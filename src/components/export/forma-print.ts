@@ -4,17 +4,29 @@
  *  ২) @page সাময়িকভাবে শীট-সাইজে সেট করা
  *  ৩) window.print() → afterprint-এ পরিচ্ছন্ন
  *
+ * নির্ভরযোগ্যতা (গুরুত্বপূর্ণ):
+ *  - <html>-এ `bwp-forma-printing` ক্লাস যোগ হয় — প্রিন্ট CSS শুধু এই
+ *    মোডে অ্যাপ লুকিয়ে শীট দেখায় (globals.css-এর সাথে সংঘর্ষ-মুক্ত)।
+ *  - `#bwp-print-page` স্টাইল এলিমেন্ট না থাকলে নিজেই তৈরি করে —
+ *    সেশনে প্রথমবারই ফরমা প্রিন্ট করলেও @page ঠিক থাকবে।
+ *  - ডায়ালগ সম্পূর্ণ বন্ধ + ফন্ট/ছবি লোড + লেআউট স্থির হওয়ার পরেই
+ *    window.print() — নইলে ডায়ালগ/অর্ধেক-রেন্ডার প্রিন্টে ঢুকে যায়।
+ *  - লাইভ পেজ DOM না পাওয়া গেলে ফাঁকা শীট ছাপার বদলে এরর দেখায়।
+ *
  * গণিত: src/lib/imposition.ts (স্বাধীন ভ্যালিডেশনে প্রমাণিত)
  */
 
+import { toast } from 'sonner';
 import { useEditorStore } from '@/lib/store';
 import { getPageDimensionsMm } from '@/lib/paper';
 import {
   computeImposition,
+  formaDuplexFor,
   formaSheetSizeMm,
   formaFoldOffsetsMm,
   type FormaSize,
 } from '@/lib/imposition';
+import { ensurePrintStyle, getOrCreatePrintStyleEl } from '@/lib/export-json';
 
 export interface FormaPrintOptions {
   formaSize: FormaSize;
@@ -24,7 +36,39 @@ export interface FormaPrintOptions {
 }
 
 const ROOT_ID = 'forma-print-root';
+const MODE_CLASS = 'bwp-forma-printing';
 let pageStyleBackup: string | null = null;
+
+/* ─── ছোট হেল্পার ─── */
+
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+const raf2 = () =>
+  new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
+
+/**
+ * সব open Radix ডায়ালগ (exit-animation সহ) DOM থেকে সরে যাওয়া পর্যন্ত অপেক্ষা।
+ * প্রিন্ট চলাকালীন ডায়ালগ দেখালে সেটি fixed-position হওয়ায় প্রতিটি প্রিন্টেড
+ * পেজে রিপিট হয় — তাই প্রিন্টের আগে এটি বাধ্যতামূলক।
+ */
+export async function waitForDialogsClosed(timeoutMs = 1500): Promise<void> {
+  const start = Date.now();
+  while (document.querySelector('[role="dialog"], [role="alertdialog"]')) {
+    if (Date.now() - start > timeoutMs) break;
+    await sleep(40);
+  }
+  await raf2();
+}
+
+/** ক্লোন-রুটের ছবিগুলো লোড হওয়া পর্যন্ত অপেক্ষা (সর্বোচ্চ cap) */
+async function waitForImages(root: HTMLElement, capMs = 800): Promise<void> {
+  const start = Date.now();
+  for (;;) {
+    const imgs = Array.from(root.querySelectorAll('img'));
+    const pending = imgs.filter((im) => !im.complete);
+    if (pending.length === 0 || Date.now() - start > capMs) return;
+    await sleep(50);
+  }
+}
 
 /** একটি ক্লোন করা পেজ নোড থেকে id/সিলেকশন অবশেষ সরানো */
 function sanitizeClone(clone: HTMLElement): void {
@@ -46,7 +90,9 @@ export function buildFormaRoot(opts: FormaPrintOptions): HTMLElement {
     settings.customPaper,
   );
   const sheet = formaSheetSizeMm(widthMm, heightMm, opts.formaSize);
-  const imposition = computeImposition(pages.length, opts.formaSize);
+  // শীট অভিমুখ অনুযায়ী ডুপ্লেক্স-অক্ষ — প্রিন্টারের ডিফল্ট long-edge flip-এ পেছনের পাশ মেলে
+  const duplex = formaDuplexFor(widthMm, heightMm, opts.formaSize);
+  const imposition = computeImposition(pages.length, opts.formaSize, duplex);
 
   const pageEls = Array.from(
     document.querySelectorAll<HTMLElement>('.workspace .page-slot .paper-page'),
@@ -132,11 +178,41 @@ export function buildFormaRoot(opts: FormaPrintOptions): HTMLElement {
   return root;
 }
 
-/** ফরমা প্রিন্ট — DOM গঠন → @page শীট-সাইজ → window.print() → ক্লিনআপ */
-export function printForma(opts: FormaPrintOptions): void {
+/** ফরমা প্রিন্ট সম্পূর্ণ পরিচ্ছন্ন — রুট, মোড-ক্লাস, @page রিস্টোর */
+function cleanupForma(styleEl: HTMLStyleElement): void {
+  document.getElementById(ROOT_ID)?.remove();
+  document.documentElement.classList.remove(MODE_CLASS);
+  if (pageStyleBackup !== null) {
+    styleEl.textContent = pageStyleBackup;
+    pageStyleBackup = null;
+  } else {
+    // আমরাই স্টাইল-এলিমেন্ট তৈরি করেছিলাম — স্বাভাবিক কাগজের সাইজে ফেরত
+    ensurePrintStyle(useEditorStore.getState().settings);
+  }
+}
+
+/**
+ * ফরমা প্রিন্ট — DOM গঠন → মোড-ক্লাস → @page শীট-সাইজ → রেন্ডার-রেডি অপেক্ষা
+ * → window.print() → afterprint/ফলব্যাক-এ ক্লিনআপ
+ */
+export async function printForma(opts: FormaPrintOptions): Promise<void> {
   if (typeof window === 'undefined') return;
 
-  const { settings } = useEditorStore.getState();
+  const { settings, pages } = useEditorStore.getState();
+
+  // ── গার্ড ১: খালি ডকুমেন্ট ──
+  if (pages.length === 0) {
+    toast.error('ডকুমেন্টে কোনো পৃষ্ঠা নেই — আগে কিছু লিখুন।');
+    return;
+  }
+
+  // ── গার্ড ২: লাইভ পেজ DOM পাওয়া যাচ্ছে কি না (না পেলে ফাঁকা শীট ছাপা হত) ──
+  const pageEls = document.querySelectorAll('.workspace .page-slot .paper-page');
+  if (pageEls.length < pages.length) {
+    toast.error('পৃষ্ঠাগুলো এখনো লোড হয়নি — এক সেকেন্ড পর আবার চেষ্টা করুন।');
+    return;
+  }
+
   const { widthMm, heightMm } = getPageDimensionsMm(
     settings.paperSize,
     settings.orientation,
@@ -144,27 +220,47 @@ export function printForma(opts: FormaPrintOptions): void {
   );
   const sheet = formaSheetSizeMm(widthMm, heightMm, opts.formaSize);
 
-  // পুরনো রুট থাকলে সরাও
+  // পুরনো রুট/মোড-অবশেষ থাকলে সরাও
   document.getElementById(ROOT_ID)?.remove();
+  document.documentElement.classList.remove(MODE_CLASS);
 
+  // ১) ফরমা-রুট গঠন ও যুক্ত করা
   const root = buildFormaRoot(opts);
   document.body.appendChild(root);
 
-  // @page → শীট সাইজ (পরে রিস্টোরের জন্য ব্যাকআপ)
-  const styleEl = document.getElementById('bwp-print-page') as HTMLStyleElement | null;
-  pageStyleBackup = styleEl?.textContent ?? null;
-  if (styleEl) {
-    styleEl.textContent = `@page { size: ${sheet.widthMm}mm ${sheet.heightMm}mm; margin: 0; }`;
-  }
+  // ২) ফরমা মোড চালু — প্রিন্ট CSS এখন শুধু শীট দেখাবে
+  document.documentElement.classList.add(MODE_CLASS);
+
+  // ৩) @page → শীট সাইজ। স্টাইল-এলিমেন্ট না থাকলে getOrCreate নিজেই তৈরি
+  //    করে (সেশনে প্রথমবারই ফরমা প্রিন্ট করলেও সঠিক — আগের বাগ: সাধারণ
+  //    প্রিন্ট না চালালে @page সেটই হতো না, শীট A4-এ কাটা পড়ত)।
+  const styleEl = getOrCreatePrintStyleEl();
+  pageStyleBackup = styleEl.textContent;
+  styleEl.textContent = `@page { size: ${sheet.widthMm}mm ${sheet.heightMm}mm; margin: 0; }`;
 
   const cleanup = () => {
-    document.getElementById(ROOT_ID)?.remove();
-    if (styleEl && pageStyleBackup !== null) styleEl.textContent = pageStyleBackup;
-    pageStyleBackup = null;
+    cleanupForma(styleEl);
     window.removeEventListener('afterprint', cleanup);
   };
   window.addEventListener('afterprint', cleanup);
+  // ফলব্যাক: afterprint কোনো কারণে না এলে ১০ মিনিট পর পরিষ্কার
+  const fallbackTimer = window.setTimeout(cleanup, 10 * 60 * 1000);
+  window.addEventListener(
+    'afterprint',
+    () => window.clearTimeout(fallbackTimer),
+    { once: true },
+  );
 
-  // ক্লোন-রেন্ডার স্থির হতে ছোট বিলম্ব
-  window.setTimeout(() => window.print(), 80);
+  // ৪) রেন্ডার-রেডি অপেক্ষা: ফন্ট → ছবি → লেআউট স্থির
+  try {
+    await Promise.race([document.fonts.ready, sleep(600)]);
+  } catch {
+    /* ফন্ট API না থাকলে এগিয়ে যাও */
+  }
+  await waitForImages(root);
+  await raf2();
+  await sleep(60);
+
+  // ৫) প্রিন্ট
+  window.print();
 }

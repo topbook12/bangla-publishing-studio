@@ -229,6 +229,22 @@ export function formaSheetSizeMm(
   return { widthMm: pageWidthMm * cols, heightMm: pageHeightMm * rows };
 }
 
+/**
+ * শীটের অভিমুখ অনুযায়ী ডুপ্লেক্স-অক্ষ নির্ণয় — যাতে প্রিন্টারের ডিফল্ট
+ * "Long-edge flip" দিয়েই পেছনের পাশ ঠিকঠাক মেলে (সব ফরমা-সাইজে):
+ *  - পোর্ট্রেট শীটে long edge = উল্লম্ব প্রান্ত → vertical (উল্লম্ব-অক্ষ) মিরর
+ *  - ল্যান্ডস্কেপ শীটে long edge = অনুভূমিক প্রান্ত → horizontal (অনুভূমিক-অক্ষ) মিরর
+ * (ভুল অক্ষ হলে ডুপ্লেক্স প্রিন্টে পেছনের পৃষ্ঠাগুলো ভুল ঘরে পড়ে — ভাঁজ ভুল হয়)
+ */
+export function formaDuplexFor(
+  pageWidthMm: number,
+  pageHeightMm: number,
+  formaSize: FormaSize,
+): 'vertical' | 'horizontal' {
+  const sheet = formaSheetSizeMm(pageWidthMm, pageHeightMm, formaSize);
+  return sheet.widthMm > sheet.heightMm ? 'horizontal' : 'vertical';
+}
+
 /** ভাঁজ রেখার অবস্থান (mm) — টিক/গাটার লাইন আঁকতে */
 export function formaFoldOffsetsMm(
   pageWidthMm: number,

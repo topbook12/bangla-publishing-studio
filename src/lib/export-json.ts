@@ -59,6 +59,23 @@ export async function importJsonBackup(file: File): Promise<'ok' | 'invalid'> {
 
 let printStyleEl: HTMLStyleElement | null = null;
 
+/**
+ * @page স্টাইল-এলিমেন্ট — থাকলে সেটাই, না থাকলে তৈরি করে দিই।
+ * ফরমা প্রিন্টও এটি ব্যবহার করে — সেশনে প্রথমবারই ফরমা প্রিন্ট করলেও
+ * @page সঠিক থাকবে (আগে: সাধারণ প্রিন্ট না চালালে এলিমেন্টই ছিল না)।
+ */
+export function getOrCreatePrintStyleEl(): HTMLStyleElement {
+  if (typeof document === 'undefined') throw new Error('no document');
+  if (!printStyleEl || !printStyleEl.isConnected) {
+    printStyleEl =
+      (document.getElementById('bwp-print-page') as HTMLStyleElement | null) ??
+      document.createElement('style');
+    if (!printStyleEl.id) printStyleEl.id = 'bwp-print-page';
+    if (!printStyleEl.isConnected) document.head.appendChild(printStyleEl);
+  }
+  return printStyleEl;
+}
+
 /** @page রুল ডাইনামিক সেট — কাগজের সাইজ অনুযায়ী */
 export function ensurePrintStyle(settings: DocumentSettings): void {
   const preset = getPaperPreset(settings.paperSize);
@@ -69,13 +86,7 @@ export function ensurePrintStyle(settings: DocumentSettings): void {
   const w = portrait ? size.w : size.h;
   const h = portrait ? size.h : size.w;
 
-  if (typeof document === 'undefined') return;
-  if (!printStyleEl) {
-    printStyleEl = document.createElement('style');
-    printStyleEl.id = 'bwp-print-page';
-    document.head.appendChild(printStyleEl);
-  }
-  printStyleEl.textContent = `@page { size: ${w}mm ${h}mm; margin: 0; }`;
+  getOrCreatePrintStyleEl().textContent = `@page { size: ${w}mm ${h}mm; margin: 0; }`;
 }
 
 export function printDocument(): void {

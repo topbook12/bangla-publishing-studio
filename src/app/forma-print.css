@@ -1,30 +1,54 @@
-/* ফরমা (Imposition) প্রিন্ট স্টাইল — স্ক্রিনে লুকানো, প্রিন্টে শুধু ফরমা-শীট */
+/* ═══════════════════════════════════════════════════════════════
+   ফরমা (Imposition) প্রিন্ট স্টাইল
+   ─────────────────────────────────────────────────────────────
+   ফরমা প্রিন্ট চলাকালীন <html>-এ `bwp-forma-printing` ক্লাস যোগ
+   হয় (forma-print.ts)। প্রিন্ট-রুলগুলো সেই ক্লাসের উপর স্কোপড —
+   যাতে globals.css-এর সাধারণ-প্রিন্ট রুলের সাথে কখনো সংঘর্ষ না হয়।
+   (html.bwp-forma-printing .app-root = specificity (0,2,1) —
+    globals-এর .app-root (0,1,0)-কে বান্ডল-অর্ডার যা-ই হোক হারায়।)
+   ═══════════════════════════════════════════════════════════════ */
 
+/* স্ক্রিনে ফরমা-রুট সবসময় লুকানো */
 #forma-print-root {
   display: none;
 }
 
 @media print {
-  /* ফরমা প্রিন্টে অ্যাপ UI লুকিয়ে শুধু শীট দেখাও */
-  #forma-print-root {
+  /* ফরমা মোড চালু থাকলে — অ্যাপ শেল লুকিয়ে শুধু ফরমা-শীট দেখাও */
+  html.bwp-forma-printing #forma-print-root {
     display: block !important;
   }
-  .app-root {
+  html.bwp-forma-printing .app-root {
     display: none !important;
   }
+  html.bwp-forma-printing [data-sonner-toaster] {
+    display: none !important;
+  }
+  html.bwp-forma-printing,
+  html.bwp-forma-printing body {
+    background: #fff !important;
+    height: auto !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* ক্লোন করা পেজে রং হুবহু থাকবে */
   #forma-print-root * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
 }
 
-/* প্রতিটি প্রেস-শীট = এক প্রিন্টেড পেজ */
+/* প্রতিটি প্রেস-শীট = হুবহু এক প্রিন্টেড পেজ */
 #forma-print-root .forma-sheet {
   position: relative;
   overflow: hidden;
+  box-sizing: border-box;
   background: #fff;
   page-break-after: always;
   break-after: page;
+  page-break-inside: avoid;
 }
 #forma-print-root .forma-sheet:last-child {
   page-break-after: auto;
@@ -35,6 +59,7 @@
 #forma-print-root .forma-cell {
   position: absolute;
   overflow: hidden;
+  box-sizing: border-box;
   background: #fff;
   z-index: 1;
 }

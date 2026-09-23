@@ -33,12 +33,13 @@ import { exportProjectToDocx } from '@/lib/export-docx';
 import { toast } from 'sonner';
 import {
   computeImposition,
+  formaDuplexFor,
   formaSheetSizeMm,
   FORMA_SIZES,
   type FormaSize,
 } from '@/lib/imposition';
 import { getPageDimensionsMm } from '@/lib/paper';
-import { printForma } from '@/components/export/forma-print';
+import { printForma, waitForDialogsClosed } from '@/components/export/forma-print';
 
 type PrintMode = 'normal' | 'forma';
 type SideOrder = 'interleaved' | 'fronts-first';
@@ -69,29 +70,33 @@ export function ExportTab() {
     }
   };
 
-  // ফরমা হিসাব — প্রিভিউ ও তথ্যের জন্য
+  // ফরমা হিসাব — প্রিভিউ ও তথ্যের জন্য (প্রিন্টের সাথে হুবহু একই duplex-অক্ষ)
   const formaInfo = useMemo(() => {
-    const imposition = computeImposition(pageCount, formaSize);
     const { widthMm, heightMm } = getPageDimensionsMm(
       settings.paperSize,
       settings.orientation,
       settings.customPaper,
     );
+    const duplex = formaDuplexFor(widthMm, heightMm, formaSize);
+    const imposition = computeImposition(pageCount, formaSize, duplex);
     const sheet = formaSheetSizeMm(widthMm, heightMm, formaSize);
     return { imposition, sheet };
   }, [pageCount, formaSize, settings.paperSize, settings.orientation, settings.customPaper]);
 
+  // ডায়ালগ সম্পূর্ণ বন্ধ (exit-animation সহ) হওয়ার পরেই প্রিন্ট —
+  // নইলে fixed-position ডায়ালগ প্রতিটি প্রিন্টেড পেজে রিপিট হতো
   const runNormalPrint = () => {
     setPrintOpen(false);
-    window.setTimeout(() => printDocument(), 120);
+    window.setTimeout(() => {
+      void waitForDialogsClosed().then(() => printDocument());
+    }, 40);
   };
 
   const runFormaPrint = () => {
     setPrintOpen(false);
-    window.setTimeout(
-      () => printForma({ formaSize, sideOrder, foldMarks }),
-      120,
-    );
+    window.setTimeout(() => {
+      void waitForDialogsClosed().then(() => printForma({ formaSize, sideOrder, foldMarks }));
+    }, 40);
   };
 
   return (
@@ -253,6 +258,7 @@ export function ExportTab() {
                 <Badge variant="outline">
                   শীট মাপ: {bn(Math.round(formaInfo.sheet.widthMm))}×{bn(Math.round(formaInfo.sheet.heightMm))} মিমি
                 </Badge>
+                <Badge variant="outline">ডুপ্লেক্স প্রিন্টে: Long-edge flip রাখুন</Badge>
               </div>
 
               {/* প্রিভিউ — প্রথম ২টি শীট */}
