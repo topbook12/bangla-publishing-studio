@@ -6,9 +6,9 @@
 
 import { useState } from 'react';
 import {
-  AlignCenter, AlignJustify, AlignLeft, AlignRight, Bold, Eraser,
-  Highlighter, Italic, List, ListOrdered, Palette, Quote, Redo2, Strikethrough,
-  Subscript as SubIcon, Superscript as SupIcon, Underline as UnderlineIcon, Undo2,
+  AlignCenter, AlignJustify, AlignLeft, AlignRight, Bold, ChevronsDown, ChevronsUp, Eraser,
+  Highlighter, Italic, List, ListOrdered, Palette, Quote, Strikethrough,
+  Subscript as SubIcon, Superscript as SupIcon, Underline as UnderlineIcon,
 } from 'lucide-react';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -166,13 +166,6 @@ export function HomeTab() {
 
   return (
     <div className="ribbon-scroll flex items-stretch gap-1">
-      <RibbonGroup label="History">
-        <div className="flex gap-1">
-          <RibbonButton icon={Undo2} label="Undo" shortcut="Ctrl+Z" onClick={() => cmd((e) => e.chain().focus().undo().run())} disabled={!ed || !ed.can().undo()} />
-          <RibbonButton icon={Redo2} label="Redo" shortcut="Ctrl+Y" onClick={() => cmd((e) => e.chain().focus().redo().run())} disabled={!ed || !ed.can().redo()} />
-        </div>
-      </RibbonGroup>
-      <RibbonDivider />
       <RibbonGroup label="Font">
         <div className="flex flex-col gap-1">
           <div className="flex gap-1">
@@ -208,6 +201,8 @@ export function HomeTab() {
             <RibbonButton icon={ListOrdered} label="Numbering" active={isActive((e) => e.isActive('orderedList'))} onClick={() => cmd((e) => e.chain().focus().toggleOrderedList().run())} />
             <RibbonButton icon={Quote} label="Quote" active={isActive((e) => e.isActive('blockquote'))} onClick={() => cmd((e) => e.chain().focus().toggleBlockquote().run())} />
             <LineHeightSelect />
+            <RibbonButton icon={ChevronsUp} label="Move Up" title="টেবিল/বক্স/ছবি সহ পুরো ব্লক উপরে সরান" shortcut="Alt+↑" onClick={() => cmd((e) => e.chain().focus().moveBlockUp().run())} />
+            <RibbonButton icon={ChevronsDown} label="Move Down" title="টেবিল/বক্স/ছবি সহ পুরো ব্লক নিচে সরান" shortcut="Alt+↓" onClick={() => cmd((e) => e.chain().focus().moveBlockDown().run())} />
           </div>
         </div>
       </RibbonGroup>

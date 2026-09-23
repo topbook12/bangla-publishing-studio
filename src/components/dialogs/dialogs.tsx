@@ -8,6 +8,8 @@ import { HeaderFooterDialog } from './header-footer-dialog';
 import { CoverDialog } from './cover-dialog';
 import { ProjectsDialog } from './projects-dialog';
 import { ReviewDialog } from './review-dialog';
+import { PageChromeDialog } from './page-chrome-dialog';
+import { TemplatesDialog } from './templates-dialog';
 
 export function Dialogs() {
   return (
@@ -16,6 +18,8 @@ export function Dialogs() {
       <CoverDialog />
       <ProjectsDialog />
       <ReviewDialog />
+      <PageChromeDialog />
+      <TemplatesDialog />
     </>
   );
 }

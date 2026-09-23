@@ -6,7 +6,7 @@
 
 import { useEffect, useRef } from 'react';
 import {
-  ArrowDown, ArrowUp, ChevronDown, Copy, Eye, EyeOff, FilePlus2, Trash2,
+  ArrowDown, ArrowUp, ChevronDown, Copy, Eye, EyeOff, FilePlus2, Settings2, Trash2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,6 +14,7 @@ import {
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useEditorStore, flushSave } from '@/lib/store';
+import { useUiStore } from '@/lib/ui-store';
 import { getPageDimensionsMm, mmToPx } from '@/lib/paper';
 import { PaperPage } from './paper-page';
 import { PageEditor } from './page-editor';
@@ -53,6 +54,15 @@ function PageMenu({ pageId, index }: { pageId: string; index: number }) {
             ? <><Eye size={14} /> হেডার/ফুটার দেখান</>
             : <><EyeOff size={14} /> হেডার/ফুটার লুকান</>}
         </DropdownMenuItem>
+        {(() => {
+          const pg = useEditorStore.getState().pages.find((p) => p.id === pageId);
+          const hasCustom = Boolean(pg?.headerOverride || pg?.footerOverride);
+          return (
+            <DropdownMenuItem onClick={() => useUiStore.getState().openPageChrome(pageId)}>
+              <Settings2 size={14} /> {hasCustom ? 'এই পাতার কাস্টম হেডার/ফুটার সম্পাদনা…' : 'এই পাতার হেডার/ফুটার কাস্টমাইজ…'}
+            </DropdownMenuItem>
+          );
+        })()}
         <DropdownMenuItem
           className="text-red-600 focus:text-red-600"
           onClick={() => deletePage(pageId)}

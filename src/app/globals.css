@@ -305,6 +305,40 @@ html.dark .header-action { box-shadow: 0 1px 2px rgb(0 0 0 / 0.3), inset 0 1px 0
   background: linear-gradient(180deg, color-mix(in oklab, var(--muted) 58%, transparent), color-mix(in oklab, var(--card) 90%, var(--muted)));
 }
 
+/* Quick Access Toolbar — Undo/Redo (সব ট্যাবে সবসময় দৃশ্যমান) */
+.ribbon-qat {
+  display: flex;
+  align-items: center;
+  flex: none;
+  gap: 2px;
+  margin-left: 8px;
+  padding: 0 8px;
+  height: 28px;
+  border-radius: 8px;
+  background: color-mix(in oklab, var(--card) 88%, var(--muted));
+  box-shadow:
+    inset 0 0 0 1px var(--border),
+    0 1px 2px rgb(0 0 0 / 0.05);
+}
+.ribbon-qat-btn {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 24px;
+  border-radius: 6px;
+  color: var(--muted-foreground);
+  transition: background-color 0.14s, color 0.14s, transform 0.14s;
+}
+.ribbon-qat-btn:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
+.ribbon-qat-btn:disabled { opacity: 0.38; pointer-events: none; }
+@media (hover: hover) {
+  .ribbon-qat-btn:hover {
+    background: color-mix(in oklab, var(--primary) 13%, transparent);
+    color: var(--primary);
+    transform: translateY(-1px);
+  }
+}
+
 .ribbon-tabs {
   display: flex;
   flex: 1;
@@ -1566,6 +1600,22 @@ html.dark .status-pill { box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05); }
   .page-editor-shell, .page-editor-inner, .page-content, .page-content-text {
     overflow: hidden !important;
   }
+  /* প্রিন্টে কনটেন্ট ভেঙে যাওয়া রোধ — টেবিল সারি, বক্স, ছবি এক পাতায় থাকে */
+  .page-content-text table { page-break-inside: auto; break-inside: auto; }
+  .page-content-text tr, .page-content-text thead, .page-content-text tbody {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .page-content-text th, .page-content-text td { word-break: break-word; overflow-wrap: anywhere; }
+  .callout-box, .mcq-block, .toc-block, .doc-textbox {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .page-content-text img { page-break-inside: avoid; break-inside: avoid; }
+  .page-content-text h1, .page-content-text h2, .page-content-text h3, .page-content-text h4 {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
   /* ইনলাইন এডিটিং অ্যাফোর্ডেন্স প্রিন্টে যেন না আসে */
   .chrome-editable, .chrome-editing {
     text-decoration: none !important;
@@ -1577,3 +1627,5 @@ html.dark .status-pill { box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05); }
     min-height: 0 !important;
   }
 }
+
+/* print robustness v2 */

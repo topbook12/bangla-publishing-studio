@@ -19,6 +19,10 @@ interface ChromeProps {
   settings: DocumentSettings;
   pageKind: 'normal' | 'cover';
   noChrome: boolean;
+  /** এই পাতার কাস্টম হেডার/ফুটার (থাকলে গ্লোবাল সেটিংসের বদলে প্রযোজ্য) */
+  pageId?: string;
+  headerOverride?: HeaderFooterSettings | null;
+  footerOverride?: HeaderFooterSettings | null;
 }
 
 function mirrorIfEven(index: number, oddEven: boolean): boolean {
@@ -35,11 +39,12 @@ const AUTO_HINT = 'Automatic content — edit via Header & Footer';
 
 /**
  * ডাবল-ক্লিকে এডিটেবল হয়ে ওঠা হেডার/ফুটার টেক্সট জোন।
- * কমিট (blur বা Enter) মাস্টার ডায়ালগের ব্যবহৃত একই store ফিল্ডে লেখে,
- * তাই IndexedDB অটোসেভ আগের মতোই কাজ করে। Escape এডিট বাতিল করে।
+ * কমিট (blur বা Enter) onCommit কলব্যাকে যায় — গ্লোবাল সেটিংস অথবা
+ * নির্দিষ্ট পাতার override — যেখানেই এই জোনটির উৎস।
+ * IndexedDB অটোসেভ আগের মতোই কাজ করে। Escape এডিট বাতিল করে।
  */
 function EditableZone({
-  section, hf, field, value, className,
+  section, hf, field, value, className, onCommit,
 }: {
   section: ChromeSection;
   hf: HeaderFooterSettings;
@@ -47,12 +52,13 @@ function EditableZone({
   /** প্রদর্শিত টেক্সট (ফলব্যাক সহ) — না দিলে hf[field] */
   value?: string;
   className?: string;
+  /** কমিট করার টার্গেট (গ্লোবাল অথবা পেজ override) */
+  onCommit: (next: HeaderFooterSettings) => void;
 }) {
   const shown = value ?? hf[field];
   const [editing, setEditing] = useState(false);
   const cancelRef = useRef(false);
   const spanRef = useRef<HTMLSpanElement>(null);
-  const updateSettings = useEditorStore((s) => s.updateSettings);
 
   // এডিটিং শুরু হলে বর্তমান টেক্সট বসিয়ে ফোকাস + পুরোটা সিলেক্ট
   // (contentEditable-এর ভেতরে টাইপের সময় React রি-রেন্ডার হয় না — কার্সর লাফায় না)
@@ -77,8 +83,7 @@ function EditableZone({
     cancelRef.current = true; // Enter-কমিটের পরে আসা blur যেন দ্বিগুণ লেখে না
     setEditing(false);
     if (text !== shown) {
-      if (section === 'header') updateSettings({ header: { ...hf, [field]: text } });
-      else updateSettings({ footer: { ...hf, [field]: text } });
+      onCommit({ ...hf, [field]: text });
     }
   };
 
@@ -147,7 +152,7 @@ function centerFallback(hf: HeaderFooterSettings, mirrored: boolean): { field: C
   return { field: 'rightText', value: hf.rightText };
 }
 
-function HeaderBar({ hf, mirrored }: { hf: HeaderFooterSettings; mirrored: boolean }) {
+function HeaderBar({ hf, mirrored, onCommit }: { hf: HeaderFooterSettings; mirrored: boolean; onCommit: (next: HeaderFooterSettings) => void }) {
   const left = mirrored ? hf.rightText : hf.leftText;
   const right = mirrored ? hf.leftText : hf.rightText;
   const accent = hf.accentColor;
@@ -157,8 +162,8 @@ function HeaderBar({ hf, mirrored }: { hf: HeaderFooterSettings; mirrored: boole
       <div className="hdr-parallel" style={{ color: accent }}>
         <div className="hdr-parallel-line" style={{ borderColor: accent }} />
         <div className="hdr-parallel-row">
-          <EditableZone section="header" hf={hf} field={mirrored ? 'rightText' : 'leftText'} value={left} className="hdr-parallel-left" />
-          <EditableZone section="header" hf={hf} field={mirrored ? 'leftText' : 'rightText'} value={right} className="hdr-parallel-right" />
+          <EditableZone section="header" hf={hf} field={mirrored ? 'rightText' : 'leftText'} value={left} className="hdr-parallel-left" onCommit={onCommit} />
+          <EditableZone section="header" hf={hf} field={mirrored ? 'leftText' : 'rightText'} value={right} className="hdr-parallel-right" onCommit={onCommit} />
         </div>
         <div className="hdr-parallel-line" style={{ borderColor: accent }} />
       </div>
@@ -170,7 +175,7 @@ function HeaderBar({ hf, mirrored }: { hf: HeaderFooterSettings; mirrored: boole
       <div className="hdr-royal" style={{ color: accent }}>
         <div className="hdr-royal-row">
           <span className="hdr-royal-flourish" style={{ color: accent }} title={AUTO_HINT}>❦</span>
-          <EditableZone section="header" hf={hf} field={title.field} value={title.value} className="hdr-royal-title" />
+          <EditableZone section="header" hf={hf} field={title.field} value={title.value} className="hdr-royal-title" onCommit={onCommit} />
           <span className="hdr-royal-flourish" style={{ color: accent }} title={AUTO_HINT}>❦</span>
         </div>
         <div className="hdr-royal-line" style={{ borderColor: accent }} />
@@ -180,23 +185,24 @@ function HeaderBar({ hf, mirrored }: { hf: HeaderFooterSettings; mirrored: boole
   if (hf.style === 'academic') {
     return (
       <div className="hdr-academic" style={{ borderColor: accent }}>
-        <EditableZone section="header" hf={hf} field={mirrored ? 'rightText' : 'leftText'} value={left} className="hdr-academic-left" />
-        <EditableZone section="header" hf={hf} field={mirrored ? 'leftText' : 'rightText'} value={right} className="hdr-academic-right" />
+        <EditableZone section="header" hf={hf} field={mirrored ? 'rightText' : 'leftText'} value={left} className="hdr-academic-left" onCommit={onCommit} />
+        <EditableZone section="header" hf={hf} field={mirrored ? 'leftText' : 'rightText'} value={right} className="hdr-academic-right" onCommit={onCommit} />
       </div>
     );
   }
   // plain
   const center = centerFallback(hf, mirrored);
   if (!center.value) return null;
-  return <div className="hdr-plain"><EditableZone section="header" hf={hf} field={center.field} value={center.value} /></div>;
+  return <div className="hdr-plain"><EditableZone section="header" hf={hf} field={center.field} value={center.value} onCommit={onCommit} /></div>;
 }
 
 function FooterBar({
-  hf, mirrored, numberHtml,
+  hf, mirrored, numberHtml, onCommit,
 }: {
   hf: HeaderFooterSettings;
   mirrored: boolean;
   numberHtml: ReactNode;
+  onCommit: (next: HeaderFooterSettings) => void;
 }) {
   const left = mirrored ? hf.rightText : hf.leftText;
   const right = mirrored ? hf.leftText : hf.rightText;
@@ -217,18 +223,18 @@ function FooterBar({
   if (hf.style === 'academic') {
     return (
       <div className="ftr-academic" style={{ borderColor: accent }}>
-        <EditableZone section="footer" hf={hf} field={mirrored ? 'rightText' : 'leftText'} value={left} />
+        <EditableZone section="footer" hf={hf} field={mirrored ? 'rightText' : 'leftText'} value={left} onCommit={onCommit} />
         {numberHtml}
-        <EditableZone section="footer" hf={hf} field={mirrored ? 'leftText' : 'rightText'} value={right} />
+        <EditableZone section="footer" hf={hf} field={mirrored ? 'leftText' : 'rightText'} value={right} onCommit={onCommit} />
       </div>
     );
   }
   if (hf.style === 'parallel') {
     return (
       <div className="ftr-parallel" style={{ borderColor: accent }}>
-        <EditableZone section="footer" hf={hf} field={mirrored ? 'rightText' : 'leftText'} value={left} />
+        <EditableZone section="footer" hf={hf} field={mirrored ? 'rightText' : 'leftText'} value={left} onCommit={onCommit} />
         {numberHtml}
-        <EditableZone section="footer" hf={hf} field={mirrored ? 'leftText' : 'rightText'} value={right} />
+        <EditableZone section="footer" hf={hf} field={mirrored ? 'leftText' : 'rightText'} value={right} onCommit={onCommit} />
       </div>
     );
   }
@@ -236,19 +242,29 @@ function FooterBar({
   const center = centerFallback(hf, mirrored);
   return (
     <div className="ftr-plain">
-      <EditableZone section="footer" hf={hf} field={center.field} value={center.value} />
+      <EditableZone section="footer" hf={hf} field={center.field} value={center.value} onCommit={onCommit} />
       {numberHtml}
     </div>
   );
 }
 
-export function PageHeader({ index, settings, pageKind, noChrome }: ChromeProps): ReactNode {
-  const { header, pageNumber } = settings;
+export function PageHeader({ index, settings, pageKind, noChrome, pageId, headerOverride }: ChromeProps): ReactNode {
+  const { pageNumber } = settings;
+  const header = headerOverride ?? settings.header;
   if (pageKind === 'cover' || noChrome || !header.enabled) return null;
   if (pageNumber.differentFirst && index === 0) return null;
   const mirrored = mirrorIfEven(index, pageNumber.oddEven);
   const numberInHeader = pageNumber.enabled && pageNumber.position.startsWith('top');
   const num = displayPageNumber(index, pageNumber);
+
+  /** কমিট টার্গেট: override থাকলে পেজে, না থাকলে গ্লোবাল সেটিংসে */
+  const commitHeader = (next: HeaderFooterSettings) => {
+    if (headerOverride && pageId) {
+      useEditorStore.getState().updatePage(pageId, { headerOverride: next });
+    } else {
+      useEditorStore.getState().updateSettings({ header: next });
+    }
+  };
 
   const numberHtml = numberInHeader && num ? (
     <span className="page-number" style={{ color: header.accentColor }} title={AUTO_HINT}>
@@ -260,7 +276,7 @@ export function PageHeader({ index, settings, pageKind, noChrome }: ChromeProps)
   // হেডার স্টাইল আর নম্বর একসাথে: plain হলে নম্বর হেডারে যোগ হয়
   return (
     <header className="page-header">
-      <HeaderBar hf={header} mirrored={mirrored} />
+      <HeaderBar hf={header} mirrored={mirrored} onCommit={commitHeader} />
       {numberInHeader && numberHtml && header.style !== 'plain' ? (
         <div className="page-number-overlay">{numberHtml}</div>
       ) : null}
@@ -269,13 +285,22 @@ export function PageHeader({ index, settings, pageKind, noChrome }: ChromeProps)
   );
 }
 
-export function PageFooter({ index, settings, pageKind, noChrome }: ChromeProps): ReactNode {
-  const { footer, pageNumber } = settings;
+export function PageFooter({ index, settings, pageKind, noChrome, pageId, footerOverride }: ChromeProps): ReactNode {
+  const { pageNumber } = settings;
+  const footer = footerOverride ?? settings.footer;
   if (pageKind === 'cover' || noChrome) return null;
   if (pageNumber.differentFirst && index === 0) return null;
   const mirrored = mirrorIfEven(index, pageNumber.oddEven);
   const numberInFooter = pageNumber.enabled && pageNumber.position.startsWith('bottom');
   const num = displayPageNumber(index, pageNumber);
+
+  const commitFooter = (next: HeaderFooterSettings) => {
+    if (footerOverride && pageId) {
+      useEditorStore.getState().updatePage(pageId, { footerOverride: next });
+    } else {
+      useEditorStore.getState().updateSettings({ footer: next });
+    }
+  };
 
   const numberHtml = numberInFooter && num ? (
     <span className="page-number" style={{ color: footer.accentColor }} title={AUTO_HINT}>
@@ -291,7 +316,7 @@ export function PageFooter({ index, settings, pageKind, noChrome }: ChromeProps)
 
   return (
     <footer className="page-footer">
-      {footer.enabled ? <FooterBar hf={footer} mirrored={mirrored} numberHtml={numberHtml} /> : numberHtml ? (
+      {footer.enabled ? <FooterBar hf={footer} mirrored={mirrored} numberHtml={numberHtml} onCommit={commitFooter} /> : numberHtml ? (
         <div className="ftr-plain">{numberHtml}</div>
       ) : null}
     </footer>

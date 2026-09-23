@@ -50,7 +50,14 @@ export function PaperPage({ page, index, settings, children, active, onPageClick
       data-page-index={index}
     >
       <div className="paper-inner" style={{ padding: pagePaddingStyle(index, settings) }}>
-        <PageHeader index={index} settings={settings} pageKind={page.kind} noChrome={page.noChrome} />
+        <PageHeader
+          index={index}
+          settings={settings}
+          pageKind={page.kind}
+          noChrome={page.noChrome}
+          pageId={page.id}
+          headerOverride={page.headerOverride}
+        />
         <div className="page-content" style={borderStyle}>
           {isCover && page.coverData ? (
             <CoverView cover={page.coverData} />
@@ -60,7 +67,14 @@ export function PaperPage({ page, index, settings, children, active, onPageClick
             </div>
           )}
         </div>
-        <PageFooter index={index} settings={settings} pageKind={page.kind} noChrome={page.noChrome} />
+        <PageFooter
+          index={index}
+          settings={settings}
+          pageKind={page.kind}
+          noChrome={page.noChrome}
+          pageId={page.id}
+          footerOverride={page.footerOverride}
+        />
       </div>
     </div>
   );

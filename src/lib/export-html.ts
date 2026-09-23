@@ -112,6 +112,13 @@ ul, ol { margin: 0 0 var(--p-gap, 8px); padding-left: 26px; }
 .toc-entry { display: flex; gap: 8px; align-items: baseline; margin: 6px 0; }
 .toc-level-2 { padding-left: 20px; } .toc-level-3 { padding-left: 40px; }
 .toc-dots { flex: 1; border-bottom: 2px dotted #94a3b8; }
+/* প্রিন্টে কনটেন্ট ভেঙে যাওয়া রোধ */
+table { page-break-inside: auto; break-inside: auto; }
+tr, thead, tbody { page-break-inside: avoid; break-inside: avoid; }
+th, td { word-break: break-word; overflow-wrap: anywhere; }
+.callout-box, .mcq-block, .toc-block, .doc-textbox { page-break-inside: avoid; break-inside: avoid; }
+img { page-break-inside: avoid; break-inside: avoid; }
+h1, h2, h3, h4 { page-break-after: avoid; break-after: avoid; }
 @media print {
   body { background: #fff; }
   .book { padding: 0; gap: 0; }
@@ -156,14 +163,16 @@ export function buildStandaloneHtml(title: string, settings: DocumentSettings, p
 
     let footerHtml = '';
     const pn = settings.pageNumber;
+    const effFooter = page.footerOverride ?? settings.footer;
     if (pn.enabled && !(pn.differentFirst && index === 0) && !page.noChrome) {
       const num = pn.startAt + index;
       const text = pn.format === 'bangla' ? toBn(num) : pn.format === 'roman' ? romanize(num) : String(num);
-      footerHtml = `<div class="footer" style="color:${settings.footer.accentColor}">${pn.prefix ? escapeHtml(pn.prefix) : ''}${text}</div>`;
+      footerHtml = `<div class="footer" style="color:${effFooter.accentColor}">${pn.prefix ? escapeHtml(pn.prefix) : ''}${text}</div>`;
     }
     let headerHtml = '';
-    if (settings.header.enabled && settings.header.style !== 'none' && !(pn.differentFirst && index === 0) && !page.noChrome) {
-      const hh = settings.header;
+    const effHeader = page.headerOverride ?? settings.header;
+    if (effHeader.enabled && effHeader.style !== 'none' && !(pn.differentFirst && index === 0) && !page.noChrome) {
+      const hh = effHeader;
       if (hh.style === 'parallel') {
         headerHtml = `<div class="header" style="color:${hh.accentColor};border-top:3px double ${hh.accentColor};border-bottom:3px double ${hh.accentColor};padding:2px 0;display:flex;justify-content:space-between"><span>${escapeHtml(hh.leftText)}</span><span>${escapeHtml(hh.rightText)}</span></div>`;
       } else if (hh.style === 'royal') {

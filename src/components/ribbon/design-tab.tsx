@@ -4,7 +4,7 @@
 
 'use client';
 
-import { Crown, Palette, RefreshCw, Settings2 } from 'lucide-react';
+import { Crown, LayoutTemplate, Palette, RefreshCw, Settings2 } from 'lucide-react';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -163,6 +163,7 @@ export function DesignTab() {
       <RibbonGroup label="Cover & TOC">
         <div className="flex gap-1">
           <RibbonButton icon={Crown} label="Cover Page" onClick={() => openDialog('cover')} />
+          <RibbonButton icon={LayoutTemplate} label="Page Templates" title="সূচিপত্র, শিরোনাম পাতা, লেখকের পরিচিতি ইত্যাদি ডিজাইন-রেডি পাতা" onClick={() => openDialog('templates')} />
           <RibbonButton icon={RefreshCw} label="Update Table of Contents" onClick={refreshToc} />
           <RibbonButton icon={Palette} label="Border Color" onClick={() => {
             const c = window.prompt('Page border color (hex, e.g. #7f1d1d):', settings.pageBorderColor);

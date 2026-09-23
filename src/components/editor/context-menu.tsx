@@ -26,11 +26,12 @@ import { CellSelection } from '@tiptap/pm/tables';
 import {
   AlignCenter, AlignJustify, AlignLeft, AlignRight, AlignCenterVertical,
   AlignEndVertical, AlignStartVertical, ArrowDownToLine, ArrowLeftToLine,
-  ArrowRightToLine, ArrowUpToLine, Bold, Check, ClipboardPaste, Copy, Eraser, Expand,
-  Frame, Highlighter, Italic, List, ListOrdered, Maximize2, Merge, Minimize2, Paintbrush,
+  ArrowRightToLine, ArrowUpToLine, Bold, Check, ChevronsDown, ChevronsUp,
+  ClipboardPaste, Copy, Eraser, Expand, Frame, Highlighter, Italic, List,
+  ListOrdered, Maximize2, Merge, Minimize2, Paintbrush,
   Palette, PanelLeft, PanelTop, RotateCcw, Ruler, Scissors, Shrink, SquareDashed, Split,
   Strikethrough, Subscript as SubIcon, Superscript as SupIcon, TextCursorInput, Trash2,
-  Underline as UnderlineIcon, type LucideIcon,
+  Underline as UnderlineIcon, UnfoldVertical, WrapText, type LucideIcon,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -401,6 +402,10 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
   // ── image state ──
   const imgWidth = typeof menu.imageAttrs.width === 'string' ? menu.imageAttrs.width : null;
   const imgAlign = typeof menu.imageAttrs.textAlign === 'string' ? menu.imageAttrs.textAlign : null;
+  const imgFloat =
+    menu.imageAttrs.float === 'left' || menu.imageAttrs.float === 'right'
+      ? (menu.imageAttrs.float as 'left' | 'right')
+      : 'none';
   const imgFramed = menu.imageAttrs.framed === true;
   const setImage = (patch: Record<string, unknown>) =>
     closeAndRun((editor) => {
@@ -453,6 +458,14 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
         { id: 'img-left', label: 'বামে', icon: AlignLeft, active: imgAlign === 'left', onSelect: () => setImage({ textAlign: 'left', float: 'none' }) },
         { id: 'img-center', label: 'মাঝখানে', icon: AlignCenter, active: imgAlign === 'center', onSelect: () => setImage({ textAlign: 'center', float: 'none' }) },
         { id: 'img-right', label: 'ডানে', icon: AlignRight, active: imgAlign === 'right', onSelect: () => setImage({ textAlign: 'right', float: 'none' }) },
+      ],
+    },
+    {
+      header: 'টেক্সট র‍্যাপ',
+      items: [
+        { id: 'img-float-left', label: 'ছবি বাঁয়ে — লেখা ডান পাশে', icon: WrapText, active: imgFloat === 'left', onSelect: () => setImage({ float: 'left' }) },
+        { id: 'img-float-right', label: 'ছবি ডানে — লেখা বাঁ পাশে', icon: WrapText, active: imgFloat === 'right', onSelect: () => setImage({ float: 'right' }) },
+        { id: 'img-float-none', label: 'র‍্যাপ বন্ধ (নিজস্ব লাইনে)', icon: UnfoldVertical, active: imgFloat === 'none', onSelect: () => setImage({ float: 'none' }) },
       ],
     },
     {
@@ -574,6 +587,15 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
       ],
     },
     {
+      header: 'সরান',
+      items: [
+        { id: 'tbl-move-up', label: 'টেবিল উপরে সরান', icon: ChevronsUp, shortcut: 'Alt+↑', onSelect: () => closeAndRun((editor) => { editor.chain().focus().moveBlockUp().run(); }) },
+        { id: 'tbl-move-down', label: 'টেবিল নিচে সরান', icon: ChevronsDown, shortcut: 'Alt+↓', onSelect: () => closeAndRun((editor) => { editor.chain().focus().moveBlockDown().run(); }) },
+        { id: 'tbl-line-above', label: 'উপরে ফাঁকা লাইন', icon: ArrowUpToLine, onSelect: () => closeAndRun((editor) => { editor.chain().focus().insertLineAbove().run(); }) },
+        { id: 'tbl-line-below', label: 'নিচে ফাঁকা লাইন', icon: ArrowDownToLine, onSelect: () => closeAndRun((editor) => { editor.chain().focus().insertLineAfter().run(); }) },
+      ],
+    },
+    {
       header: 'মুছুন',
       items: [
         { id: 'del-row', label: 'সারি মুছুন', icon: Trash2, danger: true, onSelect: () => closeAndRun((editor) => { editor.chain().focus().deleteRow().run(); }) },
@@ -683,6 +705,15 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
         { id: 'bullets', label: 'Bullets', icon: List, active: ed.isActive('bulletList'), onSelect: () => closeAndRun((editor) => { editor.chain().focus().toggleBulletList().run(); }) },
         { id: 'numbering', label: 'Numbering', icon: ListOrdered, active: ed.isActive('orderedList'), onSelect: () => closeAndRun((editor) => { editor.chain().focus().toggleOrderedList().run(); }) },
         { id: 'clear-format', label: 'Clear Formatting', icon: Eraser, onSelect: () => closeAndRun((editor) => { editor.chain().focus().unsetAllMarks().clearNodes().run(); }) },
+      ],
+    },
+    {
+      header: 'Block',
+      items: [
+        { id: 'blk-move-up', label: 'ব্লক উপরে সরান', icon: ChevronsUp, shortcut: 'Alt+↑', onSelect: () => closeAndRun((editor) => { editor.chain().focus().moveBlockUp().run(); }) },
+        { id: 'blk-move-down', label: 'ব্লক নিচে সরান', icon: ChevronsDown, shortcut: 'Alt+↓', onSelect: () => closeAndRun((editor) => { editor.chain().focus().moveBlockDown().run(); }) },
+        { id: 'blk-line-above', label: 'উপরে ফাঁকা লাইন', icon: ArrowUpToLine, onSelect: () => closeAndRun((editor) => { editor.chain().focus().insertLineAbove().run(); }) },
+        { id: 'blk-line-below', label: 'নিচে ফাঁকা লাইন', icon: ArrowDownToLine, onSelect: () => closeAndRun((editor) => { editor.chain().focus().insertLineAfter().run(); }) },
       ],
     },
   ];

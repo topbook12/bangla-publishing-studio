@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { motion, MotionConfig } from 'framer-motion';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Redo2, Undo2 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEditorStore } from '@/lib/store';
@@ -43,6 +43,7 @@ const GROUP_ACCENTS: Record<string, string> = {
   'header & footer': 'sky',
   'page numbers': 'teal',
   'cover & toc': 'amber',
+  'page templates': 'rose',
   statistics: 'cyan',
   'spelling & proofing': 'sky',
   'conjunct toolkit': 'teal',
@@ -137,6 +138,56 @@ export function runCommand(fn: (editor: NonNullable<ReturnType<typeof getEditor>
   fn(editor);
 }
 
+/**
+ * Quick Access Toolbar — Undo/Redo সব রিবন ট্যাবে সবসময় দৃশ্যমান
+ * (ট্যাব কলাপ্সড থাকলেও)। MS Word-এর QAT-এর মতোই ট্যাবস্ট্রিপের বাঁয়ে বসে।
+ */
+function QuickAccess() {
+  const ed = useActiveEditor();
+  const alive = !!ed && !ed.isDestroyed;
+  const canUndo = alive && (() => { try { return ed.can().undo(); } catch { return false; } })();
+  const canRedo = alive && (() => { try { return ed.can().redo(); } catch { return false; } })();
+
+  const run = (fn: (editor: NonNullable<typeof ed>) => void) => {
+    const { activePageId } = useEditorStore.getState();
+    const editor = getEditor(activePageId) ?? ed;
+    if (editor && !editor.isDestroyed) fn(editor);
+  };
+
+  return (
+    <div className="ribbon-qat" role="toolbar" aria-label="Quick access toolbar">
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            className="ribbon-qat-btn"
+            aria-label="Undo"
+            disabled={!canUndo}
+            onClick={() => run((e) => e.chain().focus().undo().run())}
+          >
+            <Undo2 size={15} aria-hidden="true" />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">Undo · Ctrl+Z</TooltipContent>
+      </Tooltip>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            className="ribbon-qat-btn"
+            aria-label="Redo"
+            disabled={!canRedo}
+            onClick={() => run((e) => e.chain().focus().redo().run())}
+          >
+            <Redo2 size={15} aria-hidden="true" />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">Redo · Ctrl+Y</TooltipContent>
+      </Tooltip>
+    </div>
+  );
+}
+
 export function Ribbon() {
   const activeTab = useEditorStore((s) => s.activeRibbonTab);
   const setTab = useEditorStore((s) => s.setRibbonTab);
@@ -151,6 +202,7 @@ export function Ribbon() {
   return (
     <div className="ribbon no-print" role="toolbar" aria-label="Ribbon toolbar">
       <div className="ribbon-tabstrip">
+        <QuickAccess />
         <nav className="ribbon-tabs" role="tablist" aria-label="Ribbon tabs">
           <MotionConfig reducedMotion="user">
             {RIBBON_TABS.map((tab) => (

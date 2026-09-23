@@ -119,6 +119,10 @@ export interface PageData {
   /** এই পৃষ্ঠায় হেডার/ফুটার/নম্বর লুকানো (অধ্যায়ের শুরুর পাতায় দরকার হয়) */
   noChrome: boolean;
   coverData?: CoverData;
+  /** এই পাতার জন্য কাস্টম হেডার — null/অনুপস্থিত হলে গ্লোবাল settings.header */
+  headerOverride?: HeaderFooterSettings | null;
+  /** এই পাতার জন্য কাস্টম ফুটার — null/অনুপস্থিত হলে গ্লোবাল settings.footer */
+  footerOverride?: HeaderFooterSettings | null;
 }
 
 export interface BookProject {
