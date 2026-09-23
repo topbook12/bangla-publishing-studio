@@ -1,0 +1,88 @@
+/* ফরমা (Imposition) প্রিন্ট স্টাইল — স্ক্রিনে লুকানো, প্রিন্টে শুধু ফরমা-শীট */
+
+#forma-print-root {
+  display: none;
+}
+
+@media print {
+  /* ফরমা প্রিন্টে অ্যাপ UI লুকিয়ে শুধু শীট দেখাও */
+  #forma-print-root {
+    display: block !important;
+  }
+  .app-root {
+    display: none !important;
+  }
+  #forma-print-root * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+
+/* প্রতিটি প্রেস-শীট = এক প্রিন্টেড পেজ */
+#forma-print-root .forma-sheet {
+  position: relative;
+  overflow: hidden;
+  background: #fff;
+  page-break-after: always;
+  break-after: page;
+}
+#forma-print-root .forma-sheet:last-child {
+  page-break-after: auto;
+  break-after: auto;
+}
+
+/* পেজ ঘর — হুবহু mm মাপে, প্রান্তে প্রান্তে */
+#forma-print-root .forma-cell {
+  position: absolute;
+  overflow: hidden;
+  background: #fff;
+  z-index: 1;
+}
+#forma-print-root .forma-page-holder {
+  width: 100%;
+  height: 100%;
+}
+#forma-print-root .forma-page-holder.forma-rot180 {
+  transform: rotate(180deg);
+}
+
+/* ক্লোন করা পেজ — ছায়া/গোলাই ছাড়া হুবহু রেন্ডার */
+#forma-print-root .paper-page {
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+  outline: none !important;
+  border: none !important;
+}
+
+/* ভাঁজ মার্ক — প্রান্তের টিক (z:2, হালকা ধূসর) + গাটার গাইড (z:0) */
+#forma-print-root .forma-tick,
+#forma-print-root .forma-tick-h {
+  position: absolute;
+  z-index: 2;
+  background: #94a3b8;
+}
+#forma-print-root .forma-tick {
+  width: 0.4mm;
+  height: 4mm;
+}
+#forma-print-root .forma-tick-h {
+  width: 4mm;
+  height: 0.4mm;
+}
+#forma-print-root .forma-guide-v {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0.3mm;
+  z-index: 0;
+  background: repeating-linear-gradient(to bottom, #cbd5e1 0 2mm, transparent 2mm 4mm);
+}
+#forma-print-root .forma-guide-h {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 0.3mm;
+  z-index: 0;
+  background: repeating-linear-gradient(to right, #cbd5e1 0 2mm, transparent 2mm 4mm);
+}

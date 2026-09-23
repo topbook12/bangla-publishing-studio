@@ -24,17 +24,22 @@ import { createPortal } from 'react-dom';
 import type { Content, Editor } from '@tiptap/react';
 import { CellSelection } from '@tiptap/pm/tables';
 import {
-  AlignCenter, AlignJustify, AlignLeft, AlignRight, ArrowDownToLine, ArrowLeftToLine,
+  AlignCenter, AlignJustify, AlignLeft, AlignRight, AlignCenterVertical,
+  AlignEndVertical, AlignStartVertical, ArrowDownToLine, ArrowLeftToLine,
   ArrowRightToLine, ArrowUpToLine, Bold, Check, ClipboardPaste, Copy, Eraser, Expand,
   Frame, Highlighter, Italic, List, ListOrdered, Maximize2, Merge, Minimize2, Paintbrush,
-  Palette, PanelLeft, PanelTop, Scissors, Shrink, SquareDashed, Split, Strikethrough,
-  Subscript as SubIcon, Superscript as SupIcon, TextCursorInput, Trash2,
+  Palette, PanelLeft, PanelTop, RotateCcw, Ruler, Scissors, Shrink, SquareDashed, Split,
+  Strikethrough, Subscript as SubIcon, Superscript as SupIcon, TextCursorInput, Trash2,
   Underline as UnderlineIcon, type LucideIcon,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { getEditor } from '@/lib/editor-registry';
 import { COLOR_SWATCHES, HIGHLIGHT_SWATCHES } from '@/lib/paper';
+import { CELL_BG_COLORS } from './table-cell-bg';
+import { ImageResizeHost } from './image-resizer';
+import { ImageSizeDialog, type ImageDialogState } from './image-size-dialog';
+import { TableToolbarHost } from './table-toolbar';
 
 // ─────────────────────────── types & constants ───────────────────────────
 
@@ -73,10 +78,6 @@ interface CtxSection {
 
 const TEXT_COLORS = COLOR_SWATCHES.slice(0, 8);
 const HIGHLIGHT_COLORS = HIGHLIGHT_SWATCHES.slice(0, 8);
-const CELL_BG_COLORS = [
-  'transparent', '#ffffff', '#fef3c7', '#dcfce7',
-  '#dbeafe', '#ede9fe', '#fee2e2', '#f1f5f9',
-];
 
 // ─────────────────────────── helpers ───────────────────────────
 
@@ -207,6 +208,7 @@ function SwatchRow({
 export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTMLElement | null> }) {
   const [menu, setMenu] = useState<MenuState | null>(null);
   const [pos, setPos] = useState({ x: 0, y: 0 });
+  const [sizeDialog, setSizeDialog] = useState<ImageDialogState | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   /** Decide what was clicked and open the matching menu (or let the native menu through). */
@@ -372,7 +374,15 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
     }
   };
 
-  if (!menu) return null;
+  if (!menu) {
+    return (
+      <>
+        <ImageResizeHost suppressed={sizeDialog !== null} />
+        <TableToolbarHost suppressed={sizeDialog !== null} />
+        {sizeDialog ? <ImageSizeDialog state={sizeDialog} onClose={() => setSizeDialog(null)} /> : null}
+      </>
+    );
+  }
 
   const ed = menu.editor;
 
@@ -401,12 +411,14 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
   // ── table state ──
   let cellAlign: string | null = null;
   let cellBg: string | null = null;
+  let cellVAlign: string | null = null;
   const $head = ed.state.selection.$head;
   for (let d = $head.depth; d > 0; d--) {
     const node = $head.node(d);
     if (node.type.name === 'tableCell' || node.type.name === 'tableHeader') {
       cellAlign = (node.childCount > 0 ? (node.child(0).attrs.textAlign as string | undefined) : null) ?? null;
       cellBg = (node.attrs.backgroundColor as string | null) ?? null;
+      cellVAlign = (node.attrs.verticalAlign as string | null) ?? null;
       break;
     }
   }
@@ -417,28 +429,38 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
 
   const imageSections: CtxSection[] = [
     {
-      header: 'Size',
+      header: 'সাইজ',
       items: [
-        { id: 'img-w30', label: 'Small — 30%', icon: Minimize2, active: imgWidth === '30%', onSelect: () => setImage({ width: '30%' }) },
-        { id: 'img-w55', label: 'Medium — 55%', icon: SquareDashed, active: imgWidth === '55%', onSelect: () => setImage({ width: '55%' }) },
-        { id: 'img-w80', label: 'Large — 80%', icon: Maximize2, active: imgWidth === '80%', onSelect: () => setImage({ width: '80%' }) },
-        { id: 'img-w100', label: 'Full — 100%', icon: Expand, active: imgWidth === '100%', onSelect: () => setImage({ width: '100%' }) },
+        {
+          id: 'img-size-dialog',
+          label: 'ছবির সাইজ ও পজিশন…',
+          icon: Ruler,
+          onSelect: () => {
+            if (menu.imagePos === null) return;
+            setSizeDialog({ editor: ed, pos: menu.imagePos, attrs: { ...menu.imageAttrs } });
+            setMenu(null);
+          },
+        },
+        { id: 'img-w30', label: 'ছোট — ৩০%', icon: Minimize2, active: imgWidth === '30%', onSelect: () => setImage({ width: '30%' }) },
+        { id: 'img-w55', label: 'মাঝারি — ৫৫%', icon: SquareDashed, active: imgWidth === '55%', onSelect: () => setImage({ width: '55%' }) },
+        { id: 'img-w80', label: 'বড় — ৮০%', icon: Maximize2, active: imgWidth === '80%', onSelect: () => setImage({ width: '80%' }) },
+        { id: 'img-w100', label: 'পূর্ণ প্রস্থ — ১০০%', icon: Expand, active: imgWidth === '100%', onSelect: () => setImage({ width: '100%' }) },
       ],
     },
     {
-      header: 'Align',
+      header: 'অ্যালাইন',
       items: [
-        { id: 'img-left', label: 'Left', icon: AlignLeft, active: !imgAlign || imgAlign === 'left', onSelect: () => setImage({ textAlign: 'left' }) },
-        { id: 'img-center', label: 'Center', icon: AlignCenter, active: imgAlign === 'center', onSelect: () => setImage({ textAlign: 'center' }) },
-        { id: 'img-right', label: 'Right', icon: AlignRight, active: imgAlign === 'right', onSelect: () => setImage({ textAlign: 'right' }) },
+        { id: 'img-left', label: 'বামে', icon: AlignLeft, active: imgAlign === 'left', onSelect: () => setImage({ textAlign: 'left', float: 'none' }) },
+        { id: 'img-center', label: 'মাঝখানে', icon: AlignCenter, active: imgAlign === 'center', onSelect: () => setImage({ textAlign: 'center', float: 'none' }) },
+        { id: 'img-right', label: 'ডানে', icon: AlignRight, active: imgAlign === 'right', onSelect: () => setImage({ textAlign: 'right', float: 'none' }) },
       ],
     },
     {
-      header: 'Frame',
+      header: 'ফ্রেম',
       items: [
         {
           id: 'img-frame',
-          label: imgFramed ? 'Remove Border' : 'Add Border',
+          label: imgFramed ? 'বর্ডার সরান' : 'বর্ডার যোগ করুন',
           icon: Frame,
           active: imgFramed,
           onSelect: () => setImage({ framed: !imgFramed }),
@@ -449,14 +471,14 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
       items: [
         {
           id: 'img-copy',
-          label: 'Copy Image',
+          label: 'ছবি কপি করুন',
           icon: Copy,
           onSelect: () => {
             const src = typeof menu.imageAttrs.src === 'string' ? menu.imageAttrs.src : '';
             setMenu(null);
             if (!src) return;
             const fallback = () => {
-              navigator.clipboard?.writeText(src).catch(() => toast.error('Could not copy image'));
+              navigator.clipboard?.writeText(src).catch(() => toast.error('ছবি কপি করা যায়নি'));
             };
             try {
               fetch(src)
@@ -475,7 +497,7 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
         },
         {
           id: 'img-delete',
-          label: 'Delete Image',
+          label: 'ছবি মুছুন',
           icon: Trash2,
           danger: true,
           onSelect: () =>
@@ -490,38 +512,47 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
 
   const tableSections: CtxSection[] = [
     {
-      header: 'Insert',
+      header: 'যোগ করুন',
       items: [
-        { id: 'row-above', label: 'Row Above', icon: ArrowUpToLine, onSelect: () => closeAndRun((editor) => { editor.chain().focus().addRowBefore().run(); }) },
-        { id: 'row-below', label: 'Row Below', icon: ArrowDownToLine, onSelect: () => closeAndRun((editor) => { editor.chain().focus().addRowAfter().run(); }) },
-        { id: 'col-left', label: 'Column Left', icon: ArrowLeftToLine, onSelect: () => closeAndRun((editor) => { editor.chain().focus().addColumnBefore().run(); }) },
-        { id: 'col-right', label: 'Column Right', icon: ArrowRightToLine, onSelect: () => closeAndRun((editor) => { editor.chain().focus().addColumnAfter().run(); }) },
+        { id: 'row-above', label: 'উপরে সারি যোগ', icon: ArrowUpToLine, onSelect: () => closeAndRun((editor) => { editor.chain().focus().addRowBefore().run(); }) },
+        { id: 'row-below', label: 'নিচে সারি যোগ', icon: ArrowDownToLine, onSelect: () => closeAndRun((editor) => { editor.chain().focus().addRowAfter().run(); }) },
+        { id: 'col-left', label: 'বামে কলাম', icon: ArrowLeftToLine, onSelect: () => closeAndRun((editor) => { editor.chain().focus().addColumnBefore().run(); }) },
+        { id: 'col-right', label: 'ডানে কলাম', icon: ArrowRightToLine, onSelect: () => closeAndRun((editor) => { editor.chain().focus().addColumnAfter().run(); }) },
       ],
     },
     {
-      header: 'Header',
+      header: 'হেডার',
       items: [
-        { id: 'header-row', label: 'Toggle Header Row', icon: PanelTop, onSelect: () => closeAndRun((editor) => { editor.chain().focus().toggleHeaderRow().run(); }) },
-        { id: 'header-col', label: 'Toggle Header Column', icon: PanelLeft, onSelect: () => closeAndRun((editor) => { editor.chain().focus().toggleHeaderColumn().run(); }) },
+        { id: 'header-row', label: 'হেডার সারি চালু/বন্ধ', icon: PanelTop, onSelect: () => closeAndRun((editor) => { editor.chain().focus().toggleHeaderRow().run(); }) },
+        { id: 'header-col', label: 'হেডার কলাম চালু/বন্ধ', icon: PanelLeft, onSelect: () => closeAndRun((editor) => { editor.chain().focus().toggleHeaderColumn().run(); }) },
       ],
     },
     {
-      header: 'Cell',
+      header: 'সেল',
       items: [
         {
           id: 'merge-cells',
-          label: 'Merge Cells',
+          label: 'সেল মার্জ',
           icon: Merge,
           disabled: !menu.canMergeCells,
           onSelect: () => closeAndRun((editor) => { editor.chain().focus().mergeCells().run(); }),
         },
-        { id: 'split-cell', label: 'Split Cell', icon: Split, onSelect: () => closeAndRun((editor) => { editor.chain().focus().splitCell().run(); }) },
+        { id: 'split-cell', label: 'সেল স্প্লিট', icon: Split, onSelect: () => closeAndRun((editor) => { editor.chain().focus().splitCell().run(); }) },
+        { id: 'v-align-top', label: 'সেল ভার্টিক্যাল অ্যালাইন — উপরে', icon: AlignStartVertical, active: !cellVAlign || cellVAlign === 'top', onSelect: () => closeAndRun((editor) => { editor.chain().focus().setCellAttribute('verticalAlign', 'top').run(); }) },
+        { id: 'v-align-middle', label: 'সেল ভার্টিক্যাল অ্যালাইন — মাঝখানে', icon: AlignCenterVertical, active: cellVAlign === 'middle', onSelect: () => closeAndRun((editor) => { editor.chain().focus().setCellAttribute('verticalAlign', 'middle').run(); }) },
+        { id: 'v-align-bottom', label: 'সেল ভার্টিক্যাল অ্যালাইন — নিচে', icon: AlignEndVertical, active: cellVAlign === 'bottom', onSelect: () => closeAndRun((editor) => { editor.chain().focus().setCellAttribute('verticalAlign', 'bottom').run(); }) },
+        {
+          id: 'reset-colwidth',
+          label: 'সেলের প্রস্থ রিসেট',
+          icon: RotateCcw,
+          onSelect: () => closeAndRun((editor) => { editor.chain().focus().setCellAttribute('colwidth', null).run(); }),
+        },
         {
           id: 'cell-bg',
           render: () => (
             <SwatchRow
               icon={Paintbrush}
-              label="Cell Background"
+              label="সেলের রং"
               colors={CELL_BG_COLORS}
               current={cellBg}
               onPick={(color) =>
@@ -535,18 +566,19 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
       ],
     },
     {
-      header: 'Align',
+      header: 'অ্যালাইন',
       items: [
-        { id: 'cell-left', label: 'Align Left', icon: AlignLeft, active: cellAlign === 'left', onSelect: () => closeAndRun((editor) => { editor.chain().focus().setTextAlign('left').run(); }) },
-        { id: 'cell-center', label: 'Align Center', icon: AlignCenter, active: cellAlign === 'center', onSelect: () => closeAndRun((editor) => { editor.chain().focus().setTextAlign('center').run(); }) },
-        { id: 'cell-right', label: 'Align Right', icon: AlignRight, active: cellAlign === 'right', onSelect: () => closeAndRun((editor) => { editor.chain().focus().setTextAlign('right').run(); }) },
+        { id: 'cell-left', label: 'বামে', icon: AlignLeft, active: cellAlign === 'left', onSelect: () => closeAndRun((editor) => { editor.chain().focus().setTextAlign('left').run(); }) },
+        { id: 'cell-center', label: 'মাঝখানে', icon: AlignCenter, active: cellAlign === 'center', onSelect: () => closeAndRun((editor) => { editor.chain().focus().setTextAlign('center').run(); }) },
+        { id: 'cell-right', label: 'ডানে', icon: AlignRight, active: cellAlign === 'right', onSelect: () => closeAndRun((editor) => { editor.chain().focus().setTextAlign('right').run(); }) },
       ],
     },
     {
+      header: 'মুছুন',
       items: [
-        { id: 'del-row', label: 'Delete Row', icon: Trash2, danger: true, onSelect: () => closeAndRun((editor) => { editor.chain().focus().deleteRow().run(); }) },
-        { id: 'del-col', label: 'Delete Column', icon: Trash2, danger: true, onSelect: () => closeAndRun((editor) => { editor.chain().focus().deleteColumn().run(); }) },
-        { id: 'del-table', label: 'Delete Table', icon: Trash2, danger: true, onSelect: () => closeAndRun((editor) => { editor.chain().focus().deleteTable().run(); }) },
+        { id: 'del-row', label: 'সারি মুছুন', icon: Trash2, danger: true, onSelect: () => closeAndRun((editor) => { editor.chain().focus().deleteRow().run(); }) },
+        { id: 'del-col', label: 'কলাম মুছুন', icon: Trash2, danger: true, onSelect: () => closeAndRun((editor) => { editor.chain().focus().deleteColumn().run(); }) },
+        { id: 'del-table', label: 'টেবিল মুছুন', icon: Trash2, danger: true, onSelect: () => closeAndRun((editor) => { editor.chain().focus().deleteTable().run(); }) },
       ],
     },
   ];
@@ -658,34 +690,47 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
   const sections =
     menu.kind === 'image' ? imageSections : menu.kind === 'table' ? tableSections : textSections;
 
-  return createPortal(
-    <div
-      ref={menuRef}
-      role="menu"
-      aria-label="Content menu"
-      tabIndex={-1}
-      className="fixed z-[1000] max-h-[70vh] min-w-[230px] overflow-y-auto rounded-xl border border-border bg-popover py-1.5 text-popover-foreground shadow-lg focus:outline-none"
-      style={{ left: pos.x, top: pos.y }}
-      onKeyDown={onMenuKeyDown}
-    >
-      {sections.map((section, si) => (
-        <Fragment key={`${section.header ?? 'section'}-${si}`}>
-          {si > 0 ? <div className="mx-2 my-1 h-px bg-border" role="separator" /> : null}
-          {section.header ? (
-            <div className="px-3 pb-0.5 pt-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              {section.header}
-            </div>
-          ) : null}
-          {section.items.map((item) =>
-            item.render ? (
-              <Fragment key={item.id}>{item.render()}</Fragment>
-            ) : (
-              <MenuItemButton key={item.id} item={item} />
-            ),
-          )}
-        </Fragment>
-      ))}
-    </div>,
-    document.body,
+  const mediaHosts = (
+    <>
+      <ImageResizeHost suppressed={sizeDialog !== null} />
+      <TableToolbarHost suppressed={sizeDialog !== null} />
+      {sizeDialog ? <ImageSizeDialog state={sizeDialog} onClose={() => setSizeDialog(null)} /> : null}
+    </>
+  );
+
+  return (
+    <>
+      {createPortal(
+        <div
+          ref={menuRef}
+          role="menu"
+          aria-label="Content menu"
+          tabIndex={-1}
+          className="fixed z-[1000] max-h-[70vh] min-w-[230px] overflow-y-auto rounded-xl border border-border bg-popover py-1.5 text-popover-foreground shadow-lg focus:outline-none"
+          style={{ left: pos.x, top: pos.y }}
+          onKeyDown={onMenuKeyDown}
+        >
+          {sections.map((section, si) => (
+            <Fragment key={`${section.header ?? 'section'}-${si}`}>
+              {si > 0 ? <div className="mx-2 my-1 h-px bg-border" role="separator" /> : null}
+              {section.header ? (
+                <div className="px-3 pb-0.5 pt-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  {section.header}
+                </div>
+              ) : null}
+              {section.items.map((item) =>
+                item.render ? (
+                  <Fragment key={item.id}>{item.render()}</Fragment>
+                ) : (
+                  <MenuItemButton key={item.id} item={item} />
+                ),
+              )}
+            </Fragment>
+          ))}
+        </div>,
+        document.body,
+      )}
+      {mediaHosts}
+    </>
   );
 }

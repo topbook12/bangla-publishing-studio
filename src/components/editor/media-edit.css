@@ -1,0 +1,62 @@
+/**
+ * Task 9-b — styles for the image drag-resize overlay and the floating table
+ * toolbar. Kept out of globals.css on purpose (parallel-agent file boundary).
+ * Screen = print uses the same DOM, so the overlay/toolbar are print-hidden.
+ */
+
+/* ─── ছবি রিসাইজ ওভারলে ─── */
+
+.bwp-img-resize-box {
+  position: fixed;
+  z-index: 40; /* below radix poppers (z-50) and the context menu (z-1000) */
+  pointer-events: none;
+  outline: 1.5px solid var(--primary);
+  outline-offset: 0;
+}
+
+.bwp-img-handle {
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  padding: 0;
+  background: #ffffff;
+  border: 1.5px solid var(--primary);
+  border-radius: 2px;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 0.35);
+  pointer-events: auto;
+}
+
+.bwp-img-handle[data-dir='nw'] { left: -6px; top: -6px; cursor: nwse-resize; }
+.bwp-img-handle[data-dir='n']  { left: calc(50% - 5.5px); top: -6px; cursor: ns-resize; }
+.bwp-img-handle[data-dir='ne'] { right: -6px; top: -6px; cursor: nesw-resize; }
+.bwp-img-handle[data-dir='e']  { right: -6px; top: calc(50% - 5.5px); cursor: ew-resize; }
+.bwp-img-handle[data-dir='se'] { right: -6px; bottom: -6px; cursor: nwse-resize; }
+.bwp-img-handle[data-dir='s']  { left: calc(50% - 5.5px); bottom: -6px; cursor: ns-resize; }
+.bwp-img-handle[data-dir='sw'] { left: -6px; bottom: -6px; cursor: nesw-resize; }
+.bwp-img-handle[data-dir='w']  { left: -6px; top: calc(50% - 5.5px); cursor: ew-resize; }
+
+/* ড্র্যাগের সময় টেক্সট সিলেকশন আটকানো */
+body.bwp-img-dragging {
+  user-select: none;
+  -webkit-user-select: none;
+}
+body.bwp-img-dragging,
+body.bwp-img-dragging * {
+  cursor: inherit;
+}
+
+/* ─── ভাসমান টেবিল টুলবার ─── */
+
+.bwp-table-toolbar {
+  position: fixed;
+  z-index: 40; /* radix dropdowns/tooltip (z-50) stay on top */
+  transform: translateX(-50%);
+}
+
+/* টুলবার/হ্যান্ডল কখনো প্রিন্টে আসবে না */
+@media print {
+  .bwp-img-resize-box,
+  .bwp-table-toolbar {
+    display: none !important;
+  }
+}

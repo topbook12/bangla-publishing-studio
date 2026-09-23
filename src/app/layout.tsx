@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import "./forma-print.css";
 import { Toaster } from "@/components/ui/toaster";
 import PwaRegister from "@/components/pwa-register";
 import { SonnerToaster } from "@/components/sonner-toaster";

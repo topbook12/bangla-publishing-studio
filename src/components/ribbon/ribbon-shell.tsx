@@ -6,6 +6,7 @@
 
 import { useState } from 'react';
 import type { ReactNode } from 'react';
+import { motion, MotionConfig } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -19,6 +20,38 @@ import { LayoutTab } from './layout-tab';
 import { DesignTab } from './design-tab';
 import { ReviewTab } from './review-tab';
 import { ExportTab } from './export-tab';
+
+/**
+ * Decorative accent hue per ribbon group (consumed by globals.css for icon/label tints).
+ * Purely presentational — mapped from the existing group label, no API change.
+ */
+const GROUP_ACCENTS: Record<string, string> = {
+  history: 'amber',
+  font: 'violet',
+  paragraph: 'emerald',
+  styles: 'rose',
+  'table tools': 'cyan',
+  'tables & media': 'cyan',
+  'academic blocks': 'blue',
+  'page & decor': 'fuchsia',
+  'paper size': 'blue',
+  'margins (in)': 'teal',
+  'paper & border': 'emerald',
+  'default typography': 'violet',
+  'book themes': 'fuchsia',
+  'header & footer': 'sky',
+  'page numbers': 'teal',
+  'cover & toc': 'amber',
+  statistics: 'cyan',
+  'spelling & proofing': 'sky',
+  'conjunct toolkit': 'teal',
+  settings: 'slate',
+  'press-ready output': 'amber',
+  'export file': 'emerald',
+  backup: 'slate',
+};
+
+const accentOf = (label: string): string => GROUP_ACCENTS[label.trim().toLowerCase()] ?? 'indigo';
 
 /** Active editor instance that re-renders on selection/format changes */
 export function useActiveEditor() {
@@ -39,7 +72,7 @@ export const RIBBON_TABS: Array<{ id: RibbonTab; label: string }> = [
 
 export function RibbonGroup({ label, children, className }: { label: string; children: ReactNode; className?: string }) {
   return (
-    <div className={cn('ribbon-group no-print', className)}>
+    <div className={cn('ribbon-group no-print', className)} data-accent={accentOf(label)}>
       <div className="ribbon-group-body">{children}</div>
       <div className="ribbon-group-label">{label}</div>
     </div>
@@ -118,18 +151,28 @@ export function Ribbon() {
     <div className="ribbon no-print" role="toolbar" aria-label="Ribbon toolbar">
       <div className="ribbon-tabstrip">
         <nav className="ribbon-tabs" role="tablist" aria-label="Ribbon tabs">
-          {RIBBON_TABS.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              role="tab"
-              aria-selected={activeTab === tab.id}
-              className={cn('ribbon-tab', activeTab === tab.id && 'ribbon-tab-active')}
-              onClick={() => selectTab(tab.id)}
-            >
-              {tab.label}
-            </button>
-          ))}
+          <MotionConfig reducedMotion="user">
+            {RIBBON_TABS.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                aria-selected={activeTab === tab.id}
+                className={cn('ribbon-tab', activeTab === tab.id && 'ribbon-tab-active')}
+                onClick={() => selectTab(tab.id)}
+              >
+                {activeTab === tab.id ? (
+                  <motion.span
+                    layoutId="ribbon-tab-indicator"
+                    className="ribbon-tab-ind"
+                    aria-hidden="true"
+                    transition={{ type: 'spring', bounce: 0.21, duration: 0.5 }}
+                  />
+                ) : null}
+                <span className="ribbon-tab-label">{tab.label}</span>
+              </button>
+            ))}
+          </MotionConfig>
         </nav>
         <Tooltip>
           <TooltipTrigger asChild>

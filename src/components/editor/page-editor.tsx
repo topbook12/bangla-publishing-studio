@@ -155,7 +155,7 @@ export function PageEditor({ page, index, isFirstPage }: PageEditorProps) {
       FontFamily,
       FramedImage.configure({ inline: false, allowBase64: true }),
       Link.configure({ openOnClick: false }),
-      Table.configure({ resizable: false }),
+      Table.configure({ resizable: true }),
       TableRow,
       TableHeaderWithBg,
       TableCellWithBg,

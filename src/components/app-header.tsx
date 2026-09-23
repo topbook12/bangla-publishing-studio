@@ -26,9 +26,9 @@ import { formatPageNumber } from '@/lib/bangla';
 function SaveIndicator() {
   const saveState = useEditorStore((s) => s.saveState);
   return (
-    <span className="save-indicator" role="status">
+    <span className={`save-indicator save-indicator-${saveState.status}`} role="status">
       {saveState.status === 'saving' ? (
-        <><Loader2 size={13} className="animate-spin" /> Saving…</>
+        <><span className="save-pulse" aria-hidden="true" /><Loader2 size={13} className="animate-spin" /> Saving…</>
       ) : saveState.status === 'saved' ? (
         <><Check size={13} className="text-emerald-500" /> Saved</>
       ) : saveState.status === 'error' ? (
@@ -48,7 +48,7 @@ function ThemeToggle() {
         <Button
           variant="ghost"
           size="icon"
-          className="max-sm:h-11 max-sm:w-11"
+          className="header-action max-sm:h-11 max-sm:w-11"
           aria-label="Toggle Theme"
           title="Light / dark mode"
           onClick={() => {
@@ -123,7 +123,7 @@ export function AppHeader() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="gap-1.5 max-sm:h-11 max-sm:w-11 max-sm:px-0"
+                  className="header-action gap-1.5 max-sm:h-11 max-sm:w-11 max-sm:px-0"
                   aria-label="Projects"
                 >
                   <Menu size={15} />
@@ -173,7 +173,7 @@ export function AppHeader() {
             <Button
               variant="secondary"
               size="sm"
-              className="gap-1.5 max-sm:h-11 max-sm:w-11 max-sm:px-0"
+              className="header-action header-action-accent gap-1.5 max-sm:h-11 max-sm:w-11 max-sm:px-0"
               aria-label="Proofing"
               onClick={() => openDialog('review')}
             >
