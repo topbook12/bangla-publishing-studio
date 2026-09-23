@@ -11,7 +11,7 @@ import {
 } from 'docx';
 import type { DocumentSettings, PageData } from './types';
 import { effectivePageBorderStyle, effectivePageBorderWidth, getPaperPreset, PAGE_BORDER_WIDTH_PX } from './paper';
-import { parseMcqData } from './nodes-html';
+import { parseMcqData, docBoxInlineStyle, type DocBoxAttrs, type DocBoxVariant } from './nodes-html';
 
 const MM_TO_TWIP = 56.6929;
 const INCH_TO_TWIP = 1440;
@@ -305,6 +305,46 @@ function blockToDocx(el: Element, ctx: Ctx, settings: DocumentSettings): DocxBlo
             spacing: { after: 80 },
           }));
         }
+        return out;
+      }
+      if (el.classList.contains('doc-textbox')) {
+        const attrs: Partial<DocBoxAttrs> & { variant: DocBoxVariant } = {
+          variant: ((el.getAttribute('data-variant') ?? 'rounded') as DocBoxVariant),
+          border: el.getAttribute('data-border') ?? undefined,
+          fill: el.getAttribute('data-fill') ?? undefined,
+          bstyle: (el.getAttribute('data-bstyle') ?? undefined) as DocBoxAttrs['bstyle'],
+          bwidth: el.getAttribute('data-bwidth') ? Number(el.getAttribute('data-bwidth')) : undefined,
+        };
+        const css = docBoxInlineStyle(attrs);
+        const borderHex = hexNoHash(css.borderColor) ?? '475569';
+        const fillHex = hexNoHash(css.background);
+        const borderStyleMap: Record<string, (typeof BorderStyle)[keyof typeof BorderStyle]> = {
+          solid: BorderStyle.SINGLE,
+          dashed: BorderStyle.DASHED,
+          dotted: BorderStyle.DOTTED,
+          double: BorderStyle.DOUBLE,
+        };
+        const bs = borderStyleMap[css.borderStyle] ?? BorderStyle.SINGLE;
+        const bw = Math.max(4, Math.round(parseFloat(css.borderWidth) * 0.75) * 4);
+        const innerParas: Paragraph[] = el.children.length
+          ? blockToDocxChildren(el, ctx, settings).filter((b): b is Paragraph => b instanceof Paragraph)
+          : [new Paragraph('')];
+        out.push(new Table({
+          rows: [new TableRow({
+            children: [new TableCell({
+              children: innerParas,
+              shading: fillHex ? { type: ShadingType.CLEAR, fill: fillHex } : undefined,
+              borders: {
+                top: { style: bs, size: bw, color: borderHex },
+                bottom: { style: bs, size: bw, color: borderHex },
+                left: { style: bs, size: bw, color: borderHex },
+                right: { style: bs, size: bw, color: borderHex },
+              },
+            })],
+          })],
+          width: { size: 100, type: WidthType.PERCENTAGE },
+        }));
+        out.push(new Paragraph({ text: '', spacing: { after: 100 } }));
         return out;
       }
       if (el.classList.contains('toc-block')) {

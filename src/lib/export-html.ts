@@ -5,7 +5,7 @@
 
 import type { DocumentSettings, PageData } from './types';
 import { getPaperPreset, pageBorderVisual } from './paper';
-import { parseMcqData } from './nodes-html';
+import { parseMcqData, docBoxStyleText, type DocBoxAttrs, type DocBoxVariant } from './nodes-html';
 
 const OPTION_LABELS = ['ক', 'খ', 'গ', 'ঘ'];
 
@@ -41,6 +41,19 @@ function expandHtml(html: string): string {
       .map((e) => `<li class="toc-entry toc-level-${e.level}"><span class="toc-text">${escapeHtml(e.text)}</span><span class="toc-dots"></span><span class="toc-page">${e.pageNumber}</span></li>`)
       .join('');
     el.innerHTML = `<div class="toc-head"><span class="toc-title">${escapeHtml(el.getAttribute('data-title') ?? 'সূচিপত্র')}</span></div><ol class="toc-list">${list}</ol>`;
+  });
+
+  // ডিজাইন বক্স — data attrs থেকে ইনলাইন স্টাইল
+  root.querySelectorAll('div.doc-textbox').forEach((el) => {
+    const attrs: Partial<DocBoxAttrs> & { variant: DocBoxVariant } = {
+      variant: ((el.getAttribute('data-variant') ?? 'rounded') as DocBoxVariant),
+      border: el.getAttribute('data-border') ?? undefined,
+      fill: el.getAttribute('data-fill') ?? undefined,
+      bstyle: (el.getAttribute('data-bstyle') ?? undefined) as DocBoxAttrs['bstyle'],
+      bwidth: el.getAttribute('data-bwidth') ? Number(el.getAttribute('data-bwidth')) : undefined,
+    };
+    const css = docBoxStyleText(attrs);
+    el.setAttribute('style', css);
   });
 
   root.querySelectorAll('sup.footnote').forEach((el) => {
@@ -79,12 +92,18 @@ ul, ol { margin: 0 0 var(--p-gap, 8px); padding-left: 26px; }
 .fancy-divider[data-style="double"] { border-top: 3px double #94a3b8; }
 .fancy-divider[data-style="dotted"] { border-top: 2px dotted #94a3b8; }
 .fancy-divider[data-style="flourish"]::after { content: "❦ ─── ❖ ─── ❦"; color: #94a3b8; }
+.fancy-divider[data-style="stars"]::after { content: "✦ ─── ✦ ─── ✦"; color: #94a3b8; }
+.fancy-divider[data-style="cut"]::after { content: "✂ ─ ─ ─ ─ ─ ─ ─"; color: #94a3b8; letter-spacing: 2px; }
 .callout-box { border-radius: 10px; padding: 12px 16px; margin: 12px 0; }
 .callout-concept { background: rgba(79,70,229,.08); border-left: 4px solid #4f46e5; }
 .callout-warning { background: rgba(220,38,38,.07); border-left: 4px solid #dc2626; }
 .callout-formula { background: rgba(22,163,74,.08); border-left: 4px solid #16a34a; }
 .callout-note { background: rgba(100,116,139,.08); border-left: 4px solid #64748b; }
 .callout-head { margin-bottom: 4px; font-weight: 700; }
+.doc-icon { display: inline-flex; line-height: 0; vertical-align: -0.16em; }
+.doc-icon svg, span.doc-icon svg { width: 100%; height: 100%; }
+.doc-textbox { position: relative; }
+.doc-textbox p { margin: 0.1em 0; }
 .mcq-block { border: 1.5px solid rgba(100,116,139,.4); border-radius: 12px; padding: 12px 16px; margin: 12px 0; }
 .mcq-tag { background: #4f46e5; color: #fff; font-size: .78em; padding: 2px 10px; border-radius: 999px; font-weight: 700; }
 .mcq-options { display: flex; flex-wrap: wrap; gap: 4px 28px; margin-top: 6px; }

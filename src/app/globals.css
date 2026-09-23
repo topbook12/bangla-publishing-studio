@@ -1146,6 +1146,174 @@ html.dark .status-pill { box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05); }
 }
 .footnote-input { height: 28px; font-size: 12px; }
 
+/* ─── ডকুমেন্ট আইকন ─── */
+
+.doc-icon-wrap {
+  position: relative;
+  display: inline-flex;
+  line-height: 0;
+  vertical-align: -0.16em;
+  border-radius: 5px;
+  padding: 1.5px;
+  transition: background 0.15s;
+}
+.doc-icon-wrap:hover { background: rgba(79, 70, 229, 0.14); }
+.doc-icon-selected { outline: 2px solid #4f46e5; outline-offset: 1px; }
+.doc-icon-tools {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 45;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: var(--popover, #fff);
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 9px;
+  padding: 3px 7px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
+  white-space: nowrap;
+  font-size: 11px;
+  line-height: 1.35;
+  color: #334155;
+}
+.doc-tool-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 3px;
+  border-radius: 5px;
+  color: #475569;
+  font-weight: 700;
+  font-size: 12px;
+  transition: background 0.12s, color 0.12s;
+}
+.doc-tool-btn:hover { background: rgba(100, 116, 139, 0.15); color: #0f172a; }
+.doc-tool-danger:hover { background: rgba(220, 38, 38, 0.12); color: #dc2626; }
+.doc-tool-size { min-width: 30px; text-align: center; font-variant-numeric: tabular-nums; color: #64748b; }
+.doc-tool-color {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 5px;
+  background: transparent;
+  cursor: pointer;
+}
+.doc-tool-select {
+  height: 22px;
+  max-width: 96px;
+  font-size: 11px;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 5px;
+  background: transparent;
+  color: inherit;
+  padding: 0 2px;
+}
+
+/* ─── ডিজাইন বক্স (Text Box) ─── */
+
+.doc-textbox {
+  position: relative;
+  min-width: 48px;
+}
+.doc-textbox-content { min-height: 1.4em; }
+.doc-textbox-content p { margin: 0.1em 0; }
+.doc-textbox-tools {
+  position: absolute;
+  top: -15px;
+  right: 10px;
+  z-index: 45;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: var(--popover, #fff);
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 999px;
+  padding: 2px 8px;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.15);
+  opacity: 0.3;
+  transition: opacity 0.15s;
+  font-size: 11px;
+  color: #334155;
+}
+.doc-textbox:hover .doc-textbox-tools,
+.doc-textbox-tools:focus-within,
+.doc-textbox.ProseMirror-selectednode .doc-textbox-tools {
+  opacity: 1;
+}
+
+/* ─── আইকন লাইব্রেরি ডায়ালগ ─── */
+
+.icon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(42px, 1fr));
+  gap: 4px;
+}
+.icon-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 42px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  color: #475569;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.paper-dark .icon-cell { color: #cbd5e1; }
+.icon-cell:hover { background: rgba(79, 70, 229, 0.10); color: #0f172a; }
+.icon-cell-active {
+  border-color: #4f46e5;
+  background: rgba(79, 70, 229, 0.12);
+  color: #4f46e5;
+}
+.chip {
+  flex-shrink: 0;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border, #e2e8f0);
+  font-size: 12px;
+  color: #475569;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+  white-space: nowrap;
+}
+.chip:hover { background: rgba(79, 70, 229, 0.08); }
+.chip-active {
+  background: #4f46e5;
+  border-color: #4f46e5;
+  color: #fff;
+}
+.color-dot {
+  width: 19px;
+  height: 19px;
+  border-radius: 999px;
+  border: 1px solid rgba(100, 116, 139, 0.45);
+  transition: transform 0.12s;
+}
+.color-dot:hover { transform: scale(1.12); }
+.color-dot-auto {
+  background: linear-gradient(135deg, #e2e8f0 45%, #0f172a 46%, #0f172a 55%, #e2e8f0 56%);
+}
+.color-dot-active { outline: 2px solid #4f46e5; outline-offset: 1.5px; }
+.docbox-preview {
+  display: inline-block;
+  width: 26px;
+  height: 15px;
+  margin-right: 2px;
+  flex-shrink: 0;
+}
+.docbox-preview[data-variant="box"] { border: 2px solid #475569; }
+.docbox-preview[data-variant="rounded"] { border: 2px solid #4f46e5; border-radius: 5px; }
+.docbox-preview[data-variant="pill"] { border: 2px solid #0d9488; border-radius: 999px; }
+.docbox-preview[data-variant="dashed"] { border: 2px dashed #d97706; border-radius: 5px; }
+.docbox-preview[data-variant="double"] { border: 4px double #b91c1c; border-radius: 3px; }
+.docbox-preview[data-variant="shaded"] { border: 1px solid #64748b; border-radius: 5px; background: rgba(100, 116, 139, 0.18); }
+.docbox-preview[data-variant="circle"] { border: 2px solid #c026d3; border-radius: 50%; width: 16px; height: 16px; }
+
 /* ─── ডিভাইডার ─── */
 
 .fancy-divider {
@@ -1163,6 +1331,8 @@ html.dark .status-pill { box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05); }
 .fancy-divider[data-style="double"] { height: 10px; border-top: 3px double currentColor; }
 .fancy-divider[data-style="dotted"] { height: 8px; border-top: 2.5px dotted currentColor; }
 .fancy-divider[data-style="flourish"]::after { content: "❦   ───   ❖   ───   ❦"; font-size: 0.95em; }
+.fancy-divider[data-style="stars"]::after { content: "✦   ───   ✦   ───   ✦"; font-size: 0.95em; }
+.fancy-divider[data-style="cut"]::after { content: "✂   ─   ─   ─   ─   ─   ─   ─"; letter-spacing: 2px; font-size: 0.95em; }
 
 /* ─── সূচিপত্র ─── */
 

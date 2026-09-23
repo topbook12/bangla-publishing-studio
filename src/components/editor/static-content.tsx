@@ -6,7 +6,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { parseMcqData } from '@/lib/nodes-html';
+import { parseMcqData, docBoxInlineStyle } from '@/lib/nodes-html';
 
 const OPTION_LABELS = ['ক', 'খ', 'গ', 'ঘ'] as const;
 
@@ -57,13 +57,47 @@ function inlineNodes(node: Node, keyPrefix: string): ReactNode[] {
       case 'IMG':
         out.push(<img key={key} src={el.getAttribute('src') ?? ''} alt={el.getAttribute('alt') ?? 'ছবি'} />);
         break;
+      case 'SVG': case 'svg':
+        // ডকুমেন্ট আইকনের ইনলাইন SVG (নিজস্ব জেনারেট করা — নিরাপদ)
+        out.push(
+          <span
+            key={key}
+            style={{ display: 'inline-flex', lineHeight: 0, width: '1em', height: '1em' }}
+            dangerouslySetInnerHTML={{ __html: el.outerHTML }}
+          />,
+        );
+        break;
       case 'SPAN': case 'MARK': case 'CODE': {
+        // ডকুমেন্ট আইকন — data attrs থেকে সাইজ/রং, ভিতরের SVG সরাসরি
+        if (el.classList.contains('doc-icon')) {
+          const size = Number(el.getAttribute('data-size') ?? 22) || 22;
+          const color = el.getAttribute('data-color') ?? '';
+          out.push(
+            <span
+              key={key}
+              className="doc-icon"
+              data-icon={el.getAttribute('data-icon') ?? ''}
+              style={{
+                display: 'inline-flex',
+                lineHeight: 0,
+                width: size,
+                height: size,
+                color: color || 'inherit',
+                verticalAlign: '-0.16em',
+              }}
+              dangerouslySetInnerHTML={{ __html: el.innerHTML }}
+            />,
+          );
+          break;
+        }
         const style = el.getAttribute('style') ?? '';
         const colorMatch = /color:\s*([^;]+)/.exec(style);
         const bgMatch = /background(?:-color)?:\s*([^;]+)/.exec(style);
+        const sizeMatch = /font-size:\s*([^;]+)/.exec(style);
         const css: React.CSSProperties = {};
         if (colorMatch) css.color = colorMatch[1].trim();
         if (bgMatch) css.backgroundColor = bgMatch[1].trim();
+        if (sizeMatch) css.fontSize = sizeMatch[1].trim();
         out.push(
           <span key={key} style={css}>{inlineNodes(el, key)}</span>,
         );
@@ -118,7 +152,20 @@ function blockNodes(container: Element, keyPrefix: string): ReactNode[] {
         break;
       }
       case 'DIV': {
-        if (el.classList.contains('callout-box')) {
+        if (el.classList.contains('doc-textbox')) {
+          const style = docBoxInlineStyle({
+            variant: (el.getAttribute('data-variant') ?? 'rounded') as never,
+            border: el.getAttribute('data-border') ?? undefined,
+            fill: el.getAttribute('data-fill') ?? undefined,
+            bstyle: (el.getAttribute('data-bstyle') ?? undefined) as never,
+            bwidth: el.getAttribute('data-bwidth') ? Number(el.getAttribute('data-bwidth')) : undefined,
+          });
+          out.push(
+            <div key={key} className="doc-textbox" style={style as React.CSSProperties}>
+              {blockNodes(el, key)}
+            </div>,
+          );
+        } else if (el.classList.contains('callout-box')) {
           const variant = el.getAttribute('data-variant') ?? 'concept';
           const title = el.getAttribute('data-title') || '';
           out.push(

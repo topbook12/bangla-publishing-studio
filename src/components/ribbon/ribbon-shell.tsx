@@ -32,6 +32,7 @@ const GROUP_ACCENTS: Record<string, string> = {
   styles: 'rose',
   'table tools': 'cyan',
   'tables & media': 'cyan',
+  'icons & design': 'rose',
   'academic blocks': 'blue',
   'page & decor': 'fuchsia',
   'paper size': 'blue',

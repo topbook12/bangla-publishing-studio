@@ -30,6 +30,7 @@ import { Extension } from '@tiptap/core';
 import { useEditorStore } from '@/lib/store';
 import { registerEditor, unregisterEditor } from '@/lib/editor-registry';
 import { customExtensions } from './extensions';
+import { designExtensions } from './design-ext';
 import { flowIfOverflow, mergeWithPreviousPage, pageBreakOnEditor, pullFromNextPage } from './page-ops';
 import { StaticContent } from './static-content';
 import type { PageData } from '@/lib/types';
@@ -163,6 +164,7 @@ export function PageEditor({ page, index, isFirstPage }: PageEditorProps) {
       Subscript,
       Superscript,
       ...customExtensions,
+      ...designExtensions,
       shortcuts,
     ],
     content: page.html || '<p></p>',

@@ -19,7 +19,7 @@ import { AlertTriangle, BookOpen, Lightbulb, Pin, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { parseMcqData, type McqData } from '@/lib/nodes-html';
+import { parseMcqData, type DividerStyle, type McqData } from '@/lib/nodes-html';
 
 // ─────────────────────────── কলআউট বক্স ───────────────────────────
 
@@ -334,7 +334,7 @@ declare module '@tiptap/core' {
 
 // ─────────────────────────── আলংকারিক ডিভাইডার ───────────────────────────
 
-export type DividerStyle = 'single' | 'double' | 'dotted' | 'flourish';
+export type { DividerStyle };
 
 export const FancyDivider = Node.create({
   name: 'fancyDivider',
