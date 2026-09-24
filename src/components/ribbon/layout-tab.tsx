@@ -1,15 +1,21 @@
 /**
- * Layout tab — paper size, margins, paper color, page border, default typography
+ * Layout tab — paper size, margins, paper color, page border, default typography,
+ * content flow (ফাঁকা জায়গা পূরণ / স্মার্ট ফ্লো / ফাঁকা পাতা পরিষ্কার)
  */
 
 'use client';
 
-import { SwatchBook } from 'lucide-react';
+import { ArrowUpToLine, Eraser, SwatchBook, Wand2 } from 'lucide-react';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { RibbonDivider, RibbonGroup } from './ribbon-shell';
+import { RibbonButton, RibbonDivider, RibbonGroup } from './ribbon-shell';
 import { useEditorStore } from '@/lib/store';
+import { getEditor } from '@/lib/editor-registry';
+import {
+  availableHeightOfEditor, fillFromNextPage, removeEmptyPages, smartFlowWholeBook,
+} from '@/components/editor/page-ops';
+import { toast } from 'sonner';
 import {
   effectivePageBorderStyle, effectivePageBorderWidth, FONT_OPTIONS, MARGIN_PRESETS,
   PAGE_BORDER_WIDTH_PX, PAPER_PRESETS,
@@ -80,6 +86,45 @@ export function LayoutTab() {
   // পুরনো ডকুমেন্টে pageBorderStyle/pageBorderWidth না থাকলে pageBorder কাইন্ড থেকে ডেরাইভ
   const borderStyle = effectivePageBorderStyle(settings);
   const borderWidth = effectivePageBorderWidth(settings);
+
+  // ── কনটেন্ট ফ্লো: নিচের পাতার লেখা/ছবি ফাঁকা জায়গায় তোলা ──
+  const fillFromNext = () => {
+    const s = useEditorStore.getState();
+    const pageId = s.activePageId ?? s.pages[0]?.id ?? null;
+    if (!pageId) return;
+    const editor = getEditor(pageId);
+    if (!editor || editor.isDestroyed) {
+      toast.error('পাতাটি এখনো খোলেনি — পাতাটিতে একবার ক্লিক করে আবার চাপুন');
+      return;
+    }
+    void fillFromNextPage(editor, pageId, availableHeightOfEditor(pageId)).then((res) => {
+      if (res.status === 'moved') {
+        toast.success(`${toBanglaNumber(res.blocks)}টি ব্লক নিচের পাতা থেকে উঠে এসেছে`);
+      } else if (res.status === 'absorbed') {
+        toast.success('পরের পাতার সব লেখা এই পাতায় উঠে এসেছে — খালি পাতাটি মুছে গেছে');
+      } else if (res.status === 'none') {
+        toast.info('পরের পাতার প্রথম ব্লকটি ফাঁকা জায়গায় আঁটে না — আর তোলা যায়নি');
+      } else {
+        toast.info('এই পাতার পরে টানার মতো কনটেন্ট নেই');
+      }
+    });
+  };
+
+  const smartFlow = () => {
+    toast.promise(smartFlowWholeBook(), {
+      loading: 'স্মার্ট ফ্লো চলছে — ফাঁকা পাতাগুলো পূরণ করতে স্বয়ংক্রিয়ভাবে স্ক্রল হচ্ছে…',
+      success: (st) => st.blocksMoved > 0
+        ? `${toBanglaNumber(st.blocksMoved)}টি ব্লক ${toBanglaNumber(st.pagesFilled)}টি পাতায় উঠে গেছে${st.pagesDeleted > 0 ? ` · ${toBanglaNumber(st.pagesDeleted)}টি পাতা মুছে গেছে` : ''}`
+        : 'সব পাতা আগে থেকেই সুন্দরভাবে সাজানো — কিছু করার নেই',
+      error: 'স্মার্ট ফ্লো চালাতে সমস্যা হয়েছে',
+    });
+  };
+
+  const removeEmpty = () => {
+    const n = removeEmptyPages();
+    if (n > 0) toast.success(`${toBanglaNumber(n)}টি ফাঁকা পাতা মুছে ফেলা হয়েছে`);
+    else toast.info('কোনো ফাঁকা পাতা পাওয়া যায়নি');
+  };
 
   return (
     <div className="ribbon-scroll flex items-stretch gap-1">
@@ -271,6 +316,30 @@ export function LayoutTab() {
               onChange={(e) => update({ pageBorderColor: e.target.value })}
             />
           </div>
+        </div>
+      </RibbonGroup>
+      <RibbonDivider />
+      <RibbonGroup label="Content Flow">
+        <div className="flex flex-col gap-1">
+          <RibbonButton
+            icon={ArrowUpToLine}
+            label="Fill Empty Space"
+            title="নিচের পাতার লেখা/ছবি/টেবিল এই পাতার ফাঁকা জায়গায় তুলুন"
+            onClick={fillFromNext}
+          />
+          <RibbonButton
+            icon={Wand2}
+            label="Smart Flow — Whole Book"
+            title="পুরো বই স্ক্যান করে প্রতিটি পাতার ফাঁকা জায়গা নিচের পাতার কনটেন্ট দিয়ে ভরাবে"
+            onClick={smartFlow}
+          />
+          <RibbonButton
+            icon={Eraser}
+            label="Remove Empty Pages"
+            title="শুধু খালি পাতাগুলো মুছে ফেলুন"
+            onClick={removeEmpty}
+            danger
+          />
         </div>
       </RibbonGroup>
       <RibbonDivider />

@@ -32,7 +32,7 @@ import { registerEditor, unregisterEditor } from '@/lib/editor-registry';
 import { customExtensions } from './extensions';
 import { designExtensions } from './design-ext';
 import { BlockMover } from './block-mover';
-import { flowIfOverflow, mergeWithPreviousPage, pageBreakOnEditor, pullFromNextPage } from './page-ops';
+import { fillFromNextPage, flowIfOverflow, mergeWithPreviousPage, pageBreakOnEditor } from './page-ops';
 import { StaticContent } from './static-content';
 import type { PageData } from '@/lib/types';
 import { fontStackOf } from '@/lib/paper';
@@ -134,7 +134,8 @@ export function PageEditor({ page, index, isFirstPage }: PageEditorProps) {
           const { selection } = this.editor.state;
           const atEnd = selection.empty && selection.from >= this.editor.state.doc.content.size;
           if (atEnd) {
-            pullFromNextPage(this.editor, page.id);
+            // পরের পাতা থেকে ফাঁকা জায়গামতো কনটেন্ট টেনে আনা (পুরো পাতা নয়)
+            void fillFromNextPage(this.editor, page.id, contentRef.current?.clientHeight ?? 0);
             return true;
           }
           return false;
@@ -217,6 +218,11 @@ export function PageEditor({ page, index, isFirstPage }: PageEditorProps) {
   useEffect(() => {
     if (!editor || editor.isDestroyed) return;
     if (page.html === lastEmittedRef.current) return;
+    // fill/flow ইঞ্জিন নিজেই ঠিক এই HTML এডিটরে বসিয়েছে → কার্সর রেখে শুধু রেফারেন্স সিঙ্ক
+    if (editor.getHTML() === page.html) {
+      lastEmittedRef.current = page.html;
+      return;
+    }
     lastEmittedRef.current = page.html;
     const html = page.html || '<p></p>';
     const t = window.setTimeout(() => {

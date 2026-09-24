@@ -36,6 +36,7 @@ const GROUP_ACCENTS: Record<string, string> = {
   'academic blocks': 'blue',
   'page & decor': 'fuchsia',
   'paper size': 'blue',
+  'content flow': 'amber',
   'margins (in)': 'teal',
   'paper & border': 'emerald',
   'default typography': 'violet',

@@ -6,8 +6,9 @@
 
 import { useEffect, useRef } from 'react';
 import {
-  ArrowDown, ArrowUp, ChevronDown, Copy, Eye, EyeOff, FilePlus2, Settings2, Trash2,
+  ArrowDown, ArrowUp, ArrowUpToLine, ChevronDown, Copy, Eye, EyeOff, FilePlus2, Settings2, Trash2,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -15,6 +16,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useEditorStore, flushSave } from '@/lib/store';
 import { useUiStore } from '@/lib/ui-store';
+import { getEditor } from '@/lib/editor-registry';
+import { availableHeightOfEditor, fillFromNextPage } from './page-ops';
 import { getPageDimensionsMm, mmToPx } from '@/lib/paper';
 import { PaperPage } from './paper-page';
 import { PageEditor } from './page-editor';
@@ -40,6 +43,29 @@ function PageMenu({ pageId, index }: { pageId: string; index: number }) {
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => duplicatePage(pageId)}>
           <Copy size={14} /> পৃষ্ঠা ডুপ্লিকেট
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          disabled={index >= useEditorStore.getState().pages.length - 1}
+          onClick={() => {
+            const editor = getEditor(pageId);
+            if (!editor || editor.isDestroyed) {
+              toast.info('পাতাটি এখনো খোলেনি — পাতাটিতে ক্লিক করে আবার চেষ্টা করুন');
+              return;
+            }
+            void fillFromNextPage(editor, pageId, availableHeightOfEditor(pageId)).then((res) => {
+              if (res.status === 'moved') {
+                toast.success('নিচের পাতা থেকে ফাঁকা জায়গামতো লেখা উঠে এসেছে');
+              } else if (res.status === 'absorbed') {
+                toast.success('পরের পাতার সব লেখা এই পাতায় উঠে এসেছে — খালি পাতাটি মুছে গেছে');
+              } else if (res.status === 'none') {
+                toast.info('পরের পাতার প্রথম ব্লকটি ফাঁকা জায়গায় আঁটে না');
+              } else {
+                toast.info('এই পাতার পরে টানার মতো কনটেন্ট নেই');
+              }
+            });
+          }}
+        >
+          <ArrowUpToLine size={14} /> নিচের পাতার লেখা এই পাতায় তুলুন
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => movePage(pageId, -1)} disabled={index === 0}>
