@@ -51,6 +51,7 @@ const GROUP_ACCENTS: Record<string, string> = {
   settings: 'slate',
   'press-ready output': 'amber',
   'export file': 'emerald',
+  'creative formats': 'violet',
   backup: 'slate',
 };
 

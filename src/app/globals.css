@@ -983,6 +983,14 @@ html.dark .status-pill { box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05); }
 .bwp-prosemirror img.ProseMirror-selectednode { outline: 2px solid var(--primary); }
 .bwp-prosemirror a { color: #4f46e5; text-decoration: underline; }
 .paper-dark .bwp-prosemirror a { color: #a5b4fc; }
+/* ছবির হাইপারলিংক — ক্লিকযোগ্য র‍্যাপার (প্রিন্ট-PDF/HTML এক্সপোর্টে লিংক টিকে যায়) */
+.bwp-prosemirror a.doc-image-link {
+  display: inline-block;
+  max-width: 100%;
+  text-decoration: none;
+  cursor: pointer;
+}
+.bwp-prosemirror a.doc-image-link:hover { outline: 2px dashed var(--primary); outline-offset: 2px; }
 
 .bwp-prosemirror table {
   border-collapse: collapse;

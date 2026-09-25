@@ -4,7 +4,7 @@
  */
 
 import {
-  AlignmentType, BorderStyle, Document, Footer, Header, HeadingLevel, ImageRun,
+  AlignmentType, BorderStyle, Document, ExternalHyperlink, Footer, Header, HeadingLevel, ImageRun,
   LevelFormat, PageBreak, PageBorderDisplay, PageBorderOffsetFrom, PageBorderZOrder,
   PageNumber, Packer, Paragraph, ShadingType, Table, TableCell,
   TableRow, TextRun, WidthType,
@@ -51,9 +51,17 @@ function alignmentOf(el: Element, ctx: Ctx): Ctx['align'] {
   return ctx.align;
 }
 
+/** Word-এ আসল ক্লিকযোগ্য হাইপারলিংক (Hyperlink স্টাইল) */
+function hyperlinkRun(href: string, text: string): ExternalHyperlink {
+  return new ExternalHyperlink({
+    link: href || '#',
+    children: [new TextRun({ text, style: 'Hyperlink' })],
+  });
+}
+
 /** ইনলাইন উপাদান থেকে TextRun তৈরি */
-function inlineRuns(el: Element, ctx: Ctx): Array<TextRun> {
-  const runs: TextRun[] = [];
+function inlineRuns(el: Element, ctx: Ctx): Array<TextRun | ExternalHyperlink> {
+  const runs: Array<TextRun | ExternalHyperlink> = [];
   el.childNodes.forEach((child) => {
     if (child.nodeType === Node.TEXT_NODE) {
       const text = child.textContent ?? '';
@@ -122,12 +130,23 @@ function inlineRuns(el: Element, ctx: Ctx): Array<TextRun> {
       case 'A': {
         const href = c.getAttribute('href') ?? '';
         const text = c.textContent ?? href;
-        if (text) runs.push(new TextRun({ text, style: 'Hyperlink' }));
+        if (text) runs.push(hyperlinkRun(href, text));
         break;
       }
       case 'IMG': {
         const img = imageRunOf(c);
-        if (img) runs.push(img);
+        if (img) {
+          // ছবির লিংক — <a href><img></a> আকারে থাকলে Word-এ ক্লিকযোগ্য ছবি
+          const anchor = c.closest('a[href]');
+          if (anchor) {
+            runs.push(new ExternalHyperlink({
+              link: anchor.getAttribute('href') || '#',
+              children: [img],
+            }));
+          } else {
+            runs.push(img);
+          }
+        }
         break;
       }
       default: {

@@ -1,8 +1,12 @@
 /**
  * হেডার/ফুটার মাস্টার রেন্ডারার
  * স্টাইলসমূহ: parallel (উদ্ভাস-স্টাইল ডাবল দাগ), royal (ফ্লোরিশ), academic (মিনিমাল), plain
- * টেক্সট জোনগুলোতে ডাবল-ক্লিক করে সরাসরি এডিট করা যায় — মাস্টার ডায়ালগের ব্যবহৃত
- * একই store ফিল্ডে (settings.header/footer.leftText/centerText/rightText) কমিট হয়।
+ * টেক্সট জোনগুলোতে ডাবল-ক্লিক করে সরাসরি এডিট করা যায়।
+ *
+ * ★ কমিট নিয়ম (গুরুত্বপূর্ণ):
+ *  - পাতার উপর ডাবল-ক্লিক করে সম্পাদনা = শুধু সেই পাতার override আপডেট/তৈরি হয় —
+ *    অন্য পাতার হেডার/ফুটার অপরিবর্তিত থাকে।
+ *  - সব পাতা একসাথে বদলাতে হলে Design → “Header & Footer Master” ডায়ালগ ব্যবহার করতে হবে।
  */
 
 'use client';
@@ -257,13 +261,18 @@ export function PageHeader({ index, settings, pageKind, noChrome, pageId, header
   const numberInHeader = pageNumber.enabled && pageNumber.position.startsWith('top');
   const num = displayPageNumber(index, pageNumber);
 
-  /** কমিট টার্গেট: override থাকলে পেজে, না থাকলে গ্লোবাল সেটিংসে */
+  /**
+   * কমিট টার্গেট — সবসময় এই পাতার override (থাকলে আপডেট, না থাকলে গ্লোবালের কপি দিয়ে তৈরি)।
+   * আগের বাগ: override না থাকলে গ্লোবাল সেটিংসে লিখে দিত, ফলে এক পাতার হেডার বদলালে
+   * সব পাতার হেডার বদলে যেত। এখন ডাবল-ক্লিক সম্পাদনা কেবল সেই পাতায় সীমাবদ্ধ।
+   */
   const commitHeader = (next: HeaderFooterSettings) => {
-    if (headerOverride && pageId) {
-      useEditorStore.getState().updatePage(pageId, { headerOverride: next });
-    } else {
+    if (!pageId) {
       useEditorStore.getState().updateSettings({ header: next });
+      return;
     }
+    const base = headerOverride ?? settings.header;
+    useEditorStore.getState().updatePage(pageId, { headerOverride: { ...base, ...next } });
   };
 
   const numberHtml = numberInHeader && num ? (
@@ -294,12 +303,14 @@ export function PageFooter({ index, settings, pageKind, noChrome, pageId, footer
   const numberInFooter = pageNumber.enabled && pageNumber.position.startsWith('bottom');
   const num = displayPageNumber(index, pageNumber);
 
+  /** commitHeader-এর মতোই — ফুটার সম্পাদনাও কেবল এই পাতায় সীমাবদ্ধ */
   const commitFooter = (next: HeaderFooterSettings) => {
-    if (footerOverride && pageId) {
-      useEditorStore.getState().updatePage(pageId, { footerOverride: next });
-    } else {
+    if (!pageId) {
       useEditorStore.getState().updateSettings({ footer: next });
+      return;
     }
+    const base = footerOverride ?? settings.footer;
+    useEditorStore.getState().updatePage(pageId, { footerOverride: { ...base, ...next } });
   };
 
   const numberHtml = numberInFooter && num ? (

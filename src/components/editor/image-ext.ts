@@ -1,5 +1,5 @@
 /**
- * Extended TipTap Image node — precise size/position control.
+ * Extended TipTap Image node — precise size/position control + clickable hyperlink.
  *
  * Storage contract (works with plain HTML storage + DOCX/HTML exporters):
  *  - width:       px number OR raw CSS string ("30%") → data-width + style width
@@ -11,6 +11,8 @@
  *  - naturalWidth / naturalHeight: px numbers captured once from img.onload
  *                 → data-natural-w / data-natural-h (reset-to-natural support)
  *  - framed:      data-framed="true" → inline border style
+ *  - linkHref:    string | null → <a href> wrapper around the <img> (PDF-clickable)
+ *  - linkTarget:  '_blank' | null → target attribute (new tab on click)
  *
  * All visual layout styles are built in ONE place (imageLayoutStyle) by the
  * node's renderHTML so style precedence (float > align > size) is deterministic.
@@ -31,6 +33,8 @@ interface ImageLayoutAttrs {
   textAlign?: ImageAlign | null;
   float?: ImageFloat | null;
   framed?: boolean;
+  linkHref?: string | null;
+  linkTarget?: string | null;
 }
 
 function sizeCss(name: 'width' | 'height', v: ImageSizeAttr): string | null {
@@ -175,12 +179,55 @@ export const FramedImage = Image.extend({
         parseHTML: (el) => el.getAttribute('data-framed') === 'true',
         renderHTML: (attrs) => (attrs.framed ? { 'data-framed': 'true' } : {}),
       },
+
+      /** ছবির হাইপারলিংক — প্রিন্ট-PDF/HTML/DOCX এক্সপোর্টে ক্লিকযোগ্য থাকে */
+      linkHref: {
+        default: null as string | null,
+        parseHTML: (el) => {
+          const direct = el.getAttribute('data-link-href');
+          if (direct) return direct;
+          // <a href="…"><img></a> আকারে সেভ হলে প্যারেন্ট <a> থেকে নেওয়া
+          const anchor = el.closest?.('a[href]') as HTMLAnchorElement | null;
+          return anchor?.getAttribute('href') ?? null;
+        },
+        renderHTML: (attrs) => {
+          const href = attrs.linkHref as string | null;
+          return href ? { 'data-link-href': href } : {};
+        },
+      },
+
+      linkTarget: {
+        default: null as string | null,
+        parseHTML: (el) => {
+          const direct = el.getAttribute('data-link-target');
+          if (direct) return direct;
+          const anchor = el.closest?.('a[href]') as HTMLAnchorElement | null;
+          return anchor?.getAttribute('target') ?? null;
+        },
+        renderHTML: (attrs) => {
+          const t = attrs.linkTarget as string | null;
+          return t ? { 'data-link-target': t } : {};
+        },
+      },
     };
   },
 
   renderHTML({ node, HTMLAttributes }) {
     const style = imageLayoutStyle(node.attrs as ImageLayoutAttrs);
-    return ['img', mergeAttributes(HTMLAttributes, style ? { style } : {})];
+    const img: [string, Record<string, unknown>] = [
+      'img',
+      mergeAttributes(HTMLAttributes, style ? { style } : {}),
+    ];
+    const href = (node.attrs.linkHref as string | null) ?? '';
+    if (!href) return img;
+    // <a href …><img …></a> — PDF/HTML এক্সপোর্টে ক্লিকযোগ্য
+    const target = (node.attrs.linkTarget as string | null) ?? '_blank';
+    const anchor: [string, Record<string, unknown>, [string, Record<string, unknown>]] = [
+      'a',
+      { href, target: target || undefined, rel: 'noopener noreferrer', class: 'doc-image-link' },
+      img,
+    ];
+    return anchor;
   },
 
   /**

@@ -191,6 +191,124 @@ function cleanupForma(styleEl: HTMLStyleElement): void {
   }
 }
 
+// ───────────── ফরমা সেলফ-চেক (গুরুত্বপূর্ণ: ছাপার আগে যাচাই) ─────────────
+
+export interface FormaSelfCheckResult {
+  ok: boolean;
+  formaSize: FormaSize;
+  totalPages: number;
+  sheetCount: number;
+  /** প্রতিটি শীটের A/B পাশে সঠিক সংখ্যক ঘর আছে কি না */
+  gridOk: boolean;
+  /** কোনো পৃষ্ঠা একাধিক ঘরে বা বাদ পড়েনি কি না (১..totalPages ঠিক ১ বার) */
+  pageMappingOk: boolean;
+  /** ভাঁজ-সঠিক স্ট্যান্ডার্ড ক্রমের সাথে প্রথম ফরমার আউটার ফরমা মেলে কি না */
+  outerFormaOk: boolean;
+  sheetMm: { widthMm: number; heightMm: number };
+  duplex: 'vertical' | 'horizontal';
+  problems: string[];
+}
+
+/**
+ * ফরমা ইঞ্জিনের পূর্ণ স্বাস্থ্য পরীক্ষা — window.__bwpFormaSelfCheck(formaSize)
+ * দিয়ে ব্রাউজার কনসোল থেকেও চালানো যায়। ছাপার আগে নিশ্চিত হওয়ার জন্য:
+ *  ১) প্রতি পাশে সঠিক সংখ্যক ঘর
+ *  ২) পৃষ্ঠা ১..N ঠিক একবার করে আসে (কোনোটা ডুপ্লিকেট/বাদ নেই)
+ *  ৩) প্রথম শীটের আউটার ফরমা প্রকাশিত স্ট্যান্ডার্ডের সাথে মেলে
+ */
+export function formaSelfCheck(formaSize: FormaSize = 16): FormaSelfCheckResult {
+  const { pages } = useEditorStore.getState();
+  const totalPages = Math.max(1, pages.length);
+  const { widthMm, heightMm } = getPageDimensionsMm(
+    useEditorStore.getState().settings.paperSize,
+    useEditorStore.getState().settings.orientation,
+    useEditorStore.getState().settings.customPaper,
+  );
+  const duplex = formaDuplexFor(widthMm, heightMm, formaSize);
+  const imposition = computeImposition(totalPages, formaSize, duplex);
+  const problems: string[] = [];
+
+  const { cols, rows } = imposition.grid;
+  const perSide = cols * rows;
+  const gridOk = imposition.sheets.every(
+    (sh) => sh.front.length === perSide && sh.back.length === perSide,
+  );
+  if (!gridOk) problems.push('ঘরের সংখ্যা ভুল');
+
+  const seen = new Map<number, number>();
+  imposition.sheets.forEach((sh) => {
+    [...sh.front, ...sh.back].forEach((p) => {
+      if (p.pageNumber > 0) seen.set(p.pageNumber, (seen.get(p.pageNumber) ?? 0) + 1);
+    });
+  });
+  let pageMappingOk = true;
+  for (let i = 1; i <= totalPages; i++) {
+    if (seen.get(i) !== 1) {
+      pageMappingOk = false;
+      problems.push(`পৃষ্ঠা ${i} ${seen.get(i) ?? 0} বার এসেছে (হবে ১)`);
+    }
+  }
+  // স্ট্যান্ডার্ড ফরমা সেট — প্রথম শীটে:
+  //  বাইরের ফরমা (কভারের পাশ): {1,4,5,8,…} — ভাঁজের পর যে পাশ বাইরে থাকে
+  //  ভেতরের ফরমা: {2,3,6,7,…}
+  // শর্ত: পৃষ্ঠা ১ যে পাশে থাকবে, সেই পাশের পেজ-সেট = বাইরের ফরমার স্ট্যান্ডার্ড সেট
+  const STANDARD_OUTER: Record<FormaSize, number[]> = {
+    4: [1, 4],
+    8: [1, 4, 5, 8],
+    16: [1, 4, 5, 8, 9, 12, 13, 16],
+    32: [1, 4, 5, 8, 9, 12, 13, 16, 17, 20, 21, 24, 25, 28, 29, 32],
+  };
+  const first = imposition.sheets[0];
+  const frontSet = first.front.map((p) => p.pageNumber).filter((n) => n > 0).sort((a, b) => a - b);
+  const backSet = first.back.map((p) => p.pageNumber).filter((n) => n > 0).sort((a, b) => a - b);
+  // কভার (পৃষ্ঠা ১) কোন পাশে?
+  const outerIsFront = frontSet.includes(1) || !backSet.includes(1);
+  const outerActual = outerIsFront ? frontSet : backSet;
+  const innerActual = outerIsFront ? backSet : frontSet;
+  // শীট ১-এর পৃষ্ঠা-রেঞ্জ: ১..min(formaSize, totalPages) — বাকি পৃষ্ঠা পরের শীটগুলোতে
+  const sheetOneMax = Math.min(totalPages, formaSize);
+  const expectedOuter = STANDARD_OUTER[formaSize].filter((n) => n <= sheetOneMax);
+  // ভেতরের ফরমার স্ট্যান্ডার্ড সেট — প্রতি জোড়ায় (4k+1,4k+2,4k+3,4k+4) থেকে (4k+2, 4k+3) ভেতরে যায়
+  const innerStd: number[] = [];
+  for (let n = 1; n <= sheetOneMax; n++) {
+    const mod = (n - 1) % 4;
+    if (mod === 1 || mod === 2) innerStd.push(n);
+  }
+  const expectedInnerSet = innerStd;
+  const outerFormaOk =
+    outerActual.length === expectedOuter.length && outerActual.every((n, i) => n === expectedOuter[i]);
+  const innerFormaOk =
+    innerActual.length === expectedInnerSet.length && innerActual.every((n, i) => n === expectedInnerSet[i]);
+  if (!outerFormaOk) {
+    problems.push(
+      `বাইরের ফরমা মেলেনি: পাওয়া গেছে [${outerActual.join(', ')}], প্রত্যাশিত [${expectedOuter.join(', ')}]`,
+    );
+  }
+  if (!innerFormaOk) {
+    problems.push(
+      `ভেতরের ফরমা মেলেনি: পাওয়া গেছে [${innerActual.join(', ')}], প্রত্যাশিত [${expectedInnerSet.join(', ')}]`,
+    );
+  }
+
+  return {
+    ok: problems.length === 0,
+    formaSize,
+    totalPages,
+    sheetCount: imposition.sheets.length,
+    gridOk,
+    pageMappingOk,
+    outerFormaOk: outerFormaOk && innerFormaOk,
+    sheetMm: formaSheetSizeMm(widthMm, heightMm, formaSize),
+    duplex,
+    problems,
+  };
+}
+
+// ব্রাউজার কনসোল থেকে যাচাইয়ের সুবিধা (প্রিন্টের উপর কোনো প্রভাব নেই)
+if (typeof window !== 'undefined') {
+  (window as unknown as Record<string, unknown>).__bwpFormaSelfCheck = formaSelfCheck;
+}
+
 /**
  * ফরমা প্রিন্ট — DOM গঠন → মোড-ক্লাস → @page শীট-সাইজ → রেন্ডার-রেডি অপেক্ষা
  * → window.print() → afterprint/ফলব্যাক-এ ক্লিনআপ

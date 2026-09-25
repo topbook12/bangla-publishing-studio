@@ -27,8 +27,11 @@ import {
 } from '@/lib/icon-catalog';
 import { banglaDateToday, banglaTimeNow } from '@/lib/bangla';
 import { useEditorStore } from '@/lib/store';
+import { getEditor } from '@/lib/editor-registry';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { EMPTY_LINK_DIALOG, LinkDialog, type LinkDialogState } from '@/components/editor/link-dialog';
+import { Link2Off } from 'lucide-react';
 
 /**
  * Radix মেনু বন্ধের পর নিজে থেকেই ট্রিগার বাটনে ফোকাস ফেরত নেয় (নিজের
@@ -519,6 +522,7 @@ export function InsertTab() {
   const ed = useActiveEditor();
   void ed;
   const [iconOpen, setIconOpen] = useState(false);
+  const [linkDialog, setLinkDialog] = useState<LinkDialogState>(EMPTY_LINK_DIALOG);
 
   const breakPage = () => {
     const { activePageId } = useEditorStore.getState();
@@ -528,6 +532,26 @@ export function InsertTab() {
   };
 
   const insertRaw = (html: string) => runCommand((ed2) => ed2.chain().focus().insertContent(html).run());
+
+  /** সিলেকশনে/কার্সরে লিংক বসানোর ডায়ালগ */
+  const openLinkDialog = () => {
+    const editor = getActiveEditorForLink();
+    if (!editor) {
+      toast.error('আগে কোনো পাতায় ক্লিক করুন, তারপর লিংক যোগ করুন');
+      return;
+    }
+    const activeLink = (editor.getAttributes('link').href as string | undefined) ?? '';
+    const { empty } = editor.state.selection;
+    setLinkDialog({
+      open: true,
+      mode: 'text',
+      editor,
+      imagePos: null,
+      initialHref: activeLink,
+      initialNewTab: true,
+      initialText: empty ? '' : '—', // '—' মানে সিলেকশনে আছে — টেক্সট ইনপুট লাগবে না
+    });
+  };
 
   return (
     <div className="ribbon-scroll flex items-stretch gap-1">
@@ -589,11 +613,18 @@ export function InsertTab() {
             />
             <RibbonButton
               icon={Link2}
-              label="Link"
+              label={linkDialog.initialHref && ed?.isActive('link') ? 'Edit Link' : 'Link'}
+              title="লেখা বা ছবিতে ক্লিকযোগ্য লিংক — PDF এক্সপোর্টেও কাজ করে"
+              onClick={openLinkDialog}
+            />
+            <RibbonButton
+              icon={Link2Off}
+              label="Remove Link"
+              title="সিলেকশন থেকে লিংক সরান"
               onClick={() => {
-                const url = window.prompt('Enter the link URL:');
-                if (!url) return;
-                runCommand((e) => e.chain().focus().setLink({ href: url }).run());
+                const editor = getActiveEditorForLink();
+                if (!editor) return;
+                editor.chain().focus().extendMarkRange('link').unsetLink().run();
               }}
             />
           </div>
@@ -601,6 +632,15 @@ export function InsertTab() {
       </RibbonGroup>
 
       <IconLibraryDialog open={iconOpen} onOpenChange={setIconOpen} />
+      <LinkDialog state={linkDialog} onClose={() => setLinkDialog(EMPTY_LINK_DIALOG)} />
     </div>
   );
+}
+
+/** লিংক কমান্ডের জন্য সক্রিয় এডিটর (রান-কমান্ডের মতোই ফলব্যাক সহ) */
+function getActiveEditorForLink(): ReturnType<typeof getEditor> {
+  const { activePageId, pages } = useEditorStore.getState();
+  const editor = getEditor(activePageId);
+  if (editor && !editor.isDestroyed) return editor;
+  return pages.map((p) => getEditor(p.id)).find((e) => e && !e.isDestroyed) ?? undefined;
 }

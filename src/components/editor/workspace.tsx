@@ -6,7 +6,7 @@
 
 import { useEffect, useRef } from 'react';
 import {
-  ArrowDown, ArrowUp, ArrowUpToLine, ChevronDown, Copy, Eye, EyeOff, FilePlus2, Settings2, Trash2,
+  ArrowDown, ArrowUp, ArrowUpToLine, ChevronDown, Copy, Eye, EyeOff, FilePlus2, RotateCcw, Settings2, Trash2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -84,9 +84,21 @@ function PageMenu({ pageId, index }: { pageId: string; index: number }) {
           const pg = useEditorStore.getState().pages.find((p) => p.id === pageId);
           const hasCustom = Boolean(pg?.headerOverride || pg?.footerOverride);
           return (
-            <DropdownMenuItem onClick={() => useUiStore.getState().openPageChrome(pageId)}>
-              <Settings2 size={14} /> {hasCustom ? 'এই পাতার কাস্টম হেডার/ফুটার সম্পাদনা…' : 'এই পাতার হেডার/ফুটার কাস্টমাইজ…'}
-            </DropdownMenuItem>
+            <>
+              <DropdownMenuItem onClick={() => useUiStore.getState().openPageChrome(pageId)}>
+                <Settings2 size={14} /> {hasCustom ? 'এই পাতার কাস্টম হেডার/ফুটার সম্পাদনা…' : 'এই পাতার হেডার/ফুটার কাস্টমাইজ…'}
+              </DropdownMenuItem>
+              {hasCustom ? (
+                <DropdownMenuItem
+                  onClick={() => {
+                    updatePage(pageId, { headerOverride: null, footerOverride: null });
+                    toast.info('এই পাতার হেডার/ফুটার গ্লোবাল মাস্টার অনুযায়ী হালনাগাদ হয়েছে');
+                  }}
+                >
+                  <RotateCcw size={14} /> গ্লোবাল হেডার/ফুটারে ফিরুন
+                </DropdownMenuItem>
+              ) : null}
+            </>
           );
         })()}
         <DropdownMenuItem

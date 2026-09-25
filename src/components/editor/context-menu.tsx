@@ -27,7 +27,7 @@ import {
   AlignCenter, AlignJustify, AlignLeft, AlignRight, AlignCenterVertical,
   AlignEndVertical, AlignStartVertical, ArrowDownToLine, ArrowLeftToLine,
   ArrowRightToLine, ArrowUpToLine, Bold, Check, ChevronsDown, ChevronsUp,
-  ClipboardPaste, Copy, Eraser, Expand, Frame, Highlighter, Italic, List,
+  ClipboardPaste, Copy, Eraser, Expand, ExternalLink, Frame, Highlighter, Italic, Link2, Link2Off, List,
   ListOrdered, Maximize2, Merge, Minimize2, Paintbrush,
   Palette, PanelLeft, PanelTop, RotateCcw, Ruler, Scissors, Shrink, SquareDashed, Split,
   Strikethrough, Subscript as SubIcon, Superscript as SupIcon, TextCursorInput, Trash2,
@@ -41,6 +41,7 @@ import { CELL_BG_COLORS } from './table-cell-bg';
 import { ImageResizeHost } from './image-resizer';
 import { ImageSizeDialog, type ImageDialogState } from './image-size-dialog';
 import { TableToolbarHost } from './table-toolbar';
+import { EMPTY_LINK_DIALOG, LinkDialog, type LinkDialogState } from './link-dialog';
 
 // ─────────────────────────── types & constants ───────────────────────────
 
@@ -210,6 +211,7 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
   const [menu, setMenu] = useState<MenuState | null>(null);
   const [pos, setPos] = useState({ x: 0, y: 0 });
   const [sizeDialog, setSizeDialog] = useState<ImageDialogState | null>(null);
+  const [linkDialog, setLinkDialog] = useState<LinkDialogState>(EMPTY_LINK_DIALOG);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   /** Decide what was clicked and open the matching menu (or let the native menu through). */
@@ -381,6 +383,8 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
         <ImageResizeHost suppressed={sizeDialog !== null} />
         <TableToolbarHost suppressed={sizeDialog !== null} />
         {sizeDialog ? <ImageSizeDialog state={sizeDialog} onClose={() => setSizeDialog(null)} /> : null}
+        {/* মেনু বন্ধের পরেও লিংক-ডায়ালগ খোলা থাকতে পারে */}
+        <LinkDialog state={linkDialog} onClose={() => setLinkDialog(EMPTY_LINK_DIALOG)} />
       </>
     );
   }
@@ -407,6 +411,8 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
       ? (menu.imageAttrs.float as 'left' | 'right')
       : 'none';
   const imgFramed = menu.imageAttrs.framed === true;
+  const imgLinkHref = typeof menu.imageAttrs.linkHref === 'string' ? menu.imageAttrs.linkHref : '';
+  const imgLinkTarget = menu.imageAttrs.linkTarget === null ? false : true; // default _blank
   const setImage = (patch: Record<string, unknown>) =>
     closeAndRun((editor) => {
       if (menu.imagePos === null) return;
@@ -431,6 +437,7 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
   // ── text state ──
   const currentColor = (ed.getAttributes('textStyle').color as string | undefined) ?? null;
   const currentHighlight = (ed.getAttributes('highlight').color as string | undefined) ?? null;
+  const activeLink = (ed.getAttributes('link').href as string | undefined) ?? '';
 
   const imageSections: CtxSection[] = [
     {
@@ -478,6 +485,48 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
           active: imgFramed,
           onSelect: () => setImage({ framed: !imgFramed }),
         },
+      ],
+    },
+    {
+      header: 'লিংক',
+      items: [
+        {
+          id: 'img-link-add',
+          label: imgLinkHref ? 'লিংক সম্পাদনা…' : 'ছবিতে লিংক যোগ করুন…',
+          icon: Link2,
+          active: Boolean(imgLinkHref),
+          onSelect: () => {
+            setMenu(null);
+            setLinkDialog({
+              open: true,
+              mode: 'image',
+              editor: ed,
+              imagePos: menu.imagePos,
+              initialHref: imgLinkHref,
+              initialNewTab: imgLinkTarget,
+              initialText: '',
+            });
+          },
+        },
+        ...(imgLinkHref
+          ? [
+              {
+                id: 'img-link-open' as const,
+                label: 'লিংক খুলুন',
+                icon: ExternalLink,
+                onSelect: () => {
+                  setMenu(null);
+                  window.open(imgLinkHref, '_blank', 'noopener,noreferrer');
+                },
+              },
+              {
+                id: 'img-link-remove' as const,
+                label: 'লিংক মুছুন',
+                icon: Link2Off,
+                onSelect: () => setImage({ linkHref: null, linkTarget: null }),
+              },
+            ]
+          : []),
       ],
     },
     {
@@ -696,6 +745,59 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
       ],
     },
     {
+      header: 'Link',
+      items: [
+        {
+          id: 'tx-link-add',
+          label: activeLink ? 'লিংক সম্পাদনা…' : 'লিংক যোগ করুন…',
+          icon: Link2,
+          active: Boolean(activeLink),
+          onSelect: () => {
+            const text = selectionText(ed);
+            setMenu(null);
+            setLinkDialog({
+              open: true,
+              mode: 'text',
+              editor: ed,
+              imagePos: null,
+              initialHref: activeLink,
+              initialNewTab: true,
+              initialText: text,
+            });
+          },
+        },
+        ...(activeLink
+          ? [
+              {
+                id: 'tx-link-open' as const,
+                label: 'লিংক খুলুন',
+                icon: ExternalLink,
+                onSelect: () => {
+                  setMenu(null);
+                  window.open(activeLink, '_blank', 'noopener,noreferrer');
+                },
+              },
+              {
+                id: 'tx-link-copy' as const,
+                label: 'লিংক ঠিকানা কপি',
+                icon: Copy,
+                onSelect: () => {
+                  setMenu(null);
+                  navigator.clipboard?.writeText(activeLink).catch(() => {});
+                  toast.success('লিংক কপি হয়েছে');
+                },
+              },
+              {
+                id: 'tx-link-remove' as const,
+                label: 'লিংক মুছুন',
+                icon: Link2Off,
+                onSelect: () => closeAndRun((editor) => { editor.chain().focus().extendMarkRange('link').unsetLink().run(); }),
+              },
+            ]
+          : []),
+      ],
+    },
+    {
       header: 'Paragraph',
       items: [
         { id: 'align-left', label: 'Align Left', icon: AlignLeft, active: ed.isActive({ textAlign: 'left' }), onSelect: () => closeAndRun((editor) => { editor.chain().focus().setTextAlign('left').run(); }) },
@@ -762,6 +864,7 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
         document.body,
       )}
       {mediaHosts}
+      <LinkDialog state={linkDialog} onClose={() => setLinkDialog(EMPTY_LINK_DIALOG)} />
     </>
   );
 }

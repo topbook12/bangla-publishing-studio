@@ -5,7 +5,7 @@
 'use client';
 
 import { useMemo, useRef, useState } from 'react';
-import { FileCode2, FileDown, FileText, Printer, Upload } from 'lucide-react';
+import { BookText, FileCode2, FileDown, FileText, FileType2, Printer, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { RibbonButton, RibbonDivider, RibbonGroup } from './ribbon-shell';
 import {
@@ -30,6 +30,7 @@ import { useEditorStore } from '@/lib/store';
 import { currentProjectJson, downloadJsonBackup, importJsonBackup, printDocument } from '@/lib/export-json';
 import { downloadHtmlBackup } from '@/lib/export-html';
 import { exportProjectToDocx } from '@/lib/export-docx';
+import { exportProjectToEpub, exportProjectToMarkdown, exportProjectToText } from '@/lib/export-creative';
 import { toast } from 'sonner';
 import {
   computeImposition,
@@ -67,6 +68,38 @@ export function ExportTab() {
       toast.success('DOCX downloaded', { id: 'docx' });
     } catch {
       toast.error('Failed to generate DOCX', { id: 'docx' });
+    }
+  };
+
+  // ── ক্রিয়েটিভ এক্সপোর্ট (EPUB/Markdown/TXT) ──
+  const doEpub = async () => {
+    const s = useEditorStore.getState();
+    toast.loading('Building EPUB…', { id: 'epub' });
+    try {
+      await exportProjectToEpub({ title: s.title, settings: s.settings, pages: s.pages });
+      toast.success('EPUB downloaded — যেকোনো ই-বুক রিডারে খুলুন', { id: 'epub' });
+    } catch {
+      toast.error('Failed to generate EPUB', { id: 'epub' });
+    }
+  };
+
+  const doMarkdown = () => {
+    const s = useEditorStore.getState();
+    try {
+      exportProjectToMarkdown({ title: s.title, settings: s.settings, pages: s.pages });
+      toast.success('Markdown downloaded');
+    } catch {
+      toast.error('Failed to generate Markdown');
+    }
+  };
+
+  const doText = () => {
+    const s = useEditorStore.getState();
+    try {
+      exportProjectToText({ title: s.title, settings: s.settings, pages: s.pages });
+      toast.success('Text file downloaded');
+    } catch {
+      toast.error('Failed to generate text file');
     }
   };
 
@@ -124,6 +157,29 @@ export function ExportTab() {
               downloadHtmlBackup(s.title, s.settings, s.pages);
               toast.success('HTML downloaded');
             }}
+          />
+        </div>
+      </RibbonGroup>
+      <RibbonDivider />
+      <RibbonGroup label="Creative Formats">
+        <div className="flex gap-1">
+          <RibbonButton
+            icon={BookText}
+            label="EPUB (e-book)"
+            title="ই-বুক রিডার/মোবাইলে পড়ার জন্য — ছবিসহ এমবেড হয়"
+            onClick={() => void doEpub()}
+          />
+          <RibbonButton
+            icon={FileType2}
+            label="Markdown (.md)"
+            title="ব্লগ/নোট অ্যাপে ব্যবহারের জন্য"
+            onClick={doMarkdown}
+          />
+          <RibbonButton
+            icon={FileText}
+            label="Plain Text (.txt)"
+            title="ট্যাগমুক্ত লেখা — যেকোনো জায়গায়"
+            onClick={doText}
           />
         </div>
       </RibbonGroup>
@@ -273,6 +329,11 @@ export function ExportTab() {
                         <div key={side} className="space-y-0.5">
                           <p className="text-[10px] text-muted-foreground">
                             শীট {bn(i + 1)} — পাশ {side === 0 ? 'A' : 'B'}
+                            {panels.some((p) => p.pageNumber === 1) ? (
+                              <span className="ml-1 rounded bg-amber-500/15 px-1 py-px text-[9px] font-semibold text-amber-700 dark:text-amber-300">
+                                কভার এই পাশে (বাইরের ফরমা)
+                              </span>
+                            ) : null}
                           </p>
                           <div
                             className="grid gap-0.5 rounded border bg-white p-0.5"
@@ -312,6 +373,36 @@ export function ExportTab() {
                   ভাঁজ পদ্ধতি: ডান-অর্ধেক উপরে → নিচ-অর্ধেক উপরে → পুনরাবৃত্তি (right-angle fold)।
                   শেষ অসম্পূর্ণ ফরমা খালি পৃষ্ঠা দিয়ে পূরণ হয়।
                 </p>
+              </div>
+
+              {/* বাংলাদেশের ছাপাখানা গাইড — ধাপে ধাপে */}
+              <div className="rounded-lg border border-amber-300/60 bg-amber-50/70 p-3 text-[11px] leading-relaxed text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
+                <p className="mb-1.5 font-bold">ফরমা ছাপার নিয়ম (ধাপে ধাপে):</p>
+                <ol className="list-decimal space-y-1 pl-4">
+                  <li>
+                    <b>সাইড বিন্যাস:</b> ডুপ্লেক্স (উভয় পাশ একসাথে ছাপার) প্রিন্টার থাকলে
+                    &ldquo;পাশাপাশি&rdquo; রাখুন — প্রতিটি শীটের A ও B পাশ পরপর ছাপাবে।
+                    সাধারণ (এক পাশ) প্রিন্টারে আগে সব A পাশ ছাপিয়ে কাগজ উল্টে সব B পাশ ছাপাতে
+                    &ldquo;আগে সব সামনে&rdquo; বেছে নিন।
+                  </li>
+                  <li>
+                    <b>ডুপ্লেক্স সেটিং:</b> প্রিন্ট ডায়ালগে <b>Flip on Long Edge</b>
+                    অবশ্যই রাখতে হবে — Short Edge দিলে পেছনের পৃষ্ঠাগুলো ভুল ঘরে পড়ে ভাঁজ ভুল হয়।
+                  </li>
+                  <li>
+                    <b>স্কেল ১০০% (Actual size)</b> রাখুন — &ldquo;Fit to page&rdquo; দিলে
+                    মাপ বদলে ভাঁজ মেলবে না।
+                  </li>
+                  <li>
+                    <b>কাগজের মাপ:</b> প্রেস শীট {bn(Math.round(formaInfo.sheet.widthMm))}×{bn(Math.round(formaInfo.sheet.heightMm))} মিমি —
+                    এই মাপের কাগজ না মিললে ছোট ফরমা (৪ বা ৮ পৃষ্ঠা) বেছে নিন। ছাপাখানায়
+                    A3/ডেমি/ক্রাউন শীটে এক-একটি ফরমা ছাপা হয়।
+                  </li>
+                  <li>
+                    <b>ভাঁজ ও কাটা:</b> ছাপানোর পর ভাঁজ-রেখার দাগ ধরে ভাঁজ করুন, তারপর
+                    খাড়া কাটা দিন — পৃষ্ঠা ১, ২, ৩… স্বয়ংক্রিয়ভাবে সঠিক ক্রমে পড়বে।
+                  </li>
+                </ol>
               </div>
             </div>
           )}
