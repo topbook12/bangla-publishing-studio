@@ -748,6 +748,10 @@ html.dark .stat-chip { box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05); }
   white-space: nowrap;
 }
 html.dark .status-pill { box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05); }
+button.status-pill { font: inherit; color: inherit; cursor: pointer; }
+button.status-pill:disabled { opacity: 0.45; cursor: default; pointer-events: none; }
+button.status-pill:not(:disabled):hover { color: var(--foreground); }
+.status-pill[aria-pressed="true"] { color: var(--foreground); }
 .status-pill b { color: var(--foreground); font-weight: 600; }
 
 .status-dot {

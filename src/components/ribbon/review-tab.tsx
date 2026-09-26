@@ -5,7 +5,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Grid3x3, Sigma, SpellCheck2, Type } from 'lucide-react';
+import { Grid3x3, Search, Sigma, SpellCheck2, Type } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -160,6 +160,13 @@ export function ReviewTab() {
       <RibbonGroup label="Spelling & Proofing">
         <div className="flex gap-1">
           <RibbonButton icon={SpellCheck2} label="Spelling" onClick={() => openDialog('review')} />
+          <RibbonButton
+            icon={Search}
+            label="Find & Replace"
+            title="সম্পূর্ণ বই জুড়ে খোঁজ ও প্রতিস্থাপন (Ctrl+F)"
+            shortcut="Ctrl+F"
+            onClick={() => openDialog('findReplace')}
+          />
         </div>
       </RibbonGroup>
       <RibbonDivider />

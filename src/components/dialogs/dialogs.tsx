@@ -10,8 +10,11 @@ import { ProjectsDialog } from './projects-dialog';
 import { ReviewDialog } from './review-dialog';
 import { PageChromeDialog } from './page-chrome-dialog';
 import { TemplatesDialog } from './templates-dialog';
+import { FindReplaceDialog, useFindReplaceShortcuts } from './find-replace-dialog';
+import { HelpDialog } from './help-dialog';
 
 export function Dialogs() {
+  useFindReplaceShortcuts();
   return (
     <>
       <HeaderFooterDialog />
@@ -20,6 +23,8 @@ export function Dialogs() {
       <ReviewDialog />
       <PageChromeDialog />
       <TemplatesDialog />
+      <FindReplaceDialog />
+      <HelpDialog />
     </>
   );
 }

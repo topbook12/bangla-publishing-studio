@@ -12,7 +12,9 @@ export type DialogName =
   | 'projects'
   | 'review'
   | 'pageChrome'
-  | 'templates';
+  | 'templates'
+  | 'findReplace'
+  | 'help';
 
 interface UiState {
   openDialog: DialogName | null;

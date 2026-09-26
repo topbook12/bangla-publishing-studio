@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import {
-  BookOpenCheck, Check, CloudOff, FilePlus2, FolderOpen, Loader2, Moon, PenLine,
+  BookOpenCheck, Check, CircleHelp, CloudOff, FilePlus2, FolderOpen, Loader2, Moon, PenLine,
   Save, Sun, Trash2, Copy, Pencil, Menu,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -168,6 +168,21 @@ export function AppHeader() {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="header-action max-sm:h-11 max-sm:w-11"
+              aria-label="Help / User Guide"
+              title="ব্যবহার নির্দেশিকা (Help)"
+              onClick={() => openDialog('help')}
+            >
+              <CircleHelp size={17} />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">Help / User Guide</TooltipContent>
+        </Tooltip>
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
