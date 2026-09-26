@@ -10,7 +10,7 @@
 
 import { Node, mergeAttributes, type CommandProps } from '@tiptap/core';
 import type { DOMOutputSpec } from 'prosemirror-model';
-import { TextSelection } from 'prosemirror-state';
+import { TextSelection, Selection } from 'prosemirror-state';
 import { ReactNodeViewRenderer, NodeViewWrapper, NodeViewContent, type NodeViewProps } from '@tiptap/react';
 import type { CSSProperties } from 'react';
 import { Minus, Plus, Trash2 } from 'lucide-react';
@@ -26,6 +26,15 @@ import {
   type DocBoxAttrs,
   type DocBoxVariant,
 } from '@/lib/nodes-html';
+import {
+  SHAPE_BY_ID,
+  SHAPE_DEFS,
+  SHAPE_CATEGORIES,
+  cssTextToStyle,
+  fullShapeAttrs,
+  shapeStyleText,
+  type ShapeFrameAttrs,
+} from '@/lib/shape-catalog';
 
 // ─────────────────────────── আইকন ───────────────────────────
 
@@ -401,6 +410,231 @@ declare module '@tiptap/core' {
   }
 }
 
+// ─────────────────────────── আকৃতি ফ্রেম (Decorative Shapes) ───────────────────────────
+
+/** SVG মার্কআপ → DOMOutputSpec[] (শুধু টপ-লেভেল svg এলিমেন্ট) */
+function svgMarkupToSpecs(markup: string): DOMOutputSpec[] {
+  try {
+    const dom = new DOMParser().parseFromString(`<div id="w">${markup}</div>`, 'text/html');
+    const out: DOMOutputSpec[] = [];
+    for (const child of Array.from(dom.querySelector('#w')?.children ?? [])) {
+      if (child.tagName.toLowerCase() === 'svg') {
+        const spec = svgToSpec(child);
+        if (spec) out.push(spec);
+      }
+    }
+    return out;
+  } catch {
+    return [];
+  }
+}
+
+function ShapeFrameNodeView({ node, updateAttributes, deleteNode }: NodeViewProps) {
+  const a = node.attrs as unknown as ShapeFrameAttrs;
+  const def = SHAPE_BY_ID.get(a.shape) ?? SHAPE_DEFS[0];
+  const eff = fullShapeAttrs(def.id, a as Partial<ShapeFrameAttrs>);
+  const shellStyle = { position: 'relative' as const, ...def.shell(eff) } as CSSProperties;
+  const contentStyle = def.content(eff) as CSSProperties;
+
+  return (
+    <NodeViewWrapper
+      as="div"
+      className="doc-shape"
+      style={shellStyle}
+      data-shape={def.id}
+    >
+      {def.orns(eff).map((o) => (
+        <span
+          key={o.key}
+          className="doc-shape-orn"
+          contentEditable={false}
+          style={cssTextToStyle(o.style) as CSSProperties}
+          dangerouslySetInnerHTML={{ __html: o.svg }}
+        />
+      ))}
+      <div className="doc-shape-tools no-print" contentEditable={false}>
+        <select
+          className="doc-tool-select"
+          value={def.id}
+          onChange={(e) => {
+            const nextId = e.target.value;
+            const nextDef = SHAPE_BY_ID.get(nextId);
+            // ইউজার রং কাস্টমাইজ করেনি (পুরনো শেপের ডিফল্টই আছে) হলে
+            // নতুন শেপের ডিফল্ট রংও নিয়ে নিই — প্রতিটি শেপ তার নিজের চেহারায় আসে
+            if (nextDef) {
+              const untouched =
+                eff.fill === def.defaults.fill &&
+                eff.orn === def.defaults.orn &&
+                eff.tcolor === def.defaults.tcolor;
+              if (untouched) {
+                updateAttributes({
+                  shape: nextId,
+                  fill: nextDef.defaults.fill,
+                  orn: nextDef.defaults.orn,
+                  tcolor: nextDef.defaults.tcolor,
+                });
+                return;
+              }
+            }
+            updateAttributes({ shape: nextId });
+          }}
+          title="আকৃতি বদলান"
+          aria-label="আকৃতি বদলান"
+        >
+          {SHAPE_CATEGORIES.map((cat) => (
+            <optgroup key={cat.id} label={cat.label}>
+              {SHAPE_DEFS.filter((d) => d.cat === cat.id).map((d) => (
+                <option key={d.id} value={d.id}>{d.label}</option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
+        <input
+          type="color"
+          className="doc-tool-color"
+          value={/^#[0-9a-fA-F]{6}$/.test(eff.fill) ? eff.fill : '#334155'}
+          onChange={(e) => updateAttributes({ fill: e.target.value })}
+          title="মূল রং (পটভূমি/বর্ডার)"
+          aria-label="মূল রং"
+        />
+        <input
+          type="color"
+          className="doc-tool-color"
+          value={/^#[0-9a-fA-F]{6}$/.test(eff.orn) ? eff.orn : '#94a3b8'}
+          onChange={(e) => updateAttributes({ orn: e.target.value })}
+          title="অলংকারের রং"
+          aria-label="অলংকারের রং"
+        />
+        <input
+          type="color"
+          className="doc-tool-color"
+          value={/^#[0-9a-fA-F]{6}$/.test(eff.tcolor) ? eff.tcolor : '#0f172a'}
+          onChange={(e) => updateAttributes({ tcolor: e.target.value })}
+          title="লেখার রং"
+          aria-label="লেখার রং"
+        />
+        <button
+          type="button"
+          className="doc-tool-btn doc-tool-danger"
+          onClick={deleteNode}
+          title="আকৃতি মুছুন"
+          aria-label="আকৃতি মুছুন"
+        >
+          <Trash2 size={13} />
+        </button>
+      </div>
+      <NodeViewContent className="doc-shape-content" style={contentStyle} />
+    </NodeViewWrapper>
+  );
+}
+
+export const ShapeFrame = Node.create({
+  name: 'shapeFrame',
+  group: 'block',
+  content: 'block+',
+  defining: true,
+
+  addAttributes() {
+    return {
+      shape: {
+        default: 'banner-dark',
+        parseHTML: (el) => el.getAttribute('data-shape') ?? 'banner-dark',
+        renderHTML: (attrs) => ({ 'data-shape': attrs.shape ?? 'banner-dark' }),
+      },
+      fill: {
+        default: '',
+        parseHTML: (el) => el.getAttribute('data-fill') ?? '',
+        renderHTML: (attrs) => ({ 'data-fill': attrs.fill ?? '' }),
+      },
+      orn: {
+        default: '',
+        parseHTML: (el) => el.getAttribute('data-orn') ?? '',
+        renderHTML: (attrs) => ({ 'data-orn': attrs.orn ?? '' }),
+      },
+      tcolor: {
+        default: '',
+        parseHTML: (el) => el.getAttribute('data-tcolor') ?? '',
+        renderHTML: (attrs) => ({ 'data-tcolor': attrs.tcolor ?? '' }),
+      },
+    };
+  },
+
+  parseHTML() {
+    return [
+      { tag: 'div.doc-shape' },
+      // অলংকার span গুলো কনটেন্ট হিসেবে পার্স হওয়া থেকে আটকাও
+      { tag: 'span[data-shape-orn]', ignore: true },
+    ];
+  },
+
+  renderHTML({ node, HTMLAttributes }) {
+    const a = node.attrs as unknown as ShapeFrameAttrs;
+    const def = SHAPE_BY_ID.get(a.shape) ?? SHAPE_DEFS[0];
+    const eff = fullShapeAttrs(def.id, a as Partial<ShapeFrameAttrs>);
+    const shellAttrs = mergeAttributes(HTMLAttributes, {
+      class: 'doc-shape',
+      style: shapeStyleText({ position: 'relative', ...def.shell(eff) }),
+    });
+    const ornSpecs: DOMOutputSpec[] = def.orns(eff).map((o) => [
+      'span',
+      { 'data-shape-orn': o.key, style: o.style, contenteditable: 'false' },
+      ...svgMarkupToSpecs(o.svg),
+    ]);
+    return [
+      'div',
+      shellAttrs,
+      ...ornSpecs,
+      ['div', { class: 'doc-shape-content', style: shapeStyleText(def.content(eff)) }, 0],
+    ] as DOMOutputSpec;
+  },
+
+  addNodeView() {
+    return ReactNodeViewRenderer(ShapeFrameNodeView);
+  },
+
+  addCommands() {
+    return {
+      insertShapeFrame:
+        (shapeId: string, overrides?: Partial<ShapeFrameAttrs>) =>
+        ({ chain, state }: CommandProps) => {
+          const pos = state.selection.from;
+          return chain()
+            .insertContentAt(pos, {
+              type: this.name,
+              attrs: { ...fullShapeAttrs(shapeId, overrides) },
+              content: [{ type: 'paragraph' }],
+            })
+            .command(({ tr, dispatch }) => {
+              // কার্সর আকৃতির ভিতরের প্রথম প্যারাগ্রাফে — সরাসরি লেখা যায়
+              if (dispatch) {
+                let best = -1;
+                tr.doc.descendants((n, p) => {
+                  if (n.type.name === this.name) {
+                    if (best === -1 || Math.abs(p - pos) < Math.abs(best - pos)) best = p;
+                    return false;
+                  }
+                  return true;
+                });
+                if (best >= 0) {
+                  tr.setSelection(Selection.near(tr.doc.resolve(best + 1), 1));
+                }
+              }
+              return true;
+            })
+            .run();
+        },
+    };
+  },
+});
+
+declare module '@tiptap/core' {
+  interface Commands<ReturnType> {
+    shapeFrame: {
+      insertShapeFrame: (shapeId: string, overrides?: Partial<ShapeFrameAttrs>) => ReturnType;
+    };
+  }
+}
+
 // ─────────────────────────── সব একসাথে ───────────────────────────
 
-export const designExtensions = [DocIcon, DesignBox];
+export const designExtensions = [DocIcon, DesignBox, ShapeFrame];

@@ -117,6 +117,9 @@ table { page-break-inside: auto; break-inside: auto; }
 tr, thead, tbody { page-break-inside: avoid; break-inside: avoid; }
 th, td { word-break: break-word; overflow-wrap: anywhere; }
 .callout-box, .mcq-block, .toc-block, .doc-textbox { page-break-inside: avoid; break-inside: avoid; }
+.doc-shape { page-break-inside: avoid; break-inside: avoid; position: relative; }
+.doc-shape-content p { margin: 0.15em 0; }
+.doc-shape-orn { pointer-events: none; }
 img { page-break-inside: avoid; break-inside: avoid; }
 h1, h2, h3, h4 { page-break-after: avoid; break-after: avoid; }
 @media print {

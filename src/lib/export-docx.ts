@@ -12,6 +12,7 @@ import {
 import type { DocumentSettings, PageData } from './types';
 import { effectivePageBorderStyle, effectivePageBorderWidth, getPaperPreset, PAGE_BORDER_WIDTH_PX } from './paper';
 import { parseMcqData, docBoxInlineStyle, type DocBoxAttrs, type DocBoxVariant } from './nodes-html';
+import { SHAPE_BY_ID, SHAPE_DEFS, readShapeAttrs } from './shape-catalog';
 
 const MM_TO_TWIP = 56.6929;
 const INCH_TO_TWIP = 1440;
@@ -324,6 +325,56 @@ function blockToDocx(el: Element, ctx: Ctx, settings: DocumentSettings): DocxBlo
             spacing: { after: 80 },
           }));
         }
+        return out;
+      }
+      if (el.classList.contains('doc-shape')) {
+        // আকৃতি ফ্রেম — Word-এ SVG অলংকার যায় না; ক্যাটালগের শেল স্টাইল থেকে
+        // রঙিন বর্ডার + শেডিং-এর টেবিল দিয়ে আসন্ন রূপ দেওয়া হয়
+        const attrs = readShapeAttrs(el);
+        const def = SHAPE_BY_ID.get(attrs.shape) ?? SHAPE_DEFS[0];
+        const shell = def.shell(attrs);
+        const contentEl = el.querySelector(':scope > div.doc-shape-content') ?? el;
+
+        // লেখার রং (hex হলে) ctx-এ দিয়ে পাঠাই — ভিতরের সব রানে প্রয়োগ হয়
+        const tColorHex = hexNoHash(def.content(attrs).color);
+        const innerCtx: Ctx = tColorHex ? { ...ctx, color: tColorHex } : ctx;
+
+        const innerParas: Paragraph[] = contentEl.children.length
+          ? blockToDocxChildren(contentEl, innerCtx, settings).filter((b): b is Paragraph => b instanceof Paragraph)
+          : [new Paragraph('')];
+
+        // background — গ্র্যাডিয়েন্ট হলে প্রথম hex নিই
+        const bgRaw = shell.background ?? '';
+        const bgHex = hexNoHash(bgRaw) ?? hexNoHash(/#[0-9a-fA-F]{6}/.exec(bgRaw)?.[0]);
+
+        // border — "4px double #9f1239" ফরম্যাট পার্স
+        const bm = /^([\d.]+)px\s+([a-z]+)\s+(.+)$/.exec(shell.border ?? '');
+        const borderStyleMap: Record<string, (typeof BorderStyle)[keyof typeof BorderStyle]> = {
+          solid: BorderStyle.SINGLE,
+          dashed: BorderStyle.DASHED,
+          dotted: BorderStyle.DOTTED,
+          double: BorderStyle.DOUBLE,
+        };
+        const bs = bm ? (borderStyleMap[bm[2]] ?? BorderStyle.SINGLE) : undefined;
+        const bc = bm ? hexNoHash(bm[3]) : undefined;
+        const bw = bm ? Math.max(4, Math.round(parseFloat(bm[1]) * 0.75) * 4) : 0;
+
+        out.push(new Table({
+          rows: [new TableRow({
+            children: [new TableCell({
+              children: innerParas,
+              shading: bgHex ? { type: ShadingType.CLEAR, fill: bgHex } : undefined,
+              borders: bs && bc ? {
+                top: { style: bs, size: bw, color: bc },
+                bottom: { style: bs, size: bw, color: bc },
+                left: { style: bs, size: bw, color: bc },
+                right: { style: bs, size: bw, color: bc },
+              } : undefined,
+            })],
+          })],
+          width: { size: 100, type: WidthType.PERCENTAGE },
+        }));
+        out.push(new Paragraph({ text: '', spacing: { after: 100 } }));
         return out;
       }
       if (el.classList.contains('doc-textbox')) {

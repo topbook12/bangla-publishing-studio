@@ -162,7 +162,7 @@ export function htmlIsEmpty(html: string): boolean {
   const div = document.createElement('div');
   div.innerHTML = html;
   if ((div.textContent ?? '').trim()) return false;
-  return !div.querySelector('img, table, hr, .doc-textbox, .callout-box, .mcq-block, .toc-block, svg, .doc-icon');
+  return !div.querySelector('img, table, hr, .doc-textbox, .doc-shape, .callout-box, .mcq-block, .toc-block, svg, .doc-icon');
 }
 
 /** কোনো পাতার এডিটরের লভ্য উচ্চতা (page-editor-inner) — DOM থেকে */

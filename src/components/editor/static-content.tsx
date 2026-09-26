@@ -7,6 +7,9 @@
 
 import type { ReactNode } from 'react';
 import { parseMcqData, docBoxInlineStyle } from '@/lib/nodes-html';
+import {
+  SHAPE_BY_ID, SHAPE_DEFS, cssTextToStyle, readShapeAttrs,
+} from '@/lib/shape-catalog';
 
 const OPTION_LABELS = ['ক', 'খ', 'গ', 'ঘ'] as const;
 
@@ -152,7 +155,30 @@ function blockNodes(container: Element, keyPrefix: string): ReactNode[] {
         break;
       }
       case 'DIV': {
-        if (el.classList.contains('doc-textbox')) {
+        if (el.classList.contains('doc-shape')) {
+          const attrs = readShapeAttrs(el);
+          const def = SHAPE_BY_ID.get(attrs.shape) ?? SHAPE_DEFS[0];
+          const contentEl = el.querySelector(':scope > div.doc-shape-content') ?? el;
+          out.push(
+            <div
+              key={key}
+              className="doc-shape"
+              data-shape={attrs.shape}
+              style={{ position: 'relative', ...def.shell(attrs) } as React.CSSProperties}
+            >
+              {def.orns(attrs).map((o) => (
+                <span
+                  key={o.key}
+                  style={cssTextToStyle(o.style) as React.CSSProperties}
+                  dangerouslySetInnerHTML={{ __html: o.svg }}
+                />
+              ))}
+              <div className="doc-shape-content" style={def.content(attrs) as React.CSSProperties}>
+                {blockNodes(contentEl, key)}
+              </div>
+            </div>,
+          );
+        } else if (el.classList.contains('doc-textbox')) {
           const style = docBoxInlineStyle({
             variant: (el.getAttribute('data-variant') ?? 'rounded') as never,
             border: el.getAttribute('data-border') ?? undefined,

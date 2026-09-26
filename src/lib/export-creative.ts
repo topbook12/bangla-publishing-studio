@@ -136,6 +136,15 @@ function pageToEpubXhtml(
     el.innerHTML = note ? ` <span style="font-size:.8em">[${escapeXml(note)}]</span>` : '';
   });
 
+  root.querySelectorAll('div.doc-shape').forEach((el) => {
+    // আকৃতি ফ্রেম — EPUB/XHTML-এ SVG যায় না; কেন্দ্রীয় blockquote হিসেবে লেখাটুকু রাখি
+    const contentEl = el.querySelector(':scope > div.doc-shape-content');
+    const wrap = dom.createElement('blockquote');
+    wrap.setAttribute('style', 'text-align:center');
+    wrap.innerHTML = contentEl ? contentEl.innerHTML : el.innerHTML;
+    el.replaceWith(wrap);
+  });
+
   root.querySelectorAll('div.doc-textbox').forEach((el) => {
     const wrap = dom.createElement('blockquote');
     wrap.innerHTML = el.innerHTML;

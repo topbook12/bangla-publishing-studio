@@ -4,9 +4,9 @@
 
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState, type CSSProperties } from 'react';
 import {
-  AlertTriangle, BookOpen, CalendarDays, ChevronDown, Hash, Image as ImageIcon,
+  AlertTriangle, BookOpen, CalendarDays, ChevronDown, Frame, Hash, Image as ImageIcon,
   Lightbulb, Link2, ListTree, Minus, Pin, Shapes, Square, Table as TableIcon, FilePlus2, HelpCircle,
 } from 'lucide-react';
 import {
@@ -25,6 +25,9 @@ import { buildDividerHtml, DOC_BOX_LABELS, type DocBoxVariant, type DividerStyle
 import {
   ICON_CATEGORIES, ORNAMENTS, getRecentIcons, pushRecentIcon, searchIcons,
 } from '@/lib/icon-catalog';
+import {
+  SHAPE_CATEGORIES, SHAPE_DEFS, cssTextToStyle, fullShapeAttrs, getShape,
+} from '@/lib/shape-catalog';
 import { banglaDateToday, banglaTimeNow } from '@/lib/bangla';
 import { useEditorStore } from '@/lib/store';
 import { getEditor } from '@/lib/editor-registry';
@@ -516,12 +519,121 @@ function TextBoxMenu() {
   );
 }
 
+// ═══════════════════ ডিজাইন শেপ গ্যালারি ═══════════════════
+
+/** শেপ প্রিভিউ — ক্যাটালগ ডেফ থেকে সরাসরি রেন্ডার (এডিটরের মতোই দেখায়) */
+export function ShapePreview({ shapeId, sample = 'শিরোনাম' }: { shapeId: string; sample?: string }) {
+  const def = getShape(shapeId);
+  if (!def) return null;
+  const eff = fullShapeAttrs(shapeId);
+  const shellStyle = {
+    position: 'relative' as const,
+    ...def.shell(eff),
+    margin: '0',
+    boxShadow: 'none',
+  } as CSSProperties;
+  return (
+    <span className="doc-shape shape-preview" data-shape={shapeId} style={shellStyle} aria-hidden="true">
+      {def.orns(eff).map((o) => (
+        <span
+          key={o.key}
+          style={cssTextToStyle(o.style) as CSSProperties}
+          dangerouslySetInnerHTML={{ __html: o.svg }}
+        />
+      ))}
+      <span className="doc-shape-content" style={def.content(eff) as CSSProperties}>
+        {sample}
+      </span>
+    </span>
+  );
+}
+
+function ShapeGalleryDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+  if (!open) return null;
+  return <ShapeGalleryDialogInner onOpenChange={onOpenChange} />;
+}
+
+function ShapeGalleryDialogInner({ onOpenChange }: { onOpenChange: (v: boolean) => void }) {
+  const [cat, setCat] = useState<string>('all');
+
+  const defs = cat === 'all' ? SHAPE_DEFS : SHAPE_DEFS.filter((d) => d.cat === cat);
+
+  const insert = (id: string) => {
+    runCommand((ed) => ed.chain().focus().insertShapeFrame(id).run());
+    onOpenChange(false);
+    refocusEditor();
+  };
+
+  return (
+    <Dialog open onOpenChange={onOpenChange}>
+      <DialogContent
+        className="flex h-[80vh] max-w-3xl flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl"
+        onCloseAutoFocus={(e) => { e.preventDefault(); refocusEditor(); }}
+      >
+        <DialogHeader className="border-b px-5 pb-3 pt-4">
+          <DialogTitle className="flex items-center gap-2">
+            <Frame size={17} className="text-primary" /> ডিজাইন শেপ লাইব্রেরি
+          </DialogTitle>
+          <DialogDescription>
+            অলংকৃত ব্যানার, ফ্রেম ও ব্যাজ — {SHAPE_DEFS.length}টি শেপ। বসানোর পর ভিতরে ক্লিক করে
+            সরাসরি লিখুন; শেপে মাউস রাখলে আকৃতি ও রং বদলানোর টুল দেখা যাবে।
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex gap-1.5 overflow-x-auto border-b px-5 py-3">
+          <button
+            type="button"
+            className={cn('chip', cat === 'all' && 'chip-active')}
+            onClick={() => setCat('all')}
+          >
+            সব <span className="text-[10px] opacity-60">({SHAPE_DEFS.length})</span>
+          </button>
+          {SHAPE_CATEGORIES.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              className={cn('chip', cat === c.id && 'chip-active')}
+              onClick={() => setCat(c.id)}
+            >
+              {c.label} <span className="text-[10px] opacity-60">({SHAPE_DEFS.filter((d) => d.cat === c.id).length})</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-5 py-4">
+          <div className="shape-gallery">
+            {defs.map((d) => (
+              <button
+                key={d.id}
+                type="button"
+                className="shape-card"
+                onClick={() => insert(d.id)}
+                title={`${d.label} — ক্লিক করে বসান`}
+                aria-label={d.label}
+              >
+                <span className="shape-card-preview">
+                  <ShapePreview shapeId={d.id} />
+                </span>
+                <span className="shape-card-label">{d.label}</span>
+              </button>
+            ))}
+          </div>
+          <p className="mt-4 text-center text-[11px] leading-snug text-muted-foreground">
+            টিপস: একই শেপ বারবার লাগলে বসিয়ে কপি (Ctrl+C / Ctrl+V) করুন — সব অলংকারসহ থাকবে।
+          </p>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ═══════════════════ Insert Tab ═══════════════════
 
 export function InsertTab() {
   const ed = useActiveEditor();
   void ed;
   const [iconOpen, setIconOpen] = useState(false);
+  const [shapeOpen, setShapeOpen] = useState(false);
   const [linkDialog, setLinkDialog] = useState<LinkDialogState>(EMPTY_LINK_DIALOG);
 
   const breakPage = () => {
@@ -564,14 +676,24 @@ export function InsertTab() {
       <TableOps />
       <RibbonDivider />
       <RibbonGroup label="Icons & Design">
-        <div className="flex gap-1">
-          <RibbonButton
-            icon={Shapes}
-            label="Icon Library"
-            title="৩০০+ আইকন ও অলংকার চিহ্ন — সার্চ করে যোগ করুন"
-            onClick={() => setIconOpen(true)}
-          />
-          <TextBoxMenu />
+        <div className="flex flex-col gap-1">
+          <div className="flex gap-1">
+            <RibbonButton
+              icon={Shapes}
+              label="Icon Library"
+              title="৩০০+ আইকন ও অলংকার চিহ্ন — সার্চ করে যোগ করুন"
+              onClick={() => setIconOpen(true)}
+            />
+            <RibbonButton
+              icon={Frame}
+              label="Design Shapes"
+              title="অলংকৃত ব্যানার/ফ্রেম/ব্যাজ — ভিতরে লেখা যায়"
+              onClick={() => setShapeOpen(true)}
+            />
+          </div>
+          <div className="flex gap-1">
+            <TextBoxMenu />
+          </div>
         </div>
       </RibbonGroup>
       <RibbonDivider />
@@ -632,6 +754,7 @@ export function InsertTab() {
       </RibbonGroup>
 
       <IconLibraryDialog open={iconOpen} onOpenChange={setIconOpen} />
+      <ShapeGalleryDialog open={shapeOpen} onOpenChange={setShapeOpen} />
       <LinkDialog state={linkDialog} onClose={() => setLinkDialog(EMPTY_LINK_DIALOG)} />
     </div>
   );
