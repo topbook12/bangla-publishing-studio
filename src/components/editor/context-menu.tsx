@@ -839,7 +839,7 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
           role="menu"
           aria-label="Content menu"
           tabIndex={-1}
-          className="fixed z-[1000] max-h-[70vh] min-w-[230px] overflow-y-auto rounded-xl border border-border bg-popover py-1.5 text-popover-foreground shadow-lg focus:outline-none"
+          className="bwp-context-menu fixed z-[1000] max-h-[70vh] min-w-[230px] overflow-y-auto rounded-xl border border-border bg-popover py-1.5 text-popover-foreground shadow-lg focus:outline-none"
           style={{ left: pos.x, top: pos.y }}
           onKeyDown={onMenuKeyDown}
         >

@@ -136,6 +136,21 @@ function pageToEpubXhtml(
     el.innerHTML = note ? ` <span style="font-size:.8em">[${escapeXml(note)}]</span>` : '';
   });
 
+  // সূচিপত্র — আগে data-entries অ্যাট্রিবিউটে আটকে থেকে EPUB-এ খালি div যেত;
+  // এখন এন্ট্রিগুলো সাধারণ তালিকা হিসেবে এক্সপ্যান্ড হয়
+  root.querySelectorAll('div.toc-block').forEach((el) => {
+    let entries: Array<{ text: string; level: number; pageNumber: string }> = [];
+    try {
+      const parsed: unknown = JSON.parse(el.getAttribute('data-entries') ?? '[]');
+      if (Array.isArray(parsed)) entries = parsed as typeof entries;
+    } catch { /* উপেক্ষা */ }
+    const title = escapeXml(el.getAttribute('data-title') || 'সূচিপত্র');
+    const items = entries
+      .map((e) => `<li style="margin-left:${Math.max(0, e.level - 1) * 1.4}em">${escapeXml(e.text)} — <b>${escapeXml(e.pageNumber)}</b></li>`)
+      .join('');
+    el.innerHTML = `<p><b>${title}</b></p><ol style="list-style:none;padding-left:0">${items}</ol>`;
+  });
+
   root.querySelectorAll('div.doc-shape').forEach((el) => {
     // আকৃতি ফ্রেম — EPUB/XHTML-এ SVG যায় না; কেন্দ্রীয় blockquote হিসেবে লেখাটুকু রাখি
     const contentEl = el.querySelector(':scope > div.doc-shape-content');

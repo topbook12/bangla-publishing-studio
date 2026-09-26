@@ -201,11 +201,13 @@ function HeaderBar({ hf, mirrored, onCommit }: { hf: HeaderFooterSettings; mirro
 }
 
 function FooterBar({
-  hf, mirrored, numberHtml, onCommit,
+  hf, mirrored, numberHtml, numPos, onCommit,
 }: {
   hf: HeaderFooterSettings;
   mirrored: boolean;
   numberHtml: ReactNode;
+  /** পৃষ্ঠা নম্বরের অ্যালাইনমেন্ট (settings.pageNumber.position থেকে) */
+  numPos: 'left' | 'center' | 'right';
   onCommit: (next: HeaderFooterSettings) => void;
 }) {
   const left = mirrored ? hf.rightText : hf.leftText;
@@ -216,7 +218,7 @@ function FooterBar({
     return (
       <div className="ftr-royal" style={{ color: accent }}>
         <div className="hdr-royal-line" style={{ borderColor: accent }} />
-        <div className="ftr-royal-row">
+        <div className="ftr-royal-row" style={{ justifyContent: numPos === 'left' ? 'flex-start' : numPos === 'right' ? 'flex-end' : 'center' }}>
           <span className="hdr-royal-flourish" style={{ color: accent }} title={AUTO_HINT}>❧</span>
           {numberHtml}
           <span className="hdr-royal-flourish" style={{ color: accent }} title={AUTO_HINT}>❧</span>
@@ -225,27 +227,37 @@ function FooterBar({
     );
   }
   if (hf.style === 'academic') {
+    const leftZone = <EditableZone section="footer" hf={hf} field={mirrored ? 'rightText' : 'leftText'} value={left} onCommit={onCommit} />;
+    const rightZone = <EditableZone section="footer" hf={hf} field={mirrored ? 'leftText' : 'rightText'} value={right} onCommit={onCommit} />;
+    // নম্বরের পজিশন অনুযায়ী সেল ক্রম — মাঝে হলে সত্যিকারের কেন্দ্রে (flex:1)
+    if (numPos === 'left') return <div className="ftr-academic" style={{ borderColor: accent }}>{numberHtml}{leftZone}{rightZone}</div>;
+    if (numPos === 'right') return <div className="ftr-academic" style={{ borderColor: accent }}>{leftZone}{rightZone}{numberHtml}</div>;
     return (
       <div className="ftr-academic" style={{ borderColor: accent }}>
-        <EditableZone section="footer" hf={hf} field={mirrored ? 'rightText' : 'leftText'} value={left} onCommit={onCommit} />
-        {numberHtml}
-        <EditableZone section="footer" hf={hf} field={mirrored ? 'leftText' : 'rightText'} value={right} onCommit={onCommit} />
+        {leftZone}
+        <span style={{ flex: 1, textAlign: 'center' }}>{numberHtml}</span>
+        {rightZone}
       </div>
     );
   }
   if (hf.style === 'parallel') {
+    const leftZone = <EditableZone section="footer" hf={hf} field={mirrored ? 'rightText' : 'leftText'} value={left} onCommit={onCommit} />;
+    const rightZone = <EditableZone section="footer" hf={hf} field={mirrored ? 'leftText' : 'rightText'} value={right} onCommit={onCommit} />;
+    if (numPos === 'left') return <div className="ftr-parallel" style={{ borderColor: accent }}>{numberHtml}{leftZone}{rightZone}</div>;
+    if (numPos === 'right') return <div className="ftr-parallel" style={{ borderColor: accent }}>{leftZone}{rightZone}{numberHtml}</div>;
     return (
       <div className="ftr-parallel" style={{ borderColor: accent }}>
-        <EditableZone section="footer" hf={hf} field={mirrored ? 'rightText' : 'leftText'} value={left} onCommit={onCommit} />
-        {numberHtml}
-        <EditableZone section="footer" hf={hf} field={mirrored ? 'leftText' : 'rightText'} value={right} onCommit={onCommit} />
+        {leftZone}
+        <span style={{ flex: 1, textAlign: 'center' }}>{numberHtml}</span>
+        {rightZone}
       </div>
     );
   }
   // plain
   const center = centerFallback(hf, mirrored);
+  const justify = !center.value ? (numPos === 'left' ? 'flex-start' : numPos === 'right' ? 'flex-end' : 'center') : 'center';
   return (
-    <div className="ftr-plain">
+    <div className="ftr-plain" style={{ justifyContent: justify }}>
       <EditableZone section="footer" hf={hf} field={center.field} value={center.value} onCommit={onCommit} />
       {numberHtml}
     </div>
@@ -282,14 +294,19 @@ export function PageHeader({ index, settings, pageKind, noChrome, pageId, header
     </span>
   ) : null;
 
+  // নম্বরের অ্যালাইনমেন্ট — position-এর শেষ অংশ (left/center/right)
+  const numAlign = pageNumber.position.endsWith('left') ? 'left' as const : pageNumber.position.endsWith('right') ? 'right' as const : 'center' as const;
+
   // হেডার স্টাইল আর নম্বর একসাথে: plain হলে নম্বর হেডারে যোগ হয়
   return (
-    <header className="page-header">
+    <header className="page-header" style={{ fontSize: `${header.fontSize}pt` }}>
       <HeaderBar hf={header} mirrored={mirrored} onCommit={commitHeader} />
       {numberInHeader && numberHtml && header.style !== 'plain' ? (
-        <div className="page-number-overlay">{numberHtml}</div>
+        <div className="page-number-overlay" style={{ textAlign: numAlign }}>{numberHtml}</div>
       ) : null}
-      {numberInHeader && header.style === 'plain' && num ? numberHtml : null}
+      {numberInHeader && header.style === 'plain' && num ? (
+        <div style={{ textAlign: numAlign }}>{numberHtml}</div>
+      ) : null}
     </header>
   );
 }
@@ -320,15 +337,19 @@ export function PageFooter({ index, settings, pageKind, noChrome, pageId, footer
     </span>
   ) : null;
 
+  const numAlign: 'left' | 'center' | 'right' = pageNumber.position.endsWith('left')
+    ? 'left'
+    : pageNumber.position.endsWith('right') ? 'right' : 'center';
+
   const hasFooterContent =
     footer.enabled && (footer.style !== 'plain' || footer.centerText || footer.leftText || footer.rightText);
 
   if (!hasFooterContent && !numberHtml) return null;
 
   return (
-    <footer className="page-footer">
-      {footer.enabled ? <FooterBar hf={footer} mirrored={mirrored} numberHtml={numberHtml} onCommit={commitFooter} /> : numberHtml ? (
-        <div className="ftr-plain">{numberHtml}</div>
+    <footer className="page-footer" style={{ fontSize: `${footer.fontSize}pt` }}>
+      {footer.enabled ? <FooterBar hf={footer} mirrored={mirrored} numberHtml={numberHtml} numPos={numAlign} onCommit={commitFooter} /> : numberHtml ? (
+        <div className="ftr-plain" style={{ justifyContent: numAlign === 'left' ? 'flex-start' : numAlign === 'right' ? 'flex-end' : 'center' }}>{numberHtml}</div>
       ) : null}
     </footer>
   );

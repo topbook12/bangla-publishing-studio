@@ -7,6 +7,7 @@ import { saveProject } from './dexie';
 import { useEditorStore } from './store';
 import type { DocumentSettings } from './types';
 import { getPaperPreset } from './paper';
+import { createDefaultSettings } from './sample';
 
 export function downloadJsonBackup(project: BookProject): void {
   const blob = new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' });
@@ -38,13 +39,25 @@ export async function importJsonBackup(file: File): Promise<'ok' | 'invalid'> {
     if (!parsed || typeof parsed !== 'object') return 'invalid';
     const obj = parsed as Partial<BookProject>;
     if (!Array.isArray(obj.pages) || typeof obj.title !== 'string') return 'invalid';
+    // পুরনো/আংশিক ব্যাকআপে settings-এর অংশ না থাকলে অ্যাপ ক্র্যাশ করত —
+    // ডিফল্টের সাথে ডিপ-মার্জ করে সম্পূর্ণ DocumentSettings নিশ্চিত করা হয়
+    const raw = (obj.settings && typeof obj.settings === 'object' ? obj.settings : {}) as Partial<DocumentSettings>;
+    const base = createDefaultSettings();
+    const settings = createDefaultSettings({
+      ...(raw as DocumentSettings),
+      customPaper: { ...base.customPaper, ...(raw.customPaper ?? {}) },
+      margins: { ...base.margins, ...(raw.margins ?? {}) },
+      header: { ...base.header, ...(raw.header ?? {}) },
+      footer: { ...base.footer, ...(raw.footer ?? {}) },
+      pageNumber: { ...base.pageNumber, ...(raw.pageNumber ?? {}) },
+    });
     const id = `bk-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
     await saveProject({
       id,
       title: obj.title,
       createdAt: Date.now(),
       updatedAt: Date.now(),
-      settings: obj.settings as DocumentSettings,
+      settings,
       pages: obj.pages,
     });
     await useEditorStore.getState().openProject(id);
@@ -89,8 +102,28 @@ export function ensurePrintStyle(settings: DocumentSettings): void {
   getOrCreatePrintStyleEl().textContent = `@page { size: ${w}mm ${h}mm; margin: 0; }`;
 }
 
-export function printDocument(): void {
+/**
+ * সাধারণ প্রিন্ট — @page সেট করার পরে ফন্ট ও ছবি লোড হওয়া পর্যন্ত অপেক্ষা করে
+ * window.print() ধরা হয়। আগে মাত্র ৬০ms অপেক্ষা করত — ধীর ফন্ট/ছবিতে প্রিন্টে
+ * ফলব্যাক ফন্ট বা ফাঁকা ছবি-বাক্স আসত (ফরমা প্রিন্টের মতোই রেন্ডার-রেডি নিশ্চিত)।
+ */
+export async function printDocument(): Promise<void> {
   const settings = useEditorStore.getState().settings;
   ensurePrintStyle(settings);
-  window.setTimeout(() => window.print(), 60);
+  // ফন্ট রেডি (সর্বোচ্চ ৬০০ms)
+  try {
+    await Promise.race([document.fonts.ready, new Promise<void>((r) => setTimeout(r, 600))]);
+  } catch { /* ফন্ট API না থাকলে এগিয়ে যাও */ }
+  // ছবি লোড (সর্বোচ্চ ৮০০ms)
+  const pending = Array.from(document.images).filter((im) => !im.complete);
+  if (pending.length) {
+    await Promise.race([
+      Promise.all(pending.map((im) => new Promise<void>((res) => {
+        im.addEventListener('load', () => res(), { once: true });
+        im.addEventListener('error', () => res(), { once: true });
+      }))),
+      new Promise<void>((r) => setTimeout(r, 800)),
+    ]);
+  }
+  window.print();
 }

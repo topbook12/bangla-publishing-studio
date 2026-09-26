@@ -57,9 +57,32 @@ function inlineNodes(node: Node, keyPrefix: string): ReactNode[] {
       case 'A':
         out.push(<a key={key} href={el.getAttribute('href') ?? '#'}>{inlineNodes(el, key)}</a>);
         break;
-      case 'IMG':
-        out.push(<img key={key} src={el.getAttribute('src') ?? ''} alt={el.getAttribute('alt') ?? 'ছবি'} />);
+      case 'IMG': {
+        // লাইভ এডিটরের মতো সাইজ/ফ্লোট — data-width/height (+style) না বহাল করলে
+        // ছবি ন্যাচারাল সাইজে রেন্ডার করে পাতার লেআউট এদিক-ওদিক হয়ে যেত
+        const imgEl = child as HTMLImageElement;
+        const styleAttr = imgEl.getAttribute('style') ?? '';
+        const w = imgEl.getAttribute('data-width') ?? imgEl.getAttribute('width');
+        const h = imgEl.getAttribute('data-height') ?? imgEl.getAttribute('height');
+        const imgCss: React.CSSProperties = {};
+        if (w) imgCss.width = /^\d+(\.\d+)?$/.test(w) ? `${Number(w)}px` : w;
+        if (h) imgCss.height = /^\d+(\.\d+)?$/.test(h) ? `${Number(h)}px` : h;
+        const floatMatch = /float:\s*(left|right)/.exec(styleAttr);
+        if (floatMatch) {
+          imgCss.float = floatMatch[1] as 'left' | 'right';
+          const marginSide = floatMatch[1] === 'left' ? 'marginRight' : 'marginLeft';
+          imgCss[marginSide] = 12;
+        }
+        out.push(
+          <img
+            key={key}
+            src={imgEl.getAttribute('src') ?? ''}
+            alt={imgEl.getAttribute('alt') ?? 'ছবি'}
+            style={imgCss}
+          />,
+        );
         break;
+      }
       case 'SVG': case 'svg':
         // ডকুমেন্ট আইকনের ইনলাইন SVG (নিজস্ব জেনারেট করা — নিরাপদ)
         out.push(

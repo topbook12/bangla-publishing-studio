@@ -1635,6 +1635,13 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
 
 /* ═══════════════ প্রিন্ট (প্রেস-রেডি) ═══════════════ */
 
+/* ফলব্যাক @page — এক্সপোর্ট ট্যাব না চালিয়ে সরাসরি Ctrl+P চাপলেও কাগজ A4
+   ধরে নেওয়া হয়। এক্সপোর্ট ট্যাব/ফরমা প্রিন্ট চালালে #bwp-print-page স্টাইল-এলিমেন্ট
+   পরে এসে এটিকে override করে (head-এ পরে যুক্ত হয়) — তখন আসল কাগজের সাইজ প্রযোজ্য।
+   এই রুল না থাকলে ব্রাউজার ডিফল্ট মার্জিনে (≈10-12.7mm) কাগজের ফুটার ব্যান্ড
+   পরের শিটে চলে যেত → ফাঁকা/অর্ধেক-ফাঁকা পাতা ছাপা হত। */
+@page { size: 210mm 297mm; margin: 0; }
+
 @media print {
   * {
     -webkit-print-color-adjust: exact !important;
@@ -1692,7 +1699,9 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
   }
   .page-toolbar { display: none !important; }
   .mcq-edit, .callout-delete, .footnote-pop { display: none !important; }
-  .footnote-ref > span { display: none; }
+  /* ▾ গ্লিফ লুকিয়ে নম্বর (::before কাউন্টার) প্রিন্টে থাকে —
+     লাইভ পাতা (footnote-ref) ও স্ট্যাটিক প্রিভিউ পাতা (footnote) দুটোতেই */
+  .footnote-ref > span, .footnote > span { display: none !important; }
   .page-editor-shell, .page-editor-inner, .page-content, .page-content-text {
     overflow: hidden !important;
   }
@@ -1722,6 +1731,6 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
     min-width: 0 !important;
     min-height: 0 !important;
   }
+  /* ডান-ক্লিক কনটেক্সট মেনু খোলা অবস্থায় প্রিন্ট করলেও মেনু ছাপা হবে না */
+  .bwp-context-menu { display: none !important; }
 }
-
-/* print robustness v2 */

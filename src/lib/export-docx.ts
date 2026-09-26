@@ -5,14 +5,15 @@
 
 import {
   AlignmentType, BorderStyle, Document, ExternalHyperlink, Footer, Header, HeadingLevel, ImageRun,
-  LevelFormat, PageBreak, PageBorderDisplay, PageBorderOffsetFrom, PageBorderZOrder,
-  PageNumber, Packer, Paragraph, ShadingType, Table, TableCell,
-  TableRow, TextRun, WidthType,
+  LevelFormat, PageBorderDisplay, PageBorderOffsetFrom, PageBorderZOrder,
+  Packer, Paragraph, ShadingType, Table, TableCell,
+  TableRow, TabStopType, TextRun, WidthType,
 } from 'docx';
-import type { DocumentSettings, PageData } from './types';
+import type { DocumentSettings, HeaderFooterSettings, PageData } from './types';
 import { effectivePageBorderStyle, effectivePageBorderWidth, getPaperPreset, PAGE_BORDER_WIDTH_PX } from './paper';
 import { parseMcqData, docBoxInlineStyle, type DocBoxAttrs, type DocBoxVariant } from './nodes-html';
 import { SHAPE_BY_ID, SHAPE_DEFS, readShapeAttrs } from './shape-catalog';
+import { displayPageNumber } from './pagenum';
 
 const MM_TO_TWIP = 56.6929;
 const INCH_TO_TWIP = 1440;
@@ -164,12 +165,12 @@ function inlineRuns(el: Element, ctx: Ctx): Array<TextRun | ExternalHyperlink> {
 let currentFootnotes: string[] = [];
 function footnoteIndexOf(sup: Element): number {
   const note = sup.getAttribute('data-note') ?? '';
-  let idx = currentFootnotes.indexOf(note);
-  if (idx === -1) {
-    currentFootnotes.push(note);
-    idx = currentFootnotes.length;
-  }
-  return idx;
+  const existing = currentFootnotes.indexOf(note);
+  // আগের বাগ: প্রথমবার ঠিক ছিল (push → length = 1-based), কিন্তু একই নোট
+  // দ্বিতীয়বার রেফারেন্স হলে indexOf (0-based) ফেরত দিত → "০" ছাপাত
+  if (existing !== -1) return existing + 1;
+  currentFootnotes.push(note);
+  return currentFootnotes.length;
 }
 
 function imageRunOf(img: Element): ImageRun | null {
@@ -458,48 +459,167 @@ function blockToDocxChildren(el: Element, ctx: Ctx, settings: DocumentSettings):
   return out;
 }
 
-function headerFooterParas(settings: DocumentSettings, accent: string): { header: Header; footer: Footer } {
-  const h = settings.header;
+/**
+ * এক পাতার হেডার/ফুটার — page-chrome.tsx-এর রেন্ডারের সমতুল্য।
+ * আগে: পুরো ডকুমেন্টে একটাই section-level হেডার/ফুটার — per-page override,
+ * কভার (differentFirst), পৃষ্ঠা নম্বরের ফরম্যাট (বাংলা/রোমান) ও position সব চুপচাপ
+ * হারিয়ে যেত। এখন প্রতি পাতা আলাদা Word-section, তাই সবগুলোই হুবহু মেলে।
+ */
+function headerFooterParas(
+  hfH: HeaderFooterSettings,
+  hfF: HeaderFooterSettings,
+  settings: DocumentSettings,
+  pageIndex: number,
+  showChrome: boolean,
+): { header: Header; footer: Footer } {
+  const accent = hexNoHash(hfH.accentColor) ?? '4F46E5';
+  const pn = settings.pageNumber;
+  const num = showChrome ? displayPageNumber(pageIndex, pn) : '';
+  const numAlign = pn.position.endsWith('left')
+    ? AlignmentType.LEFT
+    : pn.position.endsWith('right') ? AlignmentType.RIGHT : AlignmentType.CENTER;
+  const numberRuns = (): TextRun[] => [
+    ...(pn.prefix ? [new TextRun({ text: pn.prefix, color: accent })] : []),
+    new TextRun({ text: num, bold: true, color: accent }),
+  ];
+
   const headerChildren: Paragraph[] = [];
-  if (h.enabled && h.style !== 'none') {
-    if (h.style === 'parallel') {
+  if (showChrome && hfH.enabled && hfH.style !== 'none') {
+    const mirrored = pn.oddEven && pageIndex % 2 === 1;
+    const L = mirrored ? hfH.rightText : hfH.leftText;
+    const R = mirrored ? hfH.leftText : hfH.rightText;
+    if (hfH.style === 'parallel') {
       headerChildren.push(new Paragraph({
         children: [
-          new TextRun({ text: h.leftText, bold: true, color: accent }),
-          new TextRun({ text: `        ${h.rightText}`, color: accent }),
+          new TextRun({ text: L, bold: true, color: accent }),
+          new TextRun({ text: `        ${R}`, color: accent }),
         ],
         border: { top: { style: BorderStyle.DOUBLE, size: 6, color: accent }, bottom: { style: BorderStyle.DOUBLE, size: 6, color: accent } },
       }));
-    } else {
+    } else if (hfH.style === 'royal') {
+      const center = hfH.centerText || (mirrored ? hfH.rightText || hfH.leftText : hfH.leftText || hfH.rightText);
       headerChildren.push(new Paragraph({
         alignment: AlignmentType.CENTER,
-        children: [new TextRun({ text: h.centerText || h.leftText || h.rightText, color: accent })],
+        children: [new TextRun({ text: `❦ ${center} ❦`, color: accent })],
         border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: accent } },
       }));
+    } else if (hfH.style === 'academic') {
+      headerChildren.push(new Paragraph({
+        tabStops: [{ type: TabStopType.RIGHT, position: 9360 }],
+        children: [
+          new TextRun({ text: L, bold: true, color: accent }),
+          ...(R ? [new TextRun({ text: `\t${R}`, color: accent, size: 20 })] : []),
+        ],
+        border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: accent } },
+      }));
+    } else if (hfH.style === 'plain') {
+      const center = hfH.centerText || (mirrored ? hfH.rightText || hfH.leftText : hfH.leftText || hfH.rightText);
+      if (center) {
+        headerChildren.push(new Paragraph({
+          alignment: AlignmentType.CENTER,
+          children: [new TextRun({ text: center, bold: true, color: accent })],
+        }));
+      }
     }
   }
-  const f = settings.footer;
-  const pnPrefix = settings.pageNumber.prefix;
-  const footerChildren: Paragraph[] = [];
-  if (f.enabled && f.style !== 'none') {
-    footerChildren.push(new Paragraph({
-      alignment: AlignmentType.CENTER,
-      children: [
-        ...(pnPrefix ? [new TextRun({ text: pnPrefix })] : []),
-        new TextRun({ children: [PageNumber.CURRENT] }),
-      ],
-      border: f.style === 'academic' ? { top: { style: BorderStyle.SINGLE, size: 4, color: accent } } : undefined,
-    }));
-  } else if (settings.pageNumber.enabled) {
-    footerChildren.push(new Paragraph({
-      alignment: AlignmentType.CENTER,
-      children: [
-        ...(pnPrefix ? [new TextRun({ text: pnPrefix })] : []),
-        new TextRun({ children: [PageNumber.CURRENT] }),
-      ],
+  // হেডারে নম্বর (top পজিশন)
+  if (num && pn.position.startsWith('top')) {
+    headerChildren.push(new Paragraph({
+      alignment: numAlign === AlignmentType.CENTER ? AlignmentType.CENTER : numAlign,
+      children: numberRuns(),
     }));
   }
-  return { header: new Header({ children: headerChildren.length ? headerChildren : [new Paragraph('')] }), footer: new Footer({ children: footerChildren.length ? footerChildren : [new Paragraph('')] }) };
+
+  const footerChildren: Paragraph[] = [];
+  if (showChrome && hfF.enabled && hfF.style !== 'none') {
+    const accentF = hexNoHash(hfF.accentColor) ?? accent;
+    const mirrored = pn.oddEven && pageIndex % 2 === 1;
+    const L = mirrored ? hfF.rightText : hfF.leftText;
+    const R = mirrored ? hfF.leftText : hfF.rightText;
+    if (hfF.style === 'royal') {
+      footerChildren.push(new Paragraph({
+        alignment: AlignmentType.CENTER,
+        children: [
+          new TextRun({ text: '❧ ', color: accentF }),
+          ...(num && pn.position.startsWith('bottom') ? numberRuns() : []),
+          new TextRun({ text: ' ❧', color: accentF }),
+        ],
+        border: { top: { style: BorderStyle.SINGLE, size: 4, color: accentF } },
+      }));
+    } else if (hfF.style === 'academic') {
+      footerChildren.push(new Paragraph({
+        tabStops: [{ type: TabStopType.RIGHT, position: 9360 }],
+        children: [
+          new TextRun({ text: L, color: accentF }),
+          ...(num && pn.position.startsWith('bottom') ? [new TextRun({ text: '\t', color: accentF }), ...numberRuns()] : []),
+          ...(R ? [new TextRun({ text: R, color: accentF, size: 20 })] : []),
+        ],
+        border: { top: { style: BorderStyle.SINGLE, size: 6, color: accentF } },
+      }));
+    } else if (hfF.style === 'parallel') {
+      footerChildren.push(new Paragraph({
+        tabStops: [{ type: TabStopType.RIGHT, position: 9360 }],
+        children: [
+          new TextRun({ text: L, color: accentF }),
+          ...(num && pn.position.startsWith('bottom') ? [new TextRun({ text: '\t', color: accentF }), ...numberRuns()] : []),
+          ...(R ? [new TextRun({ text: `\t${R}`, color: accentF })] : []),
+        ],
+        border: { top: { style: BorderStyle.SINGLE, size: 6, color: accentF } },
+      }));
+    } else if (hfF.style === 'plain') {
+      const center = hfF.centerText || (mirrored ? hfF.rightText || hfF.leftText : hfF.leftText || hfF.rightText);
+      footerChildren.push(new Paragraph({
+        alignment: AlignmentType.CENTER,
+        children: [
+          ...(center ? [new TextRun({ text: `${center}   `, color: accentF })] : []),
+          ...(num && pn.position.startsWith('bottom') ? numberRuns() : []),
+        ],
+      }));
+    }
+  } else if (num && pn.position.startsWith('bottom')) {
+    // ফুটার বন্ধ কিন্তু নম্বর bottom-এ চাই
+    footerChildren.push(new Paragraph({ alignment: numAlign, children: numberRuns() }));
+  }
+
+  return {
+    header: new Header({ children: headerChildren.length ? headerChildren : [new Paragraph('')] }),
+    footer: new Footer({ children: footerChildren.length ? footerChildren : [new Paragraph('')] }),
+  };
+}
+
+/**
+ * দূরবর্তী (http/https) ছবিগুলো base64 ডেটা-URL-এ রূপান্তর — নইলে Word
+ * এক্সপোর্টে সেগুলো চুপচাপ বাদ পড়ত। CORS-ব্লকড ছবি থাকলে যেমন আছে তেমন থাকে
+ * (বাকি কনটেন্ট অক্ষত থাকে)।
+ */
+async function inlineRemoteImages(html: string, cache: Map<string, string>): Promise<string> {
+  if (!html.includes('<img')) return html;
+  const dom = new DOMParser().parseFromString(`<div id="r">${html}</div>`, 'text/html');
+  const root = dom.getElementById('r');
+  if (!root) return html;
+  const remote = Array.from(root.querySelectorAll('img[src^="http://"], img[src^="https://"]'));
+  if (!remote.length) return html;
+  await Promise.all(remote.map(async (img) => {
+    const src = img.getAttribute('src') ?? '';
+    if (!src) return;
+    try {
+      let dataUrl = cache.get(src);
+      if (dataUrl === undefined) {
+        const res = await fetch(src, { mode: 'cors' });
+        if (!res.ok) throw new Error(String(res.status));
+        const blob = await res.blob();
+        dataUrl = await new Promise<string>((resolve, reject) => {
+          const fr = new FileReader();
+          fr.onload = () => resolve(String(fr.result));
+          fr.onerror = () => reject(fr.error);
+          fr.readAsDataURL(blob);
+        });
+        cache.set(src, dataUrl);
+      }
+      img.setAttribute('src', dataUrl);
+    } catch { /* আনা না গেলে যেমন আছে তেমন থাকবে */ }
+  }));
+  return root.innerHTML;
 }
 
 export interface DocxExportInput {
@@ -529,15 +649,57 @@ export async function exportProjectToDocx(input: DocxExportInput): Promise<void>
   const pageWidthTwip = Math.round((portrait ? size.w : size.h) * MM_TO_TWIP);
   const pageHeightTwip = Math.round((portrait ? size.h : size.w) * MM_TO_TWIP);
   const m = settings.margins;
-  const { header, footer } = headerFooterParas(settings, accent);
 
-  const children: Array<Paragraph | Table> = [];
+  // পেজ বর্ডার — অ্যাপের কনফিগ (রং/স্টাইল/প্রস্থ) অনুযায়ী (docx border size = ১/৮ pt)
+  const borderProps = settings.pageBorder !== 'none'
+    ? (() => {
+        const lineColor = hexNoHash(settings.pageBorderColor || '#1e293b') ?? '1E293B';
+        const lineStyle = effectivePageBorderStyle(settings) === 'double'
+          ? BorderStyle.DOUBLE
+          : effectivePageBorderStyle(settings) === 'dashed'
+            ? BorderStyle.DASHED
+            : BorderStyle.SINGLE;
+        const lineSize = PAGE_BORDER_WIDTH_PX[effectivePageBorderWidth(settings)] * 6;
+        const edge = { style: lineStyle, size: lineSize, color: lineColor, space: 24 };
+        return {
+          borders: {
+            pageBorders: {
+              display: PageBorderDisplay.ALL_PAGES,
+              offsetFrom: PageBorderOffsetFrom.TEXT,
+              zOrder: PageBorderZOrder.FRONT,
+            },
+            pageBorderTop: edge,
+            pageBorderRight: edge,
+            pageBorderBottom: edge,
+            pageBorderLeft: edge,
+          },
+        };
+      })()
+    : {};
 
-  pages.forEach((page, pageIdx) => {
+  // দূরবর্তী ছবি একবারই আনা হয় (একই URL বারবার থাকলে ক্যাশ)
+  const imgCache = new Map<string, string>();
+
+  // ── প্রতি পাতা = একটি Word-section — তাই per-page হেডার/ফুটার override,
+  //    কভারে কিছু না দেখানো ও বাংলা/রোমান পৃষ্ঠা নম্বর হুবহু মেলে ──
+  // খেয়াল: currentFootnotes মডিউল-স্টেট প্রতি পাতায় রিসেট হয় — তাই
+  // পাতাগুলো অবশ্যই পরপর (sequential) প্রসেস করতে হবে, Promise.all নয়।
+  const sections: Array<{
+    properties: object;
+    headers: { default: Header };
+    footers: { default: Footer };
+    children: Array<Paragraph | Table>;
+  }> = [];
+  for (let pageIdx = 0; pageIdx < pages.length; pageIdx++) {
+    const page = pages[pageIdx];
     currentFootnotes = [];
-    if (pageIdx > 0) {
-      children.push(new Paragraph({ children: [new PageBreak()] }));
-    }
+    const showChrome = page.kind !== 'cover' && !page.noChrome;
+    const effH = page.headerOverride ?? settings.header;
+    const effF = page.footerOverride ?? settings.footer;
+    const { header, footer } = headerFooterParas(effH, effF, settings, pageIdx, showChrome);
+
+    const children: Array<Paragraph | Table> = [];
+
     if (page.kind === 'cover' && page.coverData) {
       const c = page.coverData;
       const push = (text: string, opts: { size?: number; bold?: boolean; color?: string; spacingAfter?: number } = {}) => {
@@ -548,35 +710,59 @@ export async function exportProjectToDocx(input: DocxExportInput): Promise<void>
         }));
       };
       push('');
-      push(c.organization, { size: 26, color: accent });
+      push(c.organization, { size: 26, color: hexNoHash(c.accentColor) ?? accent });
       push('');
-      push(c.title || title, { size: 56, bold: true, color: accent });
+      push(c.title || title, { size: 56, bold: true, color: hexNoHash(c.accentColor) ?? accent });
       if (c.subtitle) push(c.subtitle, { size: 30 });
       push('');
       push(c.course, { size: 26 });
       push('');
       push(c.author, { size: 26 });
       push(c.year, { size: 22, color: '64748B' });
-      return;
-    }
-
-    const parser = new DOMParser();
-    const dom = parser.parseFromString(page.html || '<p></p>', 'text/html');
-    Array.from(dom.body.children).forEach((el) => {
-      children.push(...blockToDocx(el, {}, settings));
-    });
-
-    // ফুটনোট তালিকা
-    if (currentFootnotes.length) {
-      children.push(new Paragraph({ text: '─────', alignment: AlignmentType.CENTER, spacing: { before: 120, after: 60 } }));
-      currentFootnotes.forEach((note, i) => {
-        children.push(new Paragraph({
-          children: [new TextRun({ text: `${i + 1} `, superScript: true, bold: true }), new TextRun({ text: note, size: 18 })],
-          spacing: { after: 40 },
-        }));
+    } else {
+      const html = await inlineRemoteImages(page.html || '<p></p>', imgCache);
+      const parser = new DOMParser();
+      const dom = parser.parseFromString(html, 'text/html');
+      Array.from(dom.body.children).forEach((el) => {
+        children.push(...blockToDocx(el, {}, settings));
       });
+
+      // ফুটনোট তালিকা
+      if (currentFootnotes.length) {
+        children.push(new Paragraph({ text: '─────', alignment: AlignmentType.CENTER, spacing: { before: 120, after: 60 } }));
+        currentFootnotes.forEach((note, i) => {
+          children.push(new Paragraph({
+            children: [new TextRun({ text: `${i + 1} `, superScript: true, bold: true }), new TextRun({ text: note, size: 18 })],
+            spacing: { after: 40 },
+          }));
+        });
+      }
     }
-  });
+
+    // gutter — অ্যাপের gutterSide লজিকের মতো অজর/জোড় পাতায় বিপরীত পাশে
+    const pn = settings.pageNumber;
+    const gutterLeft = !(pn.oddEven && pageIdx % 2 === 1);
+    const leftIn = gutterLeft ? m.left + m.gutter : m.left;
+    const rightIn = gutterLeft ? m.right : m.right + m.gutter;
+
+    sections.push({
+      properties: {
+        page: {
+          size: { width: pageWidthTwip, height: pageHeightTwip },
+          margin: {
+            top: Math.round(m.top * INCH_TO_TWIP),
+            bottom: Math.round(m.bottom * INCH_TO_TWIP),
+            left: Math.round(leftIn * INCH_TO_TWIP),
+            right: Math.round(rightIn * INCH_TO_TWIP),
+          },
+          ...borderProps,
+        },
+      },
+      headers: { default: header },
+      footers: { default: footer },
+      children,
+    });
+  }
 
   const doc = new Document({
     title,
@@ -599,49 +785,7 @@ export async function exportProjectToDocx(input: DocxExportInput): Promise<void>
         }],
       }],
     },
-    sections: [{
-      properties: {
-        page: {
-          size: { width: pageWidthTwip, height: pageHeightTwip },
-          margin: {
-            top: Math.round(m.top * INCH_TO_TWIP),
-            bottom: Math.round(m.bottom * INCH_TO_TWIP),
-            left: Math.round(m.left * INCH_TO_TWIP),
-            right: Math.round(m.right * INCH_TO_TWIP),
-            gutter: Math.round(m.gutter * INCH_TO_TWIP),
-          },
-          // পেজ বর্ডার — অ্যাপের কনফিগ (রং/স্টাইল/প্রস্থ) অনুযায়ী (docx border size = ১/৮ pt)
-          ...(settings.pageBorder !== 'none'
-            ? (() => {
-                const lineColor = hexNoHash(settings.pageBorderColor || '#1e293b') ?? '1E293B';
-                const lineStyle = effectivePageBorderStyle(settings) === 'double'
-                  ? BorderStyle.DOUBLE
-                  : effectivePageBorderStyle(settings) === 'dashed'
-                    ? BorderStyle.DASHED
-                    : BorderStyle.SINGLE;
-                const lineSize = PAGE_BORDER_WIDTH_PX[effectivePageBorderWidth(settings)] * 6;
-                const edge = { style: lineStyle, size: lineSize, color: lineColor, space: 24 };
-                return {
-                  borders: {
-                    pageBorders: {
-                      display: PageBorderDisplay.ALL_PAGES,
-                      offsetFrom: PageBorderOffsetFrom.TEXT,
-                      zOrder: PageBorderZOrder.FRONT,
-                    },
-                    pageBorderTop: edge,
-                    pageBorderRight: edge,
-                    pageBorderBottom: edge,
-                    pageBorderLeft: edge,
-                  },
-                };
-              })()
-            : {}),
-        },
-      },
-      headers: { default: header },
-      footers: { default: footer },
-      children,
-    }],
+    sections,
   });
 
   const blob = await Packer.toBlob(doc);

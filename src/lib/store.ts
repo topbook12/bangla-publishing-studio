@@ -415,16 +415,20 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
     const idx = pages.findIndex((p) => p.id === pageId);
     if (idx < 0) return;
     pages[idx] = { ...pages[idx], html: keptHtml || '<p></p>' };
+    // কভার পাতায় (kind !== 'normal') কনটেন্ট ঢালা যাবে না — কভারের html
+    // কখনোই রেন্ডার হয় না, ওখানে লিখলে লেখা চিরতরে হারিয়ে যেত।
+    // সঙ্গে সঙ্গের পাতা normal না হলে বর্তমান পাতার পরেই নতুন normal পাতা ঢোকানো হয়।
     const nextIdx = idx + 1;
-    if (nextIdx < pages.length) {
+    if (nextIdx < pages.length && pages[nextIdx].kind === 'normal') {
       pages[nextIdx] = { ...pages[nextIdx], html: overflowHtml + pages[nextIdx].html };
     } else {
-      pages.push({
+      const newPage: PageData = {
         id: newId('pg'),
         kind: 'normal',
         html: overflowHtml || '<p></p>',
         noChrome: false,
-      });
+      };
+      pages.splice(nextIdx, 0, newPage);
     }
     set({ pages });
     touch(get);

@@ -34,8 +34,8 @@ import { designExtensions } from './design-ext';
 import { BlockMover } from './block-mover';
 import { fillFromNextPage, flowIfOverflow, mergeWithPreviousPage, pageBreakOnEditor } from './page-ops';
 import { StaticContent } from './static-content';
+import { pageFontStyle } from './page-chrome';
 import type { PageData } from '@/lib/types';
-import { fontStackOf } from '@/lib/paper';
 
 /** ডকুমেন্টের প্রথম টেক্সটব্লকে কার্সর নেওয়ার অবস্থান */
 function firstTextblockPos(editor: Editor): number | null {
@@ -76,6 +76,8 @@ export function PageEditor({ page, index, isFirstPage }: PageEditorProps) {
   const lastEmittedRef = useRef<string>(page.html);
   const flowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [mounted, setMounted] = useState(index < 6);
+  // অটো-ফ্লো বন্ধ থাকলে উপচে পড়া কনটেন্টের লাল সতর্কতা (প্রিন্টে কাটা পড়বে)
+  const [overflowing, setOverflowing] = useState(false);
 
   const settings = useEditorStore((s) => s.settings);
 
@@ -111,6 +113,9 @@ export function PageEditor({ page, index, isFirstPage }: PageEditorProps) {
       const contentEl = contentRef.current;
       if (!contentEl || !editorRef.current) return;
       flowIfOverflow(editorRef.current, page.id, contentEl.clientHeight);
+      // অটো-ফ্লো বন্ধ থাকলে উপচে পড়া লেখা নিঃশব্দে কাটা পড়ে — লাল দাগ দেখাই
+      const pmEl = editorRef.current.view.dom as HTMLElement | null;
+      setOverflowing(Boolean(pmEl && pmEl.scrollHeight > contentEl.clientHeight + 4));
     }, 350);
   }, [page.id]);
 
@@ -258,15 +263,8 @@ export function PageEditor({ page, index, isFirstPage }: PageEditorProps) {
 
   if (!mounted) {
     return (
-      <div ref={wrapperRef} className="page-editor-shell">
-        <div
-          className="bwp-static-wrap"
-          style={{
-            fontFamily: fontStackOf(settings.defaultFont),
-            fontSize: `${settings.defaultFontSize}pt`,
-            lineHeight: settings.lineHeight,
-          }}
-        >
+      <div ref={wrapperRef} className={`page-editor-shell${overflowing ? ' is-overflowing' : ''}`}>
+        <div className="bwp-static-wrap" style={pageFontStyle(settings)}>
           <StaticContent html={page.html} />
         </div>
       </div>
@@ -274,7 +272,7 @@ export function PageEditor({ page, index, isFirstPage }: PageEditorProps) {
   }
 
   return (
-    <div ref={wrapperRef} className="page-editor-shell">
+    <div ref={wrapperRef} className={`page-editor-shell${overflowing ? ' is-overflowing' : ''}`}>
       <div ref={contentRef} className="page-editor-inner">
         <EditorContent editor={editor} className="h-full" />
       </div>
