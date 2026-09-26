@@ -18,6 +18,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { RibbonButton, RibbonDivider, RibbonGroup, runCommand, useActiveEditor } from './ribbon-shell';
 import { FONT_OPTIONS, FONT_SIZE_OPTIONS, COLOR_SWATCHES, HIGHLIGHT_SWATCHES, fontStackOf } from '@/lib/paper';
 import { toBanglaNumber } from '@/lib/bangla';
+import { useEditorStore } from '@/lib/store';
 import { cn } from '@/lib/utils';
 
 function FontFamilySelect() {
@@ -133,21 +134,32 @@ function ColorPicker() {
 }
 
 function LineHeightSelect() {
+  const ed = useActiveEditor();
+  const defaultLineHeight = useEditorStore((s) => s.settings.lineHeight);
   const options = ['1', '1.15', '1.3', '1.5', '1.75', '2', '2.5'];
+  // ট্রিগারে সিলেকশনের বর্তমান লাইন-হাইট দেখাই — আগে সবসময় "1.0▾" লেখা থাকত
+  const current = (() => {
+    if (!ed || ed.isDestroyed) return null;
+    try {
+      const lh = ed.getAttributes('paragraph').lineHeight as string | number | undefined;
+      return lh !== undefined && lh !== null ? String(lh) : null;
+    } catch { return null; }
+  })();
+  const shown = current ?? String(defaultLineHeight);
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button type="button" className="ribbon-select w-16 justify-center" title="Line Height">
-          1.0▾
+          {toBanglaNumber(shown)}▾
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
         {options.map((v) => (
-          <DropdownMenuItem key={v} onClick={() => runCommand((ed) => ed.chain().focus().setLineHeight(v).run())}>
+          <DropdownMenuItem key={v} onClick={() => runCommand((ed2) => ed2.chain().focus().setLineHeight(v).run())}>
             {toBanglaNumber(v)}
           </DropdownMenuItem>
         ))}
-        <DropdownMenuItem onClick={() => runCommand((ed) => ed.chain().focus().unsetLineHeight().run())}>
+        <DropdownMenuItem onClick={() => runCommand((ed2) => ed2.chain().focus().unsetLineHeight().run())}>
           Default
         </DropdownMenuItem>
       </DropdownMenuContent>

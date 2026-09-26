@@ -41,7 +41,8 @@ function inlineNodes(node: Node, keyPrefix: string): ReactNode[] {
         out.push(<br key={key} />);
         break;
       case 'SUP':
-        if (el.classList.contains('footnote') && el.getAttribute('data-note')) {
+        if (el.classList.contains('footnote')) {
+          // নোট খালি হলেও লাইভ এডিটরের মতোই ▾ গ্লিফ দেখাতে হবে
           out.push(
             <sup key={key} className="footnote" title={el.getAttribute('data-note') ?? ''}>
               <span aria-hidden="true">▾</span>
@@ -55,24 +56,30 @@ function inlineNodes(node: Node, keyPrefix: string): ReactNode[] {
         out.push(<sub key={key}>{inlineNodes(el, key)}</sub>);
         break;
       case 'A':
-        out.push(<a key={key} href={el.getAttribute('href') ?? '#'}>{inlineNodes(el, key)}</a>);
+        out.push(
+          <a
+            key={key}
+            href={el.getAttribute('href') ?? '#'}
+            target={el.getAttribute('target') ?? undefined}
+            rel={el.getAttribute('target') === '_blank' ? 'noreferrer' : undefined}
+          >
+            {inlineNodes(el, key)}
+          </a>,
+        );
         break;
       case 'IMG': {
-        // লাইভ এডিটরের মতো সাইজ/ফ্লোট — data-width/height (+style) না বহাল করলে
-        // ছবি ন্যাচারাল সাইজে রেন্ডার করে পাতার লেআউট এদিক-ওদিক হয়ে যেত
+        // লাইভ এডিটরের renderHTML style অ্যাট্রিবিউটেই imageLayoutStyle-এর আউটপুট
+        // থাকে (width/height/float/align/framed) — পুরো style বহাল করলেই
+        // স্ট্যাটিক প্রিভিউ লাইভ পাতার হুবহু হয় (আগে float মার্জিন 12px ভুল ছিল,
+        // data-align সেন্টারিং ও framed বর্ডার হারিয়ে যেত)
         const imgEl = child as HTMLImageElement;
-        const styleAttr = imgEl.getAttribute('style') ?? '';
+        const imgCss: React.CSSProperties = {
+          ...(cssTextToStyle(imgEl.getAttribute('style') ?? '') as React.CSSProperties),
+        };
         const w = imgEl.getAttribute('data-width') ?? imgEl.getAttribute('width');
         const h = imgEl.getAttribute('data-height') ?? imgEl.getAttribute('height');
-        const imgCss: React.CSSProperties = {};
-        if (w) imgCss.width = /^\d+(\.\d+)?$/.test(w) ? `${Number(w)}px` : w;
-        if (h) imgCss.height = /^\d+(\.\d+)?$/.test(h) ? `${Number(h)}px` : h;
-        const floatMatch = /float:\s*(left|right)/.exec(styleAttr);
-        if (floatMatch) {
-          imgCss.float = floatMatch[1] as 'left' | 'right';
-          const marginSide = floatMatch[1] === 'left' ? 'marginRight' : 'marginLeft';
-          imgCss[marginSide] = 12;
-        }
+        if (!imgCss.width && w) imgCss.width = /^\d+(\.\d+)?$/.test(w) ? `${Number(w)}px` : w;
+        if (!imgCss.height && h) imgCss.height = /^\d+(\.\d+)?$/.test(h) ? `${Number(h)}px` : h;
         out.push(
           <img
             key={key}
@@ -120,10 +127,12 @@ function inlineNodes(node: Node, keyPrefix: string): ReactNode[] {
         const colorMatch = /color:\s*([^;]+)/.exec(style);
         const bgMatch = /background(?:-color)?:\s*([^;]+)/.exec(style);
         const sizeMatch = /font-size:\s*([^;]+)/.exec(style);
+        const ffMatch = /font-family:\s*([^;]+)/.exec(style);
         const css: React.CSSProperties = {};
         if (colorMatch) css.color = colorMatch[1].trim();
         if (bgMatch) css.backgroundColor = bgMatch[1].trim();
         if (sizeMatch) css.fontSize = sizeMatch[1].trim();
+        if (ffMatch) css.fontFamily = ffMatch[1].trim();
         out.push(
           <span key={key} style={css}>{inlineNodes(el, key)}</span>,
         );
@@ -131,6 +140,69 @@ function inlineNodes(node: Node, keyPrefix: string): ReactNode[] {
       }
       default:
         out.push(<span key={key}>{inlineNodes(el, key)}</span>);
+    }
+  });
+  return out;
+}
+
+/** একটি <tr> রেন্ডার — সেলের data-bg/data-v-align/colspan/rowspan বহাল থাকে */
+function renderRow(el: Element, key: string): ReactNode {
+  const cells = Array.from(el.children).map((c, ci) => {
+    const Tag = (c.tagName === 'TH' ? 'th' : 'td') as 'th' | 'td';
+    const cellEl = c as HTMLElement;
+    // সেল স্টাইল (table-cell-bg.ts) — data-bg/data-v-align না নিলে
+    // স্ট্যাটিক প্রিভিউ/প্রিন্টে সেলের রঙ হারিয়ে যেত
+    const css: React.CSSProperties = {};
+    const bg = cellEl.getAttribute('data-bg');
+    if (bg) css.backgroundColor = bg;
+    const vAlign = cellEl.getAttribute('data-v-align');
+    if (vAlign) css.verticalAlign = vAlign as React.CSSProperties['verticalAlign'];
+    const colspan = cellEl.getAttribute('colspan');
+    const rowspan = cellEl.getAttribute('rowspan');
+    return (
+      <Tag
+        key={ci}
+        style={{ ...(cssTextToStyle(cellEl.getAttribute('style') ?? '') as React.CSSProperties), ...css }}
+        colSpan={colspan ? Number(colspan) : undefined}
+        rowSpan={rowspan ? Number(rowspan) : undefined}
+      >
+        {blockNodes(c, `${key}-c${ci}`)}
+      </Tag>
+    );
+  });
+  return <tr key={key}>{cells}</tr>;
+}
+
+/**
+ * টেবিলের শিশুগুলো DOM-বৈধ গঠনে ম্যাপ — colgroup/tbody/thead/tfoot তাদের
+ * নিজস্ব ট্যাগেই, খোলা <tr> থাকলে tbody-তে মুড়ে। (React `<tr>`-কে সরাসরি
+ * `<table>`-এর সন্তান হিসেবে দিলে hydration সতর্কতা ও গঠন-ভাঙা হয়।)
+ */
+function tableChildren(table: Element, keyPrefix: string): ReactNode[] {
+  const out: ReactNode[] = [];
+  Array.from(table.children).forEach((el, i) => {
+    const key = `${keyPrefix}-t${i}`;
+    switch (el.tagName) {
+      case 'COLGROUP':
+        // TipTap-জেনারেটেড (ব্যবহারকারী কনটেন্ট নয়) — সরাসরি বহাল
+        out.push(<colgroup key={key} dangerouslySetInnerHTML={{ __html: el.innerHTML }} />);
+        break;
+      case 'THEAD': case 'TBODY': case 'TFOOT': {
+        const Tag = el.tagName.toLowerCase() as 'tbody';
+        out.push(
+          <Tag key={key}>
+            {Array.from(el.children).map((tr, ri) =>
+              tr.tagName === 'TR' ? renderRow(tr, `${key}-r${ri}`) : null,
+            )}
+          </Tag>,
+        );
+        break;
+      }
+      case 'TR':
+        out.push(<tbody key={key}>{renderRow(el, key)}</tbody>);
+        break;
+      default:
+        break;
     }
   });
   return out;
@@ -162,21 +234,15 @@ function blockNodes(container: Element, keyPrefix: string): ReactNode[] {
         out.push(<blockquote key={key}>{blockNodes(el, key)}</blockquote>);
         break;
       case 'TABLE':
+        // আগে tbody default কেসে <div> এ মুড়িয়ে যেত → table>tbody>div>tr
+        // অবৈধ গঠন, কলাম সারিবদ্ধতা ভাঙত এবং সেই ভাঙা টেবিলই প্রিন্ট/এক্সপোর্টে
+        // যেত (৭+ পাতার সব টেবিল!)। এখন DOM-বৈধ গঠনে সরাসরি ম্যাপ।
         out.push(
-          <table key={key}>
-            <tbody>{blockNodes(el, key)}</tbody>
+          <table key={key} style={(cssTextToStyle(el.getAttribute('style') ?? '') as unknown) as React.CSSProperties}>
+            {tableChildren(el, key)}
           </table>,
         );
         break;
-      case 'TR': {
-        const cells = Array.from(el.children).map((c, ci) =>
-          c.tagName === 'TH'
-            ? <th key={ci}>{blockNodes(c, `${key}-c${ci}`)}</th>
-            : <td key={ci}>{blockNodes(c, `${key}-c${ci}`)}</td>,
-        );
-        out.push(<tr key={key}>{cells}</tr>);
-        break;
-      }
       case 'DIV': {
         if (el.classList.contains('doc-shape')) {
           const attrs = readShapeAttrs(el);

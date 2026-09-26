@@ -203,9 +203,9 @@ h1, h2, h3, h4 { page-break-after: avoid; break-after: avoid; }
 }
 `;
 
-/** অজর-জোড় মিররিং — page-chrome.tsx mirrorIfEven-এর সাথে মিল রেখে */
-function mirrorIfEven(index: number, oddEven: boolean): boolean {
-  return oddEven && index % 2 === 1;
+/** অজর-জোড় মিররিং — page-chrome.tsx mirrorIfEven-এর সাথে মিল রেখে (startAt-সচেতন) */
+function mirrorIfEven(index: number, oddEven: boolean, startAt: number): boolean {
+  return oddEven && (startAt + index) % 2 === 0;
 }
 
 /** centerFallback — plain/royal-এর কেন্দ্রীয় টেক্সট (page-chrome.tsx-এর সাথে মিল রেখে) */
@@ -240,7 +240,7 @@ function chromeHtml(
     return { headerHtml: '', footerHtml: '' };
   }
 
-  const mirrored = mirrorIfEven(index, pn.oddEven);
+  const mirrored = mirrorIfEven(index, pn.oddEven, pn.startAt);
   const hfH = page.headerOverride ?? settings.header;
   const hfF = page.footerOverride ?? settings.footer;
   const num = displayNumber(index, pn);
@@ -249,8 +249,11 @@ function chromeHtml(
   const numInFooter = pn.enabled && pn.position.startsWith('bottom');
 
   // ─── হেডার ───
+  // অ্যাপের PageHeader-এর মতো: style 'none' বা বন্ধ হলে হেডার সম্পূর্ণ বাদ
+  // (আগে বন্ধ হলেও top-নম্বর এক্সপোর্টে দেখাত — স্ক্রিনের সাথে অমিল)
+  const headerOff = !hfH.enabled || hfH.style === 'none';
   let headerHtml = '';
-  if (hfH.enabled) {
+  if (!headerOff) {
     const accent = hfH.accentColor;
     const L = mirrored ? hfH.rightText : hfH.leftText;
     const R = mirrored ? hfH.leftText : hfH.rightText;
@@ -285,15 +288,14 @@ function chromeHtml(
         break;
     }
   }
-  // হেডারে নম্বর (top পজিশন) — plain হলে নম্বর হেডারের সাথেই
-  if (numInHeader && num) {
+  // হেডারে নম্বর (top পজিশন) — plain হলে নম্বর হেডারের সাথেই;
+  // হেডার বন্ধ/নেই হলে অ্যাপের PageHeader পুরোপুরি null দেয় — এক্সপোর্টও তাই
+  if (numInHeader && num && !headerOff) {
     const nHtml = numberSpan(num, pn, hfH.accentColor);
-    if (hfH.enabled && hfH.style === 'plain') {
+    if (hfH.style === 'plain') {
       headerHtml = `<div class="page-header" style="text-align:${numAlign}">${headerHtml}<div style="font-size:${hfH.fontSize}pt">${nHtml}</div></div>`;
-    } else if (hfH.enabled && hfH.style !== 'none') {
-      headerHtml = `<div class="page-header" style="font-size:${hfH.fontSize}pt">${headerHtml}<div class="page-number-overlay" style="text-align:${numAlign}">${nHtml}</div></div>`;
     } else {
-      headerHtml = `<div class="page-header" style="font-size:${hfH.fontSize}pt"><div class="page-number-overlay" style="text-align:${numAlign}">${nHtml}</div></div>`;
+      headerHtml = `<div class="page-header" style="font-size:${hfH.fontSize}pt">${headerHtml}<div class="page-number-overlay" style="text-align:${numAlign}">${nHtml}</div></div>`;
     }
   } else if (headerHtml) {
     headerHtml = `<div class="page-header" style="font-size:${hfH.fontSize}pt">${headerHtml}</div>`;
@@ -301,7 +303,10 @@ function chromeHtml(
 
   // ─── ফুটার ───
   let footerInner = '';
-  if (hfF.enabled) {
+  // অ্যাপের PageFooter-এর মতো: style 'none' হলে ফুটার-বার বন্ধ,
+  // শুধু bottom-নম্বর (চালু থাকলে) দেখায়
+  const footerOff = !hfF.enabled || hfF.style === 'none';
+  if (!footerOff) {
     const accent = hfF.accentColor;
     const L = mirrored ? hfF.rightText : hfF.leftText;
     const R = mirrored ? hfF.leftText : hfF.rightText;
@@ -345,8 +350,9 @@ function chromeHtml(
       default:
         break;
     }
-  } else if (numInFooter && num) {
-    // ফুটার বন্ধ কিন্তু নম্বর bottom-এ চাই
+  }
+  if (!footerInner && numInFooter && num) {
+    // ফুটার বন্ধ/নেই কিন্তু নম্বর bottom-এ চাই — অ্যাপের PageFooter-এর ফলব্যাকের মতোই
     const justify = numAlign === 'left' ? 'flex-start' : numAlign === 'right' ? 'flex-end' : 'center';
     footerInner = `<div class="ftr-plain" style="justify-content:${justify}">${numberSpan(num, pn, hfF.accentColor)}</div>`;
   }
@@ -423,8 +429,9 @@ export function buildStandaloneHtml(title: string, settings: DocumentSettings, p
   const gutter = m.gutter;
 
   const pageHtmls = pages.map((page, index) => {
-    // gutter side — pagenum.ts gutterSide-এর সাথে মিল রেখে
-    const side = settings.pageNumber.oddEven && index % 2 === 1 ? 'right' : 'left';
+    // gutter side — pagenum.ts gutterSide-এর সাথে মিল রেখে (startAt-সচেতন প্যারিটি)
+    const startAt = settings.pageNumber.startAt;
+    const side = settings.pageNumber.oddEven && (startAt + index) % 2 === 0 ? 'right' : 'left';
     const leftM = side === 'left' ? m.left + gutter : m.left;
     const rightM = side === 'right' ? m.right + gutter : m.right;
     const padding = `${m.top}in ${rightM}in ${m.bottom}in ${leftM}in`;

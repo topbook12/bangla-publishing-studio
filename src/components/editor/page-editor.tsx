@@ -32,7 +32,7 @@ import { registerEditor, unregisterEditor } from '@/lib/editor-registry';
 import { customExtensions } from './extensions';
 import { designExtensions } from './design-ext';
 import { BlockMover } from './block-mover';
-import { fillFromNextPage, flowIfOverflow, mergeWithPreviousPage, pageBreakOnEditor } from './page-ops';
+import { fillFromNextPage, flowIfOverflow, mergeWithPreviousPage, pageBreakOnEditor, replaceDocNoHistory } from './page-ops';
 import { StaticContent } from './static-content';
 import { pageFontStyle } from './page-chrome';
 import type { PageData } from '@/lib/types';
@@ -129,16 +129,24 @@ export function PageEditor({ page, index, isFirstPage }: PageEditorProps) {
         },
         Backspace: () => {
           const { selection } = this.editor.state;
-          if (selection.empty && selection.from === 0 && !isFirstPage) {
+          // টেক্সট-কার্সরের ন্যূনতম পজিশন ১ (প্রথম টেক্সটব্লকের শুরু) — পুরনো
+          // from === 0 শর্ত শুধু GapCursor-এ মিলত, তাই টেক্সট পাতায় মার্জ কাজ করত না।
+          const start = firstTextblockPos(this.editor);
+          const atVeryStart = selection.empty && (selection.from === 0 || selection.from === start);
+          if (atVeryStart && !isFirstPage) {
             mergeWithPreviousPage(this.editor, page.id);
             return true;
           }
           return false;
         },
         Delete: () => {
-          const { selection } = this.editor.state;
-          const atEnd = selection.empty && selection.from >= this.editor.state.doc.content.size;
-          if (atEnd) {
+          const { selection, doc } = this.editor.state;
+          // টেক্সট-কার্সরের সর্বোচ্চ পজিশন content.size - ১ — পুরনো
+          // from >= content.size শর্ত শুধু GapCursor-এ মিলত, তাই টেক্সট পাতায় টানা কাজ করত না।
+          const $from = selection.$from;
+          const atTextEnd = selection.from === doc.content.size - 1 && $from.parentOffset === $from.parent.content.size;
+          const atGapEnd = selection.from >= doc.content.size;
+          if (selection.empty && (atTextEnd || atGapEnd)) {
             // পরের পাতা থেকে ফাঁকা জায়গামতো কনটেন্ট টেনে আনা (পুরো পাতা নয়)
             void fillFromNextPage(this.editor, page.id, contentRef.current?.clientHeight ?? 0);
             return true;
@@ -232,7 +240,10 @@ export function PageEditor({ page, index, isFirstPage }: PageEditorProps) {
     const html = page.html || '<p></p>';
     const t = window.setTimeout(() => {
       if (editor.isDestroyed) return;
-      editor.commands.setContent(html, false);
+      // আন্ডু-হিস্টরির বাইরে — বাইরের স্টোর-সিঙ্ক (থিম/স্প্লিট/মার্জ) ব্যবহারকারীর
+      // সম্পাদনা নয়; নইলে একটি Ctrl+Z পুরো ডক পুরনো অবস্থায় ফিরিয়ে অন্য পাতার
+      // কপির সাথে ডুপ্লিকেশন ঘটাত
+      replaceDocNoHistory(editor, html);
       normalizeInitialSelection(editor);
     }, 0);
     return () => window.clearTimeout(t);

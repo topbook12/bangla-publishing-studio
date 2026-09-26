@@ -29,6 +29,7 @@ function PageMenu({ pageId, index }: { pageId: string; index: number }) {
   const duplicatePage = useEditorStore((s) => s.duplicatePage);
   const movePage = useEditorStore((s) => s.movePage);
   const updatePage = useEditorStore((s) => s.updatePage);
+  const totalPages = useEditorStore((s) => s.pages.length);
 
   return (
     <DropdownMenu>
@@ -71,7 +72,7 @@ function PageMenu({ pageId, index }: { pageId: string; index: number }) {
         <DropdownMenuItem onClick={() => movePage(pageId, -1)} disabled={index === 0}>
           <ArrowUp size={14} /> উপরে সরান
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => movePage(pageId, 1)}>
+        <DropdownMenuItem onClick={() => movePage(pageId, 1)} disabled={index >= totalPages - 1}>
           <ArrowDown size={14} /> নিচে সরান
         </DropdownMenuItem>
         <DropdownMenuSeparator />
@@ -126,6 +127,25 @@ export function Workspace() {
     const handler = () => flushSave();
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
+  }, []);
+
+  // Ctrl+S — হেল্প-গাইডে "সেভ" হিসেবে ডকুমেন্টেড; হ্যান্ডলার না থাকলে
+  // ব্রাউজারের "Save page as…" ডায়ালগ খুলে বিভ্রান্তি হত
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && (e.key === 's' || e.key === 'S')) {
+        e.preventDefault();
+        void flushSave().then(() => {
+          const cur = useEditorStore.getState();
+          if (cur.saveState.status !== 'error') {
+            cur.setSaveState({ status: 'saved', at: Date.now() });
+          }
+          toast.success('সংরক্ষিত হয়েছে — অটোসেভ সবসময় চালু আছে');
+        });
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, []);
 
   // ছোট স্ক্রিনে পৃষ্ঠা স্ক্রিনের প্রস্থে ফিট করা

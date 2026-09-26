@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import "./forma-print.css";
-import { Toaster } from "@/components/ui/toaster";
 import PwaRegister from "@/components/pwa-register";
 import { SonnerToaster } from "@/components/sonner-toaster";
 
@@ -57,7 +56,8 @@ export const viewport: Viewport = {
   themeColor: "#4f46e5",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
+  // maximumScale: 1 সরানো হলো — এটা অ্যান্ড্রয়েডে পিঞ্চ-জুম বন্ধ করে দিত
+  // (বই-পড়া/সম্পাদনা অ্যাপে জুম অ্যাক্সেসিবিলিটি বেসলাইন; iOS আগেই এডিট করত না)
 };
 
 export default function RootLayout({
@@ -86,7 +86,7 @@ export default function RootLayout({
       </head>
       <body className="antialiased bg-background text-foreground">
         {children}
-        <Toaster />
+        {/* টোস্ট সিস্টেম Sonner — পুরনো shadcn Toaster (use-toast) এমিটার-শূন্য ছিল, বাদ */}
         <SonnerToaster />
         <PwaRegister />
       </body>

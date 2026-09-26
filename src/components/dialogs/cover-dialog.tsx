@@ -28,8 +28,17 @@ const STYLES: Array<{ id: CoverData['style']; name: string }> = [
 
 export function CoverDialog() {
   const openDialog = useUiStore((s) => s.openDialog);
-  const close = useUiStore((s) => s.close);
   const open = openDialog === 'cover';
+  // key-remount প্যাটার্ন (app-header RenameDialog-এর মতোই) — খোলা/বন্ধ টগলে
+  // ভেতরের কম্পোনেন্ট নতুন করে মাউন্ট হয়, ফলে useState প্রতিবার বর্তমান
+  // প্রজেক্টের কভার-ডেটা দিয়ে শুরু হয়। আগে কম্পোনেন্ট সবসময় মাউন্টেড থেকে
+  // প্রথম রেন্ডারের ভ্যালুতে আটকে থাকত — বই পরিবর্তনের পর "হালনাগাদ করুন"
+  // চাপলে পুরনো/অন্য বইয়ের ডেটা দিয়ে বর্তমান কভার মুছে ফেলত।
+  return <CoverDialogBody key={open ? 'open' : 'closed'} open={open} />;
+}
+
+function CoverDialogBody({ open }: { open: boolean }) {
+  const close = useUiStore((s) => s.close);
   const title = useEditorStore((s) => s.title);
   const addCoverPage = useEditorStore((s) => s.addCoverPage);
   const pages = useEditorStore((s) => s.pages);

@@ -56,7 +56,12 @@ export function ReviewDialog() {
     return list;
   }, [scanned, open, pages]);
 
-  const filteredHits = hits.filter((h) => h.word.includes(filter));
+  // dictVersion-নির্ভর — "অভিধানে যোগ" করলেই সেই শব্দের সারি সঙ্গে সঙ্গে তালিকা থেকে বাদ যায়
+  // (আগে বোতাম শুধু গায়েব হতো, সারি পড়ে থাকত + মোট গণনা বদলাত না)
+  const filteredHits = useMemo(
+    () => hits.filter((h) => h.word.includes(filter) && !isWordKnown(h.word)),
+    [hits, filter, dictVersion],
+  );
 
   const customWords = useMemo(() => Array.from(getCustomDict()).slice(0, 60), [scanned, dictVersion]);
 

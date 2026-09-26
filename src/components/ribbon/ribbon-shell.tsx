@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import { useEditorStore } from '@/lib/store';
 import { getEditor } from '@/lib/editor-registry';
 import type { RibbonTab } from '@/lib/types';
+import { toast } from 'sonner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { HomeTab } from './home-tab';
 import { InsertTab } from './insert-tab';
@@ -128,12 +129,18 @@ export function RibbonButton({ icon: Icon, label, onClick, active, disabled, tit
 
 /** Helper to run a command on the active editor */
 export function runCommand(fn: (editor: NonNullable<ReturnType<typeof getEditor>>) => void): void {
-  const { activePageId } = useEditorStore.getState();
+  const { activePageId, pages } = useEditorStore.getState();
   const editor = getEditor(activePageId);
   if (!editor || editor.isDestroyed) {
-    // No focused page — fall back to the first mounted editor
-    const anyEditor = [...useEditorStore.getState().pages].map((p) => getEditor(p.id)).find(Boolean);
-    if (anyEditor && !anyEditor.isDestroyed) fn(anyEditor);
+    const activePage = pages.find((p) => p.id === activePageId);
+    if (activePage && activePage.kind !== 'normal') {
+      // কভার পাতায় এডিটর নেই — নীরবে প্রথম মাউন্ট করা পাতায় ফরম্যাট চাপার বদলে স্পষ্ট বার্তা
+      toast.info('কভার পাতায় ফরম্যাট/সন্নিবেশ প্রযোজ্য নয়');
+      return;
+    }
+    // সক্রিয় পাতার এডিটর মাউন্ট নেই (দূরের পাতা) — ভুল পাতায় ফরম্যাট গেলে
+    // ব্যবহারকারী বুঝতই না; স্পষ্ট বার্তা দেখাই
+    toast.info('পাতাটি এখন খোলা নেই — আগে পাতাটিতে স্ক্রল করুন');
     return;
   }
   editor.commands.focus();

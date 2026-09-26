@@ -691,13 +691,13 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
             closeAndRun((editor) => {
               const clipboard = navigator.clipboard;
               if (!clipboard?.readText) {
-                toast.error('Press Ctrl+V to paste');
+                toast.error('এই ব্রাউজার ক্লিপবোর্ড পড়তে দেয় না — Ctrl+V চাপুন');
                 return;
               }
               clipboard
                 .readText()
                 .then((text) => insertPlainText(editor, text))
-                .catch(() => toast.error('Press Ctrl+V to paste'));
+                .catch(() => toast.error('ক্লিপবোর্ড পড়া গেল না — Ctrl+V চাপুন'));
             }),
         },
         { id: 'select-all', label: 'Select All', icon: TextCursorInput, shortcut: 'Ctrl+A', onSelect: () => closeAndRun((editor) => { editor.chain().focus().selectAll().run(); }) },

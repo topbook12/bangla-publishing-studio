@@ -227,7 +227,13 @@ export function HeaderFooterDialog() {
                 value={pn.startAt}
                 min={0}
                 max={999}
-                onChange={(e) => update({ pageNumber: { ...pn, startAt: Math.max(0, Math.min(999, Number(e.target.value) || 1)) } })}
+                onChange={(e) => {
+                  // নম্বর-ইনপুটে ০ টাইপ করলে || 1 এটাকে ১-এ ফেলে দিত — min={0}
+                  // বিজ্ঞাপিত মান অনুযায়ী ০ সমর্থিত (শুধু অসংখ্য/খালি হলে ১)
+                  const n = Number(e.target.value);
+                  const safe = Number.isFinite(n) ? Math.max(0, Math.min(999, Math.floor(n))) : 1;
+                  update({ pageNumber: { ...pn, startAt: safe } });
+                }}
               />
             </div>
             <div className="space-y-1">

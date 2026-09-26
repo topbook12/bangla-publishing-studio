@@ -15,6 +15,10 @@ import {
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -98,6 +102,8 @@ export function AppHeader() {
   const openDialog = useUiStore((s) => s.open);
 
   const [renameOpen, setRenameOpen] = useState(false);
+  // পুরো বই ডিলিট = সবচেয়ে বিপজ্জনক অ্যাকশন — এক ক্লিকে চুপচাপ নয়, নিশ্চিতকরণ নিই
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
   const now = formatPageNumber(new Date().getDate(), 'bangla');
 
   return (
@@ -162,7 +168,11 @@ export function AppHeader() {
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-red-600 focus:text-red-600"
-              onClick={() => projectId && void removeProject(projectId)}
+              disabled={!projectId}
+              onSelect={(e) => {
+                e.preventDefault(); // মেনু বন্ধ হওয়ার পরে ডায়ালগ খুলবে
+                setDeleteConfirm(true);
+              }}
             >
               <Trash2 size={14} /> Delete This Book
             </DropdownMenuItem>
@@ -201,6 +211,28 @@ export function AppHeader() {
       </div>
 
       <RenameDialog key={renameOpen ? 'open' : 'closed'} open={renameOpen} onClose={() => setRenameOpen(false)} />
+
+      <AlertDialog open={deleteConfirm} onOpenChange={setDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>পুরো বইটি মুছে ফেলবেন?</AlertDialogTitle>
+            <AlertDialogDescription>
+              “{title}” বইটির সব পাতা ও সেটিংস স্থায়ীভাবে মুছে যাবে — এটি আর ফেরানো যাবে না।
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>বাতিল</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-600"
+              onClick={() => {
+                if (projectId) void removeProject(projectId);
+              }}
+            >
+              হ্যাঁ, মুছে ফেলুন
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </header>
   );
 }

@@ -27,13 +27,15 @@ export function showFooter(index: number, page: PageData, pn: PageNumberSettings
   return showHeader(index, page, pn);
 }
 
-/** জোড় (even) পৃষ্ঠা কি না — বইয়ের বাঁ পাতা */
-export function isEvenPage(index: number): boolean {
-  return index % 2 === 1; // index 0 = ১ম পৃষ্ঠা (অজর)
+/** জোড় (even) পৃষ্ঠা কি না — বইয়ের বাঁ পাতা। প্যারিটি প্রদর্শিত ফোলিও
+ * (startAt + index) অনুযায়ী — startAt জোড় হলে (অন্য খণ্ড থেকে চলমান বই)
+ * প্রতিটি পাতার অজর/জোড় অবস্থান উল্টে যায় (আগে কাঁচা index ব্যবহার হতো)। */
+export function isEvenPage(index: number, startAt = 1): boolean {
+  return (startAt + index) % 2 === 0;
 }
 
 /** gutter মার্জিন কোন পাশে যোগ হবে */
-export function gutterSide(index: number, oddEven: boolean): 'left' | 'right' {
-  if (oddEven && isEvenPage(index)) return 'right';
+export function gutterSide(index: number, oddEven: boolean, startAt = 1): 'left' | 'right' {
+  if (oddEven && isEvenPage(index, startAt)) return 'right';
   return 'left';
 }

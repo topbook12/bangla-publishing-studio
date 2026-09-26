@@ -181,10 +181,20 @@ function replaceNthInHtml(html: string, query: string, n: number, replacement: s
   const { text, segs } = segmentsFromDom(dom.body);
   const hits = findRanges(text, query, matchCase);
   if (n >= hits.length) return null;
-  const m = hits[n];
+  applyRangeToDom(dom.body, segs, hits[n], replacement);
+  return dom.body.innerHTML;
+}
+
+/** একটি মিল-রেঞ্জ DOM-এর টেক্সট-নোডগুলোতে বসানো (replaceNth/replaceAll-এর ভাগ করা প্রক্রিয়া) */
+function applyRangeToDom(
+  body: HTMLElement,
+  segs: TextSeg[],
+  m: { start: number; end: number },
+  replacement: string,
+): void {
   const first = segs.find((s) => m.start >= s.start && m.start < s.end);
   const last = segs.find((s) => m.end > s.start && m.end <= s.end) ?? first;
-  if (!first?.domNode || !last?.domNode) return null;
+  if (!first?.domNode || !last?.domNode) return;
 
   if (first.domNode === last.domNode) {
     const t = first.domNode;
@@ -197,7 +207,7 @@ function replaceNthInHtml(html: string, query: string, n: number, replacement: s
     const head = ft.data.slice(0, m.start - first.start);
     const tail = lt.data.slice(m.end - last.start);
     ft.data = head + replacement;
-    const walker = document.createTreeWalker(dom.body, NodeFilter.SHOW_TEXT);
+    const walker = document.createTreeWalker(body, NodeFilter.SHOW_TEXT);
     walker.currentNode = ft;
     const mid: Text[] = [];
     let nxt = walker.nextNode() as Text | null;
@@ -208,7 +218,6 @@ function replaceNthInHtml(html: string, query: string, n: number, replacement: s
     for (const t of mid) t.data = '';
     lt.data = tail;
   }
-  return dom.body.innerHTML;
 }
 
 /** সব পাতায় replace-all — রিটার্ন: কতটি প্রতিস্থাপন হলো */
@@ -242,29 +251,35 @@ export function replaceAll(query: string, replacement: string, matchCase: boolea
       const { pages } = useEditorStore.getState();
       const page = pages.find((p) => p.id === pageId);
       if (!page) continue;
-      let html = page.html || '<p></p>';
-      // প্রতিবার শেষ মিল থেকে প্রথমের দিকে — occurrence বড় থেকে ছোট
-      let guard = 0;
-      let changed = false;
-      while (guard++ < 999) {
-        const occ = countOccurrencesInHtml(html, q, matchCase);
-        if (occ <= 0) break;
-        const next = replaceNthInHtml(html, q, occ - 1, replacement, matchCase);
-        if (next === null) break;
-        html = next;
-        changed = true;
-        count++;
+      // একবার পার্স করে সব মিল শেষ থেকে প্রথমে প্রতিস্থাপন — আগে প্রতিটি
+      // প্রতিস্থাপনের পরে পুনঃপার্স+পুনঃগণনা হত; রিপ্লেসমেন্টের ভেতরে কোয়েরি
+      // থাকলে (যেমন "বই" → "বইটি") মিল শূন্যে নামতই না এবং ৯৯৯ চক্রে
+      // লেখা বিশাল হয়ে দুর্নীতিগ্রস্ত হতো।
+      const { html, count: n } = replaceAllInHtml(page.html || '<p></p>', q, replacement, matchCase);
+      if (n > 0) {
+        useEditorStore.getState().replacePageHtml(pageId, html);
+        count += n;
       }
-      if (changed) useEditorStore.getState().replacePageHtml(pageId, html);
     }
   }
   return count;
 }
 
-function countOccurrencesInHtml(html: string, query: string, matchCase: boolean): number {
+/**
+ * এক পাতার HTML-এ সব মিল একবারই পার্স করে প্রতিস্থাপন (শেষ থেকে প্রথমে) —
+ * রিপ্লেসমেন্টে কোয়েরি থাকলেও চক্র/দুর্নীতি হয় না, অফসেটও শিফট হয় না।
+ */
+function replaceAllInHtml(html: string, query: string, replacement: string, matchCase: boolean): { html: string; count: number } {
   const dom = new DOMParser().parseFromString(html, 'text/html');
-  const { text } = segmentsFromDom(dom.body);
-  return findRanges(text, query, matchCase).length;
+  const { text, segs } = segmentsFromDom(dom.body);
+  const hits = findRanges(text, query, matchCase);
+  let count = 0;
+  // শেষ মিল থেকে প্রথমের দিকে — আগের মিলের অফসেট অপরিবর্তিত থাকে
+  for (let i = hits.length - 1; i >= 0; i--) {
+    applyRangeToDom(dom.body, segs, hits[i], replacement);
+    count += 1;
+  }
+  return { html: dom.body.innerHTML, count };
 }
 
 // ─── নেভিগেশন ───

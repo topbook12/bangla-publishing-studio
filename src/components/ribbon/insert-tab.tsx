@@ -637,10 +637,16 @@ export function InsertTab() {
   const [linkDialog, setLinkDialog] = useState<LinkDialogState>(EMPTY_LINK_DIALOG);
 
   const breakPage = () => {
-    const { activePageId } = useEditorStore.getState();
+    const { activePageId, pages } = useEditorStore.getState();
     const editor = ed ?? undefined;
-    if (!editor) return;
-    if (activePageId) pageBreakOnEditor(editor, activePageId);
+    if (!editor || !activePageId) {
+      // কভার/অমাউন্ট পাতায় নীরব no-op নয় — স্পষ্ট বার্তা
+      const pg = pages.find((p) => p.id === activePageId);
+      if (pg && pg.kind !== 'normal') toast.info('কভার পাতায় পেজ ব্রেক প্রযোজ্য নয়');
+      else toast.info('পাতাটি এখন খোলা নেই — আগে পাতাটিতে স্ক্রল করুন');
+      return;
+    }
+    pageBreakOnEditor(editor, activePageId);
   };
 
   const insertRaw = (html: string) => runCommand((ed2) => ed2.chain().focus().insertContent(html).run());

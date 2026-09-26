@@ -9,6 +9,9 @@ import { useEffect } from 'react';
  */
 export default function PwaRegister() {
   useEffect(() => {
+    // শুধু প্রোডাকশনে — dev-এ public/sw.js সরাসরি সার্ভ হয়, SW রেজিস্টার হলে
+    // HMR চাংক ক্যাশে আটকে পুরনো পেজ/স্টেল ডিভ-বাগ ধরা দিত
+    if (process.env.NODE_ENV !== 'production') return;
     if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
 
     const register = async () => {

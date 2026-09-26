@@ -33,9 +33,15 @@ function topLevelBlock(state: CommandProps['state']): TopLevelRef | null {
   const $from = doc.resolve(from);
   const $to = doc.resolve(to);
 
+  // AllSelection (Ctrl+A) — পুরো ডক সিলেক্টেড অবস্থায় ব্লক-অদলবদল অর্থহীন ও বিপজ্জনক
+  if (from === 0 && to === doc.content.size) return null;
+
   // NodeSelection / GapCursor — টপ-লেভেলে দাঁড়িয়ে থাকলে
   if ($from.depth === 0) {
     const index = $from.index(0);
+    // ডকের একেবারে শেষে GapCursor (শেষ অ্যাটমের পরে) হলে index === childCount —
+    // doc.child(index) RangeError ছুঁড়ত; নিরাপদে বাদ দিন
+    if (index >= doc.childCount) return null;
     const node = doc.child(index);
     if (!node) return null;
     return { index, from: $from.pos, to: $from.pos + node.nodeSize };

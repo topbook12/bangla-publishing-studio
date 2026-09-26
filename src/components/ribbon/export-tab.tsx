@@ -190,8 +190,8 @@ export function ExportTab() {
             icon={FileDown}
             label="Backup (JSON)"
             title="Save the entire project as a file"
-            onClick={() => {
-              const project = currentProjectJson();
+            onClick={async () => {
+              const project = await currentProjectJson();
               if (!project) return;
               downloadJsonBackup(project);
               toast.success('Backup downloaded');

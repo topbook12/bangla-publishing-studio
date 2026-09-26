@@ -1594,6 +1594,9 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
   .app-title { max-width: 42vw; font-size: 13px; }
   .app-subtitle { display: none; }
   .save-indicator { display: none; }
+  /* মোবাইলেও সেভ-ব্যর্থতা দেখা যাবে — নইলে IndexedDB ব্যর্থ হলে ব্যবহারকারী
+     কখনোই বুঝবে না যে লেখা সেভ হচ্ছে না */
+  .save-indicator-error { display: inline-flex; }
   .ribbon-body { padding: 5px 6px 6px; }
   .ribbon-group { padding: 0 4px; }
   .ribbon-group-label { display: none; }

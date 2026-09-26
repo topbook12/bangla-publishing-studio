@@ -10,7 +10,7 @@
 //       CSS/JS চলতে পারত; তাই v2 থেকে শুধু হ্যাশ-যুক্ত ফাইলই ক্যাশ-ফার্স্ট)
 //  - POST/অন্য মেথড কখনোই ইন্টারসেপ্ট হয় না
 
-const CACHE = 'bwp-v2';
+const CACHE = 'bwp-v3';
 
 /** content-hashed/immutable অ্যাসেট কি না — এগুলোই কেবল cache-first হবে */
 function isImmutable(url) {
@@ -77,7 +77,10 @@ self.addEventListener('fetch', (event) => {
         if (cached) return cached;
         try {
           const response = await fetch(request);
-          if (response && response.ok) {
+          // ক্রস-অরিজিন ফন্ট যদি no-cors মোডে আসে → opaque রেসপন্স (ok=false,
+          // type='opaque') — সেগুলোও ইচ্ছাকৃতভাবে ক্যাশ করত হবে, নইলে অফলাইনে
+          // ফন্ট CDN-এর স্টাইলশিট কখনোই ক্যাশে জমত না (আগের বাগ)
+          if (response && (response.ok || response.type === 'opaque')) {
             const cache = await caches.open(CACHE);
             cache.put(request, response.clone());
           }

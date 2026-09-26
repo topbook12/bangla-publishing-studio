@@ -485,7 +485,8 @@ function headerFooterParas(
 
   const headerChildren: Paragraph[] = [];
   if (showChrome && hfH.enabled && hfH.style !== 'none') {
-    const mirrored = pn.oddEven && pageIndex % 2 === 1;
+    // startAt-সচেতন প্যারিটি — pagenum.ts isEvenPage-এর সাথে মিল রেখে
+    const mirrored = pn.oddEven && (pn.startAt + pageIndex) % 2 === 0;
     const L = mirrored ? hfH.rightText : hfH.leftText;
     const R = mirrored ? hfH.leftText : hfH.rightText;
     if (hfH.style === 'parallel') {
@@ -522,8 +523,9 @@ function headerFooterParas(
       }
     }
   }
-  // হেডারে নম্বর (top পজিশন)
-  if (num && pn.position.startsWith('top')) {
+  // হেডারে নম্বর (top পজিশন) — অ্যাপের PageHeader-এর মতো: হেডার বন্ধ/নেই হলে
+  // top-নম্বরও দেখায় না (আগে DOCX-এ ফুটন্তর নম্বর দেখাত — স্ক্রিনের সাথে অমিল)
+  if (num && pn.position.startsWith('top') && showChrome && hfH.enabled && hfH.style !== 'none') {
     headerChildren.push(new Paragraph({
       alignment: numAlign === AlignmentType.CENTER ? AlignmentType.CENTER : numAlign,
       children: numberRuns(),
@@ -533,7 +535,7 @@ function headerFooterParas(
   const footerChildren: Paragraph[] = [];
   if (showChrome && hfF.enabled && hfF.style !== 'none') {
     const accentF = hexNoHash(hfF.accentColor) ?? accent;
-    const mirrored = pn.oddEven && pageIndex % 2 === 1;
+    const mirrored = pn.oddEven && (pn.startAt + pageIndex) % 2 === 0;
     const L = mirrored ? hfF.rightText : hfF.leftText;
     const R = mirrored ? hfF.leftText : hfF.rightText;
     if (hfF.style === 'royal') {
@@ -740,8 +742,9 @@ export async function exportProjectToDocx(input: DocxExportInput): Promise<void>
     }
 
     // gutter — অ্যাপের gutterSide লজিকের মতো অজর/জোড় পাতায় বিপরীত পাশে
+    // (startAt-সচেতন প্যারিটি — pagenum.ts isEvenPage-এর সাথে মিল রেখে)
     const pn = settings.pageNumber;
-    const gutterLeft = !(pn.oddEven && pageIdx % 2 === 1);
+    const gutterLeft = !(pn.oddEven && (pn.startAt + pageIdx) % 2 === 0);
     const leftIn = gutterLeft ? m.left + m.gutter : m.left;
     const rightIn = gutterLeft ? m.right : m.right + m.gutter;
 

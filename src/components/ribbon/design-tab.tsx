@@ -13,11 +13,21 @@ import { BOOK_THEMES } from '@/lib/paper';
 import { useEditorStore } from '@/lib/store';
 import { useUiStore } from '@/lib/ui-store';
 import { scanTocEntries, updateTocNodes } from '@/lib/toc';
-import { getAllEditors } from '@/lib/editor-registry';
+import { getAllEditors, getEditor } from '@/lib/editor-registry';
+import { ensurePageEditorMounted } from '@/components/editor/page-ops';
 import { formatPageNumber } from '@/lib/bangla';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import type { PageNumberFormat } from '@/lib/types';
+
+const POSITION_LABELS: Record<string, string> = {
+  'bottom-center': 'Bottom Center',
+  'bottom-right': 'Bottom Right',
+  'bottom-left': 'Bottom Left',
+  'top-center': 'Top Center',
+  'top-right': 'Top Right',
+  'top-left': 'Top Left',
+};
 
 export function DesignTab() {
   const settings = useEditorStore((s) => s.settings);
@@ -27,10 +37,25 @@ export function DesignTab() {
   const openDialog = useUiStore((s) => s.open);
   void pages;
 
-  const refreshToc = () => {
+  const refreshToc = async () => {
     const s = useEditorStore.getState();
     const entries = scanTocEntries(s.pages, s.settings);
-    const editors = getAllEditors();
+    let editors = getAllEditors();
+    // TOC-ব্লক কোনো পাতার HTML-এ আছে কিন্তু মাউন্ট করা কোনো এডিটরে নেই →
+    // TOC পাতাটি এখনো ভিউপোর্টে আসেনি। মাউন্ট না করলে updateTocNodes
+    // নীরবে কিছুই লিখত না — ভুল পেজ-নম্বরসহ সূচিপত্র প্রিন্ট/এক্সপোর্ট হতো।
+    if (entries.length > 0 && editors.length > 0) {
+      const mountedHasToc = s.pages.some((p) => {
+        const ed = getEditor(p.id);
+        return Boolean(ed && !ed.isDestroyed && ed.getHTML().includes('toc-block'));
+      });
+      if (!mountedHasToc) {
+        const tocPage = s.pages.find((p) => p.html.includes('toc-block'));
+        if (tocPage && (await ensurePageEditorMounted(tocPage.id))) {
+          editors = getAllEditors();
+        }
+      }
+    }
     if (editors.length === 0) {
       toast.error('No page editor is open');
       return;
@@ -128,7 +153,7 @@ export function DesignTab() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button type="button" className="ribbon-select w-32">
-                  Position <span aria-hidden="true">▾</span>
+                  {POSITION_LABELS[settings.pageNumber.position] ?? 'Position'} <span aria-hidden="true">▾</span>
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
@@ -136,6 +161,8 @@ export function DesignTab() {
                 <DropdownMenuItem onClick={() => update({ pageNumber: { ...settings.pageNumber, position: 'bottom-right' } })}>Bottom Right</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => update({ pageNumber: { ...settings.pageNumber, position: 'bottom-left' } })}>Bottom Left</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => update({ pageNumber: { ...settings.pageNumber, position: 'top-center' } })}>Top Center</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => update({ pageNumber: { ...settings.pageNumber, position: 'top-right' } })}>Top Right</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => update({ pageNumber: { ...settings.pageNumber, position: 'top-left' } })}>Top Left</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

@@ -2,8 +2,8 @@
  * JSON ব্যাকআপ (ডাউনলোড/ইমপোর্ট) ও প্রিন্ট পোর্টাল
  */
 
-import type { BookProject } from './types';
-import { saveProject } from './dexie';
+import type { BookProject, PageData } from './types';
+import { saveProject, getProject, newId } from './dexie';
 import { useEditorStore } from './store';
 import type { DocumentSettings } from './types';
 import { getPaperPreset } from './paper';
@@ -19,13 +19,47 @@ export function downloadJsonBackup(project: BookProject): void {
   setTimeout(() => URL.revokeObjectURL(url), 4000);
 }
 
-export function currentProjectJson(): BookProject | null {
+/** ব্যাকআপ JSON-এর পাতার এন্ট্রি স্যানিটাইজ — ক্ষতিগ্রস্ত/হাতে-লেখা ফাইলেও অ্যাপ ক্র্যাশ করবে না */
+function sanitizePages(raw: unknown[]): PageData[] {
+  const out: PageData[] = [];
+  for (const entry of raw) {
+    if (!entry || typeof entry !== 'object') continue;
+    const e = entry as Record<string, unknown>;
+    out.push({
+      id: typeof e.id === 'string' && e.id ? e.id : newId('pg'),
+      kind: e.kind === 'cover' ? 'cover' : 'normal',
+      html: typeof e.html === 'string' ? e.html : '<p></p>',
+      noChrome: e.noChrome === true,
+      coverData:
+        e.coverData && typeof e.coverData === 'object'
+          ? (e.coverData as PageData['coverData'])
+          : undefined,
+      headerOverride:
+        e.headerOverride === null || e.headerOverride === undefined
+          ? null
+          : (e.headerOverride as PageData['headerOverride']),
+      footerOverride:
+        e.footerOverride === null || e.footerOverride === undefined
+          ? null
+          : (e.footerOverride as PageData['footerOverride']),
+    });
+  }
+  return out.length ? out : [{ id: newId('pg'), kind: 'normal', html: '<p></p>', noChrome: false }];
+}
+
+export async function currentProjectJson(): Promise<BookProject | null> {
   const s = useEditorStore.getState();
   if (!s.projectId) return null;
+  // মূল createdAt সংরক্ষণ — ব্যাকআপ নিলেই সৃষ্টি-তারিখ রিসেট হয়ে যেত
+  let createdAt = Date.now();
+  try {
+    const existing = await getProject(s.projectId);
+    if (existing?.createdAt) createdAt = existing.createdAt;
+  } catch { /* ইন-মেমরি মোড */ }
   return {
     id: s.projectId,
     title: s.title,
-    createdAt: Date.now(),
+    createdAt,
     updatedAt: Date.now(),
     settings: s.settings,
     pages: s.pages,
@@ -58,7 +92,9 @@ export async function importJsonBackup(file: File): Promise<'ok' | 'invalid'> {
       createdAt: Date.now(),
       updatedAt: Date.now(),
       settings,
-      pages: obj.pages,
+      // পাতার এন্ট্রিগুলোও স্যানিটাইজ — [null, {}, {html: 5}]-জাতীয় এন্ট্রি
+      // ঢুকলে React key undefined + dangerouslySetInnerHTML ক্র্যাশ করত
+      pages: sanitizePages(obj.pages),
     });
     await useEditorStore.getState().openProject(id);
     await useEditorStore.getState().refreshProjects();

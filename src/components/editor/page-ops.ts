@@ -6,7 +6,9 @@
 'use client';
 
 import { DOMSerializer } from '@tiptap/pm/model';
+import type { Node as PMNode } from '@tiptap/pm/model';
 import type { Editor } from '@tiptap/react';
+import { createNodeFromContent } from '@tiptap/core';
 import { useEditorStore } from '@/lib/store';
 import { getEditor } from '@/lib/editor-registry';
 
@@ -16,6 +18,41 @@ export function nodeContentToHtml(doc: import('@tiptap/pm/model').Node, schema: 
   const div = document.createElement('div');
   div.appendChild(fragment);
   return div.innerHTML;
+}
+
+/**
+ * setContent-এর বিকল্প — কিন্তু আন্ডু-হিস্টরিতে না ঢুকিয়ে।
+ * পেজ-ইঞ্জিন অপারেশন (ফ্লো/স্প্লিট/মার্জ/ফিল) লেআউট অপারেশন, ব্যবহারকারীর
+ * সম্পাদনা নয়; setContent পুরো-ডক রিপ্লেসমেন্ট হিস্টরিতে ঢুকিয়ে দিত —
+ * ফ্লোর পর একটি Ctrl+Z পাতাটিকে আগের পূর্ণ-লেখায় ফিরিয়ে দিত আর পরের পাতায়
+ * সরানো অংশের কপি থেকে যেত → একই লেখা দুই পাতায় ডুপ্লিকেট হতো।
+ */
+export function replaceDocNoHistory(editor: Editor, html: string): void {
+  try {
+    const document = createNodeFromContent(html || '<p></p>', editor.schema, { slice: false }) as PMNode;
+    const tr = editor.state.tr.replaceWith(0, editor.state.doc.content.size, document);
+    tr.setMeta('preventUpdate', true); // setContent(html, false)-এর মতোই আপডেট-ইভেন্ট নীরব
+    tr.setMeta('addToHistory', false); // আন্ডু-হিস্টরিতে নয়
+    editor.view.dispatch(tr);
+  } catch {
+    // অপ্রত্যাশিত পার্স ব্যর্থতায় পুরনো পথেই যাওয়া — কনটেন্ট হারাবে না
+    editor.commands.setContent(html || '<p></p>', false);
+  }
+}
+
+/**
+ * ওয়ার্কস্পেসে প্রয়োগ হওয়া কার্যকর CSS zoom — মোবাইলে ফিট-জুম (≈০.৪–০.৬৫) হলে
+ * getBoundingClientRect() ভিজ্যুয়াল (জুমড) পিক্সেল দেয়, কিন্তু clientHeight/
+ * scrollHeight লেআউট পিক্সেল। দুটো মেশালে ফ্লো-ইঞ্জিনের মাপ ভুল হয় — জুম < ১-এ
+ * সব ব্লক "আঁটে যাওয়া" দেখায় (ফ্লো কখনো ট্রিগারই হয় না), জুম > ১-এ অতিরিক্ত ভাগ হয়।
+ */
+function appliedZoomOf(el: HTMLElement): number {
+  const cs = window.getComputedStyle(el);
+  const zRaw = (cs as unknown as { zoom?: string }).zoom;
+  const zNum = zRaw ? Number.parseFloat(zRaw) : NaN;
+  if (Number.isFinite(zNum) && zNum > 0) return zNum;
+  const rect = el.getBoundingClientRect();
+  return el.offsetWidth > 0 && rect.width > 0 ? rect.width / el.offsetWidth : 1;
 }
 
 /** কার্সরের অবস্থানে পৃষ্ঠা ভাগ করা (Ctrl+Enter / Insert > পেজ ব্রেক) */
@@ -42,8 +79,8 @@ export function pageBreakOnEditor(editor: Editor, pageId: string): void {
   useEditorStore.getState().splitPageAt(pageId, keptHtml, overflowHtml);
   useEditorStore.getState().setActivePage(pageId);
 
-  // বর্তমান এডিটরে কাটা অংশ বসান ও কার্সর শেষে নিন
-  editor.commands.setContent(keptHtml || '<p></p>', false);
+  // বর্তমান এডিটরে কাটা অংশ বসান ও কার্সর শেষে নিন (আন্ডু-হিস্টরিতে নয়)
+  replaceDocNoHistory(editor, keptHtml || '<p></p>');
   window.setTimeout(() => {
     editor.commands.focus('end');
   }, 30);
@@ -65,11 +102,14 @@ export function flowIfOverflow(editor: Editor, pageId: string, availableHeight: 
   // নোডভিউ র‍্যাপার ইত্যাদি বাদ দিয়ে আসল ব্লকগুলো
   if (children.length <= 1) return false;
 
-  const pmTop = pmEl.getBoundingClientRect().top;
+  const pmRect = pmEl.getBoundingClientRect();
+  const zoom = appliedZoomOf(pmEl);
+  const pmTop = pmRect.top;
   let fitCount = 0;
   for (let i = 0; i < children.length; i++) {
     const rect = children[i].getBoundingClientRect();
-    const bottom = rect.bottom - pmTop;
+    // ভিজ্যুয়াল পিক্সেল → লেআউট পিক্সেল (availableHeight clientHeight লেআউট এককে)
+    const bottom = (rect.bottom - pmTop) / zoom;
     if (bottom <= availableHeight - 4) fitCount = i + 1;
     else break;
   }
@@ -99,8 +139,8 @@ export function flowIfOverflow(editor: Editor, pageId: string, availableHeight: 
 
   s.flowOverflow(pageId, keptHtml, overflowHtml);
 
-  // নিজের এডিটরে রাখা অংশ সেট করা
-  editor.commands.setContent(keptHtml, false);
+  // নিজের এডিটরে রাখা অংশ সেট করা (আন্ডু-হিস্টরিতে নয়)
+  replaceDocNoHistory(editor, keptHtml);
 
   if (cursorMoved) {
     // কার্সর সরে যাওয়া অংশে ছিল → পরের পৃষ্ঠার এডিটরে স্থানান্তর
@@ -220,18 +260,21 @@ export async function fillFromNextPage(editor: Editor, pageId: string, available
   const cursorBefore = editor.state.selection.from;
   const originalCount = editor.state.doc.childCount;
 
-  // ১) পরের পাতার কনটেন্ট সাময়িকভাবে মার্জ
-  editor.commands.setContent(currentHtml + next.html, false);
+  // ১) পরের পাতার কনটেন্ট সাময়িকভাবে মার্জ (আন্ডু-হিস্টরিতে নয়)
+  replaceDocNoHistory(editor, currentHtml + next.html);
   await waitForImages(editor);
   if (editor.isDestroyed) return { status: 'blocked', blocks: 0 };
 
   // ২) কোন ব্লকগুলো ফাঁকা জায়গায় আঁটে মাপা
   const pmEl = editor.view.dom as HTMLElement;
   const children = Array.from(pmEl.children).filter((c): c is HTMLElement => c instanceof HTMLElement);
-  const pmTop = pmEl.getBoundingClientRect().top;
+  const pmRect = pmEl.getBoundingClientRect();
+  const zoom = appliedZoomOf(pmEl);
+  const pmTop = pmRect.top;
   let fitCount = 0;
   for (let i = 0; i < children.length; i++) {
-    const bottom = children[i].getBoundingClientRect().bottom - pmTop;
+    // ভিজ্যুয়াল পিক্সেল → লেআউট পিক্সেল (availableHeight clientHeight লেআউট এককে)
+    const bottom = (children[i].getBoundingClientRect().bottom - pmTop) / zoom;
     if (bottom <= availableHeight - 4) fitCount = i + 1;
     else break;
   }
@@ -244,9 +287,9 @@ export async function fillFromNextPage(editor: Editor, pageId: string, available
     return { status: 'absorbed', blocks: children.length - originalCount };
   }
 
-  // ৪) একটিও ব্লক উঠতে পারেনি → আগের অবস্থায় ফেরত
+  // ৪) একটিও ব্লক উঠতে পারেনি → আগের অবস্থায় ফেরত (আন্ডু-হিস্টরিতে নয়)
   if (fitCount <= originalCount) {
-    editor.commands.setContent(currentHtml, false);
+    replaceDocNoHistory(editor, currentHtml);
     restoreCursor(editor, cursorBefore);
     return { status: 'none', blocks: 0 };
   }
@@ -266,7 +309,7 @@ export async function fillFromNextPage(editor: Editor, pageId: string, available
 
   s.replacePageHtml(pageId, keptHtml);
   s.updatePageHtml(next.id, overflowHtml);
-  editor.commands.setContent(keptHtml, false);
+  replaceDocNoHistory(editor, keptHtml);
   restoreCursor(editor, cursorBefore);
   return { status: 'moved', blocks: fitCount - originalCount };
 }
@@ -283,7 +326,7 @@ export interface SmartFlowStats {
 }
 
 /** অদৃশ্য পাতার এডিটর মাউন্ট করতে পাতাটি ভিউপোর্টে এনে অপেক্ষা */
-async function ensurePageEditorMounted(pageId: string): Promise<boolean> {
+export async function ensurePageEditorMounted(pageId: string): Promise<boolean> {
   const idx = useEditorStore.getState().pages.findIndex((p) => p.id === pageId);
   if (idx < 0) return false;
   const el = document.querySelector(`[data-page-index="${idx}"]`);

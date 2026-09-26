@@ -185,6 +185,8 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
   },
 
   createProject: async (title, withSample = false) => {
+    // আগের বইয়ের অপেক্ষমাণ সেভ আগে ডিস্কে
+    await flushSave();
     const id = newId('bk');
     const now = Date.now();
     const project: BookProject = {
@@ -213,6 +215,9 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 
   openProject: async (id) => {
     try {
+      // আগের বইয়ের অপেক্ষমাণ সেভ ডিস্কে লেখা — না হলে শেষ ≤৮০০ms-এর টাইপিং
+      // নতুন বইয়ের স্টেট দিয়ে প্রতিস্থাপিত হয়ে চিরতরে হারিয়ে যেত
+      await flushSave();
       const project = await getProject(id);
       if (!project) return;
       if (typeof window !== 'undefined') window.localStorage.setItem(LAST_PROJECT_KEY, id);
@@ -229,6 +234,8 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 
   duplicateProject: async (id) => {
     try {
+      // কপি নেওয়ার আগে সোর্স বইয়ের অপেক্ষমাণ সেভ ডিস্কে — নইলে পুরনো অবস্থার কপি হয়
+      await flushSave();
       const src = await getProject(id);
       if (!src) return;
       const copy: BookProject = {
@@ -245,6 +252,9 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 
   removeProject: async (id) => {
     try {
+      // ডিলিটের আগে পেন্ডিং টাইমার বাতিল (সেভ নয়) — নইলে await-এর ফাঁকে
+      // টাইমার চলে মুছে-ফেলা রেকর্ডটি আবার IndexedDB-তে লিখে ফেলে (পুনরুত্থান)
+      cancelPendingSave();
       await deleteProject(id);
       await get().refreshProjects();
       if (get().projectId === id) {
@@ -398,12 +408,17 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
     const pages = [...get().pages];
     const idx = pages.findIndex((p) => p.id === pageId);
     if (idx < 0) return;
-    pages[idx] = { ...pages[idx], html: keptHtml || '<p></p>' };
+    const src = pages[idx];
+    pages[idx] = { ...src, html: keptHtml || '<p></p>' };
+    // স্প্লিট থেকে সৃষ্ট ধারাবাহিক পাতা — সোর্স পাতার chrome সেটিং বহাল থাকে
+    // (না হলে অধ্যায়ের শুরুর noChrome পাতা ভাঙলে হঠাৎ হেডার/ফুটার চলে আসে)
     const newPage: PageData = {
       id: newId('pg'),
       kind: 'normal',
       html: overflowHtml || '<p></p>',
-      noChrome: false,
+      noChrome: src?.noChrome ?? false,
+      headerOverride: src?.headerOverride ?? null,
+      footerOverride: src?.footerOverride ?? null,
     };
     pages.splice(idx + 1, 0, newPage);
     set({ pages });
@@ -422,11 +437,15 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
     if (nextIdx < pages.length && pages[nextIdx].kind === 'normal') {
       pages[nextIdx] = { ...pages[nextIdx], html: overflowHtml + pages[nextIdx].html };
     } else {
+      // নতুন ধারাবাহিক পাতা — সোর্সের chrome সেটিং উত্তরাধিকারসূত্রে পায়
+      const src = pages[idx];
       const newPage: PageData = {
         id: newId('pg'),
         kind: 'normal',
         html: overflowHtml || '<p></p>',
-        noChrome: false,
+        noChrome: src?.noChrome ?? false,
+        headerOverride: src?.headerOverride ?? null,
+        footerOverride: src?.footerOverride ?? null,
       };
       pages.splice(nextIdx, 0, newPage);
     }
@@ -443,21 +462,38 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
   bumpSelection: () => set({ selectionVersion: get().selectionVersion + 1 }),
 }));
 
-/** কাজের স্টেট পরিষ্কার করে আগের প্রজেক্ট সেভ নিশ্চিত করা */
-export function flushSave() {
-  if (saveTimer) {
-    clearTimeout(saveTimer);
-    saveTimer = null;
-    const s = useEditorStore.getState();
-    if (s.projectId) {
-      void saveProject({
-        id: s.projectId,
+/**
+ * কাজের স্টেট পরিষ্কার করে আগের প্রজেক্ট সেভ নিশ্চিত করা।
+ * প্রজেক্ট সুইচ/ইম্পোর্ট/ডুপ্লিকেটের আগে await করে ডাকা হয় — শেষ মুহূর্তের
+ * সম্পাদনা হারানো ও পুরনো অবস্থার কপি হওয়া ঠেকাতে।
+ */
+export function flushSave(): Promise<void> {
+  if (!saveTimer) return Promise.resolve();
+  clearTimeout(saveTimer);
+  saveTimer = null;
+  const s = useEditorStore.getState();
+  const pid = s.projectId;
+  if (!pid) return Promise.resolve();
+  return (async () => {
+    try {
+      const existing = await getProject(pid);
+      await saveProject({
+        id: pid,
         title: s.title,
-        createdAt: Date.now(),
+        // মূল createdAt সংরক্ষণ — Date.now() লিখলে বইয়ের সৃষ্টি-তারিখ রিসেট হয়ে যেত
+        createdAt: existing?.createdAt ?? Date.now(),
         updatedAt: Date.now(),
         settings: s.settings,
         pages: s.pages,
-      }).catch(() => undefined);
-    }
+      });
+    } catch { /* ইন-মেমরি মোড */ }
+  })();
+}
+
+/** অপেক্ষমাণ টাইমার শুধু বাতিল — রেকর্ড ডিলিটের আগে (পুনরুত্থান ঠেকাতে) */
+export function cancelPendingSave() {
+  if (saveTimer) {
+    clearTimeout(saveTimer);
+    saveTimer = null;
   }
 }

@@ -29,8 +29,8 @@ interface ChromeProps {
   footerOverride?: HeaderFooterSettings | null;
 }
 
-function mirrorIfEven(index: number, oddEven: boolean): boolean {
-  return oddEven && isEvenPage(index);
+function mirrorIfEven(index: number, oddEven: boolean, startAt: number): boolean {
+  return oddEven && isEvenPage(index, startAt);
 }
 
 // ─── ইনলাইন এডিটেবল টেক্সট জোন ───
@@ -267,9 +267,11 @@ function FooterBar({
 export function PageHeader({ index, settings, pageKind, noChrome, pageId, headerOverride }: ChromeProps): ReactNode {
   const { pageNumber } = settings;
   const header = headerOverride ?? settings.header;
-  if (pageKind === 'cover' || noChrome || !header.enabled) return null;
+  // style 'none' = হেডার বন্ধ (ডায়ালগের "নেই" কার্ডের প্রতিশ্রুতি অনুযায়ী — আগে
+  // 'none' plain রেন্ডারারে পড়ে হেডার দেখাতই থাকত)
+  if (pageKind === 'cover' || noChrome || !header.enabled || header.style === 'none') return null;
   if (pageNumber.differentFirst && index === 0) return null;
-  const mirrored = mirrorIfEven(index, pageNumber.oddEven);
+  const mirrored = mirrorIfEven(index, pageNumber.oddEven, pageNumber.startAt);
   const numberInHeader = pageNumber.enabled && pageNumber.position.startsWith('top');
   const num = displayPageNumber(index, pageNumber);
 
@@ -316,7 +318,10 @@ export function PageFooter({ index, settings, pageKind, noChrome, pageId, footer
   const footer = footerOverride ?? settings.footer;
   if (pageKind === 'cover' || noChrome) return null;
   if (pageNumber.differentFirst && index === 0) return null;
-  const mirrored = mirrorIfEven(index, pageNumber.oddEven);
+  const mirrored = mirrorIfEven(index, pageNumber.oddEven, pageNumber.startAt);
+  // style 'none' হলে ফুটার-বার বন্ধ, শুধু পৃষ্ঠা নম্বর (চালু থাকলে) দেখায় —
+  // footer.enabled=false-এর সাথে একই আচরণ
+  const footerOff = !footer.enabled || footer.style === 'none';
   const numberInFooter = pageNumber.enabled && pageNumber.position.startsWith('bottom');
   const num = displayPageNumber(index, pageNumber);
 
@@ -342,13 +347,13 @@ export function PageFooter({ index, settings, pageKind, noChrome, pageId, footer
     : pageNumber.position.endsWith('right') ? 'right' : 'center';
 
   const hasFooterContent =
-    footer.enabled && (footer.style !== 'plain' || footer.centerText || footer.leftText || footer.rightText);
+    !footerOff && (footer.style !== 'plain' || footer.centerText || footer.leftText || footer.rightText);
 
   if (!hasFooterContent && !numberHtml) return null;
 
   return (
     <footer className="page-footer" style={{ fontSize: `${footer.fontSize}pt` }}>
-      {footer.enabled ? <FooterBar hf={footer} mirrored={mirrored} numberHtml={numberHtml} numPos={numAlign} onCommit={commitFooter} /> : numberHtml ? (
+      {!footerOff ? <FooterBar hf={footer} mirrored={mirrored} numberHtml={numberHtml} numPos={numAlign} onCommit={commitFooter} /> : numberHtml ? (
         <div className="ftr-plain" style={{ justifyContent: numAlign === 'left' ? 'flex-start' : numAlign === 'right' ? 'flex-end' : 'center' }}>{numberHtml}</div>
       ) : null}
     </footer>
@@ -358,7 +363,7 @@ export function PageFooter({ index, settings, pageKind, noChrome, pageId, footer
 /** পৃষ্ঠার মার্জিন স্টাইল (gutter সহ) */
 export function pagePaddingStyle(index: number, settings: DocumentSettings): string {
   const m = settings.margins;
-  const side = gutterSide(index, settings.pageNumber.oddEven);
+  const side = gutterSide(index, settings.pageNumber.oddEven, settings.pageNumber.startAt);
   const left = side === 'left' ? m.left + m.gutter : m.left;
   const right = side === 'right' ? m.right + m.gutter : m.right;
   return `${m.top}in ${right}in ${m.bottom}in ${left}in`;
