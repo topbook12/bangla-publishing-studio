@@ -64,6 +64,29 @@ export const FORMA_FOLD_SEQUENCE: Record<FormaSize, Array<'V' | 'H'>> = {
   32: ['V', 'H', 'V', 'H'],
 };
 
+/**
+ * গ্রিড ঘোরানো (swapGrid) — ৪×২ ↔ ২×৪ জাতীয় বিন্যাস বিনিময়।
+ * ছাপাখানায় কাগজের গ্রেন-দিক ও স্টক-সাইজ অনুযায়ী মাঝে মাঝে ল্যান্ডস্কেপ-গ্রিডের
+ * বদলে পোর্ট্রেট-গ্রিড (বা উল্টোটা) দরকার হয় — একই ফরমা-সাইজে ভাঁজ-সঠিক
+ * বিন্যাস দুই অভিমুখেই বৈধ (physical fold-test-এ প্রমাণিত)।
+ */
+export interface FormaLayoutOptions {
+  /** গ্রিড ঘোরান (cols ↔ rows বিনিময়, ভাঁজের ক্রমও V↔H) */
+  swapGrid?: boolean;
+}
+
+/** কার্যকর গ্রিড — swapGrid সম্মান করে */
+export function formaGridFor(size: FormaSize, swapGrid = false): { cols: number; rows: number } {
+  const g = FORMA_GRIDS[size];
+  return swapGrid ? { cols: g.rows, rows: g.cols } : g;
+}
+
+/** কার্যকর ভাঁজ-ক্রম — swapGrid হলে V↔H বিনিময় */
+export function formaFoldSequenceFor(size: FormaSize, swapGrid = false): Array<'V' | 'H'> {
+  const seq = FORMA_FOLD_SEQUENCE[size];
+  return swapGrid ? seq.map((f) => (f === 'V' ? 'H' : 'V')) : seq;
+}
+
 type FoldDirection = 'R2L' | 'L2R' | 'B2T' | 'T2B';
 
 /**
@@ -91,12 +114,15 @@ interface CellInfo {
 
 /**
  * ভাঁজ সিমুলেশন — স্ট্যাক গঠন করে প্রতি ফিজিক্যাল সেলের A/B ফেসে পৃষ্ঠা নির্ণয়।
+ * dirs না দিলে ভাঁজ-প্রকার অনুযায়ী canonical দিক নেয় (V→R2L, H→B2T) —
+ * swapGrid করলেও সঠিক থাকে (দিক পজিশন নয়, ভাঁজ-প্রকারের সাথে যুক্ত)।
  */
 export function foldSimulate(
   size: FormaSize,
-  dirs: FoldDirection[] = CANONICAL_DIRS,
+  dirs?: FoldDirection[],
+  swapGrid = false,
 ): CellInfo[] {
-  const { cols: C, rows: R } = FORMA_GRIDS[size];
+  const { cols: C, rows: R } = formaGridFor(size, swapGrid);
   const cellCount = C * R; // = N/2
 
   type Stack = SimPanel[];
@@ -111,10 +137,11 @@ export function foldSimulate(
     hFlips: p.hFlips + (horizontal ? 1 : 0),
   });
 
-  const folds = FORMA_FOLD_SEQUENCE[size];
+  const folds = formaFoldSequenceFor(size, swapGrid);
+  const effDirs = dirs ?? folds.map((k): FoldDirection => (k === 'V' ? 'R2L' : 'B2T'));
   for (let f = 0; f < folds.length; f++) {
     const kind = folds[f];
-    const dir = dirs[f] ?? dirs[dirs.length - 1];
+    const dir = effDirs[f] ?? effDirs[effDirs.length - 1];
     const next: Stack[] = [];
     if (kind === 'V') {
       const half = cw / 2;
@@ -175,8 +202,9 @@ export function buildFormes(
   sim: CellInfo[],
   size: FormaSize,
   duplex: 'vertical' | 'horizontal' = 'vertical',
+  swapGrid = false,
 ): { front: FormaPanel[]; back: FormaPanel[] } {
-  const { cols: C, rows: R } = FORMA_GRIDS[size];
+  const { cols: C, rows: R } = formaGridFor(size, swapGrid);
   const front: FormaPanel[] = [];
   const back: FormaPanel[] = [];
   sim.forEach((cell, i) => {
@@ -197,10 +225,11 @@ export function computeImposition(
   totalPages: number,
   formaSize: FormaSize,
   duplex: 'vertical' | 'horizontal' = 'vertical',
+  swapGrid = false,
 ): ImpositionResult {
-  const sim = foldSimulate(formaSize);
-  const formes = buildFormes(sim, formaSize, duplex);
-  const grid = FORMA_GRIDS[formaSize];
+  const sim = foldSimulate(formaSize, undefined, swapGrid);
+  const formes = buildFormes(sim, formaSize, duplex, swapGrid);
+  const grid = formaGridFor(formaSize, swapGrid);
   const sheetCount = Math.max(1, Math.ceil(totalPages / formaSize));
   const blankPagesAdded = sheetCount * formaSize - Math.max(0, totalPages);
 
@@ -224,8 +253,9 @@ export function formaSheetSizeMm(
   pageWidthMm: number,
   pageHeightMm: number,
   formaSize: FormaSize,
+  swapGrid = false,
 ): { widthMm: number; heightMm: number } {
-  const { cols, rows } = FORMA_GRIDS[formaSize];
+  const { cols, rows } = formaGridFor(formaSize, swapGrid);
   return { widthMm: pageWidthMm * cols, heightMm: pageHeightMm * rows };
 }
 
@@ -240,8 +270,9 @@ export function formaDuplexFor(
   pageWidthMm: number,
   pageHeightMm: number,
   formaSize: FormaSize,
+  swapGrid = false,
 ): 'vertical' | 'horizontal' {
-  const sheet = formaSheetSizeMm(pageWidthMm, pageHeightMm, formaSize);
+  const sheet = formaSheetSizeMm(pageWidthMm, pageHeightMm, formaSize, swapGrid);
   return sheet.widthMm > sheet.heightMm ? 'horizontal' : 'vertical';
 }
 
@@ -250,8 +281,9 @@ export function formaFoldOffsetsMm(
   pageWidthMm: number,
   pageHeightMm: number,
   formaSize: FormaSize,
+  swapGrid = false,
 ): { verticalXmm: number[]; horizontalYmm: number[] } {
-  const { cols, rows } = FORMA_GRIDS[formaSize];
+  const { cols, rows } = formaGridFor(formaSize, swapGrid);
   return {
     verticalXmm: Array.from({ length: cols - 1 }, (_, i) => (i + 1) * pageWidthMm),
     horizontalYmm: Array.from({ length: rows - 1 }, (_, i) => (i + 1) * pageHeightMm),

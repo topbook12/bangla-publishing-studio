@@ -1734,6 +1734,17 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
     min-width: 0 !important;
     min-height: 0 !important;
   }
+  /* সিলেকশন অ্যাফোর্ডেন্স প্রিন্টে দাগ হয় না — ছবি/টেক্সটবক্স/আইকন সিলেক্টেড
+     অবস্থায় প্রিন্ট করলেও নীল আউটলাইন/ওভারলে ছাপা হবে না */
+  .ProseMirror-selectednode,
+  .doc-icon-selected,
+  .doc-textbox.ProseMirror-selectednode,
+  .doc-shape.ProseMirror-selectednode {
+    outline: none !important;
+  }
+  .selectedCell::after { display: none !important; }
+  .column-resize-handle { display: none !important; }
+  .resize-cursor { cursor: auto !important; }
   /* ফাঁকা পাতার "লিখতে শুরু করুন…" প্লেসহোল্ডার প্রিন্ট/ফরমায় যেন ছাপা না হয় */
   .bwp-prosemirror p.is-editor-empty::before,
   .bwp-prosemirror p.is-empty::before,

@@ -70,3 +70,6 @@ server.log
 /mini-services/
 /Caddyfile
 /worklog.md
+
+# scratch verification artifacts (local only)
+/scratch/

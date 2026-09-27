@@ -12,8 +12,11 @@
  *  - ডায়ালগ সম্পূর্ণ বন্ধ + ফন্ট/ছবি লোড + লেআউট স্থির হওয়ার পরেই
  *    window.print() — নইলে ডায়ালগ/অর্ধেক-রেন্ডার প্রিন্টে ঢুকে যায়।
  *  - লাইভ পেজ DOM না পাওয়া গেলে ফাঁকা শীট ছাপার বদলে এরর দেখায়।
+ *  - ছাপার আগে formaSelfCheck বাধ্যতামূলক — ফরমা-গণিত মিলতে না দিলে
+ *    ভুল বই ছাপার আগেই আটকে দেয় (press-safety gate)।
  *
- * গণিত: src/lib/imposition.ts (স্বাধীন ভ্যালিডেশনে প্রমাণিত)
+ * গণিত: src/lib/imposition.ts — স্বাধীন 3D ফিজিক্যাল ফোল্ড-সিমুলেশনে
+ * প্রমাণিত (scratch/verify-imposition.ts — সব সাইজ × দুই গ্রিড-অভিমুখ)।
  */
 
 import { toast } from 'sonner';
@@ -24,15 +27,20 @@ import {
   formaDuplexFor,
   formaSheetSizeMm,
   formaFoldOffsetsMm,
+  type FormaLayoutOptions,
   type FormaSize,
 } from '@/lib/imposition';
 import { ensurePrintStyle, getOrCreatePrintStyleEl } from '@/lib/export-json';
 
-export interface FormaPrintOptions {
+export interface FormaPrintOptions extends FormaLayoutOptions {
   formaSize: FormaSize;
   /** interleaved: A,B,A,B… | fronts-first: সব সামনের পাশ, তারপর সব পেছনের */
   sideOrder: 'interleaved' | 'fronts-first';
   foldMarks: boolean;
+  /** কভার পাতা ফরমায় রাখা হবে কি না (false = কভার আলাদা ছাপানো হবে) */
+  includeCover: boolean;
+  /** প্রতি শীটের কোণে ছোট প্রেস-স্লিপ (ফরমা নম্বর/পাশ) ছাপা হবে কি না */
+  pressSlip: boolean;
 }
 
 const ROOT_ID = 'forma-print-root';
@@ -44,6 +52,9 @@ let pageStyleBackup: string | null = null;
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 const raf2 = () =>
   new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
+
+const BN_DIGITS = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+const bn = (n: number | string) => String(n).replace(/\d/g, (d) => BN_DIGITS[Number(d)]);
 
 /**
  * সব open Radix ডায়ালগ (exit-animation সহ) DOM থেকে সরে যাওয়া পর্যন্ত অপেক্ষা।
@@ -60,7 +71,7 @@ export async function waitForDialogsClosed(timeoutMs = 1500): Promise<void> {
 }
 
 /** ক্লোন-রুটের ছবিগুলো লোড হওয়া পর্যন্ত অপেক্ষা (সর্বোচ্চ cap) */
-async function waitForImages(root: HTMLElement, capMs = 800): Promise<void> {
+async function waitForImages(root: HTMLElement | DocumentFragment, capMs = 800): Promise<void> {
   const start = Date.now();
   for (;;) {
     const imgs = Array.from(root.querySelectorAll('img'));
@@ -70,13 +81,19 @@ async function waitForImages(root: HTMLElement, capMs = 800): Promise<void> {
   }
 }
 
-/** একটি ক্লোন করা পেজ নোড থেকে id/সিলেকশন অবশেষ সরানো */
+/**
+ * একটি ক্লোন করা পেজ নোড থেকে id/সিলেকশন/এডিটিং অবশেষ সরানো।
+ * সিলেকশন-অ্যাফোর্ডেন্স (নীল আউটলাইন/ওভারলে) ছাপায় গেলে বইয়ে দাগ পড়ত —
+ * ক্লাস স্ট্রিপ + এলিমেন্ট রিমুভ দুটোই (globals.css-এর print রুলের সাথে দ্বৈত সুরক্ষা)।
+ */
 function sanitizeClone(clone: HTMLElement): void {
   clone.removeAttribute('id');
   clone.querySelectorAll('[id]').forEach((el) => el.removeAttribute('id'));
   clone.querySelectorAll('[contenteditable]').forEach((el) => el.removeAttribute('contenteditable'));
   clone
-    .querySelectorAll('.no-print, .page-toolbar, .mcq-edit, .callout-delete, .footnote-pop, .bwp-img-handle, .bwp-table-toolbar')
+    .querySelectorAll(
+      '.no-print, .page-toolbar, .mcq-edit, .callout-delete, .footnote-pop, .bwp-img-handle, .bwp-table-toolbar, .column-resize-handle',
+    )
     .forEach((el) => el.remove());
   // ফাঁকা পাতার placeholder লেখা ফরমায় ছাপা রোধ (CSS-সহ দ্বৈত সুরক্ষা)
   clone
@@ -85,41 +102,105 @@ function sanitizeClone(clone: HTMLElement): void {
       el.classList.remove('is-editor-empty', 'is-empty');
       el.removeAttribute('data-placeholder');
     });
+  // সিলেকশন/এডিটিং অ্যাফোর্ডেন্স — প্রিন্টে কখনো দাগ হবে না
+  clone.querySelectorAll('.ProseMirror-selectednode, .selectedCell, .doc-icon-selected').forEach((el) => {
+    el.classList.remove('ProseMirror-selectednode', 'selectedCell', 'doc-icon-selected');
+  });
+  clone
+    .querySelectorAll<HTMLElement>('.chrome-editing, .chrome-editable')
+    .forEach((el) => el.classList.remove('chrome-editing', 'chrome-editable'));
   clone.classList.remove('paper-active');
 }
 
-/** প্রিন্ট-রুট DOM তৈরি (টেস্ট/ডিবাগের জন্যও এক্সপোর্টেড) */
-export function buildFormaRoot(opts: FormaPrintOptions): HTMLElement {
+/** প্রেস-স্লিপ — শীটের নিচের-ডান কোণে ছোট শনাক্তকরণ লেখা (কাটা পড়ে যায়) */
+function buildPressSlip(text: string): HTMLElement {
+  const slip = document.createElement('div');
+  slip.className = 'forma-slip';
+  slip.textContent = text;
+  return slip;
+}
+
+/** কোণার ট্রিম-মার্ক — শীটের ৪ কোণে ছোট L-টিক (প্রেস ট্রিম সারিবদ্ধতার জন্য) */
+function buildCornerMarks(sheetEl: HTMLElement): void {
+  const legs: Array<[string, string]> = [
+    ['top', 'left'],
+    ['top', 'right'],
+    ['bottom', 'left'],
+    ['bottom', 'right'],
+  ];
+  for (const [v, h] of legs) {
+    const barH = document.createElement('div');
+    barH.className = 'forma-corner';
+    barH.style[v] = '0';
+    barH.style[h] = '0';
+    if (v === 'top') barH.style.borderTop = 'solid';
+    else barH.style.borderBottom = 'solid';
+    if (h === 'left') barH.style.borderLeft = 'solid';
+    else barH.style.borderRight = 'solid';
+    sheetEl.appendChild(barH);
+  }
+}
+
+interface FormaBuildInfo {
+  root: HTMLElement;
+  sheetCount: number;
+  sheet: { widthMm: number; heightMm: number };
+  totalPages: number;
+}
+
+/**
+ * ফরমা-রুট গঠন (প্রিন্ট ও লাইভ-প্রিভিউ দুজায়গাতেই ব্যবহৃত)।
+ * @param maxSheets দিলে প্রথম N শীট পর্যন্ত গঠন করে (প্রিভিউতে দ্রুত দেখাতে)
+ */
+export function buildFormaSheets(opts: FormaPrintOptions, maxSheets?: number): FormaBuildInfo {
   const { settings, pages } = useEditorStore.getState();
   const { widthMm, heightMm } = getPageDimensionsMm(
     settings.paperSize,
     settings.orientation,
     settings.customPaper,
   );
-  const sheet = formaSheetSizeMm(widthMm, heightMm, opts.formaSize);
-  // শীট অভিমুখ অনুযায়ী ডুপ্লেক্স-অক্ষ — প্রিন্টারের ডিফল্ট long-edge flip-এ পেছনের পাশ মেলে
-  const duplex = formaDuplexFor(widthMm, heightMm, opts.formaSize);
-  const imposition = computeImposition(pages.length, opts.formaSize, duplex);
+  const swapGrid = opts.swapGrid ?? false;
+  const sheet = formaSheetSizeMm(widthMm, heightMm, opts.formaSize, swapGrid);
+  const duplex = formaDuplexFor(widthMm, heightMm, opts.formaSize, swapGrid);
+
+  // কভার বাদ দিলে ফরমার ডোমেন = কভার-পরবর্তী পাতা
+  const coverCount = opts.includeCover ? 0 : 1;
+  const imposeCount = Math.max(0, pages.length - coverCount);
+  const imposition = computeImposition(Math.max(1, imposeCount), opts.formaSize, duplex, swapGrid);
 
   const pageEls = Array.from(
     document.querySelectorAll<HTMLElement>('.workspace .page-slot .paper-page'),
   );
+  // imposed index i (1-based) → ডকুমেন্ট পেজ এলিমেন্ট (কভার বাদ হলে +১ সরে)
+  const pageElAt = (imposedPage: number): HTMLElement | undefined => {
+    const docIndex = imposedPage - 1 + coverCount;
+    return pageEls[docIndex];
+  };
+
+  const title = useEditorStore.getState().title.trim();
+  const dateStr = new Date().toLocaleDateString('bn-BD');
 
   const root = document.createElement('div');
   root.id = ROOT_ID;
+  root.className = 'forma-root';
 
   // প্রিন্ট ক্রম — সাইড বিন্যাস অনুযায়ী
-  const sides: Array<{ panels: typeof imposition.sheets[0]['front']; label: string }> = [];
+  const sides: Array<{ panels: typeof imposition.sheets[0]['front']; label: string; side: 'A' | 'B' }> = [];
   imposition.sheets.forEach((sh, i) => {
-    sides.push({ panels: sh.front, label: `শীট ${i + 1} — পাশ A` });
-    sides.push({ panels: sh.back, label: `শীট ${i + 1} — পাশ B` });
+    sides.push({ panels: sh.front, label: `শীট ${bn(i + 1)}/${bn(imposition.sheets.length)} — পাশ A`, side: 'A' });
+    sides.push({ panels: sh.back, label: `শীট ${bn(i + 1)}/${bn(imposition.sheets.length)} — পাশ B`, side: 'B' });
   });
   const ordered =
     opts.sideOrder === 'interleaved'
       ? sides
       : [...sides.filter((_, i) => i % 2 === 0), ...sides.filter((_, i) => i % 2 === 1)];
 
-  ordered.forEach(({ panels }) => {
+  const sheetLimit = maxSheets ?? imposition.sheets.length;
+  let renderedSheets = 0;
+  for (const { panels, label } of ordered) {
+    if (renderedSheets >= sheetLimit * 2) break; // প্রতি শীটে ২ পাশ
+    renderedSheets++;
+
     const sheetEl = document.createElement('div');
     sheetEl.className = 'forma-sheet';
     sheetEl.style.width = `${sheet.widthMm}mm`;
@@ -127,7 +208,7 @@ export function buildFormaRoot(opts: FormaPrintOptions): HTMLElement {
 
     // ভাঁজ মার্ক — প্রান্তে ছোট টিক (z: 2), পেজ সেলের নিচে ড্যাশড গাইড (z: 0)
     if (opts.foldMarks) {
-      const folds = formaFoldOffsetsMm(widthMm, heightMm, opts.formaSize);
+      const folds = formaFoldOffsetsMm(widthMm, heightMm, opts.formaSize, swapGrid);
       folds.verticalXmm.forEach((x) => {
         for (const edge of ['top', 'bottom'] as const) {
           const tick = document.createElement('div');
@@ -154,6 +235,8 @@ export function buildFormaRoot(opts: FormaPrintOptions): HTMLElement {
         guide.style.top = `${y}mm`;
         sheetEl.appendChild(guide);
       });
+      // কোণার ট্রিম-মার্ক — প্রেস কাটা/সারিবদ্ধতার জন্য
+      buildCornerMarks(sheetEl);
     }
 
     panels.forEach((panel) => {
@@ -165,7 +248,7 @@ export function buildFormaRoot(opts: FormaPrintOptions): HTMLElement {
       cellEl.style.height = `${heightMm}mm`;
 
       if (panel.pageNumber > 0) {
-        const src = pageEls[panel.pageNumber - 1];
+        const src = pageElAt(panel.pageNumber);
         if (src) {
           const inner = document.createElement('div');
           inner.className = 'forma-page-holder';
@@ -179,23 +262,33 @@ export function buildFormaRoot(opts: FormaPrintOptions): HTMLElement {
       sheetEl.appendChild(cellEl);
     });
 
+    if (opts.pressSlip) {
+      sheetEl.appendChild(
+        buildPressSlip(
+          `${label} · ${bn(opts.formaSize)} পৃষ্ঠা/ফরমা${title ? ` · ${title}` : ''} · ${dateStr}`,
+        ),
+      );
+    }
     root.appendChild(sheetEl);
-  });
+  }
 
-  return root;
+  return { root, sheetCount: imposition.sheets.length, sheet, totalPages: imposeCount };
+}
+
+/** প্রিন্ট-রুট DOM তৈরি — সামঞ্জস্যের জন্য রাখা র‍্যাপার */
+export function buildFormaRoot(opts: FormaPrintOptions): HTMLElement {
+  return buildFormaSheets(opts).root;
 }
 
 /** ফরমা প্রিন্ট সম্পূর্ণ পরিচ্ছন্ন — রুট, মোড-ক্লাস, @page রিস্টোর */
 function cleanupForma(styleEl: HTMLStyleElement): void {
   document.getElementById(ROOT_ID)?.remove();
   document.documentElement.classList.remove(MODE_CLASS);
-  if (pageStyleBackup !== null) {
-    styleEl.textContent = pageStyleBackup;
-    pageStyleBackup = null;
-  } else {
-    // আমরাই স্টাইল-এলিমেন্ট তৈরি করেছিলাম — স্বাভাবিক কাগজের সাইজে ফেরত
-    ensurePrintStyle(useEditorStore.getState().settings);
-  }
+  // সবসময় ডকুমেন্টের আসল কাগজের @page ফেরত — নইলে ফরমার পর Ctrl+P
+  // করলে শীট-সাইজেই ছাপা হত (backup-'' edge case সহ)
+  ensurePrintStyle(useEditorStore.getState().settings);
+  pageStyleBackup = null;
+  void styleEl;
 }
 
 // ───────────── ফরমা সেলফ-চেক (গুরুত্বপূর্ণ: ছাপার আগে যাচাই) ─────────────
@@ -203,6 +296,7 @@ function cleanupForma(styleEl: HTMLStyleElement): void {
 export interface FormaSelfCheckResult {
   ok: boolean;
   formaSize: FormaSize;
+  swapGrid: boolean;
   totalPages: number;
   sheetCount: number;
   /** প্রতিটি শীটের A/B পাশে সঠিক সংখ্যক ঘর আছে কি না */
@@ -223,16 +317,20 @@ export interface FormaSelfCheckResult {
  *  ২) পৃষ্ঠা ১..N ঠিক একবার করে আসে (কোনোটা ডুপ্লিকেট/বাদ নেই)
  *  ৩) প্রথম শীটের আউটার ফরমা প্রকাশিত স্ট্যান্ডার্ডের সাথে মেলে
  */
-export function formaSelfCheck(formaSize: FormaSize = 16): FormaSelfCheckResult {
+export function formaSelfCheck(
+  formaSize: FormaSize = 16,
+  swapGrid = false,
+  totalPagesOverride?: number,
+): FormaSelfCheckResult {
   const { pages } = useEditorStore.getState();
-  const totalPages = Math.max(1, pages.length);
+  const totalPages = Math.max(1, totalPagesOverride ?? pages.length);
   const { widthMm, heightMm } = getPageDimensionsMm(
     useEditorStore.getState().settings.paperSize,
     useEditorStore.getState().settings.orientation,
     useEditorStore.getState().settings.customPaper,
   );
-  const duplex = formaDuplexFor(widthMm, heightMm, formaSize);
-  const imposition = computeImposition(totalPages, formaSize, duplex);
+  const duplex = formaDuplexFor(widthMm, heightMm, formaSize, swapGrid);
+  const imposition = computeImposition(totalPages, formaSize, duplex, swapGrid);
   const problems: string[] = [];
 
   const { cols, rows } = imposition.grid;
@@ -300,12 +398,13 @@ export function formaSelfCheck(formaSize: FormaSize = 16): FormaSelfCheckResult 
   return {
     ok: problems.length === 0,
     formaSize,
+    swapGrid,
     totalPages,
     sheetCount: imposition.sheets.length,
     gridOk,
     pageMappingOk,
     outerFormaOk: outerFormaOk && innerFormaOk,
-    sheetMm: formaSheetSizeMm(widthMm, heightMm, formaSize),
+    sheetMm: formaSheetSizeMm(widthMm, heightMm, formaSize, swapGrid),
     duplex,
     problems,
   };
@@ -317,8 +416,8 @@ if (typeof window !== 'undefined') {
 }
 
 /**
- * ফরমা প্রিন্ট — DOM গঠন → মোড-ক্লাস → @page শীট-সাইজ → রেন্ডার-রেডি অপেক্ষা
- * → window.print() → afterprint/ফলব্যাক-এ ক্লিনআপ
+ * ফরমা প্রিন্ট — সেলফ-চেক গেট → DOM গঠন → মোড-ক্লাস → @page শীট-সাইজ
+ * → রেন্ডার-রেডি অপেক্ষা → window.print() → afterprint/ফলব্যাক-এ ক্লিনআপ
  */
 export async function printForma(opts: FormaPrintOptions): Promise<void> {
   if (typeof window === 'undefined') return;
@@ -331,10 +430,25 @@ export async function printForma(opts: FormaPrintOptions): Promise<void> {
     return;
   }
 
+  // ── গার্ড ১-ক: কভার বাদ দিলে অন্তত ১টি ভেতরের পাতা দরকার ──
+  const coverCount = opts.includeCover ? 0 : 1;
+  const imposeCount = pages.length - coverCount;
+  if (imposeCount < 1) {
+    toast.error('কভার বাদ দিলে ফরমায় ছাপার মতো কোনো পৃষ্ঠা থাকে না।');
+    return;
+  }
+
   // ── গার্ড ২: লাইভ পেজ DOM পাওয়া যাচ্ছে কি না (না পেলে ফাঁকা শীট ছাপা হত) ──
   const pageEls = document.querySelectorAll('.workspace .page-slot .paper-page');
   if (pageEls.length < pages.length) {
     toast.error('পৃষ্ঠাগুলো এখনো লোড হয়নি — এক সেকেন্ড পর আবার চেষ্টা করুন।');
+    return;
+  }
+
+  // ── গার্ড ৩: ফরমা সেলফ-চেক (প্রেস-সেফটি গেট) — মিললে তবেই ছাপা ──
+  const check = formaSelfCheck(opts.formaSize, opts.swapGrid ?? false, imposeCount);
+  if (!check.ok) {
+    toast.error(`ফরমা যাচাইয়ে সমস্যা: ${check.problems[0]}`, { duration: 8000 });
     return;
   }
 
@@ -343,21 +457,21 @@ export async function printForma(opts: FormaPrintOptions): Promise<void> {
     settings.orientation,
     settings.customPaper,
   );
-  const sheet = formaSheetSizeMm(widthMm, heightMm, opts.formaSize);
+  const sheet = formaSheetSizeMm(widthMm, heightMm, opts.formaSize, opts.swapGrid ?? false);
 
   // পুরনো রুট/মোড-অবশেষ থাকলে সরাও
   document.getElementById(ROOT_ID)?.remove();
   document.documentElement.classList.remove(MODE_CLASS);
 
   // ১) ফরমা-রুট গঠন ও যুক্ত করা
-  const root = buildFormaRoot(opts);
+  const root = buildFormaSheets(opts).root;
   document.body.appendChild(root);
 
   // ২) ফরমা মোড চালু — প্রিন্ট CSS এখন শুধু শীট দেখাবে
   document.documentElement.classList.add(MODE_CLASS);
 
   // ৩) @page → শীট সাইজ। স্টাইল-এলিমেন্ট না থাকলে getOrCreate নিজেই তৈরি
-  //    করে (সেশনে প্রথমবারই ফরমা প্রিন্ট করলেও সঠিক — আগের বাগ: সাধারণ
+  //    করে (সেশনে প্রথমবারই ফরমা প্রিন্ট করলেও @page সঠিক — আগের বাগ: সাধারণ
   //    প্রিন্ট না চালালে @page সেটই হতো না, শীট A4-এ কাটা পড়ত)।
   const styleEl = getOrCreatePrintStyleEl();
   pageStyleBackup = styleEl.textContent;

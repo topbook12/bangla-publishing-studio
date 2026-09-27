@@ -4,8 +4,10 @@
 
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
-import { BookText, FileCode2, FileDown, FileText, FileType2, Printer, Upload } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  BadgeCheck, BookText, FileCode2, FileDown, FileText, FileType2, Loader2, Printer, RefreshCw, Upload,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { RibbonButton, RibbonDivider, RibbonGroup } from './ribbon-shell';
 import {
@@ -39,8 +41,8 @@ import {
   FORMA_SIZES,
   type FormaSize,
 } from '@/lib/imposition';
-import { getPageDimensionsMm } from '@/lib/paper';
-import { printForma, waitForDialogsClosed } from '@/components/export/forma-print';
+import { getPageDimensionsMm, mmToPx } from '@/lib/paper';
+import { buildFormaSheets, formaSelfCheck, printForma, waitForDialogsClosed, type FormaPrintOptions } from '@/components/export/forma-print';
 
 type PrintMode = 'normal' | 'forma';
 type SideOrder = 'interleaved' | 'fronts-first';
@@ -58,6 +60,12 @@ export function ExportTab() {
   const [formaSize, setFormaSize] = useState<FormaSize>(16);
   const [sideOrder, setSideOrder] = useState<SideOrder>('interleaved');
   const [foldMarks, setFoldMarks] = useState(true);
+  const [includeCover, setIncludeCover] = useState(true);
+  const [pressSlip, setPressSlip] = useState(true);
+  const [swapGrid, setSwapGrid] = useState(false);
+  const [previewTick, setPreviewTick] = useState(0);
+  const [previewBuilding, setPreviewBuilding] = useState(false);
+  const previewHostRef = useRef<HTMLDivElement>(null);
   void title;
 
   const doDocx = async () => {
@@ -103,6 +111,9 @@ export function ExportTab() {
     }
   };
 
+  // কভার বাদ দিলে ফরমার পৃষ্ঠা-সংখ্যা
+  const effectiveCount = Math.max(0, pageCount - (includeCover ? 0 : 1));
+
   // ফরমা হিসাব — প্রিভিউ ও তথ্যের জন্য (প্রিন্টের সাথে হুবহু একই duplex-অক্ষ)
   const formaInfo = useMemo(() => {
     const { widthMm, heightMm } = getPageDimensionsMm(
@@ -110,11 +121,70 @@ export function ExportTab() {
       settings.orientation,
       settings.customPaper,
     );
-    const duplex = formaDuplexFor(widthMm, heightMm, formaSize);
-    const imposition = computeImposition(pageCount, formaSize, duplex);
-    const sheet = formaSheetSizeMm(widthMm, heightMm, formaSize);
-    return { imposition, sheet };
-  }, [pageCount, formaSize, settings.paperSize, settings.orientation, settings.customPaper]);
+    const duplex = formaDuplexFor(widthMm, heightMm, formaSize, swapGrid);
+    const imposition = computeImposition(Math.max(1, effectiveCount), formaSize, duplex, swapGrid);
+    const sheet = formaSheetSizeMm(widthMm, heightMm, formaSize, swapGrid);
+    return { imposition, sheet, duplex };
+  }, [effectiveCount, formaSize, swapGrid, settings.paperSize, settings.orientation, settings.customPaper.widthMm, settings.customPaper.heightMm]);
+
+  // ফরমা সেলফ-চেক — ডায়ালগেই সবুজ/লাল ব্যাজ (ছাপার আগে বাধ্যতামূলক যাচাই)
+  const selfCheck = useMemo(
+    () => formaSelfCheck(formaSize, swapGrid, Math.max(1, effectiveCount)),
+    [formaSize, swapGrid, effectiveCount],
+  );
+  const formaPrintable = pageCount > 0 && effectiveCount >= 1 && selfCheck.ok;
+
+  // ── লাইভ ফরমা প্রিভিউ — প্রথম শীটের দুই পাশ আসল পৃষ্ঠা-ক্লোন দিয়ে ──
+  useEffect(() => {
+    if (!printOpen || mode !== 'forma' || pageCount === 0) return;
+
+    let cancelled = false;
+    let timer = 0;
+    setPreviewBuilding(true);
+
+    // Radix ডায়ালগ কনটেন্ট পোর্টালে mount হতে এক-দুই পাস দেরি করতে পারে —
+    // হোস্ট না পাওয়া পর্যন্ত সীমিত রিট্রাই (নইলে দ্বিতীয়বার খুললে প্রিভিউ ফাঁকা থাকত)
+    let retries = 0;
+    const tryBuild = () => {
+      if (cancelled) return;
+      const host = previewHostRef.current;
+      if (!host) {
+        if (retries++ < 15) timer = window.setTimeout(tryBuild, 100);
+        else setPreviewBuilding(false);
+        return;
+      }
+      host.textContent = '';
+      try {
+        const opts: FormaPrintOptions = { formaSize, sideOrder, foldMarks, includeCover, pressSlip, swapGrid };
+        const built = buildFormaSheets(opts, 1);
+        const root = built.root;
+        root.removeAttribute('id'); // প্রিন্ট-রুটের id নয় — প্রিভিউ হোস্টেই দেখাই
+        root.classList.add('forma-preview-root');
+        const scale = Math.min(1, 460 / mmToPx(built.sheet.widthMm));
+        root.style.width = `${mmToPx(built.sheet.widthMm)}px`;
+        root.style.height = `${mmToPx(built.sheet.heightMm)}px`;
+        root.style.transform = `scale(${scale})`;
+        root.style.transformOrigin = 'top left';
+        const frame = document.createElement('div');
+        frame.style.width = `${mmToPx(built.sheet.widthMm) * scale}px`;
+        frame.style.height = `${mmToPx(built.sheet.heightMm) * scale}px`;
+        frame.appendChild(root);
+        host.appendChild(frame);
+      } catch {
+        /* প্রিভিউ ব্যর্থ হলে স্কিমাটিক প্রিভিউই থাকবে */
+      } finally {
+        if (!cancelled) setPreviewBuilding(false);
+      }
+    };
+    timer = window.setTimeout(tryBuild, 120);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+      const host = previewHostRef.current;
+      if (host) host.textContent = '';
+    };
+  }, [printOpen, mode, pageCount, formaSize, sideOrder, foldMarks, includeCover, pressSlip, swapGrid, previewTick]);
 
   // ডায়ালগ সম্পূর্ণ বন্ধ (exit-animation সহ) হওয়ার পরেই প্রিন্ট —
   // নইলে fixed-position ডায়ালগ প্রতিটি প্রিন্টেড পেজে রিপিট হতো
@@ -126,9 +196,15 @@ export function ExportTab() {
   };
 
   const runFormaPrint = () => {
+    if (!formaPrintable) {
+      toast.error(`ফরমা যাচাইয়ে সমস্যা — ছাপা আটকানো হয়েছে: ${selfCheck.problems[0] ?? 'অজানা'}`);
+      return;
+    }
     setPrintOpen(false);
     window.setTimeout(() => {
-      void waitForDialogsClosed().then(() => printForma({ formaSize, sideOrder, foldMarks }));
+      void waitForDialogsClosed().then(() =>
+        printForma({ formaSize, sideOrder, foldMarks, includeCover, pressSlip, swapGrid }),
+      );
     }, 40);
   };
 
@@ -238,7 +314,7 @@ export function ExportTab() {
               <div className="space-y-0.5">
                 <p className="text-sm font-semibold leading-none">সাধারণ PDF</p>
                 <p className="text-xs text-muted-foreground">
-                  প্রতি শীটে একটি পৃষ্ঠা, সঠিক কাগজের সাইজে — প্রিন্টার বা ডিজিটাল কপির জন্য।
+                  প্রতি শীটে একটি পৃষ্ঠা, সঠিক কাগজের সাইজে — প্রিন্টার, ডিজিটাল কপি বা কভার ছাপার জন্য।
                 </p>
               </div>
             </Label>
@@ -295,12 +371,58 @@ export function ExportTab() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between">
-                <Label htmlFor="fold-marks" className="text-xs text-muted-foreground">
-                  ভাঁজ/কাট মার্ক দেখান
-                </Label>
-                <Switch id="fold-marks" checked={foldMarks} onCheckedChange={setFoldMarks} />
+              <div className="space-y-2 rounded-md border bg-background/60 p-2.5">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="include-cover" className="text-xs text-muted-foreground">
+                    কভার ফরমায় রাখুন
+                  </Label>
+                  <Switch id="include-cover" checked={includeCover} onCheckedChange={setIncludeCover} />
+                </div>
+                <p className="text-[10px] leading-tight text-muted-foreground">
+                  বাঁদিকে রাখলে কভার ফরমার প্রথম পৃষ্ঠা হিসেবে ছাপাবে। আসল বইয়ের মতো কভার
+                  আলাদা মোটা কাগজে ছাপাতে চাইলে বন্ধ করুন — তখন কভার &ldquo;সাধারণ
+                  PDF&rdquo; দিয়ে আলাদা ছাপাবেন, ভেতরের ব্লক ফরমায় ছাপা হবে।
+                </p>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="press-slip" className="text-xs text-muted-foreground">
+                    প্রেস-স্লিপ (শীট নম্বর/পাশ)
+                  </Label>
+                  <Switch id="press-slip" checked={pressSlip} onCheckedChange={setPressSlip} />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="fold-marks" className="text-xs text-muted-foreground">
+                    ভাঁজ/কাট মার্ক দেখান
+                  </Label>
+                  <Switch id="fold-marks" checked={foldMarks} onCheckedChange={setFoldMarks} />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="grid-swap" className="text-xs text-muted-foreground">
+                    শীট গ্রিড ঘোরান ({bn(formaInfo.imposition.grid.rows)}×{bn(formaInfo.imposition.grid.cols)})
+                  </Label>
+                  <Switch id="grid-swap" checked={swapGrid} onCheckedChange={setSwapGrid} />
+                </div>
+                <p className="text-[10px] leading-tight text-muted-foreground">
+                  ছাপাখানার কাগজের গ্রেন-দিক বা স্টক-সাইজে লম্বা গ্রিড দরকার হলে এটি চালু
+                  করুন — দুই অভিমুখেই ভাঁজ সঠিক থাকে (যাচাইকৃত)।
+                </p>
               </div>
+
+              {/* ফরমা সেলফ-চেক ব্যাজ */}
+              {selfCheck.ok ? (
+                <div className="flex items-center gap-2 rounded-md border border-emerald-300/70 bg-emerald-50/80 px-3 py-2 text-xs font-medium text-emerald-800 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-300">
+                  <BadgeCheck size={15} className="shrink-0" />
+                  ফরমা যাচাই সম্পন্ন — পৃষ্ঠা ক্রম, ঘর ও আউটার ফরমা স্ট্যান্ডার্ড মেলেছে ✓
+                </div>
+              ) : (
+                <div className="rounded-md border border-red-300/70 bg-red-50/80 px-3 py-2 text-xs font-medium text-red-800 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-300">
+                  ফরমা যাচাইয়ে সমস্যা — ছাপা আটকানো হয়েছে:
+                  <ul className="mt-1 list-disc pl-4 font-normal">
+                    {selfCheck.problems.slice(0, 3).map((p) => (
+                      <li key={p}>{p}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               {/* তথ্য ব্যাজ */}
               <div className="flex flex-wrap gap-1.5">
@@ -315,12 +437,43 @@ export function ExportTab() {
                   শীট মাপ: {bn(Math.round(formaInfo.sheet.widthMm))}×{bn(Math.round(formaInfo.sheet.heightMm))} মিমি
                 </Badge>
                 <Badge variant="outline">ডুপ্লেক্স প্রিন্টে: Long-edge flip রাখুন</Badge>
+                {!includeCover && pageCount > 0 && (
+                  <Badge variant="outline">কভার বাদ — ফরমায় {bn(effectiveCount)}টি পৃষ্ঠা</Badge>
+                )}
               </div>
 
-              {/* প্রিভিউ — প্রথম ২টি শীট */}
+              {/* লাইভ প্রিভিউ — আসল পৃষ্ঠা দিয়ে গড়া প্রথম প্রেস-শীট */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-medium text-muted-foreground">
+                    লাইভ প্রিভিউ — প্রথম প্রেস-শীট (আসল পৃষ্ঠা দিয়ে গড়া; ছাপা হবে ঠিক এটিই):
+                  </p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 gap-1 text-[11px]"
+                    onClick={() => setPreviewTick((t) => t + 1)}
+                    disabled={previewBuilding}
+                  >
+                    {previewBuilding ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
+                    রিফ্রেশ
+                  </Button>
+                </div>
+                <div
+                  ref={previewHostRef}
+                  className="forma-preview-host flex justify-center overflow-hidden rounded border bg-white p-1"
+                  aria-label="ফরমা প্রিভিউ"
+                />
+                <p className="text-[10px] leading-tight text-muted-foreground">
+                  সাইড বিন্যাস অনুযায়ী প্রিন্টে শীট-পর শীট (A, B, A, B…) আসবে — এই প্রিভিউতে
+                  প্রথম শীটের দুই পাশ পাশাপাশি দেখানো হয়েছে।
+                </p>
+              </div>
+
+              {/* স্কিমাটিক প্রিভিউ — প্রথম ২টি শীটের পৃষ্ঠা-বিন্যাস */}
               <div className="space-y-2">
                 <p className="text-xs font-medium text-muted-foreground">
-                  প্রিভিউ — পৃষ্ঠা বিন্যাস (↻ = ১৮০° ঘুরিয়ে ছাপা হবে):
+                  পৃষ্ঠা বিন্যাস (↻ = ১৮০° ঘুরিয়ে ছাপা হবে):
                 </p>
                 <div className="flex gap-2 overflow-x-auto pb-1">
                   {formaInfo.imposition.sheets.slice(0, 2).map((sh, i) => (
@@ -380,6 +533,10 @@ export function ExportTab() {
                 <p className="mb-1.5 font-bold">ফরমা ছাপার নিয়ম (ধাপে ধাপে):</p>
                 <ol className="list-decimal space-y-1 pl-4">
                   <li>
+                    <b>সব পৃষ্ঠা ছাপুন:</b> প্রিন্ট ডায়ালগে পেজ-রেঞ্জ <b>All</b> রাখতে হবে —
+                    কোনো শীট বাদ গেলে সই-এ পৃষ্ঠা মিলবে না।
+                  </li>
+                  <li>
                     <b>সাইড বিন্যাস:</b> ডুপ্লেক্স (উভয় পাশ একসাথে ছাপার) প্রিন্টার থাকলে
                     &ldquo;পাশাপাশি&rdquo; রাখুন — প্রতিটি শীটের A ও B পাশ পরপর ছাপাবে।
                     সাধারণ (এক পাশ) প্রিন্টারে আগে সব A পাশ ছাপিয়ে কাগজ উল্টে সব B পাশ ছাপাতে
@@ -395,12 +552,23 @@ export function ExportTab() {
                   </li>
                   <li>
                     <b>কাগজের মাপ:</b> প্রেস শীট {bn(Math.round(formaInfo.sheet.widthMm))}×{bn(Math.round(formaInfo.sheet.heightMm))} মিমি —
-                    এই মাপের কাগজ না মিললে ছোট ফরমা (৪ বা ৮ পৃষ্ঠা) বেছে নিন। ছাপাখানায়
+                    এই মাপের কাগজ না মিললে ছোট ফরমা (৪ বা ৮ পৃষ্ঠা) বা গ্রিড ঘোরানো বেছে নিন। ছাপাখানায়
                     A3/ডেমি/ক্রাউন শীটে এক-একটি ফরমা ছাপা হয়।
                   </li>
                   <li>
-                    <b>ভাঁজ ও কাটা:</b> ছাপানোর পর ভাঁজ-রেখার দাগ ধরে ভাঁজ করুন, তারপর
-                    খাড়া কাটা দিন — পৃষ্ঠা ১, ২, ৩… স্বয়ংক্রিয়ভাবে সঠিক ক্রমে পড়বে।
+                    <b>কভার:</b> আসল বইয়ে কভার আলাদা মোটা কাগজে (ইলাস্ট্রেশন কার্ড ২৫০–৩০০ গ্রাম)
+                    ছাপানো হয় — &ldquo;কভার ফরমায় রাখুন&rdquo; বন্ধ রেখে কভারটি সাধারণ PDF দিয়ে
+                    আলাদা ছাপান, ভেতরের ব্লক ফরমায় যাবে।
+                  </li>
+                  <li>
+                    <b>ভাঁজ ও কাটা:</b> ছাপানোর পর ভাঁজ-রেখার দাগ ধরে ভাঁজ করুন (ডান-অর্ধেক
+                    উপরে → নিচ-অর্ধেক উপরে → পুনরাবৃত্তি), তারপর খাড়া কাটা দিন — কোণার
+                    ট্রিম-মার্ক ধরে কাটলে পৃষ্ঠা ১, ২, ৩… স্বয়ংক্রিয়ভাবে সঠিক ক্রমে পড়বে।
+                  </li>
+                  <li>
+                    <b>প্রেসে দেওয়ার আগে:</b> প্রতিটি শীটের কোণে ছাপা প্রেস-স্লিপ (শীট ১/৪ — পাশ A)
+                    দেখে ক্রম মিলিয়ে নিন; প্রথম শীটের বাইরের পাশে {bn(1)}, {bn(4)}, {bn(5)}… জাতীয়
+                    পৃষ্ঠা-সেট থাকলেই বাইরের ফরমা ঠিক আছে।
                   </li>
                 </ol>
               </div>
@@ -416,7 +584,7 @@ export function ExportTab() {
                 <Printer size={15} className="mr-1" /> প্রিন্ট করুন
               </Button>
             ) : (
-              <Button onClick={runFormaPrint}>
+              <Button onClick={runFormaPrint} disabled={!formaPrintable}>
                 <Printer size={15} className="mr-1" /> ফরমা প্রিন্ট করুন
               </Button>
             )}
