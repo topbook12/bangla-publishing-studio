@@ -78,6 +78,13 @@ function sanitizeClone(clone: HTMLElement): void {
   clone
     .querySelectorAll('.no-print, .page-toolbar, .mcq-edit, .callout-delete, .footnote-pop, .bwp-img-handle, .bwp-table-toolbar')
     .forEach((el) => el.remove());
+  // ফাঁকা পাতার placeholder লেখা ফরমায় ছাপা রোধ (CSS-সহ দ্বৈত সুরক্ষা)
+  clone
+    .querySelectorAll<HTMLElement>('.bwp-prosemirror p.is-editor-empty, .bwp-prosemirror p.is-empty')
+    .forEach((el) => {
+      el.classList.remove('is-editor-empty', 'is-empty');
+      el.removeAttribute('data-placeholder');
+    });
   clone.classList.remove('paper-active');
 }
 

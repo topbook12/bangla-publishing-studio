@@ -32,6 +32,9 @@ export function scanTocEntries(pages: PageData[], settings: DocumentSettings): T
 /** সব মাউন্ট করা এডিটরের ভেতরের tocBlock নোডের attrs আপডেট করে */
 export function updateTocNodes(editors: Editor[], entries: TocEntry[], title: string): void {
   for (const editor of editors) {
+    // ফ্লো/ফিল অপে এডিটর অ্যাসিনক্রোনাসভাবে ধ্বংস হতে পারে — ডিসপ্যাচের আগে গার্ড
+    // (নইলে view.dispatch থ্রো করে বাকি পাতার TOC আপডেটই বন্ধ হয়ে যেত)
+    if (editor.isDestroyed) continue;
     const { state, view } = editor;
     if (!state.doc.descendants) continue;
     const tr = state.tr;
@@ -43,7 +46,11 @@ export function updateTocNodes(editors: Editor[], entries: TocEntry[], title: st
       }
       return true;
     });
-    if (found) view.dispatch(tr);
+    if (found) {
+      // ইঞ্জিন-আপডেট — আন্ডু-হিস্টরিতে নয় (নইলে একটি Ctrl+Z পুরনো পৃষ্ঠা-নম্বরে ফিরিয়ে দিত)
+      tr.setMeta('addToHistory', false);
+      view.dispatch(tr);
+    }
   }
 }
 

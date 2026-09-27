@@ -74,6 +74,18 @@ function expandHtml(html: string): string {
     el.setAttribute('title', note);
   });
 
+  // কলআউট — স্ক্রিনে NodeView যেভাবে রেন্ডার করে ঠিক তেমন ব্যাজ-হেড বসাই
+  // (আগে ব্যাজ/শিরোনাম এক্সপোর্টে হারিয়ে যেত — কনটেন্ট লস)
+  const CALLOUT_LABELS: Record<string, string> = {
+    concept: 'মূল ধারণা', warning: 'সতর্কতা', formula: 'সূত্র', note: 'নোট',
+  };
+  root.querySelectorAll('div.callout-box').forEach((el) => {
+    if (el.querySelector(':scope > .callout-head')) return; // আগে এক্সপ্যান্ড হলে দ্বিগুণ নয়
+    const variant = el.getAttribute('data-variant') ?? 'concept';
+    const title = el.getAttribute('data-title') || CALLOUT_LABELS[variant] || CALLOUT_LABELS.concept;
+    el.innerHTML = `<div class="callout-head"><span class="callout-badge">${escapeHtml(title)}</span></div><div class="callout-content">${el.innerHTML}</div>`;
+  });
+
   return root.innerHTML;
 }
 
@@ -112,6 +124,14 @@ ul, ol { margin: 0 0 var(--p-gap, 8px); padding-left: 26px; }
 .callout-formula { background: rgba(22,163,74,.08); border-left: 4px solid #16a34a; }
 .callout-note { background: rgba(100,116,139,.08); border-left: 4px solid #64748b; }
 .callout-head { margin-bottom: 4px; font-weight: 700; }
+.callout-badge { display: inline-block; font-size: 0.82em; font-weight: 700; color: #fff; padding: 2px 12px; border-radius: 999px; }
+.callout-concept .callout-badge { background: #4f46e5; }
+.callout-warning .callout-badge { background: #dc2626; }
+.callout-formula .callout-badge { background: #16a34a; }
+.callout-note .callout-badge { background: #64748b; }
+.callout-content p:last-child { margin-bottom: 0; }
+a, a * { color: #4f46e5; text-decoration: underline; }
+a { cursor: pointer; }
 .doc-icon { display: inline-flex; line-height: 0; vertical-align: -0.16em; }
 .doc-icon svg, span.doc-icon svg { width: 100%; height: 100%; }
 .doc-textbox { position: relative; }
@@ -289,8 +309,13 @@ function chromeHtml(
     }
   }
   // হেডারে নম্বর (top পজিশন) — plain হলে নম্বর হেডারের সাথেই;
-  // হেডার বন্ধ/নেই হলে অ্যাপের PageHeader পুরোপুরি null দেয় — এক্সপোর্টও তাই
-  if (numInHeader && num && !headerOff) {
+  // হেডার বন্ধ/নেই হলে অ্যাপের PageHeader-এর নতুন ফলব্যাকের মতো শুধু নম্বরটুকু দেখাই
+  const justifyNum = numAlign === 'left' ? 'flex-start' : numAlign === 'right' ? 'flex-end' : 'center';
+  if (headerOff) {
+    if (numInHeader && num) {
+      headerHtml = `<div class="page-header" style="font-size:${hfH.fontSize}pt"><div class="ftr-plain" style="justify-content:${justifyNum}">${numberSpan(num, pn, hfH.accentColor)}</div></div>`;
+    }
+  } else if (numInHeader && num) {
     const nHtml = numberSpan(num, pn, hfH.accentColor);
     if (hfH.style === 'plain') {
       headerHtml = `<div class="page-header" style="text-align:${numAlign}">${headerHtml}<div style="font-size:${hfH.fontSize}pt">${nHtml}</div></div>`;
@@ -315,7 +340,7 @@ function chromeHtml(
       case 'royal':
         footerInner = `<div class="ftr-royal" style="color:${accent}">` +
           `<div class="hdr-royal-line" style="border-color:${accent}"></div>` +
-          `<div class="ftr-royal-row"><span class="hdr-royal-flourish" style="color:${accent}">❧</span>${nHtml}<span class="hdr-royal-flourish" style="color:${accent}">❧</span></div></div>`;
+          `<div class="ftr-royal-row"><span class="hdr-royal-flourish" style="color:${accent}">❧</span>${numInFooter ? nHtml : ''}<span class="hdr-royal-flourish" style="color:${accent}">❧</span></div></div>`;
         break;
       case 'academic': {
         const cells = numInFooter && nHtml

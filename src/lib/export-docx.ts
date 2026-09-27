@@ -6,8 +6,8 @@
 import {
   AlignmentType, BorderStyle, Document, ExternalHyperlink, Footer, Header, HeadingLevel, ImageRun,
   LevelFormat, PageBorderDisplay, PageBorderOffsetFrom, PageBorderZOrder,
-  Packer, Paragraph, ShadingType, Table, TableCell,
-  TableRow, TabStopType, TextRun, WidthType,
+  Packer, Paragraph, ShadingType, Tab, Table, TableCell,
+  TableRow, TabStopType, TextRun, VerticalAlign, WidthType,
 } from 'docx';
 import type { DocumentSettings, HeaderFooterSettings, PageData } from './types';
 import { effectivePageBorderStyle, effectivePageBorderWidth, getPaperPreset, PAGE_BORDER_WIDTH_PX } from './paper';
@@ -61,6 +61,30 @@ function hyperlinkRun(href: string, text: string): ExternalHyperlink {
   });
 }
 
+/** <u> — নেস্টেড কনটেন্টসহ underline রান (আগে সরাসরি টেক্সট-চাইল্ড বাদ পড়ত) */
+function collectU(el: Element, ctx: Ctx, runs: Array<TextRun | ExternalHyperlink>): void {
+  el.childNodes.forEach((child) => {
+    if (child.nodeType === Node.TEXT_NODE) {
+      const text = child.textContent ?? '';
+      if (text) runs.push(new TextRun({ text, bold: ctx.bold, italics: ctx.italics, color: ctx.color, underline: {} }));
+    } else if (child.nodeType === Node.ELEMENT_NODE) {
+      collectU(child as Element, ctx, runs);
+    }
+  });
+}
+
+/** <s>/<del> — নেস্টেড কনটেন্টসহ strike রান */
+function collectStrike(el: Element, ctx: Ctx, runs: Array<TextRun | ExternalHyperlink>): void {
+  el.childNodes.forEach((child) => {
+    if (child.nodeType === Node.TEXT_NODE) {
+      const text = child.textContent ?? '';
+      if (text) runs.push(new TextRun({ text, strike: true, bold: ctx.bold, italics: ctx.italics, color: ctx.color }));
+    } else if (child.nodeType === Node.ELEMENT_NODE) {
+      collectStrike(child as Element, ctx, runs);
+    }
+  });
+}
+
 /** ইনলাইন উপাদান থেকে TextRun তৈরি */
 function inlineRuns(el: Element, ctx: Ctx): Array<TextRun | ExternalHyperlink> {
   const runs: Array<TextRun | ExternalHyperlink> = [];
@@ -98,18 +122,11 @@ function inlineRuns(el: Element, ctx: Ctx): Array<TextRun | ExternalHyperlink> {
         runs.push(...inlineRuns(c, { ...childCtx, italics: true }));
         break;
       case 'U':
-        c.childNodes.forEach((gc) => {
-          if (gc.nodeType === Node.TEXT_NODE && gc.textContent) {
-            runs.push(new TextRun({ text: gc.textContent, bold: childCtx.bold, italics: childCtx.italics, color: childCtx.color, underline: {} }));
-          }
-        });
+        // নেস্টেড উপাদানও যেন হারিয়ে না যায় — পুরো সাবট্রি recurse
+        collectU(c, childCtx, runs);
         break;
       case 'S': case 'STRIKE': case 'DEL':
-        c.childNodes.forEach((gc) => {
-          if (gc.nodeType === Node.TEXT_NODE && gc.textContent) {
-            runs.push(new TextRun({ text: gc.textContent, strike: true, color: childCtx.color }));
-          }
-        });
+        collectStrike(c, childCtx, runs);
         break;
       case 'BR':
         runs.push(new TextRun({ break: 1 }));
@@ -131,6 +148,16 @@ function inlineRuns(el: Element, ctx: Ctx): Array<TextRun | ExternalHyperlink> {
       }
       case 'A': {
         const href = c.getAttribute('href') ?? '';
+        // ছবি-লিংক: <a href><img></a> — আগে textContent খালি হওয়ায় ছবি ও লিংক
+        // দুটোই DOCX-এ চুপচাপ বাদ পড়ত। এখন ছবিকে ক্লিকযোগ্য হাইপারলিংকে মুড়ি।
+        const imgEl = c.querySelector('img');
+        if (imgEl) {
+          const img = imageRunOf(imgEl);
+          if (img) {
+            runs.push(new ExternalHyperlink({ link: href || '#', children: [img] }));
+            break;
+          }
+        }
         const text = c.textContent ?? href;
         if (text) runs.push(hyperlinkRun(href, text));
         break;
@@ -154,6 +181,13 @@ function inlineRuns(el: Element, ctx: Ctx): Array<TextRun | ExternalHyperlink> {
       default: {
         // SPAN, MARK ইত্যাদি
         if (c.tagName === 'IMG') { const img = imageRunOf(c); if (img) runs.push(img); break; }
+        // ডকুমেন্ট আইকন — Word-এ SVG যায় না; রঙিন ◆ প্লেসহোল্ডার দেই (আগে সম্পূর্ণ বাদ পড়ত)
+        if (c.classList.contains('doc-icon')) {
+          const sizePx = Number(c.getAttribute('data-size') ?? 20) || 20;
+          const colorHex = hexNoHash(c.getAttribute('data-color') ?? undefined) ?? childCtx.color;
+          runs.push(new TextRun({ text: '◆', size: Math.max(8, Math.round(sizePx * 1.2)), color: colorHex }));
+          break;
+        }
         runs.push(...inlineRuns(c, childCtx));
       }
     }
@@ -186,12 +220,38 @@ function imageRunOf(img: Element): ImageRun | null {
     const bin = atob(base64);
     const bytes = new Uint8Array(bin.length);
     for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-    const width = Number(img.getAttribute('data-w') ?? img.getAttribute('width') ?? 420);
-    const height = Number(img.getAttribute('data-h') ?? img.getAttribute('height') ?? 280);
+    // px সাইজ সরাসরি; CSS স্ট্রিং ("30%") হলে ন্যাচারাল সাইজ থেকে px বের করি —
+    // আগে data-width পড়া হতো না বলে সব %-ছবি 420×280 ডিফল্টে চলে যেত
+    const natW = Number(img.getAttribute('data-natural-w') ?? 0) || 0;
+    const natH = Number(img.getAttribute('data-natural-h') ?? 0) || 0;
+    let width = readSizePx(img.getAttribute('width') ?? img.getAttribute('data-width'), natW, natH, 'w');
+    let height = readSizePx(img.getAttribute('height') ?? img.getAttribute('data-height'), natW, natH, 'h');
+    if (width && !height && natW && natH) height = Math.round(width * natH / natW);
+    if (height && !width && natW && natH) width = Math.round(height * natW / natH);
+    if (!width || width <= 0) width = 420;
+    if (!height || height <= 0) height = Math.round(width * 2 / 3);
     return new ImageRun({ data: bytes, type, transformation: { width, height } });
   } catch {
     return null;
   }
+}
+
+/** width/height attr → px। "30%" জাতীয় CSS ভ্যালু হলে natural মাপ × শতাংশ। */
+function readSizePx(raw: string | null, natW: number, natH: number, axis: 'w' | 'h'): number | null {
+  if (!raw) return null;
+  const t = raw.trim();
+  if (t.endsWith('%')) {
+    const pct = parseFloat(t);
+    if (!Number.isFinite(pct) || pct <= 0) return null;
+    const nat = axis === 'w' ? natW : natH;
+    return nat > 0 ? Math.round(nat * pct / 100) : null;
+  }
+  if (t.endsWith('px')) {
+    const v = parseFloat(t);
+    return Number.isFinite(v) && v > 0 ? Math.round(v) : null;
+  }
+  const v = Number(t);
+  return Number.isFinite(v) && v > 0 ? Math.round(v) : null;
 }
 
 const CALLOUT_DOCX: Record<string, { fill: string; label: string }> = {
@@ -213,7 +273,7 @@ function blockToDocx(el: Element, ctx: Ctx, settings: DocumentSettings): DocxBlo
     case 'H1': case 'H2': case 'H3': case 'H4': {
       const level = el.tagName === 'H1' ? HeadingLevel.HEADING_1 : el.tagName === 'H2' ? HeadingLevel.HEADING_2 : el.tagName === 'H3' ? HeadingLevel.HEADING_3 : HeadingLevel.HEADING_4;
       out.push(new Paragraph({
-        children: inlineRuns(el, { color: settings.header.accentColor.replace('#', '').toUpperCase() }),
+        children: inlineRuns(el, { color: hexNoHash(settings.header.accentColor) ?? '4F46E5' }),
         heading: level,
         alignment: alignmentOf(el, ctx),
         spacing: { after: 120, line: 300 },
@@ -257,9 +317,16 @@ function blockToDocx(el: Element, ctx: Ctx, settings: DocumentSettings): DocxBlo
         Array.from(tr.children).forEach((cell) => {
           const isHeader = cell.tagName === 'TH';
           const cellParas: Paragraph[] = blockToDocx(cell, { color: undefined }, settings).filter((b): b is Paragraph => b instanceof Paragraph);
+          // সেলের ব্যাকগ্রাউন্ড ও উল্লম্ব অ্যালাইনমেন্ট — আগে চুপচাপ বাদ পড়ত
+          const cellStyle = parseInlineStyle(cell);
+          const bgHex = hexNoHash(cellStyle['background-color'] ?? cellStyle['background'])
+            ?? (isHeader ? 'F1F5F9' : undefined);
+          const va = (cellStyle['vertical-align'] ?? '').toLowerCase();
+          const vAlign = va === 'middle' ? VerticalAlign.CENTER : va === 'bottom' ? VerticalAlign.BOTTOM : va === 'top' ? VerticalAlign.TOP : undefined;
           cells.push(new TableCell({
             children: cellParas.length ? cellParas : [new Paragraph('')],
-            shading: isHeader ? { type: ShadingType.CLEAR, fill: 'F1F5F9' } : undefined,
+            shading: bgHex ? { type: ShadingType.CLEAR, fill: bgHex } : undefined,
+            verticalAlign: vAlign,
             columnSpan: Number(cell.getAttribute('colspan') ?? 1) || 1,
             rowSpan: Number(cell.getAttribute('rowspan') ?? 1) || 1,
           }));
@@ -451,9 +518,18 @@ function blockToDocx(el: Element, ctx: Ctx, settings: DocumentSettings): DocxBlo
 
 function blockToDocxChildren(el: Element, ctx: Ctx, settings: DocumentSettings): DocxBlock[] {
   const out: DocxBlock[] = [];
+  // মিশ্র কনটেন্ট (<div>লেখা<p>…</p></div>) — সরাসরি টেক্সট-নোড আগে এক প্যারায়
+  // ধরে নিই (আগে শুধু এলিমেন্ট-চাইল্ড ছাড়া অবস্থায় ধরা হতো, টেক্সট হারাত)
+  let hasLeadingText = false;
+  for (const node of Array.from(el.childNodes)) {
+    if (node.nodeType === Node.TEXT_NODE && (node.textContent ?? '').trim()) { hasLeadingText = true; break; }
+    if (node.nodeType === Node.ELEMENT_NODE) break;
+  }
+  if (hasLeadingText) {
+    out.push(new Paragraph({ children: inlineRuns(el, ctx) }));
+  }
   Array.from(el.children).forEach((c) => out.push(...blockToDocx(c, ctx, settings)));
-  // সরাসরি টেক্সট থাকলে
-  if (!el.children.length && el.textContent?.trim()) {
+  if (!el.children.length && !hasLeadingText && el.textContent?.trim()) {
     out.push(new Paragraph({ children: inlineRuns(el, ctx) }));
   }
   return out;
@@ -478,10 +554,25 @@ function headerFooterParas(
   const numAlign = pn.position.endsWith('left')
     ? AlignmentType.LEFT
     : pn.position.endsWith('right') ? AlignmentType.RIGHT : AlignmentType.CENTER;
-  const numberRuns = (): TextRun[] => [
-    ...(pn.prefix ? [new TextRun({ text: pn.prefix, color: accent })] : []),
-    new TextRun({ text: num, bold: true, color: accent }),
+  const numberRuns = (sizeHalfPt?: number): TextRun[] => [
+    ...(pn.prefix ? [new TextRun({ text: pn.prefix, color: accent, size: sizeHalfPt })] : []),
+    new TextRun({ text: num, bold: true, color: accent, size: sizeHalfPt }),
   ];
+
+  // ট্যাব-স্টপ অবস্থান — কাগজের প্রস্থ − মার্জিন (gutter প্যারিটি সহ)।
+  // আগে 9360 (US Letter + 1″) হার্ডকোড ছিল — A4/Demy/Custom-এ ডান-অ্যালাইন লেখা
+  // মার্জিন ছাড়িয়ে দ্বিতীয় লাইনে ঝাঁপাত।
+  const preset = getPaperPreset(settings.paperSize);
+  const paperSize = settings.paperSize === 'custom'
+    ? { w: settings.customPaper.widthMm, h: settings.customPaper.heightMm }
+    : { w: preset.widthMm, h: preset.heightMm };
+  const portrait = settings.orientation === 'portrait';
+  const pageWidthTwip = Math.round((portrait ? paperSize.w : paperSize.h) * MM_TO_TWIP);
+  const gutterLeft = !(pn.oddEven && (pn.startAt + pageIndex) % 2 === 0);
+  const leftIn = gutterLeft ? settings.margins.left + settings.margins.gutter : settings.margins.left;
+  const rightIn = gutterLeft ? settings.margins.right : settings.margins.right + settings.margins.gutter;
+  const tabPos = Math.max(1000, Math.round(pageWidthTwip - (leftIn + rightIn) * INCH_TO_TWIP));
+  const midPos = Math.round(tabPos / 2);
 
   const headerChildren: Paragraph[] = [];
   if (showChrome && hfH.enabled && hfH.style !== 'none') {
@@ -489,11 +580,12 @@ function headerFooterParas(
     const mirrored = pn.oddEven && (pn.startAt + pageIndex) % 2 === 0;
     const L = mirrored ? hfH.rightText : hfH.leftText;
     const R = mirrored ? hfH.leftText : hfH.rightText;
+    const hfSize = Math.max(8, Math.round(hfH.fontSize * 2));
     if (hfH.style === 'parallel') {
       headerChildren.push(new Paragraph({
         children: [
-          new TextRun({ text: L, bold: true, color: accent }),
-          new TextRun({ text: `        ${R}`, color: accent }),
+          new TextRun({ text: L, bold: true, color: accent, size: hfSize }),
+          new TextRun({ text: `        ${R}`, color: accent, size: hfSize }),
         ],
         border: { top: { style: BorderStyle.DOUBLE, size: 6, color: accent }, bottom: { style: BorderStyle.DOUBLE, size: 6, color: accent } },
       }));
@@ -501,15 +593,15 @@ function headerFooterParas(
       const center = hfH.centerText || (mirrored ? hfH.rightText || hfH.leftText : hfH.leftText || hfH.rightText);
       headerChildren.push(new Paragraph({
         alignment: AlignmentType.CENTER,
-        children: [new TextRun({ text: `❦ ${center} ❦`, color: accent })],
+        children: [new TextRun({ text: `❦ ${center} ❦`, color: accent, size: hfSize })],
         border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: accent } },
       }));
     } else if (hfH.style === 'academic') {
       headerChildren.push(new Paragraph({
-        tabStops: [{ type: TabStopType.RIGHT, position: 9360 }],
+        tabStops: [{ type: TabStopType.RIGHT, position: tabPos }],
         children: [
-          new TextRun({ text: L, bold: true, color: accent }),
-          ...(R ? [new TextRun({ text: `\t${R}`, color: accent, size: 20 })] : []),
+          new TextRun({ text: L, bold: true, color: accent, size: hfSize }),
+          ...(R ? [new Tab(), new TextRun({ text: R, color: accent, size: hfSize })] : []),
         ],
         border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: accent } },
       }));
@@ -518,14 +610,14 @@ function headerFooterParas(
       if (center) {
         headerChildren.push(new Paragraph({
           alignment: AlignmentType.CENTER,
-          children: [new TextRun({ text: center, bold: true, color: accent })],
+          children: [new TextRun({ text: center, bold: true, color: accent, size: hfSize })],
         }));
       }
     }
   }
-  // হেডারে নম্বর (top পজিশন) — অ্যাপের PageHeader-এর মতো: হেডার বন্ধ/নেই হলে
-  // top-নম্বরও দেখায় না (আগে DOCX-এ ফুটন্তর নম্বর দেখাত — স্ক্রিনের সাথে অমিল)
-  if (num && pn.position.startsWith('top') && showChrome && hfH.enabled && hfH.style !== 'none') {
+  // হেডারে নম্বর (top পজিশন) — অ্যাপের PageHeader-এর মতো: হেডার বন্ধ/নেই হলেও
+  // top-নম্বর (চালু থাকলে) নম্বর-ওনলি প্যারায় দেখায় — স্ক্রিনের ফলব্যাকের সাথে মিল
+  if (num && pn.position.startsWith('top') && showChrome) {
     headerChildren.push(new Paragraph({
       alignment: numAlign === AlignmentType.CENTER ? AlignmentType.CENTER : numAlign,
       children: numberRuns(),
@@ -538,43 +630,55 @@ function headerFooterParas(
     const mirrored = pn.oddEven && (pn.startAt + pageIndex) % 2 === 0;
     const L = mirrored ? hfF.rightText : hfF.leftText;
     const R = mirrored ? hfF.leftText : hfF.rightText;
+    const hfSize = Math.max(8, Math.round(hfF.fontSize * 2));
+    const numHere = num && pn.position.startsWith('bottom');
+    // স্ক্রিনের মতো ৩-সেল লেআউট: numAlign অনুযায়ী নম্বর বাঁয়ে/মাঝে/ডানে
+    // (আগে সবসময় L → নম্বর → R ক্রমে লিখত, তাই bottom-left নম্বর ডানে পড়ত)
+    const tabbedRow = (cells: Array<'L' | 'R' | 'num'>): Paragraph => {
+      const runs: Array<TextRun | Tab> = [];
+      for (let i = 0; i < cells.length; i++) {
+        if (i > 0) runs.push(new Tab());
+        const c = cells[i];
+        if (c === 'L') runs.push(new TextRun({ text: L, color: accentF, size: hfSize }));
+        else if (c === 'R') runs.push(new TextRun({ text: R, color: accentF, size: hfSize }));
+        else runs.push(...numberRuns(hfSize));
+      }
+      const isThreeCell = cells.length === 3;
+      return new Paragraph({
+        tabStops: isThreeCell
+          ? [{ type: TabStopType.CENTER, position: midPos }, { type: TabStopType.RIGHT, position: tabPos }]
+          : [{ type: TabStopType.RIGHT, position: tabPos }],
+        children: runs,
+        border: { top: { style: BorderStyle.SINGLE, size: 6, color: accentF } },
+      });
+    };
     if (hfF.style === 'royal') {
       footerChildren.push(new Paragraph({
         alignment: AlignmentType.CENTER,
         children: [
-          new TextRun({ text: '❧ ', color: accentF }),
-          ...(num && pn.position.startsWith('bottom') ? numberRuns() : []),
-          new TextRun({ text: ' ❧', color: accentF }),
+          new TextRun({ text: '❧ ', color: accentF, size: hfSize }),
+          ...(numHere ? numberRuns(hfSize) : []),
+          new TextRun({ text: ' ❧', color: accentF, size: hfSize }),
         ],
         border: { top: { style: BorderStyle.SINGLE, size: 4, color: accentF } },
       }));
-    } else if (hfF.style === 'academic') {
-      footerChildren.push(new Paragraph({
-        tabStops: [{ type: TabStopType.RIGHT, position: 9360 }],
-        children: [
-          new TextRun({ text: L, color: accentF }),
-          ...(num && pn.position.startsWith('bottom') ? [new TextRun({ text: '\t', color: accentF }), ...numberRuns()] : []),
-          ...(R ? [new TextRun({ text: R, color: accentF, size: 20 })] : []),
-        ],
-        border: { top: { style: BorderStyle.SINGLE, size: 6, color: accentF } },
-      }));
-    } else if (hfF.style === 'parallel') {
-      footerChildren.push(new Paragraph({
-        tabStops: [{ type: TabStopType.RIGHT, position: 9360 }],
-        children: [
-          new TextRun({ text: L, color: accentF }),
-          ...(num && pn.position.startsWith('bottom') ? [new TextRun({ text: '\t', color: accentF }), ...numberRuns()] : []),
-          ...(R ? [new TextRun({ text: `\t${R}`, color: accentF })] : []),
-        ],
-        border: { top: { style: BorderStyle.SINGLE, size: 6, color: accentF } },
-      }));
+    } else if (hfF.style === 'academic' || hfF.style === 'parallel') {
+      footerChildren.push(
+        numHere
+          ? (numAlign === AlignmentType.LEFT
+            ? tabbedRow(['num', 'L', 'R'])
+            : numAlign === AlignmentType.RIGHT
+              ? tabbedRow(['L', 'R', 'num'])
+              : tabbedRow(['L', 'num', 'R']))
+          : tabbedRow(['L', 'R']),
+      );
     } else if (hfF.style === 'plain') {
       const center = hfF.centerText || (mirrored ? hfF.rightText || hfF.leftText : hfF.leftText || hfF.rightText);
       footerChildren.push(new Paragraph({
         alignment: AlignmentType.CENTER,
         children: [
-          ...(center ? [new TextRun({ text: `${center}   `, color: accentF })] : []),
-          ...(num && pn.position.startsWith('bottom') ? numberRuns() : []),
+          ...(center ? [new TextRun({ text: `${center}   `, color: accentF, size: hfSize })] : []),
+          ...(numHere ? numberRuns(hfSize) : []),
         ],
       }));
     }
@@ -695,7 +799,10 @@ export async function exportProjectToDocx(input: DocxExportInput): Promise<void>
   for (let pageIdx = 0; pageIdx < pages.length; pageIdx++) {
     const page = pages[pageIdx];
     currentFootnotes = [];
-    const showChrome = page.kind !== 'cover' && !page.noChrome;
+    // differentFirst — স্ক্রিন ও HTML এক্সপোর্টের মতো প্রথম পাতায় সব ক্রোম লুকানো
+    // (আগে শুধু নম্বর লুকাত, হেডার/ফুটার লেখা ছাপা হতো — স্ক্রিনের সাথে অমিল)
+    const showChrome = page.kind !== 'cover' && !page.noChrome
+      && !(settings.pageNumber.differentFirst && pageIdx === 0);
     const effH = page.headerOverride ?? settings.header;
     const effF = page.footerOverride ?? settings.footer;
     const { header, footer } = headerFooterParas(effH, effF, settings, pageIdx, showChrome);

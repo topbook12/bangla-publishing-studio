@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { RibbonButton, RibbonDivider, RibbonGroup, runCommand, useActiveEditor } from './ribbon-shell';
+import { RibbonButton, RibbonDivider, RibbonGroup, refocusActiveEditor, runCommand, useActiveEditor } from './ribbon-shell';
 import { FONT_OPTIONS, FONT_SIZE_OPTIONS, COLOR_SWATCHES, HIGHLIGHT_SWATCHES, fontStackOf } from '@/lib/paper';
 import { toBanglaNumber } from '@/lib/bangla';
 import { useEditorStore } from '@/lib/store';
@@ -35,7 +35,11 @@ function FontFamilySelect() {
           <span aria-hidden="true">▾</span>
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="max-h-80 w-56 overflow-y-auto">
+      <DropdownMenuContent
+        align="start"
+        className="max-h-80 w-56 overflow-y-auto"
+        onCloseAutoFocus={(e) => { e.preventDefault(); refocusActiveEditor(); }}
+      >
         {FONT_OPTIONS.map((f) => (
           <DropdownMenuItem
             key={f.family}
@@ -64,7 +68,11 @@ function FontSizeSelect() {
           {current ? toBanglaNumber(current) : 'Size'} <span aria-hidden="true">▾</span>
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="max-h-80 overflow-y-auto">
+      <DropdownMenuContent
+        align="start"
+        className="max-h-80 overflow-y-auto"
+        onCloseAutoFocus={(e) => { e.preventDefault(); refocusActiveEditor(); }}
+      >
         {FONT_SIZE_OPTIONS.map((size) => (
           <DropdownMenuItem
             key={size}
@@ -94,7 +102,11 @@ function ColorPicker() {
         </TooltipTrigger>
         <TooltipContent side="bottom">Color & Highlight</TooltipContent>
       </Tooltip>
-      <PopoverContent className="w-60 p-3" align="start">
+      <PopoverContent
+        className="w-60 p-3"
+        align="start"
+        onCloseAutoFocus={(e) => { e.preventDefault(); refocusActiveEditor(); }}
+      >
         <p className="mb-2 text-xs font-semibold text-muted-foreground">Text Color</p>
         <div className="grid grid-cols-7 gap-1.5">
           {COLOR_SWATCHES.map((c) => (
@@ -137,11 +149,13 @@ function LineHeightSelect() {
   const ed = useActiveEditor();
   const defaultLineHeight = useEditorStore((s) => s.settings.lineHeight);
   const options = ['1', '1.15', '1.3', '1.5', '1.75', '2', '2.5'];
-  // ট্রিগারে সিলেকশনের বর্তমান লাইন-হাইট দেখাই — আগে সবসময় "1.0▾" লেখা থাকত
+  // ট্রিগারে সিলেকশনের বর্তমান লাইন-হাইট দেখাই — হেডিংয়ের ভিতরে থাকলে heading-এর
+  // অ্যাট্রিবিউট থেকে (আগে শুধু paragraph পড়ত, তাই হেডিংয়ে সবসময় ডিফল্ট দেখাত)
   const current = (() => {
     if (!ed || ed.isDestroyed) return null;
     try {
-      const lh = ed.getAttributes('paragraph').lineHeight as string | number | undefined;
+      const inHeading = ed.state.selection.$from.parent.type.name === 'heading';
+      const lh = ed.getAttributes(inHeading ? 'heading' : 'paragraph').lineHeight as string | number | undefined;
       return lh !== undefined && lh !== null ? String(lh) : null;
     } catch { return null; }
   })();
@@ -153,7 +167,10 @@ function LineHeightSelect() {
           {toBanglaNumber(shown)}▾
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start">
+      <DropdownMenuContent
+        align="start"
+        onCloseAutoFocus={(e) => { e.preventDefault(); refocusActiveEditor(); }}
+      >
         {options.map((v) => (
           <DropdownMenuItem key={v} onClick={() => runCommand((ed2) => ed2.chain().focus().setLineHeight(v).run())}>
             {toBanglaNumber(v)}

@@ -9,7 +9,7 @@ import { Grid3x3, Search, Sigma, SpellCheck2, Type } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { RibbonButton, RibbonDivider, RibbonGroup } from './ribbon-shell';
+import { RibbonButton, RibbonDivider, RibbonGroup, refocusActiveEditor } from './ribbon-shell';
 import { useEditorStore } from '@/lib/store';
 import { useUiStore } from '@/lib/ui-store';
 import { CONJUNCTS, countCharacters, countWords, findConjunctWords } from '@/lib/bangla';
@@ -60,7 +60,11 @@ function ConjunctPalette() {
         </TooltipTrigger>
         <TooltipContent side="bottom">Conjunct Palette</TooltipContent>
       </Tooltip>
-      <PopoverContent className="w-96 p-3" align="start">
+      <PopoverContent
+        className="w-96 p-3"
+        align="start"
+        onCloseAutoFocus={(e) => { e.preventDefault(); refocusActiveEditor(); }}
+      >
         <p className="mb-2 text-sm font-semibold">Conjunct Palette</p>
         <input
           className="mb-2 w-full rounded-md border border-input bg-background px-2 py-1 text-sm"

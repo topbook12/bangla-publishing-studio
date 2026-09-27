@@ -123,6 +123,11 @@ declare module '@tiptap/core' {
 
 const OPTION_LABELS = ['ক', 'খ', 'গ', 'ঘ'] as const;
 
+/** ৪টির বেশি অপশন হলে (পেস্ট/ইমপোর্ট) পরের লেবেল সংখ্যা দিয়ে — undefined রেন্ডার রোধে */
+function mcqLabel(i: number): string {
+  return OPTION_LABELS[i] ?? String(i + 1);
+}
+
 function McqNodeView({ node, updateAttributes, deleteNode, selected }: NodeViewProps) {
   // attrs থেকে সরাসরি পড়া (parseMcqData ফলব্যাক)
   const fallback = parseMcqData(document.createElement('div'));
@@ -159,7 +164,7 @@ function McqNodeView({ node, updateAttributes, deleteNode, selected }: NodeViewP
           <div className="mcq-options">
             {options.map((opt, i) => (
               <span key={i} className={cn('mcq-option', answer === i && 'mcq-answer')}>
-                <b>({OPTION_LABELS[i]})</b> {opt || '—'}
+                <b>({mcqLabel(i)})</b> {opt || '—'}
               </span>
             ))}
           </div>
@@ -176,7 +181,7 @@ function McqNodeView({ node, updateAttributes, deleteNode, selected }: NodeViewP
                 onClick={() => update({ answer: i })}
                 title="সঠিক উত্তর চিহ্নিত করুন"
               >
-                ({OPTION_LABELS[i]})
+                ({mcqLabel(i)})
               </button>
               <Input
                 value={opt}
@@ -185,7 +190,7 @@ function McqNodeView({ node, updateAttributes, deleteNode, selected }: NodeViewP
                   next[i] = e.target.value;
                   update({ options: next as McqData['options'] });
                 }}
-                placeholder={`অপশন (${OPTION_LABELS[i]})`}
+                placeholder={`অপশন (${mcqLabel(i)})`}
                 className="mcq-input"
               />
             </div>
@@ -352,7 +357,12 @@ export const FancyDivider = Node.create({
   },
 
   parseHTML() {
-    return [{ tag: 'hr.fancy-divider' }];
+    return [
+      { tag: 'hr.fancy-divider' },
+      // সাধারণ <hr> (বাইরের HTML পেস্ট/ইমপোর্ট) — আগে কোনো রুল না মিলতে
+      // পেস্টে চুপচাপ হারিয়ে যেত; এখন single-স্টাইল ডিভাইডার হিসেবে ঢোকে
+      { tag: 'hr' },
+    ];
   },
 
   renderHTML({ HTMLAttributes }) {
@@ -497,12 +507,18 @@ export const LineHeight = Extension.create({
     return {
       setLineHeight:
         (value: string) =>
-        ({ commands }: CommandProps) =>
-          commands.updateAttributes('paragraph', { lineHeight: value }),
+        ({ commands, state }: CommandProps) => {
+          // কার্সর যে ব্লকে আছে সেই টাইপকে টার্গেট করি — আগে শুধু 'paragraph'
+          // আপডেট হত, তাই হেডিংয়ের ভিতরে কমান্ডটা নীরব নো-অপ ছিল
+          const target = state.selection.$from.parent.type.name === 'heading' ? 'heading' : 'paragraph';
+          return commands.updateAttributes(target, { lineHeight: value });
+        },
       unsetLineHeight:
         () =>
-        ({ commands }: CommandProps) =>
-          commands.updateAttributes('paragraph', { lineHeight: null }),
+        ({ commands, state }: CommandProps) => {
+          const target = state.selection.$from.parent.type.name === 'heading' ? 'heading' : 'paragraph';
+          return commands.updateAttributes(target, { lineHeight: null });
+        },
     };
   },
 });

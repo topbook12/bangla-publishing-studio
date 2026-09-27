@@ -761,7 +761,9 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
               editor: ed,
               imagePos: null,
               initialHref: activeLink,
-              initialNewTab: true,
+              // বিদ্যমান লিংকের আসল target — আগে হার্ডকোড true ছিল, এডিটে
+              // সেম-ট্যাব লিংকও নীরবে _blank হয়ে যেত
+              initialNewTab: ((ed.getAttributes('link').target as string | null | undefined) ?? null) === '_blank',
               initialText: text,
             });
           },

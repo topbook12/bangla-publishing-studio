@@ -5,7 +5,7 @@
 
 'use client';
 
-import { DOMSerializer } from '@tiptap/pm/model';
+import { DOMParser as PMDOMParser, DOMSerializer } from '@tiptap/pm/model';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import type { Editor } from '@tiptap/react';
 import { createNodeFromContent } from '@tiptap/core';
@@ -35,8 +35,28 @@ export function replaceDocNoHistory(editor: Editor, html: string): void {
     tr.setMeta('addToHistory', false); // আন্ডু-হিস্টরিতে নয়
     editor.view.dispatch(tr);
   } catch {
-    // অপ্রত্যাশিত পার্স ব্যর্থতায় পুরনো পথেই যাওয়া — কনটেন্ট হারাবে না
-    editor.commands.setContent(html || '<p></p>', false);
+    // আগের ফলব্যাক setContent(html, false) পুরো-ডক রিপ্লেসমেন্ট আন্ডু-হিস্টরিতে
+    // ঢুকিয়ে দিত → ফ্লো-এর পর Ctrl+Z-এ ডুপ্লিকেশন ফিরে আসত। এখন ProseMirror-এর
+    // নিজস্ব DOM-পার্সার (বেশি সহনশীল — অজানা ট্যাগ বাদ পড়ে, কনটেন্ট হারায় না)
+    // দিয়েই আন্ডু-হিস্টরির বাইরে বসাই।
+    try {
+      const holder = document.createElement('div');
+      holder.innerHTML = html || '<p></p>';
+      const docNode = PMDOMParser.fromSchema(editor.schema).parse(holder);
+      const tr = editor.state.tr.replaceWith(0, editor.state.doc.content.size, docNode);
+      tr.setMeta('preventUpdate', true);
+      tr.setMeta('addToHistory', false);
+      editor.view.dispatch(tr);
+    } catch {
+      // শেষ ফলব্যাক: ফাঁকা প্যারাতে রিসেট — অন্তত হিস্টরি-দূষণ হয় না
+      try {
+        const para = editor.schema.nodes.paragraph?.create?.() ?? editor.state.doc;
+        const tr = editor.state.tr.replaceWith(0, editor.state.doc.content.size, para);
+        tr.setMeta('preventUpdate', true);
+        tr.setMeta('addToHistory', false);
+        editor.view.dispatch(tr);
+      } catch { /* এডিটর ধ্বংস হয়ে গলে */ }
+    }
   }
 }
 
@@ -53,6 +73,26 @@ function appliedZoomOf(el: HTMLElement): number {
   if (Number.isFinite(zNum) && zNum > 0) return zNum;
   const rect = el.getBoundingClientRect();
   return el.offsetWidth > 0 && rect.width > 0 ? rect.width / el.offsetWidth : 1;
+}
+
+// ─── ফ্লো-অপ মিউচুয়াল এক্সক্লুশন ───
+// fillFromNextPage-এর await-জানালায় ResizeObserver-ট্রিগারড ফ্লো ঢুকে একই এডিটরের
+// ডক বদলে দিলে ব্লক দুই পাতায় ডুপ্লিকেট হতে পারে — প্রতি-এডিটর ফ্ল্যাগ দিয়ে আটকাই।
+const flowOpsRunning = new WeakSet<object>();
+
+/** এই এডিটরে এখন কোনো ফ্লো/ফিল অপ চলছে কি না (page-editor-এর scheduleFlow গার্ড) */
+export function isFlowOpRunning(editor: Editor): boolean {
+  return flowOpsRunning.has(editor);
+}
+
+function beginFlowOp(editor: Editor): boolean {
+  if (flowOpsRunning.has(editor)) return false;
+  flowOpsRunning.add(editor);
+  return true;
+}
+
+function endFlowOp(editor: Editor): void {
+  flowOpsRunning.delete(editor);
 }
 
 /** কার্সরের অবস্থানে পৃষ্ঠা ভাগ করা (Ctrl+Enter / Insert > পেজ ব্রেক) */
@@ -88,6 +128,15 @@ export function pageBreakOnEditor(editor: Editor, pageId: string): void {
 
 /** অটো-ফ্লো: পৃষ্ঠা উপচে পড়লে শেষ ব্লকগুলো পরের পৃষ্ঠায় সরানো */
 export function flowIfOverflow(editor: Editor, pageId: string, availableHeight: number): boolean {
+  if (!beginFlowOp(editor)) return false;
+  try {
+    return flowIfOverflowInner(editor, pageId, availableHeight);
+  } finally {
+    endFlowOp(editor);
+  }
+}
+
+function flowIfOverflowInner(editor: Editor, pageId: string, availableHeight: number): boolean {
   if (editor.isDestroyed) return false;
   const s = useEditorStore.getState();
   if (!s.settings.autoFlow) return false;
@@ -246,7 +295,15 @@ async function waitForImages(editor: Editor, timeoutMs = 250): Promise<void> {
  */
 export async function fillFromNextPage(editor: Editor, pageId: string, availableHeight: number): Promise<FillResult> {
   if (editor.isDestroyed || availableHeight <= 0) return { status: 'blocked', blocks: 0 };
+  if (!beginFlowOp(editor)) return { status: 'blocked', blocks: 0 };
+  try {
+    return await fillFromNextPageInner(editor, pageId, availableHeight);
+  } finally {
+    endFlowOp(editor);
+  }
+}
 
+async function fillFromNextPageInner(editor: Editor, pageId: string, availableHeight: number): Promise<FillResult> {
   const s = useEditorStore.getState();
   const idx = s.pages.findIndex((p) => p.id === pageId);
   if (idx < 0 || idx >= s.pages.length - 1) return { status: 'blocked', blocks: 0 };

@@ -202,6 +202,15 @@ export function useFindReplaceShortcuts(): void {
     const onKey = (e: KeyboardEvent) => {
       const mod = e.ctrlKey || e.metaKey;
       if (mod && (e.key === 'f' || e.key === 'h')) {
+        // ডায়ালগ আগে থেকেই খোলা থাকলে ব্রাউজারের ফাইন্ড না খুলে সার্চ-বক্সে
+        // ফোকাস নেয় (আগে ইনপুটের ভিতরে Ctrl+F চাপলে ব্রাউজার-ফাইন্ড পালাত)
+        if (useUiStore.getState().openDialog === 'findReplace') {
+          if (e.key === 'f') {
+            e.preventDefault();
+            document.querySelector<HTMLInputElement>('#find-query')?.focus();
+          }
+          return;
+        }
         const target = e.target as HTMLElement | null;
         const inEditable = target?.closest('input, textarea, select, [contenteditable="true"]');
         // হেডার/ফুটার ইনলাইন এডিট ছাড়া অন্য ইনপুটে ব্রাউজারের ফাইন্ড সবসময় বেছে নেয়

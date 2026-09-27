@@ -32,7 +32,7 @@ import { registerEditor, unregisterEditor } from '@/lib/editor-registry';
 import { customExtensions } from './extensions';
 import { designExtensions } from './design-ext';
 import { BlockMover } from './block-mover';
-import { fillFromNextPage, flowIfOverflow, mergeWithPreviousPage, pageBreakOnEditor, replaceDocNoHistory } from './page-ops';
+import { fillFromNextPage, flowIfOverflow, isFlowOpRunning, mergeWithPreviousPage, pageBreakOnEditor, replaceDocNoHistory } from './page-ops';
 import { StaticContent } from './static-content';
 import { pageFontStyle } from './page-chrome';
 import type { PageData } from '@/lib/types';
@@ -112,6 +112,8 @@ export function PageEditor({ page, index, isFirstPage }: PageEditorProps) {
     flowTimerRef.current = setTimeout(() => {
       const contentEl = contentRef.current;
       if (!contentEl || !editorRef.current) return;
+      // ফিল/ফ্লো অপ চলাকালীন পুনঃপ্রবাহ বন্ধ — ডুপ্লিকেশন রোধে
+      if (isFlowOpRunning(editorRef.current)) return;
       flowIfOverflow(editorRef.current, page.id, contentEl.clientHeight);
       // অটো-ফ্লো বন্ধ থাকলে উপচে পড়া লেখা নিঃশব্দে কাটা পড়ে — লাল দাগ দেখাই
       const pmEl = editorRef.current.view.dom as HTMLElement | null;
@@ -249,10 +251,23 @@ export function PageEditor({ page, index, isFirstPage }: PageEditorProps) {
     return () => window.clearTimeout(t);
   }, [editor, page.html]);
 
-  // কাগজের সাইজ/মার্জিন/থিম পরিবর্তনে অটো-ফ্লো পুনঃমূল্যায়ন
+  // কাগজের সাইজ/মার্জিন/থিম/টাইপোগ্রাফি পরিবর্তনে অটো-ফ্লো পুনঃমূল্যায়ন
   useEffect(() => {
     scheduleFlow();
-  }, [scheduleFlow, settings.paperSize, settings.orientation, settings.margins, settings.header, settings.footer]);
+  }, [scheduleFlow, settings.paperSize, settings.orientation, settings.margins, settings.header, settings.footer, settings.defaultFont, settings.defaultFontSize, settings.lineHeight, settings.paragraphSpacing]);
+
+  // বাংলা ওয়েবফন্ট লেট-সোয়াপ রেস — ফলব্যাক ফন্টে মেপে ভাঙা পাতা পরে ঠিক হত না।
+  // ফন্ট লোড শেষে একবার পুনঃমূল্যায়ন করলে আসল মেট্রিক্সে ভাঙ পুনঃগণনা হয়।
+  useEffect(() => {
+    if (!editor) return;
+    let cancelled = false;
+    if (typeof document !== 'undefined' && document.fonts?.ready) {
+      document.fonts.ready.then(() => {
+        if (!cancelled) scheduleFlow();
+      }).catch(() => { /* উপেক্ষা */ });
+    }
+    return () => { cancelled = true; };
+  }, [editor, scheduleFlow]);
 
   // ResizeObserver — টাইপিং, ছবি লোড, ফন্ট লোডে উচ্চতা পরিবর্তন ধরা
   useEffect(() => {

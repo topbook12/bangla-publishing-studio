@@ -267,13 +267,15 @@ function FooterBar({
 export function PageHeader({ index, settings, pageKind, noChrome, pageId, headerOverride }: ChromeProps): ReactNode {
   const { pageNumber } = settings;
   const header = headerOverride ?? settings.header;
-  // style 'none' = হেডার বন্ধ (ডায়ালগের "নেই" কার্ডের প্রতিশ্রুতি অনুযায়ী — আগে
-  // 'none' plain রেন্ডারারে পড়ে হেডার দেখাতই থাকত)
-  if (pageKind === 'cover' || noChrome || !header.enabled || header.style === 'none') return null;
+  if (pageKind === 'cover' || noChrome) return null;
   if (pageNumber.differentFirst && index === 0) return null;
   const mirrored = mirrorIfEven(index, pageNumber.oddEven, pageNumber.startAt);
   const numberInHeader = pageNumber.enabled && pageNumber.position.startsWith('top');
   const num = displayPageNumber(index, pageNumber);
+  // হেডার বন্ধ বা 'none' — ফুটারের মতোই: হেডার-বার বন্ধ, কিন্তু top-নম্বর
+  // (চালু থাকলে) নম্বর-ওনলি আকারে দেখাই। আগে পুরোপুরি null দিত, ফলে
+  // "হেডার নেই + উপরে নম্বর" কনফিগে নম্বরই হারিয়ে যেত।
+  const headerOff = !header.enabled || header.style === 'none';
 
   /**
    * কমিট টার্গেট — সবসময় এই পাতার override (থাকলে আপডেট, না থাকলে গ্লোবালের কপি দিয়ে তৈরি)।
@@ -298,6 +300,15 @@ export function PageHeader({ index, settings, pageKind, noChrome, pageId, header
 
   // নম্বরের অ্যালাইনমেন্ট — position-এর শেষ অংশ (left/center/right)
   const numAlign = pageNumber.position.endsWith('left') ? 'left' as const : pageNumber.position.endsWith('right') ? 'right' as const : 'center' as const;
+
+  if (headerOff) {
+    if (!numberHtml) return null;
+    return (
+      <header className="page-header" style={{ fontSize: `${header.fontSize}pt` }}>
+        <div className="ftr-plain" style={{ justifyContent: numAlign === 'left' ? 'flex-start' : numAlign === 'right' ? 'flex-end' : 'center' }}>{numberHtml}</div>
+      </header>
+    );
+  }
 
   // হেডার স্টাইল আর নম্বর একসাথে: plain হলে নম্বর হেডারে যোগ হয়
   return (

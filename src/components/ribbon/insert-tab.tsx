@@ -41,10 +41,19 @@ import { Link2Off } from 'lucide-react';
  * অভ্যন্তরীণ হ্যান্ডলারে — প্রতিরোধ করা যায় না)। তাই দুই ধাপে এডিটরে
  * ফোকাস ফিরিয়ে আনি: একবার সাথে সাথে, আরেকবার Radix-এর ফোকাস-ফেরতের পরে —
  * যাতে বক্স/আইকন বসানোর পর সরাসরি টাইপ করা যায়।
+ * সরাসরি রেজিস্ট্রি থেকে ফোকাস করে — runCommand ব্যবহার না করলে ভুল
+ * পাতা/কভার পাতায় বারবার toast ঝরত (এক ক্লিকে ৩টি বার্তা)।
  */
 function refocusEditor(): void {
-  window.setTimeout(() => runCommand((ed) => ed.commands.focus()), 60);
-  window.setTimeout(() => runCommand((ed) => ed.commands.focus()), 320);
+  const tryFocus = () => {
+    const { activePageId } = useEditorStore.getState();
+    const ed = getEditor(activePageId);
+    if (ed && !ed.isDestroyed) {
+      try { ed.commands.focus(); } catch { /* ধ্বংসপ্রাপ্ত এডিটর */ }
+    }
+  };
+  window.setTimeout(tryFocus, 60);
+  window.setTimeout(tryFocus, 320);
 }
 
 function TableInsert() {
@@ -263,14 +272,18 @@ function IconLibraryDialogInner({ onOpenChange }: { onOpenChange: (v: boolean) =
       : ICON_CATEGORIES.filter((c) => c.id === cat);
 
   const insertIcon = (name: string) => {
-    runCommand((ed) => ed.chain().focus().insertDocIcon({ name, size, color }).run());
+    // ব্যর্থ হলে (কভার/অমাউন্ট পাতা) ডায়ালগ খোলা রাখি — ব্যবহারকারী runCommand-
+    // এর একটিমাত্র বার্তাই দেখে, ডায়ালগ বন্ধ হয়ে গিয়ে আবার খুলতে হয় না
+    const ok = runCommand((ed) => ed.chain().focus().insertDocIcon({ name, size, color }).run());
+    if (!ok) return;
     pushRecentIcon(name);
     onOpenChange(false);
   };
 
   const insertOrnament = (char: string) => {
     const style = `color:${color || 'inherit'};font-size:${size}px;`;
-    runCommand((ed) => ed.chain().focus().insertContent(`<span style="${style}">${char}</span>`).run());
+    const ok = runCommand((ed) => ed.chain().focus().insertContent(`<span style="${style}">${char}</span>`).run());
+    if (!ok) return;
     onOpenChange(false);
     refocusEditor();
   };
@@ -559,7 +572,8 @@ function ShapeGalleryDialogInner({ onOpenChange }: { onOpenChange: (v: boolean) 
   const defs = cat === 'all' ? SHAPE_DEFS : SHAPE_DEFS.filter((d) => d.cat === cat);
 
   const insert = (id: string) => {
-    runCommand((ed) => ed.chain().focus().insertShapeFrame(id).run());
+    const ok = runCommand((ed) => ed.chain().focus().insertShapeFrame(id).run());
+    if (!ok) return;
     onOpenChange(false);
     refocusEditor();
   };
@@ -658,7 +672,8 @@ export function InsertTab() {
       toast.error('আগে কোনো পাতায় ক্লিক করুন, তারপর লিংক যোগ করুন');
       return;
     }
-    const activeLink = (editor.getAttributes('link').href as string | undefined) ?? '';
+    const linkAttrs = editor.getAttributes('link');
+    const activeLink = (linkAttrs.href as string | undefined) ?? '';
     const { empty } = editor.state.selection;
     setLinkDialog({
       open: true,
@@ -666,7 +681,9 @@ export function InsertTab() {
       editor,
       imagePos: null,
       initialHref: activeLink,
-      initialNewTab: true,
+      // বিদ্যমান লিংকের আসল target থেকে শুরু — আগে সবসময় true ছিল, তাই
+      // এডিট করতে গিয়ে সেম-ট্যাব লিংকও নীরবে _blank হয়ে যেত
+      initialNewTab: ((linkAttrs.target as string | null | undefined) ?? null) === '_blank',
       initialText: empty ? '' : '—', // '—' মানে সিলেকশনে আছে — টেক্সট ইনপুট লাগবে না
     });
   };
@@ -741,7 +758,7 @@ export function InsertTab() {
             />
             <RibbonButton
               icon={Link2}
-              label={linkDialog.initialHref && ed?.isActive('link') ? 'Edit Link' : 'Link'}
+              label={ed?.isActive('link') ? 'Edit Link' : 'Link'}
               title="লেখা বা ছবিতে ক্লিকযোগ্য লিংক — PDF এক্সপোর্টেও কাজ করে"
               onClick={openLinkDialog}
             />
@@ -751,7 +768,10 @@ export function InsertTab() {
               title="সিলেকশন থেকে লিংক সরান"
               onClick={() => {
                 const editor = getActiveEditorForLink();
-                if (!editor) return;
+                if (!editor) {
+                  toast.error('আগে কোনো পাতায় ক্লিক করুন, তারপর লিংক সরান');
+                  return;
+                }
                 editor.chain().focus().extendMarkRange('link').unsetLink().run();
               }}
             />
@@ -766,10 +786,13 @@ export function InsertTab() {
   );
 }
 
-/** লিংক কমান্ডের জন্য সক্রিয় এডিটর (রান-কমান্ডের মতোই ফলব্যাক সহ) */
+/**
+ * লিংক কমান্ডের জন্য সক্রিয় এডিটর — শুধুই সক্রিয় পাতার এডিটর।
+ * আগে সক্রিয় এডিটর না পেলে যেকোনো মাউন্ট করা এডিটরে ফলব্যাক করত — ফলে
+ * দূরে স্ক্রল করা অবস্থায় লিংক ভুল পাতার পুরনো কার্সরে বসে যেত।
+ */
 function getActiveEditorForLink(): ReturnType<typeof getEditor> {
-  const { activePageId, pages } = useEditorStore.getState();
+  const { activePageId } = useEditorStore.getState();
   const editor = getEditor(activePageId);
-  if (editor && !editor.isDestroyed) return editor;
-  return pages.map((p) => getEditor(p.id)).find((e) => e && !e.isDestroyed) ?? undefined;
+  return editor && !editor.isDestroyed ? editor : undefined;
 }

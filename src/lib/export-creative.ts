@@ -38,11 +38,76 @@ function decodeDataUrl(dataUrl: string): { bytes: Uint8Array; ext: string; mime:
   const m = /^data:([^;,]+)(?:;charset=[^;,]+)?;base64,([\s\S]*)$/.exec(dataUrl.trim());
   if (!m) return null;
   const mime = m[1].toLowerCase();
-  const bin = atob(m[2]);
+  let bin: string;
+  try {
+    bin = atob(m[2]);
+  } catch {
+    // ভাঙা base64 — পুরো এক্সপোর্ট ব্যর্থ না করে ছবিটা বাদ দিই
+    return null;
+  }
   const bytes = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
   const ext = mime.includes('jpeg') ? 'jpg' : mime.includes('png') ? 'png' : mime.includes('gif') ? 'gif' : mime.includes('webp') ? 'webp' : 'png';
   return { bytes, ext, mime };
+}
+
+/**
+ * কাস্টম নোড (MCQ/সূচিপত্র/ফুটনোট/আকৃতি/টেক্সটবক্স) → এক্সপোর্ট-বান্ধব সরল HTML।
+ * EPUB/MD/TXT তিন পথেই ব্যবহৃত — আগে MD/TXT এই নোডগুলো সম্পূর্ণ হারিয়ে দিত
+ * (কনটেন্ট data-* অ্যাট্রিবিউটে থাকায় textContent খালি ফিরত)।
+ */
+function expandCustomNodesForFlat(root: HTMLElement): void {
+  root.querySelectorAll('div.mcq-block').forEach((el) => {
+    const q = el.getAttribute('data-question') ?? '';
+    let opts = '';
+    try {
+      const arr: unknown = JSON.parse(el.getAttribute('data-options') ?? '[]');
+      if (Array.isArray(arr)) {
+        const labels = ['ক', 'খ', 'গ', 'ঘ'];
+        opts = (arr as string[])
+          .map((o, i) => `<p><b>(${labels[i] ?? i + 1})</b> ${escapeXml(String(o))}</p>`)
+          .join('');
+      }
+    } catch { /* উপেক্ষা */ }
+    let expl = '';
+    try {
+      const ex = JSON.parse(el.getAttribute('data-explanation') ?? 'null');
+      if (typeof ex === 'string' && ex) expl = `<p><i>ব্যাখ্যা: ${escapeXml(ex)}</i></p>`;
+    } catch { /* উপেক্ষা */ }
+    el.innerHTML = `<p><b>প্রশ্ন:</b> ${escapeXml(q)}</p>${opts}${expl}`;
+  });
+
+  root.querySelectorAll('sup.footnote').forEach((el) => {
+    const note = el.getAttribute('data-note') ?? '';
+    el.innerHTML = note ? ` <span style="font-size:.8em">[${escapeXml(note)}]</span>` : '';
+  });
+
+  root.querySelectorAll('div.toc-block').forEach((el) => {
+    let entries: Array<{ text: string; level: number; pageNumber: string }> = [];
+    try {
+      const parsed: unknown = JSON.parse(el.getAttribute('data-entries') ?? '[]');
+      if (Array.isArray(parsed)) entries = parsed as typeof entries;
+    } catch { /* উপেক্ষা */ }
+    const title = escapeXml(el.getAttribute('data-title') || 'সূচিপত্র');
+    const items = entries
+      .map((e) => `<li style="margin-left:${Math.max(0, e.level - 1) * 1.4}em">${escapeXml(e.text)} — <b>${escapeXml(e.pageNumber)}</b></li>`)
+      .join('');
+    el.innerHTML = `<p><b>${title}</b></p><ol style="list-style:none;padding-left:0">${items}</ol>`;
+  });
+
+  root.querySelectorAll('div.doc-shape').forEach((el) => {
+    const contentEl = el.querySelector(':scope > div.doc-shape-content');
+    const wrap = root.ownerDocument.createElement('blockquote');
+    wrap.setAttribute('style', 'text-align:center');
+    wrap.innerHTML = contentEl ? contentEl.innerHTML : el.innerHTML;
+    el.replaceWith(wrap);
+  });
+
+  root.querySelectorAll('div.doc-textbox').forEach((el) => {
+    const wrap = root.ownerDocument.createElement('blockquote');
+    wrap.innerHTML = el.innerHTML;
+    el.replaceWith(wrap);
+  });
 }
 
 // ─────────────────────────── EPUB ───────────────────────────
@@ -116,55 +181,7 @@ function pageToEpubXhtml(
   });
 
   // MCQ/TOC/কলআউট/টেক্সটবক্স/ফুটনোট — এক্সপোর্ট-বান্ধব সরল রূপ
-  root.querySelectorAll('div.mcq-block').forEach((el) => {
-    const q = el.getAttribute('data-question') ?? '';
-    let opts = '';
-    try {
-      const arr: unknown = JSON.parse(el.getAttribute('data-options') ?? '[]');
-      if (Array.isArray(arr)) {
-        const labels = ['ক', 'খ', 'গ', 'ঘ'];
-        opts = (arr as string[])
-          .map((o, i) => `<p><b>(${labels[i] ?? i + 1})</b> ${escapeXml(String(o))}</p>`)
-          .join('');
-      }
-    } catch { /* উপেক্ষা */ }
-    el.innerHTML = `<p><b>প্রশ্ন:</b> ${escapeXml(q)}</p>${opts}`;
-  });
-
-  root.querySelectorAll('sup.footnote').forEach((el) => {
-    const note = el.getAttribute('data-note') ?? '';
-    el.innerHTML = note ? ` <span style="font-size:.8em">[${escapeXml(note)}]</span>` : '';
-  });
-
-  // সূচিপত্র — আগে data-entries অ্যাট্রিবিউটে আটকে থেকে EPUB-এ খালি div যেত;
-  // এখন এন্ট্রিগুলো সাধারণ তালিকা হিসেবে এক্সপ্যান্ড হয়
-  root.querySelectorAll('div.toc-block').forEach((el) => {
-    let entries: Array<{ text: string; level: number; pageNumber: string }> = [];
-    try {
-      const parsed: unknown = JSON.parse(el.getAttribute('data-entries') ?? '[]');
-      if (Array.isArray(parsed)) entries = parsed as typeof entries;
-    } catch { /* উপেক্ষা */ }
-    const title = escapeXml(el.getAttribute('data-title') || 'সূচিপত্র');
-    const items = entries
-      .map((e) => `<li style="margin-left:${Math.max(0, e.level - 1) * 1.4}em">${escapeXml(e.text)} — <b>${escapeXml(e.pageNumber)}</b></li>`)
-      .join('');
-    el.innerHTML = `<p><b>${title}</b></p><ol style="list-style:none;padding-left:0">${items}</ol>`;
-  });
-
-  root.querySelectorAll('div.doc-shape').forEach((el) => {
-    // আকৃতি ফ্রেম — EPUB/XHTML-এ SVG যায় না; কেন্দ্রীয় blockquote হিসেবে লেখাটুকু রাখি
-    const contentEl = el.querySelector(':scope > div.doc-shape-content');
-    const wrap = dom.createElement('blockquote');
-    wrap.setAttribute('style', 'text-align:center');
-    wrap.innerHTML = contentEl ? contentEl.innerHTML : el.innerHTML;
-    el.replaceWith(wrap);
-  });
-
-  root.querySelectorAll('div.doc-textbox').forEach((el) => {
-    const wrap = dom.createElement('blockquote');
-    wrap.innerHTML = el.innerHTML;
-    el.replaceWith(wrap);
-  });
+  expandCustomNodesForFlat(root);
 
   const body = xhtmlify(root.innerHTML)
     // div/callout → section রাখলেও EPUB রিডার সহজে নেয়; শুধু epub:type বৈধতা
@@ -374,7 +391,11 @@ export function exportProjectToMarkdown(input: CreativeExportInput): void {
       if (c.year) out.push(c.year, '');
       return;
     }
-    const md = htmlToMarkdown(page.html);
+    // কাস্টম নোড আগে সরল HTML-এ এক্সপ্যান্ড — নইলে MCQ/সূচিপত্র/ফুটনোট হারাত
+    const dom = new DOMParser().parseFromString(`<div id="r">${page.html || ''}</div>`, 'text/html');
+    const root = dom.getElementById('r');
+    if (root) expandCustomNodesForFlat(root);
+    const md = htmlToMarkdown(root ? root.innerHTML : (page.html || ''));
     if (md.trim()) {
       out.push(`<!-- পৃষ্ঠা ${i + 1} -->`, '', md, '');
     }
@@ -405,8 +426,11 @@ export function exportProjectToText(input: CreativeExportInput): void {
       out.push(...coverLines);
       return;
     }
-    const dom = new DOMParser().parseFromString(page.html || '', 'text/html');
-    const text = (dom.body.textContent ?? '').replace(/\n{3,}/g, '\n\n').trim();
+    const dom = new DOMParser().parseFromString(`<div id="r">${page.html || ''}</div>`, 'text/html');
+    const root = dom.getElementById('r');
+    if (root) expandCustomNodesForFlat(root); // MCQ/সূচিপত্র/ফুটনোট নইলে textContent-এ হারাত
+    const text = ((root?.textContent ?? dom.body.textContent) ?? '')
+      .replace(/\n{3,}/g, '\n\n').trim();
     if (text) out.push(`[ পৃষ্ঠা ${i + 1} ]`, '', text, '');
   });
   const blob = new Blob([out.join('\n')], { type: 'text/plain;charset=utf-8' });

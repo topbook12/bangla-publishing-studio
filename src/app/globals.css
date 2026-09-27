@@ -1734,6 +1734,12 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
     min-width: 0 !important;
     min-height: 0 !important;
   }
+  /* ফাঁকা পাতার "লিখতে শুরু করুন…" প্লেসহোল্ডার প্রিন্ট/ফরমায় যেন ছাপা না হয় */
+  .bwp-prosemirror p.is-editor-empty::before,
+  .bwp-prosemirror p.is-empty::before,
+  .bwp-prosemirror p.is-empty::after {
+    content: none !important;
+  }
   /* ডান-ক্লিক কনটেক্সট মেনু খোলা অবস্থায় প্রিন্ট করলেও মেনু ছাপা হবে না */
   .bwp-context-menu { display: none !important; }
 }

@@ -127,8 +127,8 @@ export function RibbonButton({ icon: Icon, label, onClick, active, disabled, tit
   );
 }
 
-/** Helper to run a command on the active editor */
-export function runCommand(fn: (editor: NonNullable<ReturnType<typeof getEditor>>) => void): void {
+/** Helper to run a command on the active editor — সফল হলে true, ব্যর্থ হলে false */
+export function runCommand(fn: (editor: NonNullable<ReturnType<typeof getEditor>>) => void): boolean {
   const { activePageId, pages } = useEditorStore.getState();
   const editor = getEditor(activePageId);
   if (!editor || editor.isDestroyed) {
@@ -136,15 +136,33 @@ export function runCommand(fn: (editor: NonNullable<ReturnType<typeof getEditor>
     if (activePage && activePage.kind !== 'normal') {
       // কভার পাতায় এডিটর নেই — নীরবে প্রথম মাউন্ট করা পাতায় ফরম্যাট চাপার বদলে স্পষ্ট বার্তা
       toast.info('কভার পাতায় ফরম্যাট/সন্নিবেশ প্রযোজ্য নয়');
-      return;
+      return false;
     }
     // সক্রিয় পাতার এডিটর মাউন্ট নেই (দূরের পাতা) — ভুল পাতায় ফরম্যাট গেলে
     // ব্যবহারকারী বুঝতই না; স্পষ্ট বার্তা দেখাই
     toast.info('পাতাটি এখন খোলা নেই — আগে পাতাটিতে স্ক্রল করুন');
-    return;
+    return false;
   }
   editor.commands.focus();
   fn(editor);
+  return true;
+}
+
+/**
+ * Radix মেনু/পপওভার বন্ধ হলে নিজে থেকেই ট্রিগার বাটনে ফোকাস ফেরত যায় —
+ * দুই ধাপে এডিটরে ফোকাস ফিরিয়ে আনি (insert-tab-এর refocusEditor-এর শেয়ার্ড
+ * সংস্করণ)। নইলে ফন্ট/সাইজ/রং বাছাইয়ের পর টাইপ করা যায় না — ফোকাস রিবনে আটকে থাকে।
+ */
+export function refocusActiveEditor(): void {
+  const tryFocus = () => {
+    const { activePageId } = useEditorStore.getState();
+    const ed = getEditor(activePageId);
+    if (ed && !ed.isDestroyed) {
+      try { ed.commands.focus(); } catch { /* ধ্বংসপ্রাপ্ত এডিটর */ }
+    }
+  };
+  window.setTimeout(tryFocus, 60);
+  window.setTimeout(tryFocus, 320);
 }
 
 /**

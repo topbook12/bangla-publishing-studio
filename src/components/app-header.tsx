@@ -25,7 +25,7 @@ import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useEditorStore } from '@/lib/store';
 import { useUiStore } from '@/lib/ui-store';
-import { formatPageNumber } from '@/lib/bangla';
+import { banglaDateToday } from '@/lib/bangla';
 
 function SaveIndicator() {
   const saveState = useEditorStore((s) => s.saveState);
@@ -104,7 +104,8 @@ export function AppHeader() {
   const [renameOpen, setRenameOpen] = useState(false);
   // পুরো বই ডিলিট = সবচেয়ে বিপজ্জনক অ্যাকশন — এক ক্লিকে চুপচাপ নয়, নিশ্চিতকরণ নিই
   const [deleteConfirm, setDeleteConfirm] = useState(false);
-  const now = formatPageNumber(new Date().getDate(), 'bangla');
+  // সম্পূর্ণ বাংলা তারিখ (আগে শুধু মাসের-তারিখ "১৫" দেখাত — প্রজেক্ট-ডায়ালগের মতোই)
+  const now = banglaDateToday();
 
   return (
     <header className="app-header no-print">
