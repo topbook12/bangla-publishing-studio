@@ -4,7 +4,7 @@
 
 'use client';
 
-import { ChevronUp, Database, FileText, ListOrdered, Maximize2, Minus, Plus, Type } from 'lucide-react';
+import { ChevronUp, Database, FileText, ListOrdered, Maximize2, Minus, Plus, Ruler, Type } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
@@ -14,6 +14,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useEditorStore } from '@/lib/store';
 import { useDocStats } from '@/components/ribbon/review-tab';
 import { toBanglaNumber } from '@/lib/bangla';
+import { getPageDimensionsMm, getPaperPreset } from '@/lib/paper';
 import { cn } from '@/lib/utils';
 
 /** পাতার ভিউপোর্টে স্ক্রল + অ্যাকটিভ সেট */
@@ -66,6 +67,32 @@ function PageJumper() {
   );
 }
 
+/** বর্তমান ট্রিম-সাইজ (ছাপাখানার কাগজের মাপ) — প্রো প্রেস রেফারেন্স */
+function TrimSizePill() {
+  const settings = useEditorStore((s) => s.settings);
+  const preset = getPaperPreset(settings.paperSize);
+  const { widthMm, heightMm } = getPageDimensionsMm(
+    settings.paperSize,
+    settings.orientation,
+    settings.customPaper,
+  );
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="status-pill max-xl:hidden" title={`${preset.name} — ${preset.note}`}>
+          <Ruler size={12} aria-hidden="true" />
+          <b>{toBanglaNumber(Math.round(widthMm))}×{toBanglaNumber(Math.round(heightMm))}</b>
+          <span className="opacity-70">মিমি</span>
+        </span>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="max-w-56 text-center">
+        <p className="font-semibold">{preset.name}</p>
+        <p className="text-[10px] opacity-80">{preset.note}</p>
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
 export function StatusBar() {
   const pages = useEditorStore((s) => s.pages);
   const activePageId = useEditorStore((s) => s.activePageId);
@@ -112,6 +139,7 @@ export function StatusBar() {
           AutoSave · IndexedDB
           <span className="status-dot" aria-hidden="true" />
         </span>
+        <TrimSizePill />
       </div>
       <div className="flex shrink-0 items-center gap-0.5">
         <Tooltip>

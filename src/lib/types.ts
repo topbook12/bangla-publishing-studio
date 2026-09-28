@@ -9,7 +9,7 @@ export type { PageNumberFormat };
 
 // ─── কাগজ ও মার্জিন ───
 
-export type PaperSizeId = 'a4' | 'a5' | 'letter' | 'crown-octavo' | 'demy-octavo' | 'custom';
+export type PaperSizeId = 'a4' | 'a5' | 'letter' | 'crown-octavo' | 'demy-octavo' | 'crown-16mo' | 'custom';
 export type Orientation = 'portrait' | 'landscape';
 export type PaperColor = 'white' | 'cream' | 'dark';
 

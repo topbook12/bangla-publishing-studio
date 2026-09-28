@@ -6,7 +6,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  BadgeCheck, BookText, FileCode2, FileDown, FileText, FileType2, Loader2, Printer, RefreshCw, Upload,
+  BadgeCheck, BookText, FileCode2, FileDown, FileText, FileType2, Loader2, Printer, RefreshCw, TriangleAlert, Upload,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { RibbonButton, RibbonDivider, RibbonGroup } from './ribbon-shell';
@@ -133,6 +133,16 @@ export function ExportTab() {
     [formaSize, swapGrid, effectiveCount],
   );
   const formaPrintable = pageCount > 0 && effectiveCount >= 1 && selfCheck.ok;
+
+  // বাঁধাই-মার্জিন প্রি-ফ্লাইট — আসল বইয়ে ভাঁজ/বাঁধাইয়ের ভেতরে লেখা ঢুকে যাওয়া রোধে
+  // (ছাপাখানার নিয়ম: ভেতরের মার্জিন ≥ ১৬ মিমি নিরাপদ)
+  const binding = useMemo(() => {
+    const m = settings.margins;
+    const oddEven = settings.pageNumber.oddEven;
+    const bindIn = oddEven ? Math.min(m.left + m.gutter, m.right + m.gutter) : m.left + m.gutter;
+    const bindMm = Math.round(bindIn * 25.4);
+    return { bindMm, tight: bindMm < 16 };
+  }, [settings.margins, settings.pageNumber.oddEven]);
 
   // ── লাইভ ফরমা প্রিভিউ — প্রথম শীটের দুই পাশ আসল পৃষ্ঠা-ক্লোন দিয়ে ──
   useEffect(() => {
@@ -405,6 +415,16 @@ export function ExportTab() {
                   ছাপাখানার কাগজের গ্রেন-দিক বা স্টক-সাইজে লম্বা গ্রিড দরকার হলে এটি চালু
                   করুন — দুই অভিমুখেই ভাঁজ সঠিক থাকে (যাচাইকৃত)।
                 </p>
+                {binding.tight && (
+                  <div className="flex items-start gap-2 rounded-md border border-amber-300/70 bg-amber-50/80 px-2.5 py-2 text-[10px] leading-snug text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200">
+                    <TriangleAlert size={13} className="mt-px shrink-0" />
+                    <span>
+                      <b>বাঁধাই সতর্কতা:</b> ভেতরের (বাঁধাই) মার্জিন মাত্র {bn(binding.bindMm)} মিমি —
+                      ভাঁজ/বাঁধাইয়ের সময় লেখা মেরুদণ্ডের ভেতরে ঢুকে যেতে পারে। Layout → Margins
+                      থেকে Gutter বাড়িয়ে মোট {bn(19)}–{bn(25)} মিমি করুন (আসল বইয়ের নিয়ম)।
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* ফরমা সেলফ-চেক ব্যাজ */}

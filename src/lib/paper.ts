@@ -18,8 +18,9 @@ export interface PaperPreset {
 export const PAPER_PRESETS: PaperPreset[] = [
   { id: 'a4', name: 'A4', widthMm: 210, heightMm: 297, note: 'General documents & notices' },
   { id: 'letter', name: 'Letter', widthMm: 216, heightMm: 279, note: 'American standard' },
-  { id: 'crown-octavo', name: 'Crown Octavo', widthMm: 184, heightMm: 241, note: 'Popular trim size for coaching books' },
-  { id: 'demy-octavo', name: 'Demy Octavo', widthMm: 138, heightMm: 216, note: 'Novels & literature books' },
+  { id: 'crown-octavo', name: 'Crown Quarto (ক্রাউন ১/৪)', widthMm: 184, heightMm: 241, note: 'Coaching books & textbooks — most common press size (7.25"×9.5")' },
+  { id: 'demy-octavo', name: 'Demy Octavo (ডেমি ১/৮)', widthMm: 138, heightMm: 216, note: 'Novels & literature books (5.5"×8.5")' },
+  { id: 'crown-16mo', name: 'Crown Octavo (ক্রাউন ১/৮)', widthMm: 127, heightMm: 190, note: 'Pocket novels, poetry & story books (5"×7.5")' },
   { id: 'a5', name: 'A5', widthMm: 148, heightMm: 210, note: 'Handbooks & notebooks' },
   { id: 'custom', name: 'Custom', widthMm: 210, heightMm: 297, note: 'Set your own dimensions' },
 ];

@@ -6,7 +6,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { Loader2 } from 'lucide-react';
+import { BookOpenCheck, Loader2 } from 'lucide-react';
 import { AppHeader } from '@/components/app-header';
 import { Ribbon } from '@/components/ribbon/ribbon-shell';
 import { Workspace } from '@/components/editor/workspace';
@@ -24,9 +24,15 @@ export default function EditorApp() {
 
   if (!loaded) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-slate-100 dark:bg-slate-950">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden="true" />
-        <p className="text-sm text-muted-foreground">বাংলা পাবলিশিং স্টুডিও চালু হচ্ছে…</p>
+      <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-slate-100 dark:bg-slate-950">
+        <div className="app-splash-mark" aria-hidden="true">
+          <BookOpenCheck size={36} />
+        </div>
+        <div className="space-y-1 text-center">
+          <p className="app-splash-title">বাংলা পাবলিশিং স্টুডিও</p>
+          <p className="text-sm text-muted-foreground">স্টুডিও প্রস্তুত হচ্ছে…</p>
+        </div>
+        <Loader2 className="h-5 w-5 animate-spin text-primary/70" aria-hidden="true" />
       </div>
     );
   }
