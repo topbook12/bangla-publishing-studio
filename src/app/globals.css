@@ -1636,6 +1636,75 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
   }
 }
 
+/* ═══════════════ প্রিমিয়াম ওয়ার্কস্পেস স্টুডিও (শুধু স্ক্রিন — প্রিন্টে রিসেট হয়) ═══════════════ */
+
+/* স্টুডিও ব্যাকড্রপ — উষ্ণ গ্রেডিয়েন্ট + মাইক্রো ডট-গ্রিড (প্রো পাবলিশিং টুল লুক) */
+main.workspace {
+  background:
+    radial-gradient(1200px 500px at 50% -8%, color-mix(in oklab, var(--primary) 7%, transparent), transparent 62%),
+    radial-gradient(circle at 1px 1px, rgb(15 23 42 / 0.055) 1px, transparent 0) 0 0 / 22px 22px,
+    linear-gradient(180deg, oklch(0.958 0.006 265) 0%, oklch(0.935 0.008 265) 100%);
+}
+html.dark main.workspace {
+  background:
+    radial-gradient(1200px 500px at 50% -8%, color-mix(in oklab, var(--primary) 9%, transparent), transparent 62%),
+    radial-gradient(circle at 1px 1px, rgb(255 255 255 / 0.05) 1px, transparent 0) 0 0 / 22px 22px,
+    linear-gradient(180deg, oklch(0.18 0.02 265) 0%, oklch(0.145 0.018 265) 100%);
+}
+
+/* স্লিম প্রিমিয়াম স্ক্রলবার */
+main.workspace::-webkit-scrollbar { width: 11px; height: 11px; }
+main.workspace::-webkit-scrollbar-track { background: transparent; }
+main.workspace::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  background-color: color-mix(in oklab, var(--foreground) 22%, transparent);
+}
+main.workspace::-webkit-scrollbar-thumb:hover { background-color: color-mix(in oklab, var(--foreground) 34%, transparent); }
+
+/* পেপার এলিভেশন — লেয়ার্ড অ্যাম্বিয়েন্ট শ্যাডো (প্রিন্টে box-shadow:none রুল আছে) */
+.paper-page {
+  box-shadow:
+    0 0 0 1px rgb(15 23 42 / 0.06),
+    0 1px 2px rgb(15 23 42 / 0.07),
+    0 6px 16px -4px rgb(15 23 42 / 0.12),
+    0 16px 44px -12px rgb(15 23 42 / 0.16);
+}
+.paper-active {
+  box-shadow:
+    0 0 0 2px color-mix(in oklab, var(--primary) 88%, transparent),
+    0 0 0 5px color-mix(in oklab, var(--primary) 13%, transparent),
+    0 10px 26px -6px rgb(15 23 42 / 0.16),
+    0 20px 52px -14px rgb(15 23 42 / 0.2);
+}
+html.dark .paper-page {
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 0.07),
+    0 1px 2px rgb(0 0 0 / 0.4),
+    0 8px 20px -4px rgb(0 0 0 / 0.5),
+    0 18px 48px -12px rgb(0 0 0 / 0.55);
+}
+html.dark .paper-active {
+  box-shadow:
+    0 0 0 2px color-mix(in oklab, var(--primary) 90%, transparent),
+    0 0 0 5px color-mix(in oklab, var(--primary) 16%, transparent),
+    0 12px 30px -6px rgb(0 0 0 / 0.55),
+    0 24px 56px -14px rgb(0 0 0 / 0.6);
+}
+
+/* পেজ নম্বর চিপ — মসৃণ ফেড+লিফট */
+.page-toolbar {
+  opacity: 0;
+  transform: translateY(-3px);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.page-slot:hover .page-toolbar,
+.page-slot:focus-within .page-toolbar {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 /* ═══════════════ প্রিন্ট (প্রেস-রেডি) ═══════════════ */
 
 /* ফলব্যাক @page — এক্সপোর্ট ট্যাব না চালিয়ে সরাসরি Ctrl+P চাপলেও কাগজ A4
