@@ -560,7 +560,9 @@ export const FontSize = Extension.create({
       setFontSize:
         (value: string) =>
         ({ commands }: CommandProps) =>
-          commands.updateAttributes('textStyle', { fontSize: value }),
+          // setMark — প্লেইন টেক্সটে (textStyle মার্ক ছাড়া) সাইজ এখন সত্যিই বসে;
+          // আগের updateAttributes মার্ক ছাড়া লেখায় নীরব নো-অপ ছিল
+          commands.setMark('textStyle', { fontSize: value }),
       unsetFontSize:
         () =>
         ({ commands }: CommandProps) =>
@@ -578,6 +580,208 @@ declare module '@tiptap/core' {
   }
 }
 
+// ─────────────────────────── অ্যাডভান্সড টাইপোগ্রাফি ───────────────────────────
+
+/**
+ * উন্নত টেক্সট টুল (MS Word-এর Paragraph ডায়ালগ + Font → Advanced-এর সমতুল্য):
+ *  - শব্দের ফাঁক (word-spacing)
+ *  - অক্ষরের ফাঁক (letter-spacing) — প্যারা জুড়ে + নির্বাচিত লেখায় (textStyle)
+ *  - প্যারার আগে/পরে ফাঁক (margin-top/bottom)
+ *  - প্রথম-লাইন ইনডেন্ট (text-indent) + বাম/ডান ইনডেন্ট (padding-left/right)
+ *  - প্যারা পটভূমি রং (shading → background-color)
+ *
+ * সবগুলো paragraph/heading-এ গ্লোবাল অ্যাট্রিবিউট → ইনলাইন স্টাইল হিসেবে সেভ হয়,
+ * তাই HTML/DOCX/প্রিন্ট/ফরমা — সব আউটপুটে স্বয়ংক্রিয়ভাবে একই চেহারা আসে।
+ * একাধিক অ্যাট্রিবিউটের style আউটপুট TipTap-এর mergeAttributes জুড়ে দেয়।
+ */
+
+/** কার্সর/সিলেকশনের সব paragraph + heading ব্লকে একসাথে অ্যাট্রিবিউট বসাই */
+function updateBothBlocks(commands: CommandProps['commands'], attrs: Record<string, unknown>): boolean {
+  commands.updateAttributes('paragraph', attrs);
+  commands.updateAttributes('heading', attrs);
+  return true;
+}
+
+/** CSS দৈর্ঘ্য স্ট্রিং থেকে সংখ্যা (px/em/pt) — না বোঝা গেলে null */
+function cssLen(raw: unknown): number | null {
+  if (typeof raw !== 'string' || !raw.trim()) return null;
+  const v = parseFloat(raw);
+  return Number.isFinite(v) ? v : null;
+}
+
+/** ইনডেন্ট em-ভ্যালু স্ট্রিং হিসেবে — ০ বা নেগেটিভ হলে null (অ্যাট্রিবিউট মুছে যায়) */
+function indentVal(em: number): string | null {
+  const rounded = Math.round(em * 100) / 100;
+  return rounded > 0 ? `${rounded}em` : null;
+}
+
+export const AdvancedTypography = Extension.create({
+  name: 'advancedTypography',
+
+  addGlobalAttributes() {
+    return [
+      {
+        types: ['paragraph', 'heading'],
+        attributes: {
+          wordSpacing: {
+            default: null,
+            parseHTML: (el) => el.style.wordSpacing || null,
+            renderHTML: (attrs) => {
+              const v = (attrs as { wordSpacing?: string | null }).wordSpacing;
+              return v ? { style: `word-spacing: ${v}` } : {};
+            },
+          },
+          letterSpacing: {
+            default: null,
+            parseHTML: (el) => el.style.letterSpacing || null,
+            renderHTML: (attrs) => {
+              const v = (attrs as { letterSpacing?: string | null }).letterSpacing;
+              return v ? { style: `letter-spacing: ${v}` } : {};
+            },
+          },
+          spaceBefore: {
+            default: null,
+            parseHTML: (el) => el.style.marginTop || null,
+            renderHTML: (attrs) => {
+              const v = (attrs as { spaceBefore?: string | null }).spaceBefore;
+              return v ? { style: `margin-top: ${v}` } : {};
+            },
+          },
+          spaceAfter: {
+            default: null,
+            parseHTML: (el) => el.style.marginBottom || null,
+            renderHTML: (attrs) => {
+              const v = (attrs as { spaceAfter?: string | null }).spaceAfter;
+              return v ? { style: `margin-bottom: ${v}` } : {};
+            },
+          },
+          firstLineIndent: {
+            default: null,
+            parseHTML: (el) => el.style.textIndent || null,
+            renderHTML: (attrs) => {
+              const v = (attrs as { firstLineIndent?: string | null }).firstLineIndent;
+              return v ? { style: `text-indent: ${v}` } : {};
+            },
+          },
+          indentLeft: {
+            default: null,
+            parseHTML: (el) => el.style.paddingLeft || null,
+            renderHTML: (attrs) => {
+              const v = (attrs as { indentLeft?: string | null }).indentLeft;
+              return v ? { style: `padding-left: ${v}` } : {};
+            },
+          },
+          indentRight: {
+            default: null,
+            parseHTML: (el) => el.style.paddingRight || null,
+            renderHTML: (attrs) => {
+              const v = (attrs as { indentRight?: string | null }).indentRight;
+              return v ? { style: `padding-right: ${v}` } : {};
+            },
+          },
+          shading: {
+            default: null,
+            parseHTML: (el) => el.style.backgroundColor || null,
+            renderHTML: (attrs) => {
+              const v = (attrs as { shading?: string | null }).shading;
+              return v ? { style: `background-color: ${v}` } : {};
+            },
+          },
+        },
+      },
+      {
+        // নির্বাচিত লেখার অক্ষর-ফাঁক — FontSize-এর মতো textStyle মার্ক অ্যাট্রিবিউট
+        types: ['textStyle'],
+        attributes: {
+          charSpacing: {
+            default: null,
+            parseHTML: (el) => el.style.letterSpacing || null,
+            renderHTML: (attrs) => {
+              const v = (attrs as { charSpacing?: string | null }).charSpacing;
+              return v ? { style: `letter-spacing: ${v}` } : {};
+            },
+          },
+        },
+      },
+    ];
+  },
+
+  addCommands() {
+    return {
+      setWordSpacing: (value: string) => ({ commands }: CommandProps) => updateBothBlocks(commands, { wordSpacing: value }),
+      unsetWordSpacing: () => ({ commands }: CommandProps) => updateBothBlocks(commands, { wordSpacing: null }),
+      setLetterSpacing: (value: string) => ({ commands }: CommandProps) => updateBothBlocks(commands, { letterSpacing: value }),
+      unsetLetterSpacing: () => ({ commands }: CommandProps) => updateBothBlocks(commands, { letterSpacing: null }),
+      setSpaceBefore: (value: string) => ({ commands }: CommandProps) => updateBothBlocks(commands, { spaceBefore: value }),
+      unsetSpaceBefore: () => ({ commands }: CommandProps) => updateBothBlocks(commands, { spaceBefore: null }),
+      setSpaceAfter: (value: string) => ({ commands }: CommandProps) => updateBothBlocks(commands, { spaceAfter: value }),
+      unsetSpaceAfter: () => ({ commands }: CommandProps) => updateBothBlocks(commands, { spaceAfter: null }),
+      setFirstLineIndent: (value: string) => ({ commands }: CommandProps) => updateBothBlocks(commands, { firstLineIndent: value }),
+      unsetFirstLineIndent: () => ({ commands }: CommandProps) => updateBothBlocks(commands, { firstLineIndent: null }),
+      setIndentLeft: (value: string) => ({ commands }: CommandProps) => updateBothBlocks(commands, { indentLeft: value }),
+      setIndentRight: (value: string) => ({ commands }: CommandProps) => updateBothBlocks(commands, { indentRight: value }),
+      unsetIndents: () => ({ commands }: CommandProps) => updateBothBlocks(commands, { indentLeft: null, indentRight: null, firstLineIndent: null }),
+
+      /** ইনডেন্ট বাড়ানো/কমানো — Word-এর Indent বাটনের মতো ০.৫em ধাপে, ০–৮em সীমায় */
+      adjustIndent:
+        (which: 'indentLeft' | 'indentRight', deltaEm: number) =>
+        ({ commands, state }: CommandProps) => {
+          const cur = cssLen(state.selection.$from.parent.attrs[which]) ?? 0;
+          const next = Math.min(8, Math.max(0, cur + deltaEm));
+          return updateBothBlocks(commands, { [which]: indentVal(next) });
+        },
+
+      setParagraphShading: (color: string) => ({ commands }: CommandProps) => updateBothBlocks(commands, { shading: color }),
+      unsetParagraphShading: () => ({ commands }: CommandProps) => updateBothBlocks(commands, { shading: null }),
+
+      /** প্যারার সব উন্নত ফরম্যাট একসাথে মুছুন (লাইন-হাইট/অ্যালাইন/টেক্সট অপরিবর্তিত) */
+      resetParagraphFormatting: () => ({ commands }: CommandProps) => {
+        const cleared = {
+          wordSpacing: null, letterSpacing: null, spaceBefore: null, spaceAfter: null,
+          firstLineIndent: null, indentLeft: null, indentRight: null, shading: null,
+        };
+        commands.updateAttributes('paragraph', cleared);
+        commands.updateAttributes('heading', cleared);
+        commands.resetAttributes('textStyle', 'charSpacing');
+        return true;
+      },
+
+      // নির্বাচিত লেখার অক্ষর-ফাঁক (textStyle মার্ক)
+      // setMark ব্যবহার — updateAttributes দিয়ে করলে টেক্সটে আগে থেকে textStyle
+      // মার্ক না থাকলে নীরব নো-অপ হত (FontSize-এর লুকানো বাগের মূল কারণ)।
+      // setMark মার্ক না থাকলে তৈরি করে, থাকলে অ্যাট্রিবিউট মার্জ করে।
+      setCharSpacing: (value: string) => ({ commands }: CommandProps) => commands.setMark('textStyle', { charSpacing: value }),
+      unsetCharSpacing: () => ({ commands }: CommandProps) => commands.updateAttributes('textStyle', { charSpacing: null }),
+    };
+  },
+});
+
+declare module '@tiptap/core' {
+  interface Commands<ReturnType> {
+    advancedTypography: {
+      setWordSpacing: (value: string) => ReturnType;
+      unsetWordSpacing: () => ReturnType;
+      setLetterSpacing: (value: string) => ReturnType;
+      unsetLetterSpacing: () => ReturnType;
+      setSpaceBefore: (value: string) => ReturnType;
+      unsetSpaceBefore: () => ReturnType;
+      setSpaceAfter: (value: string) => ReturnType;
+      unsetSpaceAfter: () => ReturnType;
+      setFirstLineIndent: (value: string) => ReturnType;
+      unsetFirstLineIndent: () => ReturnType;
+      setIndentLeft: (value: string) => ReturnType;
+      setIndentRight: (value: string) => ReturnType;
+      unsetIndents: () => ReturnType;
+      adjustIndent: (which: 'indentLeft' | 'indentRight', deltaEm: number) => ReturnType;
+      setParagraphShading: (color: string) => ReturnType;
+      unsetParagraphShading: () => ReturnType;
+      resetParagraphFormatting: () => ReturnType;
+      setCharSpacing: (value: string) => ReturnType;
+      unsetCharSpacing: () => ReturnType;
+    };
+  }
+}
+
 // ─────────────────────────── সব একসাথে ───────────────────────────
 
-export const customExtensions = [CalloutBox, McqBlock, Footnote, FancyDivider, TocBlock, LineHeight, FontSize];
+export const customExtensions = [CalloutBox, McqBlock, Footnote, FancyDivider, TocBlock, LineHeight, FontSize, AdvancedTypography];

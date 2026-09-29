@@ -30,6 +30,7 @@ const GROUP_ACCENTS: Record<string, string> = {
   history: 'amber',
   font: 'violet',
   paragraph: 'emerald',
+  'advanced text': 'amber',
   styles: 'rose',
   'table tools': 'cyan',
   'tables & media': 'cyan',

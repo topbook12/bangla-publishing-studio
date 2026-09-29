@@ -16,6 +16,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { RibbonButton, RibbonDivider, RibbonGroup, refocusActiveEditor, runCommand, useActiveEditor } from './ribbon-shell';
+import { AdvancedTextGroup } from './advanced-text';
 import { FONT_OPTIONS, FONT_SIZE_OPTIONS, COLOR_SWATCHES, HIGHLIGHT_SWATCHES, fontStackOf } from '@/lib/paper';
 import { toBanglaNumber } from '@/lib/bangla';
 import {
@@ -325,6 +326,8 @@ export function HomeTab() {
           </div>
         </div>
       </RibbonGroup>
+      <RibbonDivider />
+      <AdvancedTextGroup />
       <RibbonDivider />
       <RibbonGroup label="Styles">
         <div className="flex flex-col gap-1">

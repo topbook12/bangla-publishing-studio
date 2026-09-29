@@ -24,6 +24,8 @@ interface Ctx {
   bg?: string;
   bold?: boolean;
   italics?: boolean;
+  /** অক্ষরের ফাঁক — twip (১/২০ pt) এককে; প্যারা-লেভেল letter-spacing/charSpacing থেকে আসে */
+  charSpacingTw?: number;
 }
 
 function hexNoHash(c: string | undefined): string | undefined {
@@ -53,6 +55,67 @@ function alignmentOf(el: Element, ctx: Ctx): Ctx['align'] {
   return ctx.align;
 }
 
+/** CSS দৈর্ঘ্য (px/em/pt) → twip। em হলে বডি ফন্ট-সাইজ (pt) ধরে হিসাব হয় */
+function cssLenToTwip(raw: string | undefined, emPt: number): number | undefined {
+  if (!raw) return undefined;
+  const t = raw.trim();
+  const v = parseFloat(t);
+  if (!Number.isFinite(v)) return undefined;
+  if (t.endsWith('em')) return Math.round(v * emPt * 20);
+  if (t.endsWith('pt')) return Math.round(v * 20);
+  if (t.endsWith('%')) return undefined;
+  return Math.round(v * 15); // px → twip (১px = ০.৭৫pt = ১৫ twip)
+}
+
+/**
+ * প্যারা-লেভেল ইনলাইন স্টাইল → DOCX indent/spacing/shading + অক্ষর-ফাঁক।
+ * উন্নত টেক্সট টুলের (শব্দ/অক্ষর ফাঁক, ইনডেন্ট, প্যারার আগে/পরে ফাঁক, পটভূমি,
+ * প্রতি-প্যারা লাইন-হাইট) সেটিং স্ক্রিনের মতোই Word ফাইলেও থাকে — একই বেইজ।
+ */
+function paraExtras(el: Element, settings: DocumentSettings, fallbackAfterTwip: number): {
+  charSpacingTw?: number;
+  indent?: { left?: number; right?: number; firstLine?: number };
+  spacing?: { before?: number; after: number; line?: number };
+  shading?: { type: typeof ShadingType.CLEAR; fill: string };
+} {
+  const st = parseInlineStyle(el);
+  const emPt = settings.defaultFontSize;
+  const left = cssLenToTwip(st['padding-left'], emPt);
+  const right = cssLenToTwip(st['padding-right'], emPt);
+  const firstLine = cssLenToTwip(st['text-indent'], emPt);
+  const before = cssLenToTwip(st['margin-top'], emPt);
+  const after = cssLenToTwip(st['margin-bottom'], emPt);
+  const fill = hexNoHash(st['background-color'] ?? st['background']);
+  const letter = cssLenToTwip(st['letter-spacing'], emPt);
+
+  // প্রতি-প্যারা লাইন-হাইট — unitless হলে ×২৪০, pt হলে ×২০, px হলে ×১৫ twip
+  const lhRaw = st['line-height'];
+  let line: number | undefined;
+  if (lhRaw) {
+    const v = parseFloat(lhRaw);
+    if (Number.isFinite(v)) {
+      line = Math.round(lhRaw.includes('pt') ? v * 20 : lhRaw.includes('px') ? v * 15 : v * 240);
+    }
+  }
+
+  const indent = (left || right || firstLine)
+    ? {
+        ...(left ? { left } : {}),
+        ...(right ? { right } : {}),
+        ...(firstLine ? { firstLine } : {}),
+      }
+    : undefined;
+
+  return {
+    charSpacingTw: letter,
+    indent,
+    spacing: (before || after || line)
+      ? { ...(before ? { before } : {}), after: after ?? fallbackAfterTwip, ...(line ? { line } : {}) }
+      : undefined,
+    shading: fill ? { type: ShadingType.CLEAR, fill } : undefined,
+  };
+}
+
 /** Word-এ আসল ক্লিকযোগ্য হাইপারলিংক (Hyperlink স্টাইল) */
 function hyperlinkRun(href: string, text: string): ExternalHyperlink {
   return new ExternalHyperlink({
@@ -66,7 +129,7 @@ function collectU(el: Element, ctx: Ctx, runs: Array<TextRun | ExternalHyperlink
   el.childNodes.forEach((child) => {
     if (child.nodeType === Node.TEXT_NODE) {
       const text = child.textContent ?? '';
-      if (text) runs.push(new TextRun({ text, bold: ctx.bold, italics: ctx.italics, color: ctx.color, underline: {} }));
+      if (text) runs.push(new TextRun({ text, bold: ctx.bold, italics: ctx.italics, color: ctx.color, underline: {}, characterSpacing: ctx.charSpacingTw }));
     } else if (child.nodeType === Node.ELEMENT_NODE) {
       collectU(child as Element, ctx, runs);
     }
@@ -78,7 +141,7 @@ function collectStrike(el: Element, ctx: Ctx, runs: Array<TextRun | ExternalHype
   el.childNodes.forEach((child) => {
     if (child.nodeType === Node.TEXT_NODE) {
       const text = child.textContent ?? '';
-      if (text) runs.push(new TextRun({ text, strike: true, bold: ctx.bold, italics: ctx.italics, color: ctx.color }));
+      if (text) runs.push(new TextRun({ text, strike: true, bold: ctx.bold, italics: ctx.italics, color: ctx.color, characterSpacing: ctx.charSpacingTw }));
     } else if (child.nodeType === Node.ELEMENT_NODE) {
       collectStrike(child as Element, ctx, runs);
     }
@@ -97,6 +160,7 @@ function inlineRuns(el: Element, ctx: Ctx): Array<TextRun | ExternalHyperlink> {
           bold: ctx.bold,
           italics: ctx.italics,
           color: ctx.color,
+          characterSpacing: ctx.charSpacingTw,
           shading: ctx.bg ? { type: ShadingType.CLEAR, fill: ctx.bg } : undefined,
         }));
       }
@@ -272,20 +336,26 @@ function blockToDocx(el: Element, ctx: Ctx, settings: DocumentSettings): DocxBlo
   switch (el.tagName) {
     case 'H1': case 'H2': case 'H3': case 'H4': {
       const level = el.tagName === 'H1' ? HeadingLevel.HEADING_1 : el.tagName === 'H2' ? HeadingLevel.HEADING_2 : el.tagName === 'H3' ? HeadingLevel.HEADING_3 : HeadingLevel.HEADING_4;
+      const hex = paraExtras(el, settings, 120);
       out.push(new Paragraph({
-        children: inlineRuns(el, { color: hexNoHash(settings.header.accentColor) ?? '4F46E5' }),
+        children: inlineRuns(el, { color: hexNoHash(settings.header.accentColor) ?? '4F46E5', charSpacingTw: hex.charSpacingTw }),
         heading: level,
         alignment: alignmentOf(el, ctx),
-        spacing: { after: 120, line: 300 },
+        indent: hex.indent,
+        spacing: hex.spacing ?? { after: 120, line: 300 },
+        shading: hex.shading,
       }));
       return out;
     }
     case 'P': {
-      const runs = inlineRuns(el, { ...ctx, align: alignmentOf(el, ctx) });
+      const ex = paraExtras(el, settings, spacingAfter);
+      const runs = inlineRuns(el, { ...ctx, align: alignmentOf(el, ctx), charSpacingTw: ex.charSpacingTw ?? ctx.charSpacingTw });
       out.push(new Paragraph({
         children: runs.length ? runs : [new TextRun('')],
         alignment: alignmentOf(el, ctx),
-        spacing: { after: spacingAfter, line: lineTwip },
+        indent: ex.indent,
+        spacing: ex.spacing ?? { after: spacingAfter, line: lineTwip },
+        shading: ex.shading,
       }));
       return out;
     }
