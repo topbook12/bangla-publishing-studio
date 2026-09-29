@@ -8,11 +8,14 @@ import { create } from 'zustand';
 import {
   db, newId, saveProject, listProjects, deleteProject, getProject, LAST_PROJECT_KEY,
 } from './dexie';
+import type { SnapshotRecord } from './dexie';
 import { createDefaultSettings, createSamplePages, createEmptyPage } from './sample';
 import type {
   BookProject, CoverData, DocumentSettings, PageData, PageKind, RibbonTab, SaveState,
 } from './types';
 import type { BookTheme } from './types';
+
+export type { SnapshotRecord } from './dexie';
 
 interface ProjectMeta {
   id: string;
@@ -65,6 +68,15 @@ interface EditorActions {
   setZoom: (zoom: number) => void;
   bumpSelection: () => void;
   setSaveState: (s: SaveState) => void;
+
+  // ── স্ন্যাপশট (ভার্সন ব্যাকআপ) ──
+  /** বর্তমান অবস্থার স্ন্যাপশট নেয় + পুরনোগুলো প্রুন (প্রতি প্রজেক্টে সর্বোচ্চ ১৫টি) */
+  takeSnapshot: (kind: 'auto' | 'manual') => Promise<void>;
+  /** স্ন্যাপশট তালিকা (নতুন আগে); projectId না দিলে চালু বইয়ের */
+  listSnapshots: (projectId?: string) => Promise<SnapshotRecord[]>;
+  /** পুনরুদ্ধার — আগে বর্তমান অবস্থার নিরাপত্তা-স্ন্যাপশট, তারপর স্ন্যাপশটের অবস্থা লোড */
+  restoreSnapshot: (id: string) => Promise<void>;
+  deleteSnapshot: (id: string) => Promise<void>;
 }
 
 export type EditorStore = EditorState & EditorActions;
@@ -72,6 +84,39 @@ export type EditorStore = EditorState & EditorActions;
 // ─── অটোসেভ ───
 
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
+
+/**
+ * শেষ সফল সেভের স্ন্যাপশট (রেফারেন্স, ক্লোন নয়) — ডার্টি-চেকের জন্য।
+ * title/settings/pages তিনটার রেফারেন্সই অপরিবর্তিত থাকলে স্টেট বদলায়নি —
+ * একই অবস্থা আবার IndexedDB-তে লেখার খরচ (সিরিয়ালাইজ + I/O) এড়ানো যায়।
+ */
+let lastSaved: { title: string; settings: DocumentSettings; pages: PageData[] } | null = null;
+
+// ─── স্ন্যাপশট (ভার্সন ব্যাকআপ) ───
+
+/** প্রতি প্রজেক্টে সর্বোচ্চ রাখা স্ন্যাপশট সংখ্যা */
+const SNAPSHOT_KEEP = 15;
+/** স্বয়ংক্রিয় স্ন্যাপশটের ব্যবধান — ৫ মিনিট */
+const AUTO_SNAPSHOT_MS = 5 * 60 * 1000;
+
+let snapshotTimer: ReturnType<typeof setInterval> | null = null;
+/** শেষ স্ন্যাপশটের pages রেফারেন্স — একই রেফারেন্স মানে কোনো পরিবর্তন নেই (স্কিপ) */
+let lastSnapshottedPages: PageData[] | null = null;
+
+/**
+ * অটো-স্ন্যাপশট লুপ — init() প্রথম ডাকেই (লেজি) চালু হয়, অ্যাপের জীবনজুড়ে একটাই।
+ * ৫ মিনিট পরপর: বই খোলা আছে এবং শেষ স্ন্যাপশটের পর pages বদলে থাকলে (রেফারেন্স-চেক —
+ * স্টোর প্রতিবার নতুন অ্যারে বানায়) নীরবে 'auto' স্ন্যাপশট নেয়।
+ */
+function ensureAutoSnapshotLoop(get: () => EditorStore): void {
+  if (snapshotTimer || typeof window === 'undefined') return;
+  snapshotTimer = setInterval(() => {
+    const s = get();
+    if (!s.projectId) return;
+    if (s.pages === lastSnapshottedPages) return;
+    void s.takeSnapshot('auto');
+  }, AUTO_SNAPSHOT_MS);
+}
 
 function scheduleSave(get: () => EditorStore) {
   const { projectId, title, settings, pages } = get();
@@ -82,6 +127,16 @@ function scheduleSave(get: () => EditorStore) {
     const s = get();
     const pid = s.projectId;
     if (!pid) return;
+    // ডার্টি-চেক: শেষ সেভের পর কিছুই বদলায়নি → লেখা সম্পূর্ণ এড়িয়ে যাই।
+    // saveState স্পর্শ করা হয় না — অপরিবর্তিত স্টেটের জন্য সেভ-ইঙ্গিত অর্থহীন।
+    if (
+      lastSaved &&
+      s.title === lastSaved.title &&
+      s.settings === lastSaved.settings &&
+      s.pages === lastSaved.pages
+    ) {
+      return;
+    }
     try {
       const record: BookProject = {
         id: pid,
@@ -94,6 +149,8 @@ function scheduleSave(get: () => EditorStore) {
       const existing = await getProject(pid);
       if (existing) record.createdAt = existing.createdAt;
       await saveProject(record);
+      // সফল লেখার পর স্ন্যাপশট — পরের টাইমার এই রেফারেন্সগুলোর সাথে মিলিয়ে দেখবে
+      lastSaved = { title: s.title, settings: s.settings, pages: s.pages };
       if (get().saveState.status === 'saving') {
         get().setSaveState({ status: 'saved', at: Date.now() });
       }
@@ -151,6 +208,8 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
   // ── প্রজেক্ট লাইফসাইকেল ──
 
   init: async () => {
+    // অটো-স্ন্যাপশট লুপ — প্রথম init-এই লেজি-স্টার্ট (অ্যাপজুড়ে একটাই টাইমার)
+    ensureAutoSnapshotLoop(get);
     try {
       await db.open();
       const lastId = typeof window !== 'undefined' ? window.localStorage.getItem(LAST_PROJECT_KEY) : null;
@@ -453,6 +512,84 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
     touch(get);
   },
 
+  // ── স্ন্যাপশট (ভার্সন ব্যাকআপ) ──
+
+  takeSnapshot: async (kind) => {
+    const s = get();
+    if (!s.projectId) return;
+    try {
+      // pages/settings রেফারেন্স-ই — লেখার সময় IndexedDB নিজেই ক্লোন করে
+      const record: SnapshotRecord = {
+        id: newId('snap'),
+        projectId: s.projectId,
+        title: s.title,
+        createdAt: Date.now(),
+        kind,
+        pages: s.pages,
+        settings: s.settings,
+      };
+      await db.snapshots.put(record);
+      // প্রুন — এই প্রজেক্টের নতুন SNAPSHOT_KEEP-টি রাখা, পুরনোগুলো মুছা
+      const all = await db.snapshots.where('projectId').equals(s.projectId).sortBy('createdAt');
+      const stale = all.slice(0, Math.max(0, all.length - SNAPSHOT_KEEP));
+      if (stale.length) await db.snapshots.bulkDelete(stale.map((r) => r.id));
+      lastSnapshottedPages = s.pages;
+    } catch { /* ইন-মেমরি মোড / IndexedDB অনুপলব্ধ */ }
+  },
+
+  listSnapshots: async (projectId) => {
+    const pid = projectId ?? get().projectId;
+    if (!pid) return [];
+    try {
+      const rows = await db.snapshots.where('projectId').equals(pid).sortBy('createdAt');
+      return rows.reverse(); // নতুন আগে
+    } catch {
+      return [];
+    }
+  },
+
+  restoreSnapshot: async (id) => {
+    try {
+      // পেন্ডিং ডিবাউন্সড সেভ আগে বাতিল — নইলে অপেক্ষমাণ পুরনো অবস্থা পরে ফেরত লিখতে পারে
+      // (বর্তমান অবস্থা ঠিক পরের লাইনের নিরাপত্তা-স্ন্যাপশটে সংরক্ষিত হচ্ছে)
+      cancelPendingSave();
+      // নিরাপত্তা-জাল: পুনরুদ্ধারের আগে বর্তমান অবস্থার স্ন্যাপশট — ভুল পুনরুদ্ধারও ফেরানো যায়
+      await get().takeSnapshot('auto');
+      const rec = await db.snapshots.get(id);
+      if (!rec) return;
+      const pid = get().projectId;
+      if (!pid || rec.projectId !== pid) return; // অন্য বইয়ের স্ন্যাপশট — অগ্রাহ্য
+      // পুরো বই লোড + সরাসরি সম্পূর্ণ সেভ (মূল createdAt সংরক্ষণ — flushSave প্যাটার্ন)
+      const existing = await getProject(pid);
+      await saveProject({
+        id: pid,
+        title: rec.title,
+        createdAt: existing?.createdAt ?? Date.now(),
+        updatedAt: Date.now(),
+        settings: rec.settings,
+        pages: rec.pages,
+      });
+      lastSaved = { title: rec.title, settings: rec.settings, pages: rec.pages };
+      lastSnapshottedPages = rec.pages;
+      // সক্রিয় পাতা পুনরুদ্ধার-করা পাতার তালিকায় থাকলে ধরে রাখা (UX), নইলে প্রথম পাতা
+      const curActive = get().activePageId;
+      const nextActive = rec.pages.some((p) => p.id === curActive) ? curActive : (rec.pages[0]?.id ?? null);
+      set({
+        title: rec.title,
+        settings: rec.settings,
+        pages: rec.pages,
+        activePageId: nextActive,
+        saveState: { status: 'saved', at: Date.now() },
+      });
+    } catch { /* ইন-মেমরি মোড */ }
+  },
+
+  deleteSnapshot: async (id) => {
+    try {
+      await db.snapshots.delete(id);
+    } catch { /* ইন-মেমরি মোড */ }
+  },
+
   // ── UI ──
 
   setActivePage: (pageId) => set({ activePageId: pageId }),
@@ -486,6 +623,9 @@ export function flushSave(): Promise<void> {
         settings: s.settings,
         pages: s.pages,
       });
+      // ফ্লাশ-সেভও সফল হলে স্ন্যাপশট হালনাগাদ করে — নইলে পরের ডিবাউন্সড সেভ
+      // একই অবস্থা আবার লিখে ফেলত
+      lastSaved = { title: s.title, settings: s.settings, pages: s.pages };
     } catch { /* ইন-মেমরি মোড */ }
   })();
 }

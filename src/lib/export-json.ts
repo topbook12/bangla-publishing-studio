@@ -142,10 +142,34 @@ export function ensurePrintStyle(settings: DocumentSettings): void {
  * সাধারণ প্রিন্ট — @page সেট করার পরে ফন্ট ও ছবি লোড হওয়া পর্যন্ত অপেক্ষা করে
  * window.print() ধরা হয়। আগে মাত্র ৬০ms অপেক্ষা করত — ধীর ফন্ট/ছবিতে প্রিন্টে
  * ফলব্যাক ফন্ট বা ফাঁকা ছবি-বাক্স আসত (ফরমা প্রিন্টের মতোই রেন্ডার-রেডি নিশ্চিত)।
+ *
+ * পরিসর (range) দিলে — ১-ভিত্তিক, অন্তর্ভুক্তি-সহ (from..to) — পরিসরের বাইরের
+ * .page-slot-গুলোতে `print-range-skip` ক্লাস বসিয়ে প্রিন্ট থেকে বাদ দেওয়া হয়
+ * (globals.css-এর @media print নিয়ম)। ক্লাস afterprint + ১০-মিনিট ফলব্যাক-এ
+ * পরিষ্কার হয় (forma-print.ts-এর ক্লিনআপ প্যাটার্ন)। অবৈধ/না-মেলা পরিসরে
+ * নিরাপদ ফলব্যাক: পুরো বই ছাপা হয়।
  */
-export async function printDocument(): Promise<void> {
+export async function printDocument(range?: { from: number; to: number }): Promise<void> {
   const settings = useEditorStore.getState().settings;
   ensurePrintStyle(settings);
+
+  // ── পরিসর-প্রস্তুতি (আসল window.print()-এর ঠিক আগেই — স্ক্রিন-ফ্লিকার ন্যূনতম) ──
+  let skipped: HTMLElement[] = [];
+  let validRange = false;
+  if (range) {
+    const slots = Array.from(document.querySelectorAll<HTMLElement>('.workspace .page-slot'));
+    // পেজ-স্লটই নেই → পরিসর প্রয়োগ অসম্ভব — no-op (কলার পৃষ্ঠা-সংখ্যা যাচাই করে)
+    if (slots.length === 0) return;
+    const from = Math.max(1, Math.floor(range.from));
+    const to = Math.min(slots.length, Math.floor(range.to));
+    // অবৈধ পরিসর → পুরো বই (নীরব ফলব্যাক; কলার টোস্ট দিয়ে আগেই আটকায়)
+    if (from <= to) {
+      validRange = true;
+      skipped = slots.filter((_, i) => i < from - 1 || i > to - 1);
+    }
+  }
+
+  // ── রেন্ডার-রেডি অপেক্ষা ──
   // ফন্ট রেডি (সর্বোচ্চ ৬০০ms)
   try {
     await Promise.race([document.fonts.ready, new Promise<void>((r) => setTimeout(r, 600))]);
@@ -160,6 +184,19 @@ export async function printDocument(): Promise<void> {
       }))),
       new Promise<void>((r) => setTimeout(r, 800)),
     ]);
+  }
+
+  // ── পরিসর প্রয়োগ + প্রিন্ট + ক্লিনআপ ──
+  if (validRange) {
+    for (const el of skipped) el.classList.add('print-range-skip');
+    const cleanup = () => {
+      for (const el of skipped) el.classList.remove('print-range-skip');
+      window.removeEventListener('afterprint', cleanup);
+    };
+    window.addEventListener('afterprint', cleanup);
+    // ফলব্যাক: afterprint কোনো কারণে না এলে ১০ মিনিট পর পরিষ্কার
+    const fallbackTimer = window.setTimeout(cleanup, 10 * 60 * 1000);
+    window.addEventListener('afterprint', () => window.clearTimeout(fallbackTimer), { once: true });
   }
   window.print();
 }

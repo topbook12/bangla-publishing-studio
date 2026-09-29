@@ -5,10 +5,13 @@
 
 'use client';
 
-import { ArrowUpToLine, Eraser, SwatchBook, Wand2 } from 'lucide-react';
+import { ArrowUpToLine, Droplet, Eraser, SlidersHorizontal, SwatchBook, Wand2 } from 'lucide-react';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Slider } from '@/components/ui/slider';
+import { Input } from '@/components/ui/input';
 import { RibbonButton, RibbonDivider, RibbonGroup } from './ribbon-shell';
 import { useEditorStore } from '@/lib/store';
 import { getEditor } from '@/lib/editor-registry';
@@ -17,11 +20,11 @@ import {
 } from '@/components/editor/page-ops';
 import { toast } from 'sonner';
 import {
-  effectivePageBorderStyle, effectivePageBorderWidth, FONT_OPTIONS, MARGIN_PRESETS,
+  effectivePageBorderStyle, effectivePageBorderWidth, FONT_OPTIONS, fontStackOf, MARGIN_PRESETS,
   PAGE_BORDER_WIDTH_PX, PAPER_PRESETS,
 } from '@/lib/paper';
 import { toBanglaNumber } from '@/lib/bangla';
-import type { DocumentSettings, Margins, PageBorderStyle, PageBorderWidth, PaperColor } from '@/lib/types';
+import type { DocumentSettings, Margins, PageBorderStyle, PageBorderWidth, PaperColor, WatermarkSettings } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -77,6 +80,24 @@ const BORDER_LINE_COLORS: Array<{ hex: string; name: string }> = [
 const BORDER_STYLE_LABELS: Record<PageBorderStyle, string> = { solid: 'Solid', double: 'Double', dashed: 'Dashed' };
 const BORDER_WIDTH_LABELS: Record<PageBorderWidth, string> = { thin: 'Thin', medium: 'Medium', thick: 'Thick' };
 
+// ─── পানির ছাপ (Watermark) ───
+
+/** এক-ক্লিক প্রিসেট — লেখা + চালু করে দেয় (বাকি স্টাইল অপরিবর্তিত) */
+const WATERMARK_PRESETS: Array<{ text: string; label: string; note: string }> = [
+  { text: 'খসড়া', label: 'খসড়া (Draft)', note: 'লেখা চলাকালীন প্রিন্ট-প্রুফ শনাক্ত করতে' },
+  { text: 'নমুনা', label: 'নমুনা (Sample)', note: 'রিভিউ/প্রুফ কপির জন্য' },
+  { text: 'গোপনীয়', label: 'গোপনীয় (Confidential)', note: 'সংবেদনশীল ডকুমেন্টে' },
+  { text: 'COPY', label: 'COPY', note: 'অননুমোদিত কপি চিহ্নিত করতে' },
+];
+
+/** ছাপের রং — ধূসর/নীল/লাল প্রিসেট + কাস্টম পিকার */
+const WATERMARK_COLORS: string[] = ['#64748b', '#94a3b8', '#334155', '#1d4ed8', '#0284c7', '#dc2626', '#991b1b', '#e11d48'];
+
+/** ডিফল্ট ছাপ — পুরনো ডকুমেন্টে (Dexie-তে সেভ হওয়া) watermark ফিল্ড অনুপস্থিত হলে ফলব্যাক */
+const WATERMARK_DEFAULTS: WatermarkSettings = {
+  enabled: false, text: 'খসড়া', opacity: 0.12, angle: -30, fontSize: 64, color: '#64748b',
+};
+
 export function LayoutTab() {
   const settings = useEditorStore((s) => s.settings);
   const update = useEditorStore((s) => s.updateSettings);
@@ -125,6 +146,21 @@ export function LayoutTab() {
     if (n > 0) toast.success(`${toBanglaNumber(n)}টি ফাঁকা পাতা মুছে ফেলা হয়েছে`);
     else toast.info('কোনো ফাঁকা পাতা পাওয়া যায়নি');
   };
+
+  // ── পানির ছাপ: পুরনো ডকুমেন্টে settings.watermark অনুপস্থিত হতে পারে — ডিফল্ট ধরে নেই ──
+  const wm: WatermarkSettings = settings.watermark ?? WATERMARK_DEFAULTS;
+  // mergeSettings নেস্টেড অবজেক্ট ডিপ-মার্জ করে, তবু পুরো অবজেক্ট লিখি —
+  // ফলে পুরনো ডকুমেন্টে প্রথম বদলের সাথেই সম্পূর্ণ watermark ফিল্ড তৈরি হয়ে যায়
+  const setWm = (patch: Partial<WatermarkSettings>) => update({ watermark: { ...wm, ...patch } });
+  const toggleWatermark = () => {
+    if (wm.enabled) {
+      setWm({ enabled: false });
+      return;
+    }
+    // ফাঁকা লেখায় চালু করলে ডিফল্ট 'খসড়া' বসাই — নইলে চালু হয়েও দেখা যেত না
+    setWm({ enabled: true, ...(wm.text.trim() ? {} : { text: 'খসড়া' }) });
+  };
+  const applyWatermarkPreset = (text: string) => setWm({ enabled: true, text });
 
   return (
     <div className="ribbon-scroll flex items-stretch gap-1">
@@ -315,6 +351,120 @@ export function LayoutTab() {
               value={/^#[0-9a-fA-F]{6}$/.test(settings.pageBorderColor) ? settings.pageBorderColor : '#1e293b'}
               onChange={(e) => update({ pageBorderColor: e.target.value })}
             />
+          </div>
+        </div>
+      </RibbonGroup>
+      <RibbonDivider />
+      <RibbonGroup label="Watermark">
+        <div className="flex flex-col gap-1">
+          <RibbonButton
+            icon={Droplet}
+            label="Watermark"
+            title="প্রতিটি পাতায় হালকা ঘূর্ণিত পানির ছাপ — প্রিন্ট ও ফরমার খসড়া কপিতেও ছাপা হয়"
+            active={wm.enabled}
+            onClick={toggleWatermark}
+          />
+          <div className="flex gap-1">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button type="button" className="ribbon-select w-28" title="Watermark preset">
+                  <span className="truncate">{wm.text.trim() || 'Preset'}</span> <span aria-hidden="true">▾</span>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56">
+                {WATERMARK_PRESETS.map((p) => (
+                  <DropdownMenuItem key={p.text} onClick={() => applyWatermarkPreset(p.text)}>
+                    <span className="flex flex-col">
+                      <span className={cn(wm.text === p.text && 'font-bold')}>{p.label}</span>
+                      <span className="text-[10px] text-muted-foreground">{p.note}</span>
+                    </span>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button type="button" className="ribbon-select w-36" title="Watermark customization">
+                  <SlidersHorizontal size={13} /> Customize… <span aria-hidden="true">▾</span>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-72 p-3" align="start">
+                <p className="mb-1 text-xs font-semibold text-muted-foreground">Watermark Text</p>
+                <Input
+                  value={wm.text}
+                  onChange={(e) => setWm({ text: e.target.value })}
+                  placeholder="খসড়া"
+                  className="h-8 text-sm"
+                />
+                <p className="mb-1 mt-2.5 text-xs font-semibold text-muted-foreground">Preview</p>
+                <div className="flex h-14 items-center justify-center overflow-hidden rounded-md border border-border bg-background">
+                  <span
+                    aria-hidden="true"
+                    className="whitespace-nowrap font-bold"
+                    style={{
+                      transform: `rotate(${wm.angle}deg)`,
+                      color: wm.color,
+                      opacity: wm.opacity,
+                      fontSize: `${Math.min(wm.fontSize, 28)}pt`,
+                      fontFamily: fontStackOf(settings.defaultFont),
+                    }}
+                  >
+                    {wm.text.trim() || 'খসড়া'}
+                  </span>
+                </div>
+                <div className="mt-3 space-y-2.5">
+                  <div>
+                    <div className="mb-1 flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">Opacity</span>
+                      <span className="tabular-nums">{Math.round(wm.opacity * 100)}%</span>
+                    </div>
+                    <Slider value={[wm.opacity]} min={0.04} max={0.35} step={0.01} onValueChange={(v) => setWm({ opacity: v[0] ?? wm.opacity })} />
+                  </div>
+                  <div>
+                    <div className="mb-1 flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">Angle</span>
+                      <span className="tabular-nums">{wm.angle}°</span>
+                    </div>
+                    <Slider value={[wm.angle]} min={-90} max={90} step={5} onValueChange={(v) => setWm({ angle: v[0] ?? wm.angle })} />
+                  </div>
+                  <div>
+                    <div className="mb-1 flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">Font Size (pt)</span>
+                      <span className="tabular-nums">{wm.fontSize}</span>
+                    </div>
+                    <Slider value={[wm.fontSize]} min={24} max={120} step={4} onValueChange={(v) => setWm({ fontSize: v[0] ?? wm.fontSize })} />
+                  </div>
+                </div>
+                <p className="mb-1 mt-3 text-xs font-semibold text-muted-foreground">Color</p>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {WATERMARK_COLORS.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      aria-label={`Watermark color ${c}`}
+                      title={c}
+                      onClick={() => setWm({ color: c })}
+                      className={cn(
+                        'h-6 w-6 rounded-md border border-black/10 transition hover:scale-110',
+                        wm.color.toLowerCase() === c && 'ring-2 ring-primary ring-offset-1',
+                      )}
+                      style={{ backgroundColor: c }}
+                    />
+                  ))}
+                  <input
+                    type="color"
+                    aria-label="Custom watermark color"
+                    title="Custom color"
+                    className="h-6 w-8 cursor-pointer rounded border border-border bg-transparent p-0"
+                    value={/^#[0-9a-fA-F]{6}$/.test(wm.color) ? wm.color : '#64748b'}
+                    onChange={(e) => setWm({ color: e.target.value })}
+                  />
+                </div>
+                <p className="mt-2.5 text-[10px] leading-snug text-muted-foreground">
+                  ছাপটি প্রিন্ট ও ফরমা PDF-এও আসে — চূড়ান্ত PDF বানানোর আগে Watermark টগল বন্ধ করে নিন।
+                </p>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
       </RibbonGroup>

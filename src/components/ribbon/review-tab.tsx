@@ -4,39 +4,20 @@
 
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { Grid3x3, Search, Sigma, SpellCheck2, Type } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Grid3x3, Pause, Search, Sigma, SpellCheck2, Square, Type, Volume2 } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { RibbonButton, RibbonDivider, RibbonGroup, refocusActiveEditor } from './ribbon-shell';
+import { RibbonButton, RibbonDivider, RibbonGroup, refocusActiveEditor, runCommand, useActiveEditor } from './ribbon-shell';
 import { useEditorStore } from '@/lib/store';
 import { useUiStore } from '@/lib/ui-store';
-import { CONJUNCTS, countCharacters, countWords, findConjunctWords } from '@/lib/bangla';
-import { runCommand } from './ribbon-shell';
+import { useDocStats } from '@/lib/doc-stats';
+import { CONJUNCTS, findConjunctWords, toBanglaNumber } from '@/lib/bangla';
+import { useReadAloud } from '@/lib/read-aloud';
+import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-
-export function useDocStats() {
-  const [stats, setStats] = useState({ words: 0, chars: 0 });
-  const pages = useEditorStore((s) => s.pages);
-
-  useEffect(() => {
-    const t = setTimeout(() => {
-      let words = 0;
-      let chars = 0;
-      for (const page of pages) {
-        if (page.kind !== 'normal' || !page.html) continue;
-        const text = page.html.replace(/<[^>]*>/g, ' ').replace(/&[a-z]+;/gi, ' ');
-        words += countWords(text);
-        chars += countCharacters(text.replace(/\s+/g, ' ').trim(), false);
-      }
-      setStats({ words, chars });
-    }, 500);
-    return () => clearTimeout(t);
-  }, [pages]);
-
-  return stats;
-}
 
 function ConjunctPalette() {
   const [open, setOpen] = useState(false);
@@ -137,9 +118,70 @@ function ConjunctWordFinder() {
   );
 }
 
+/**
+ * Read Aloud (পড়ে শোনানো) — প্রুফরিডিং সহায়ক: সিলেকশন বা সক্রিয় পাতার পুরো লেখা
+ * ব্রাউজারের speechSynthesis দিয়ে পড়ে শোনায়। বিস্তারিত: src/lib/read-aloud.ts
+ */
+const READ_RATES = [0.5, 0.75, 1, 1.25, 1.5] as const;
+
+function ReadAloudControls() {
+  const ed = useActiveEditor();
+  const ra = useReadAloud();
+  const noEditor = !ed || ed.isDestroyed;
+
+  const handleToggle = () => {
+    if (!ed) return;
+    const result = ra.toggle(ed);
+    if (result === 'unsupported') toast.error('এই ব্রাউজারে পড়া সুবিধা নেই');
+    else if (result === 'empty') toast.info('পড়ার মতো লেখা নেই');
+  };
+
+  return (
+    <div className="flex gap-1">
+      <RibbonButton
+        icon={ra.speaking && !ra.paused ? Pause : Volume2}
+        label="Read Aloud"
+        active={ra.speaking}
+        disabled={noEditor}
+        title={ra.speaking ? (ra.paused ? 'আবার পড়া শুরু করুন' : 'থামিয়ে রাখুন (Pause)') : 'সিলেকশন বা পুরো পাতা পড়ে শোনান'}
+        onClick={handleToggle}
+      />
+      <RibbonButton
+        icon={Square}
+        label="Stop"
+        disabled={noEditor || !ra.speaking}
+        title="পড়া বন্ধ করুন"
+        onClick={() => ra.stop()}
+      />
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild disabled={noEditor}>
+          <button type="button" className="ribbon-select w-16 justify-center" title="পড়ার গতি (Speed)">
+            {toBanglaNumber(ra.rate)}× <span aria-hidden="true">▾</span>
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          align="end"
+          onCloseAutoFocus={(e) => { e.preventDefault(); refocusActiveEditor(); }}
+        >
+          {READ_RATES.map((r) => (
+            <DropdownMenuItem
+              key={r}
+              className={cn(Math.abs(ra.rate - r) < 0.001 && 'bg-accent')}
+              onClick={() => ra.setRate(r)}
+            >
+              {toBanglaNumber(r)}×
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+}
+
 export function ReviewTab() {
-  const { words, chars } = useDocStats();
-  const pages = useEditorStore((s) => s.pages);
+  // শেয়ার্ড ডক-স্ট্যাটস (src/lib/doc-stats) — স্টেটাস বারের সাথে একই ডিবাউন্সড
+  // হিসাব ভাগ করে; প্রতি কীস্ট্রোকে দুইবার পুরো বই পার্স হত না
+  const { words, chars, pages } = useDocStats();
   const autoFlow = useEditorStore((s) => s.settings.autoFlow);
   const update = useEditorStore((s) => s.updateSettings);
   const openDialog = useUiStore((s) => s.open);
@@ -156,7 +198,7 @@ export function ReviewTab() {
             <span><b>{chars}</b> Characters</span>
           </div>
           <div className="stat-chip">
-            <span><b>{pages.length}</b> Pages</span>
+            <span><b>{pages}</b> Pages</span>
           </div>
         </div>
       </RibbonGroup>
@@ -193,6 +235,10 @@ export function ReviewTab() {
           />
           <span className="text-xs">Auto-flow</span>
         </div>
+      </RibbonGroup>
+      <RibbonDivider />
+      <RibbonGroup label="Read Aloud">
+        <ReadAloudControls />
       </RibbonGroup>
     </div>
   );

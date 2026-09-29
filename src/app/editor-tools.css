@@ -1,0 +1,13 @@
+/**
+ * editor-tools.css — এডিটর পাওয়ার-টুল স্টাইল (টাস্ক 10-c)
+ * বর্তমানে: ড্রপ ক্যাপ (DropCapMark মার্কের span.drop-cap)।
+ * প্রিন্ট-নিরাপদ: সাধারণ span — কোনো .no-print বা ব্যাকগ্রাউন্ড-রঙ নেই, Ctrl+P-তে স্বাভাবিকভাবেই ছাপা হয়।
+ */
+
+.drop-cap {
+  float: left;
+  font-size: 3.1em;
+  line-height: 0.82;
+  font-weight: 700;
+  padding: 0.04em 0.12em 0 0;
+}

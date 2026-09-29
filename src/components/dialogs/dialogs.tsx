@@ -11,6 +11,7 @@ import { ReviewDialog } from './review-dialog';
 import { PageChromeDialog } from './page-chrome-dialog';
 import { TemplatesDialog } from './templates-dialog';
 import { FindReplaceDialog, useFindReplaceShortcuts } from './find-replace-dialog';
+import { SnapshotsDialog } from './snapshots-dialog';
 import { HelpDialog } from './help-dialog';
 
 export function Dialogs() {
@@ -24,6 +25,7 @@ export function Dialogs() {
       <PageChromeDialog />
       <TemplatesDialog />
       <FindReplaceDialog />
+      <SnapshotsDialog />
       <HelpDialog />
     </>
   );

@@ -33,9 +33,7 @@ export function DesignTab() {
   const settings = useEditorStore((s) => s.settings);
   const update = useEditorStore((s) => s.updateSettings);
   const applyTheme = useEditorStore((s) => s.applyTheme);
-  const pages = useEditorStore((s) => s.pages);
   const openDialog = useUiStore((s) => s.open);
-  void pages;
 
   const refreshToc = async () => {
     const s = useEditorStore.getState();

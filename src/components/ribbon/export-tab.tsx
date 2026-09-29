@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { useEditorStore } from '@/lib/store';
 import { currentProjectJson, downloadJsonBackup, importJsonBackup, printDocument } from '@/lib/export-json';
 import { downloadHtmlBackup } from '@/lib/export-html';
@@ -42,10 +43,14 @@ import {
   type FormaSize,
 } from '@/lib/imposition';
 import { getPageDimensionsMm, mmToPx } from '@/lib/paper';
+import { toEnglishDigits } from '@/lib/bangla';
+import { cn } from '@/lib/utils';
 import { buildFormaSheets, formaSelfCheck, printForma, waitForDialogsClosed, type FormaPrintOptions } from '@/components/export/forma-print';
 
 type PrintMode = 'normal' | 'forma';
 type SideOrder = 'interleaved' | 'fronts-first';
+/** মুদ্রণ পরিসর — সম্পূর্ণ বই / নির্দিষ্ট পরিসর / শুধু সক্রিয় পাতা */
+type PrintRangeMode = 'all' | 'custom' | 'current';
 
 const BN_DIGITS = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
 const bn = (n: number | string) => String(n).replace(/\d/g, (d) => BN_DIGITS[Number(d)]);
@@ -54,9 +59,15 @@ export function ExportTab() {
   const title = useEditorStore((s) => s.title);
   const pageCount = useEditorStore((s) => s.pages.length);
   const settings = useEditorStore((s) => s.settings);
+  // সক্রিয় পাতার সূচি (0-ভিত্তিক) — “শুধু এই পাতা” পরিসরের জন্য; প্রিমিটিভ সিলেক্টর,
+  // কেবল পাতা-পরিবর্তনে রি-রেন্ডার (প্রতি কীস্ট্রোকে নয়)
+  const activePageIndex = useEditorStore((s) => s.pages.findIndex((p) => p.id === s.activePageId));
   const importRef = useRef<HTMLInputElement>(null);
   const [printOpen, setPrintOpen] = useState(false);
   const [mode, setMode] = useState<PrintMode>('normal');
+  const [rangeMode, setRangeMode] = useState<PrintRangeMode>('all');
+  const [rangeFrom, setRangeFrom] = useState('1');
+  const [rangeTo, setRangeTo] = useState('1');
   const [formaSize, setFormaSize] = useState<FormaSize>(16);
   const [sideOrder, setSideOrder] = useState<SideOrder>('interleaved');
   const [foldMarks, setFoldMarks] = useState(true);
@@ -199,9 +210,31 @@ export function ExportTab() {
   // ডায়ালগ সম্পূর্ণ বন্ধ (exit-animation সহ) হওয়ার পরেই প্রিন্ট —
   // নইলে fixed-position ডায়ালগ প্রতিটি প্রিন্টেড পেজে রিপিট হতো
   const runNormalPrint = () => {
+    // মুদ্রণ পরিসর যাচাই — বাংলা/ইংরেজি ডিজিট দুটোই চলে (toEnglishDigits),
+    // ভুল হলে টোস্ট + বাতিল (নীরবে পুরো বই ছাপার দুর্ঘটনা নয়)
+    let range: { from: number; to: number } | undefined;
+    if (rangeMode === 'current') {
+      if (activePageIndex < 0) {
+        toast.error('কোনো পাতা সক্রিয় নেই — আগে একটি পাতায় ক্লিক করুন।');
+        return;
+      }
+      range = { from: activePageIndex + 1, to: activePageIndex + 1 };
+    } else if (rangeMode === 'custom') {
+      const from = Number(toEnglishDigits(rangeFrom.trim()));
+      const to = Number(toEnglishDigits(rangeTo.trim()));
+      if (!Number.isFinite(from) || !Number.isFinite(to) || from < 1 || to < 1 || from > to) {
+        toast.error('পরিসর ঠিক নেই — শুরু ও শেষ পৃষ্ঠা সঠিকভাবে লিখুন (শুরু ≤ শেষ)।');
+        return;
+      }
+      if (from > pageCount) {
+        toast.error(`এই বইয়ে মোট ${bn(pageCount)}টি পৃষ্ঠা — শুরু ${bn(from)} এর বাইরে।`);
+        return;
+      }
+      range = { from, to: Math.min(to, pageCount) };
+    }
     setPrintOpen(false);
     window.setTimeout(() => {
-      void waitForDialogsClosed().then(() => printDocument());
+      void waitForDialogsClosed().then(() => printDocument(range));
     }, 40);
   };
 
@@ -345,6 +378,94 @@ export function ExportTab() {
               </div>
             </Label>
           </RadioGroup>
+
+          {/* ═══ মুদ্রণ পরিসর — শুধু সাধারণ PDF-এ প্রযোজ্য; ফরমা পুরো বই নেয় ═══ */}
+          <div
+            className={cn(
+              'space-y-2.5 rounded-lg border bg-muted/30 p-3',
+              mode === 'forma' && 'pointer-events-none select-none opacity-55',
+            )}
+            aria-disabled={mode === 'forma'}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <Label className="text-xs font-medium text-muted-foreground">মুদ্রণ পরিসর</Label>
+              {mode === 'forma' && (
+                <span className="text-[10px] text-muted-foreground">ফরমা সবসময় পুরো বইয়ের উপর গণনা হয়</span>
+              )}
+            </div>
+            <RadioGroup
+              value={rangeMode}
+              onValueChange={(v) => setRangeMode(v as PrintRangeMode)}
+              className="gap-1.5"
+              disabled={mode === 'forma'}
+            >
+              <Label
+                htmlFor="range-all"
+                className={`flex min-h-9 cursor-pointer items-center gap-3 rounded-md border p-2 text-sm transition ${
+                  rangeMode === 'all' ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
+                }`}
+              >
+                <RadioGroupItem value="all" id="range-all" />
+                <span>সম্পূর্ণ বই</span>
+              </Label>
+              <Label
+                htmlFor="range-custom"
+                className={`flex min-h-9 cursor-pointer items-center gap-3 rounded-md border p-2 text-sm transition ${
+                  rangeMode === 'custom' ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
+                }`}
+              >
+                <RadioGroupItem value="custom" id="range-custom" />
+                <span>নির্দিষ্ট পরিসর</span>
+              </Label>
+              {rangeMode === 'custom' && (
+                <div className="grid grid-cols-2 gap-2 pb-1 pl-7">
+                  <div className="space-y-1">
+                    <Label htmlFor="range-from" className="text-[10px] text-muted-foreground">
+                      শুরু (পৃষ্ঠা)
+                    </Label>
+                    <Input
+                      id="range-from"
+                      inputMode="numeric"
+                      autoComplete="off"
+                      className="h-9"
+                      value={rangeFrom}
+                      onChange={(e) => setRangeFrom(e.target.value)}
+                      placeholder={bn(1)}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="range-to" className="text-[10px] text-muted-foreground">
+                      শেষ (পৃষ্ঠা)
+                    </Label>
+                    <Input
+                      id="range-to"
+                      inputMode="numeric"
+                      autoComplete="off"
+                      className="h-9"
+                      value={rangeTo}
+                      onChange={(e) => setRangeTo(e.target.value)}
+                      placeholder={bn(pageCount)}
+                    />
+                  </div>
+                </div>
+              )}
+              <Label
+                htmlFor="range-current"
+                className={`flex min-h-9 cursor-pointer items-center gap-3 rounded-md border p-2 text-sm transition ${
+                  rangeMode === 'current' ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
+                }`}
+              >
+                <RadioGroupItem value="current" id="range-current" />
+                <span>
+                  শুধু এই পাতা{activePageIndex >= 0 ? ` (পৃষ্ঠা ${bn(activePageIndex + 1)})` : ''}
+                </span>
+              </Label>
+            </RadioGroup>
+            <p className="text-[10px] leading-tight text-muted-foreground">
+              বাইরের পাতাগুলো প্রিন্টে স্বয়ংক্রিয়ভাবে বাদ যাবে — ব্রাউজারের প্রিন্ট ডায়ালগে
+              পেজ-রেঞ্জ &ldquo;All&rdquo;-ই রাখুন। বাংলা বা ইংরেজি সংখ্যা দুটোই লেখা যায়।
+            </p>
+          </div>
 
           {mode === 'forma' && (
             <div className="space-y-3 rounded-lg border bg-muted/30 p-3">

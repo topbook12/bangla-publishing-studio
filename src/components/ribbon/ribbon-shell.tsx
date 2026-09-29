@@ -4,7 +4,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { motion, MotionConfig } from 'framer-motion';
 import { ChevronDown, Redo2, Undo2 } from 'lucide-react';
@@ -101,7 +101,9 @@ interface RibbonButtonProps {
   danger?: boolean;
 }
 
-export function RibbonButton({ icon: Icon, label, onClick, active, disabled, title, shortcut, danger }: RibbonButtonProps) {
+// React.memo — প্যারেন্ট ট্যাব রি-রেন্ডার হলেও props (icon/label/active/disabled)
+// অপরিবর্তিত থাকলে বাটনের ভেতরের Tooltip ট্রি রি-রেন্ডার বাদ যায়
+export const RibbonButton = memo(function RibbonButton({ icon: Icon, label, onClick, active, disabled, title, shortcut, danger }: RibbonButtonProps) {
   const tip = [title ?? label, shortcut].filter(Boolean).join(' · ');
   return (
     <Tooltip>
@@ -125,7 +127,7 @@ export function RibbonButton({ icon: Icon, label, onClick, active, disabled, tit
       <TooltipContent side="bottom">{tip}</TooltipContent>
     </Tooltip>
   );
-}
+});
 
 /** Helper to run a command on the active editor — সফল হলে true, ব্যর্থ হলে false */
 export function runCommand(fn: (editor: NonNullable<ReturnType<typeof getEditor>>) => void): boolean {

@@ -4,16 +4,22 @@
 
 'use client';
 
-import { ChevronUp, Database, FileText, ListOrdered, Maximize2, Minus, Plus, Ruler, Type } from 'lucide-react';
+import { useState } from 'react';
+import { ChevronUp, Database, FileText, ListOrdered, Maximize2, Minus, Plus, Ruler, Target, Type } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Progress } from '@/components/ui/progress';
+import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useEditorStore } from '@/lib/store';
-import { useDocStats } from '@/components/ribbon/review-tab';
-import { toBanglaNumber } from '@/lib/bangla';
+import { useDocStats } from '@/lib/doc-stats';
+import { getGoal, setGoal, useWritingSession } from '@/lib/writing-session';
+import type { WritingGoal } from '@/lib/writing-session';
+import { toBanglaNumber, toEnglishDigits } from '@/lib/bangla';
 import { getPageDimensionsMm, getPaperPreset } from '@/lib/paper';
 import { cn } from '@/lib/utils';
 
@@ -64,6 +70,134 @@ function PageJumper() {
         ))}
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+/** লেখার লক্ষ্য ও সেশন-হিসাব পিল — পপওভারে প্রোগ্রেস + লক্ষ্য এডিটর */
+function GoalPill() {
+  const { sessionWords, wpm, sessionMinutes, progressPct } = useWritingSession();
+  const goal = getGoal();
+  const words = useDocStats().words;
+  const pagesCount = useEditorStore((s) => s.pages.length);
+  const [open, setOpen] = useState(false);
+  const [type, setType] = useState<WritingGoal['type']>('words');
+  const [target, setTarget] = useState('');
+
+  // পপওভার খুললে এডিটর-ফর্মে চলতি লক্ষ্য বসানো
+  const handleOpenChange = (v: boolean): void => {
+    if (v) {
+      const g = getGoal();
+      setType(g?.type ?? 'words');
+      setTarget(g ? String(g.target) : '');
+    }
+    setOpen(v);
+  };
+
+  const saveGoal = (): void => {
+    // বাংলা ডিজিটেও লেখা যায় (৫০০০ → 5000)
+    const n = Math.floor(Number(toEnglishDigits(target.trim())));
+    if (!Number.isFinite(n) || n <= 0) return;
+    setGoal({ type, target: n });
+    setOpen(false);
+  };
+
+  const clearGoal = (): void => {
+    setGoal(null);
+    setTarget('');
+  };
+
+  return (
+    <Popover open={open} onOpenChange={handleOpenChange}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="status-pill max-lg:hidden cursor-pointer transition-colors hover:bg-accent/60"
+          aria-label="Writing goal and session stats"
+          title="লেখার লক্ষ্য ও সেশন"
+        >
+          <Target size={12} aria-hidden="true" />
+          {goal ? (
+            <><b>{toBanglaNumber(Math.round(progressPct))}%</b><span className="opacity-70">লক্ষ্য পূর্ণ</span></>
+          ) : (
+            <span>লক্ষ্য নির্ধারণ</span>
+          )}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-72 p-3">
+        {/* লক্ষ্য প্রোগ্রেস */}
+        {goal ? (
+          <div className="space-y-1.5">
+            <Progress value={progressPct} className="h-2" aria-label="লক্ষ্য অগ্রগতি" />
+            <p className="text-[11px] text-muted-foreground">
+              {goal.type === 'words'
+                ? <>মোট <b className="text-foreground">{toBanglaNumber(words)}</b> শব্দ · লক্ষ্য {toBanglaNumber(goal.target)} শব্দ</>
+                : <>মোট <b className="text-foreground">{toBanglaNumber(pagesCount)}</b> পৃষ্ঠা · লক্ষ্য {toBanglaNumber(goal.target)} পৃষ্ঠা</>}
+            </p>
+          </div>
+        ) : (
+          <p className="text-[11px] leading-relaxed text-muted-foreground">
+            প্রতিদিন/প্রতি সেশনে কত লিখবেন — লক্ষ্য ঠিক করে নিন, অগ্রগতি এখানেই দেখা যাবে।
+          </p>
+        )}
+
+        {/* সেশন-হিসাব মিনি-কার্ড */}
+        <div className="session-stats-card mt-3" role="status">
+          <p className="text-[11px] leading-relaxed text-foreground/90">
+            এই সেশন: <b className="text-primary">+{toBanglaNumber(sessionWords)}</b> শব্দ ·{' '}
+            {toBanglaNumber(Math.round(wpm))} শব্দ/মিনিট · {toBanglaNumber(Math.floor(sessionMinutes))} মিনিট
+          </p>
+        </div>
+
+        {/* লক্ষ্য এডিটর */}
+        <div className="mt-3 space-y-2">
+          <div className="flex overflow-hidden rounded-md border" role="group" aria-label="লক্ষ্যের ধরন">
+            <button
+              type="button"
+              aria-pressed={type === 'words'}
+              onClick={() => setType('words')}
+              className={cn(
+                'flex-1 px-2 py-1.5 text-xs font-medium transition-colors',
+                type === 'words' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent/60',
+              )}
+            >
+              শব্দ
+            </button>
+            <button
+              type="button"
+              aria-pressed={type === 'pages'}
+              onClick={() => setType('pages')}
+              className={cn(
+                'flex-1 border-l px-2 py-1.5 text-xs font-medium transition-colors',
+                type === 'pages' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent/60',
+              )}
+            >
+              পৃষ্ঠা
+            </button>
+          </div>
+          <Input
+            inputMode="numeric"
+            value={target}
+            onChange={(e) => setTarget(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') saveGoal();
+            }}
+            placeholder={type === 'words' ? 'যেমন: ৫০০০ শব্দ' : 'যেমন: ৫০ পৃষ্ঠা'}
+            aria-label="লক্ষ্যের সংখ্যা"
+            className="h-8 text-[12px]"
+          />
+          <div className="flex gap-2">
+            <Button size="sm" className="h-8 flex-1 text-xs" disabled={!target.trim()} onClick={saveGoal}>
+              সেভ
+            </Button>
+            {goal ? (
+              <Button size="sm" variant="outline" className="h-8 text-xs" onClick={clearGoal}>
+                মুছুন
+              </Button>
+            ) : null}
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -134,6 +268,7 @@ export function StatusBar() {
           <Type size={12} aria-hidden="true" />
           <b>{toBanglaNumber(words)}</b> Words
         </span>
+        <GoalPill />
         <span className="status-pill max-lg:hidden">
           <Database size={12} aria-hidden="true" />
           AutoSave · IndexedDB

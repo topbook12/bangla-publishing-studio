@@ -3,7 +3,7 @@
  * - প্রতিটি ফিজিক্যাল পৃষ্ঠার নিজস্ব এডিটর
  * - Ctrl+Enter: কার্সর থেকে নতুন পৃষ্ঠা
  * - অটো-ফ্লো: পৃষ্ঠা ভরে গেলে শেষ ব্লকগুলো পরের পাতায়
- * - ভিউপোর্টের বাইরে স্ট্যাটিক প্রিভিউ (পারফরম্যান্স)
+ * - দুই-মুখী রিসাইক্লিং: ভিউপোর্টের কাছে লাইভ এডিটর, দূরে স্ট্যাটিক প্রিভিউ (পারফরম্যান্স)
  */
 
 'use client';
@@ -27,6 +27,8 @@ import Placeholder from '@tiptap/extension-placeholder';
 import Subscript from '@tiptap/extension-subscript';
 import Superscript from '@tiptap/extension-superscript';
 import { Extension } from '@tiptap/core';
+import { FormatPainterPlugin } from '@/lib/format-painter';
+import { DropCapMark } from '@/lib/text-transform';
 import { useEditorStore } from '@/lib/store';
 import { registerEditor, unregisterEditor } from '@/lib/editor-registry';
 import { customExtensions } from './extensions';
@@ -81,24 +83,6 @@ export function PageEditor({ page, index, isFirstPage }: PageEditorProps) {
 
   const settings = useEditorStore((s) => s.settings);
 
-  // ভিউপোর্ট অবজারভার — কাছে এলে আসল এডিটর মাউন্ট হয়
-  useEffect(() => {
-    if (mounted || !wrapperRef.current) return;
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const en of entries) {
-          if (en.isIntersecting) {
-            setMounted(true);
-            io.disconnect();
-          }
-        }
-      },
-      { rootMargin: '700px 0px' },
-    );
-    io.observe(wrapperRef.current);
-    return () => io.disconnect();
-  }, [mounted]);
-
   const syncHtml = useCallback(
     (html: string) => {
       lastEmittedRef.current = html;
@@ -110,6 +94,9 @@ export function PageEditor({ page, index, isFirstPage }: PageEditorProps) {
   const scheduleFlow = useCallback(() => {
     if (flowTimerRef.current) clearTimeout(flowTimerRef.current);
     flowTimerRef.current = setTimeout(() => {
+      // টাইমার ফায়ার করলে রেফ পরিষ্কার — নইলে রিসাইকেল-গার্ড (পেন্ডিং ফ্লো
+      // টাইমার) একবার ফ্লো হওয়ার পর পাতাটিকে চিরকাল static-এ ফেরত আটকে রাখত
+      flowTimerRef.current = null;
       const contentEl = contentRef.current;
       if (!contentEl || !editorRef.current) return;
       // ফিল/ফ্লো অপ চলাকালীন পুনঃপ্রবাহ বন্ধ — ডুপ্লিকেশন রোধে
@@ -180,6 +167,8 @@ export function PageEditor({ page, index, isFirstPage }: PageEditorProps) {
       Placeholder.configure({ placeholder: 'লিখতে শুরু করুন…' }),
       Subscript,
       Superscript,
+      FormatPainterPlugin,
+      DropCapMark,
       ...customExtensions,
       ...designExtensions,
       BlockMover,
@@ -197,9 +186,9 @@ export function PageEditor({ page, index, isFirstPage }: PageEditorProps) {
       syncHtml(ed.getHTML());
       scheduleFlow();
     },
-    onSelectionUpdate: () => {
-      useEditorStore.getState().bumpSelection();
-    },
+    // সিলেকশন-বাম্প শুধু onTransaction-এ — এটি সিলেকশন-আপডেটসহ প্রতিটি
+    // ট্রানজ্যাকশনের সুপারসেট; onSelectionUpdate আর onTransaction দুটোতেই
+    // বাম্প করলে প্রতি কীস্ট্রোকে/কার্সর-নড়াচড়ায় দুবার স্টোর-রাইট হত
     onTransaction: () => {
       useEditorStore.getState().bumpSelection();
     },
@@ -220,6 +209,44 @@ export function PageEditor({ page, index, isFirstPage }: PageEditorProps) {
 
   const editorRef = useRef<typeof editor | null>(null);
   editorRef.current = editor;
+
+  // ভিউপোর্ট অবজারভার — দুই-মুখী রিসাইক্লিং (পারফরম্যান্স):
+  // ভিউপোর্টের কাছে (±২০০০px) এলে আসল TipTap এডিটর মাউন্ট হয়; দূরে সরে গেলে
+  // স্ট্যাটিক প্রিভিউতে ফেরত যায়। আগে একবার ভিজিট হলেই এডিটর চিরকাল জিইয়ে রাখা
+  // হত — ১০০+ পাতার বইয়ে শত শত লাইভ এডিটর জমে মেমরি ফুলত ও স্ক্রল ধীর হত।
+  // তাই অবজারভার কম্পোনেন্টের সারা জীবন সক্রিয় থাকে (প্রথম মাউন্টে ডিসকানেক্ট নয়) —
+  // wrapper div দুই ব্রাঞ্চেই একই রেফে রেন্ডার হয় বলে অবজারভেশন টিকে থাকে।
+  // তবে সক্রিয় কাজ কখনো বাধাগ্রস্ত হবে না — নিচের যেকোনো গার্ড সত্যি হলে রিসাইকেল স্কিপ:
+  //   ১) এই পাতাটিই স্টোরের activePageId
+  //   ২) এই এডিটরের DOM-এ ফোকাস আছে (ব্যবহারকারী এখানেই টাইপ করছেন)
+  //   ৩) fill/flow অপারেশন এই মুহূর্তে চলছে
+  //   ৪) শিডিউল করা ফ্লো টাইমার এখনো পেন্ডিং আছে
+  useEffect(() => {
+    const el = wrapperRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const en of entries) {
+          if (en.isIntersecting) {
+            setMounted(true);
+            continue;
+          }
+          // ── রিসাইকেল গার্ড: সক্রিয় কাজ না থাকলেই কেবল static-এ ফেরা হয় ──
+          if (useEditorStore.getState().activePageId === page.id) continue;
+          const ed = editorRef.current;
+          if (!ed || ed.isDestroyed) continue;
+          const active = document.activeElement;
+          if (active && el.contains(active)) continue;
+          if (isFlowOpRunning(ed)) continue;
+          if (flowTimerRef.current !== null) continue;
+          setMounted(false);
+        }
+      },
+      { rootMargin: '2000px 0px' },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [page.id]);
 
   // এডিটর মাউন্ট/আপডেটে রেজিস্ট্রি সিঙ্ক
   useEffect(() => {

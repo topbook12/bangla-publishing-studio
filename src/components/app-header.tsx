@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import {
-  BookOpenCheck, Check, CircleHelp, CloudOff, FilePlus2, FolderOpen, Loader2, Moon, PenLine,
+  BookOpenCheck, Check, CircleHelp, CloudOff, FilePlus2, Focus, FolderOpen, History, ListTree, Loader2, Moon, PenLine,
   Save, Sun, Trash2, Copy, Pencil, Menu,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useEditorStore } from '@/lib/store';
 import { useUiStore } from '@/lib/ui-store';
 import { banglaDateToday } from '@/lib/bangla';
+import { cn } from '@/lib/utils';
 
 function SaveIndicator() {
   const saveState = useEditorStore((s) => s.saveState);
@@ -66,6 +67,52 @@ function ThemeToggle() {
         </Button>
       </TooltipTrigger>
       <TooltipContent side="bottom">Toggle Theme</TooltipContent>
+    </Tooltip>
+  );
+}
+
+function NavigatorToggle() {
+  const navigatorOpen = useUiStore((s) => s.navigatorOpen);
+  const toggleNavigator = useUiStore((s) => s.toggleNavigator);
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn('header-action max-sm:h-11 max-sm:w-11', navigatorOpen && 'bg-accent text-accent-foreground')}
+          aria-label="Outline Navigator"
+          aria-pressed={navigatorOpen}
+          title="আউটলাইন নেভিগেটর (অধ্যায় তালিকা)"
+          onClick={toggleNavigator}
+        >
+          <ListTree size={17} />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="bottom">আউটলাইন নেভিগেটর</TooltipContent>
+    </Tooltip>
+  );
+}
+
+function FocusModeToggle() {
+  const focusMode = useUiStore((s) => s.focusMode);
+  const toggleFocusMode = useUiStore((s) => s.toggleFocusMode);
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn('header-action max-sm:h-11 max-sm:w-11', focusMode && 'bg-accent text-accent-foreground')}
+          aria-label="Focus Mode"
+          aria-pressed={focusMode}
+          title="ফোকাস মোড (Ctrl+Shift+F)"
+          onClick={toggleFocusMode}
+        >
+          <Focus size={17} />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="bottom">ফোকাস মোড (Ctrl+Shift+F)</TooltipContent>
     </Tooltip>
   );
 }
@@ -122,6 +169,8 @@ export function AppHeader() {
       <div className="flex shrink-0 items-center gap-1.5">
         <SaveIndicator />
         <span className="hidden text-xs text-muted-foreground md:inline">{now}</span>
+        <NavigatorToggle />
+        <FocusModeToggle />
         <ThemeToggle />
         <DropdownMenu>
           <Tooltip>
@@ -165,6 +214,9 @@ export function AppHeader() {
             )}
             <DropdownMenuItem onClick={() => openDialog('projects')}>
               <FolderOpen size={14} /> All Books (Manager)
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => openDialog('snapshots')}>
+              <History size={14} /> Snapshot History (Version Backup)
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem

@@ -230,6 +230,55 @@ ${sp(1)}
 <p style="text-align:right"><em><span style="font-size:11pt; color:#334155">লেখক</span></em></p>
 `.trim(),
   },
+  {
+    id: 'certificate',
+    name: 'সনদপত্র',
+    desc: 'অলংকৃত ডাবল-বর্ডার সনদ — প্রশংসাপত্র, কোর্স সম্পন্নকরণ বা অর্জনের প্রত্যয়নপত্র',
+    accent: '#9f1239',
+    category: 'front',
+    kind: 'copyright',
+    html: `
+${sp(1)}
+${buildDesignBoxHtml(
+  { variant: 'double', border: '#9f1239', fill: 'transparent', bstyle: 'double', bwidth: 4 },
+  `${sp(1)}
+<p style="text-align:center"><span style="font-size:13pt; color:#b45309; letter-spacing:2px">❦ ────────── ❖ ────────── ❦</span></p>
+<h1 style="text-align:center; color:#7f1d1d"><span style="font-size:28pt">সনদপত্র</span></h1>
+<p style="text-align:center"><span style="font-size:10pt; color:#9f1239; letter-spacing:3px">CERTIFICATE OF ACHIEVEMENT</span></p>
+<p style="text-align:center"></p>
+<p style="text-align:center; padding:0 1.5em"><span style="font-size:12pt; color:#334155">এই মর্মে প্রত্যয়ন করা হচ্ছে যে,</span></p>
+<h2 style="text-align:center; color:#1e293b"><span style="font-size:18pt">শিক্ষার্থীর নাম</span></h2>
+<p style="text-align:center; padding:0 1.5em"><span style="font-size:11pt; color:#475569">উপরোক্ত শিক্ষার্থী … (কোর্স/বিষয়ের নাম) … সফলতার সাথে সম্পন্ন করেছে এবং পরীক্ষায় … (গ্রেড/ফলাফল) … অর্জন করেছে।</span></p>
+<p style="text-align:center; padding:0 1.5em"><span style="font-size:10pt; color:#64748b">তাঁর মেধা, পরিশ্রম ও নিয়মিত উপস্থিতির স্বীকৃতিস্বরূপ এই সনদপত্র প্রদান করা হলো।</span></p>
+${sp(2)}
+<p style="text-align:center"><span style="font-size:11pt; color:#334155">তারিখ: …………………………&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;স্বাক্ষর: …………………………</span></p>
+<p style="text-align:center"><span style="font-size:10pt; color:#64748b">(প্রদানকারী কর্তৃপক্ষের পদবি ও প্রতিষ্ঠানের নাম)</span></p>
+${sp(1)}`,
+)}
+${sp(1)}
+${TIP_NOTE}
+`.trim(),
+  },
+  {
+    id: 'declaration',
+    name: 'ঘোষণাপত্র',
+    desc: 'লেখকের আনুষ্ঠানিক ঘোষণা — মৌলিকতা স্বীকার, স্বত্ব দাবি ও স্বাক্ষরসহ প্রারম্ভিক পাতা',
+    accent: '#b45309',
+    category: 'front',
+    kind: 'preface',
+    html: `
+${sp(2)}
+<h1 style="text-align:center; color:#b45309">ঘোষণাপত্র</h1>
+<hr class="fancy-divider" data-style="double" />
+<p>আমি, …………………… (লেখকের পূর্ণ নাম), এই মর্মে আনুষ্ঠানিকভাবে ঘোষণা করছি যে এই বইটি আমি নিজে রচনা করেছি — এর সব লেখা, ব্যাখ্যা ও উপস্থাপনার সম্পূর্ণ দায়িত্ব আমার।</p>
+<p>বইটি রচনায় অন্য কোনো রচনার অনুলিপি বা স্বত্বলঙ্ঘন করা হয়নি; প্রয়োজনীয় স্থানে উৎসের যথাযথ উল্লেখ রাখা হয়েছে।</p>
+<p>এই বইয়ের কোনো অংশ লেখকের লিখিত অনুমতি ছাড়া কোনো প্রকারে পুনঃপ্রকাশ বা বিতরণ করা যাবে না।</p>
+<p>ভুলত্রুটির জন্য ক্ষমাপ্রার্থী — পাঠকদের মূল্যবান পরামর্শ পরবর্তী সংস্করণে সংযোজিত হবে।</p>
+<p style="text-align:center"></p>
+<p style="text-align:right"><span style="font-size:11pt; color:#334155">লেখকের স্বাক্ষর: …………………………</span></p>
+<p style="text-align:right"><em><span style="font-size:11pt; color:#64748b">তারিখ: …………………………</span></em></p>
+`.trim(),
+  },
 
   // ═══════════════════════ সূচিপত্র ═══════════════════════
   {

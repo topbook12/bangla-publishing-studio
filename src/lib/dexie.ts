@@ -4,7 +4,7 @@
  */
 
 import Dexie, { type EntityTable } from 'dexie';
-import type { BookProject } from './types';
+import type { BookProject, DocumentSettings, PageData } from './types';
 
 /**
  * প্রজেক্টের HTML কনটেন্ট বড় হতে পারে, তাই প্রতিটি পৃষ্ঠা আলাদা রেকর্ড নয় —
@@ -12,12 +12,35 @@ import type { BookProject } from './types';
  */
 export type ProjectRecord = BookProject;
 
+/**
+ * স্ন্যাপশট (ভার্সন ব্যাকআপ) — পুরো বইয়ের এক মুহূর্তের অবস্থা।
+ * kind: 'auto' = প্রতি ৫ মিনিটে/পুনরুদ্ধারের আগে স্বয়ংক্রিয়, 'manual' = ব্যবহারকারীর নেওয়া।
+ * pages/settings রেফারেন্স হিসেবেই রাখা হয় — IndexedDB লেখার সময়
+ * structured-clone হয়ে যায়, তাই পরের সম্পাদনায় স্ন্যাপশট নষ্ট হয় না।
+ */
+export interface SnapshotRecord {
+  id: string;
+  projectId: string;
+  title: string;
+  createdAt: number;
+  kind: 'auto' | 'manual';
+  pages: PageData[];
+  settings: DocumentSettings;
+}
+
 const db = new Dexie('bwp-studio') as Dexie & {
   projects: EntityTable<ProjectRecord, 'id'>;
+  snapshots: EntityTable<SnapshotRecord, 'id'>;
 };
 
 db.version(1).stores({
   projects: 'id, title, updatedAt',
+});
+
+// সংস্করণ ২ — শুধু নতুন `snapshots` টেবিল যোগ (অ্যাডিটিভ স্কিমা-বৃদ্ধি;
+// উল্লেখ-না-করা টেবিল আগের স্কিমায় অক্ষত থাকে — পুরনো ডেটা/আপগ্রেড নিরাপদ)
+db.version(2).stores({
+  snapshots: 'id, projectId, createdAt',
 });
 
 export { db };

@@ -46,6 +46,14 @@ export function createDefaultSettings(overrides?: Partial<DocumentSettings>): Do
     autoFlow: true,
     pageBorder: 'none',
     pageBorderColor: '#4f46e5',
+    watermark: {
+      enabled: false,
+      text: 'খসড়া',
+      opacity: 0.12,
+      angle: -30,
+      fontSize: 64,
+      color: '#64748b',
+    },
     ...overrides,
   };
 }

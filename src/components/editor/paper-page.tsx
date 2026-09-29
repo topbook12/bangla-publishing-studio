@@ -4,10 +4,11 @@
 
 'use client';
 
+import { memo } from 'react';
 import type { ReactNode } from 'react';
 import type { DocumentSettings, PageData } from '@/lib/types';
 import { getPageDimensionsMm, mmToPx, pageBorderVisual } from '@/lib/paper';
-import { PageFooter, PageHeader, pageFontStyle, pagePaddingStyle } from './page-chrome';
+import { PageFooter, PageHeader, PageWatermark, pageFontStyle, pagePaddingStyle } from './page-chrome';
 import { CoverView } from './cover-view';
 import { cn } from '@/lib/utils';
 
@@ -20,7 +21,20 @@ interface PaperPageProps {
   onPageClick?: () => void;
 }
 
-export function PaperPage({ page, index, settings, children, active, onPageClick }: PaperPageProps) {
+/**
+ * React.memo — এক পাতা সম্পাদনার সময় updatePageHtml অ্যারে ক্লোন করে শুধু
+ * সম্পাদিত পাতার এন্ট্রি বদলায়, তাই বাকি সব পাতার `page` রেফারেন্স অপরিবর্তিত —
+ * প্রতি কীস্ট্রোকে শত শত পাতার রি-রেন্ডার বাদ পড়ে।
+ *
+ * children ও onPageClick ইচ্ছাকৃতভাবে তুলনার বাইরে: একমাত্র কনজিউমার
+ * (workspace.tsx)-এ দুটোই কেবল page/index থেকে নির্ধারিত — `page.kind === 'normal'
+ * ? <PageEditor page={page} index={index} …/> : null` এবং
+ * `() => setActivePage(page.id)`। তাই প্রতি রেন্ডারে এদের পরিচয় বদলালেও ফল একই।
+ * কনজিউমার কখনো বাইরের স্টেট-নির্ভর children/onPageClick পাঠাতে শুরু করলে এই
+ * তুলনা হালনাগাদ করতে হবে (নইলে স্টেল রেন্ডার হবে)।
+ */
+export const PaperPage = memo(
+  function PaperPage({ page, index, settings, children, active, onPageClick }: PaperPageProps) {
   const { widthMm, heightMm } = getPageDimensionsMm(
     settings.paperSize,
     settings.orientation,
@@ -50,6 +64,8 @@ export function PaperPage({ page, index, settings, children, active, onPageClick
       data-page-index={index}
     >
       <div className="paper-inner" style={{ padding: pagePaddingStyle(index, settings) }}>
+        {/* ওয়াটারমার্ক লেয়ার — কনটেন্টের নিচে, প্রিন্টেও ছাপা হয় (খসড়া/নমুনা কপি) */}
+        <PageWatermark settings={settings} />
         <PageHeader
           index={index}
           settings={settings}
@@ -78,4 +94,10 @@ export function PaperPage({ page, index, settings, children, active, onPageClick
       </div>
     </div>
   );
-}
+  },
+  (prev, next) =>
+    prev.page === next.page &&
+    prev.index === next.index &&
+    prev.settings === next.settings &&
+    prev.active === next.active,
+);

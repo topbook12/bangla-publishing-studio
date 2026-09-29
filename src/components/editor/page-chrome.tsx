@@ -388,3 +388,61 @@ export function pageFontStyle(settings: DocumentSettings): React.CSSProperties {
     '--page-paragraph-gap': `${settings.paragraphSpacing}px`,
   } as React.CSSProperties;
 }
+
+// ─── পানির ছাপ (Watermark) ───
+
+/**
+ * প্রতিটি পাতার পেছনে হালকা ঘূর্ণিত লেখা (খসড়া/গোপনীয়…) — খসড়া কপি শনাক্ত করতে।
+ *
+ * ★ ইন্টিগ্রেশন: paper-page.tsx-এর `<div class="paper-inner">`-এর প্রথম সন্তান হিসেবে বসে
+ *   (globals.css-এ .paper-inner-কে positioning context করা হয়েছে)। স্তরটি absolute +
+ *   pointer-events:none — লেখা সিলেকশন/ক্লিকে বাধা দেয় না। প্রিন্ট ও ফরমা ক্লোনেও
+ *   ছাপা হয় (print-color-adjust: exact ইনলাইনে দেওয়া; কোনো .no-print রুল এটিকে লুকায় না)।
+ *
+ * পুরনো ডকুমেন্টে settings.watermark অনুপস্থিত থাকতে পারে — তাই `?.` গার্ড বাধ্যতামূলক।
+ */
+export function PageWatermark({ settings }: { settings: DocumentSettings }): ReactNode {
+  const wm = settings.watermark;
+  if (!wm?.enabled) return null;
+  const text = (wm.text ?? '').trim();
+  if (!text) return null;
+  // সেটিংস কোথাও ভেঙে গেলেও চিত্র বিগড়াবে না — নিরাপদ সীমায় বাঁধা
+  const opacity = Math.min(0.35, Math.max(0.04, wm.opacity));
+  const angle = Math.min(90, Math.max(-90, wm.angle));
+  const fontSize = Math.min(120, Math.max(24, wm.fontSize));
+  return (
+    <div
+      className="page-watermark"
+      style={{
+        position: 'absolute',
+        inset: 0,
+        zIndex: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        pointerEvents: 'none',
+        userSelect: 'none',
+        // ঘূর্ণন + রং + হালকা অস্বচ্ছতা — খসড়া ছাপের ক্লাসিক চেহারা
+        transform: `rotate(${angle}deg)`,
+        color: wm.color,
+        opacity,
+        lineHeight: 1.2,
+        fontSize: `${fontSize}pt`,
+        // পাতার ডিফল্ট ফন্টেই ছাপ — বইয়ের টাইপোগ্রাফির সাথে সামঞ্জস্য
+        fontFamily: fontStackOf(settings.defaultFont),
+        fontWeight: 700,
+        // খসড়া কপিতেও ছাপ হওয়া বাধ্যতামূলক — ব্রাউজার রঙ বাদ দিলে স্বচ্ছ হয়ে যেত
+        WebkitPrintColorAdjust: 'exact',
+        printColorAdjust: 'exact',
+      } as React.CSSProperties}
+    >
+      {/* দীর্ঘ লেখা মাঝবরাবর মুড়ে যায় (max-width 90%); aria-hidden — স্ক্রিন-রিডারে বাড়তি শব্দ নয় */}
+      <span
+        aria-hidden="true"
+        style={{ maxWidth: '90%', whiteSpace: 'normal', textAlign: 'center', overflowWrap: 'break-word' }}
+      >
+        {text}
+      </span>
+    </div>
+  );
+}

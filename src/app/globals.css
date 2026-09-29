@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import './editor-tools.css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -863,6 +864,8 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
   display: flex;
   flex-direction: column;
   height: 100%;
+  /* PageWatermark স্তরের positioning context — নইলে absolute ছাপ paper-page পর্যন্ত ছড়ায় */
+  position: relative;
 }
 
 .page-header { flex-shrink: 0; }
@@ -876,6 +879,22 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
   border-radius: 2px;
 }
 .page-content-text { height: 100%; counter-reset: bwp-footnote; }
+
+/* ─── পানির ছাপ (Watermark) ───
+   .page-watermark নিজে absolute + z:0 + pointer-events:none (page-chrome.tsx-এর PageWatermark)।
+   হেডার/কনটেন্ট/ফুটারকে z:1 দিয়ে ছাপের উপরে তোলা হয় — লেখা ছাপের নিচে না লুকায়।
+   প্রিন্টে ছাপ হওয়া বাধ্যতামূলক (খসড়া কপি) — print ব্লকেও সুরক্ষা আছে, নিচে দেখুন। */
+.paper-inner > .page-header,
+.paper-inner > .page-content,
+.paper-inner > .page-footer {
+  position: relative;
+  z-index: 1;
+}
+.page-watermark {
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
 
 /* ─── হেডার স্টাইল ─── */
 
@@ -1861,4 +1880,106 @@ html.dark .paper-active {
   }
   /* ডান-ক্লিক কনটেক্সট মেনু খোলা অবস্থায় প্রিন্ট করলেও মেনু ছাপা হবে না */
   .bwp-context-menu { display: none !important; }
+  /* পানির ছাপ — খসড়া/গোপনীয় কপি শনাক্ত করতে প্রিন্টেও ছাপা হবে (আরও সুরক্ষা:
+     ইনলাইন print-color-adjust: exact + কোনো .no-print ক্লাস নেই)। ফরমা ক্লোনেও থাকে। */
+  .page-watermark {
+    display: flex !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+
+/* ═══════════════ আউটলাইন নেভিগেটর (Task 10-a) ═══════════════ */
+
+/* নেভিগেটরের সরু প্রিমিয়াম স্ক্রলবার — ওয়ার্কস্পেসের লুকের সাথে মানানসই */
+.nav-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--foreground) 20%, transparent) transparent;
+}
+.nav-scroll::-webkit-scrollbar { width: 6px; }
+.nav-scroll::-webkit-scrollbar-track { background: transparent; }
+.nav-scroll::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background-color: color-mix(in oklab, var(--foreground) 18%, transparent);
+}
+.nav-scroll::-webkit-scrollbar-thumb:hover { background-color: color-mix(in oklab, var(--foreground) 32%, transparent); }
+
+/* বর্তমান অবস্থানের শিরোনাম — বাম দিকে অ্যাকসেন্ট বর্ডার (লেআউট নড়ে না) */
+.nav-row-active {
+  box-shadow: inset 2px 0 0 0 color-mix(in oklab, var(--primary) 85%, transparent);
+}
+
+/* ═══════════════ ফোকাস মোড (নিরবচ্ছিন্ন লেখা) ═══════════════ */
+
+/* হেডার/রিবন/স্ট্যাটাস-বার লুকিয়ে শুধু কাগজ — নেভিগেটর খোলা থাকলে সেটিও থাকে */
+.app-root.focus-mode .app-header,
+.app-root.focus-mode .ribbon,
+.app-root.focus-mode .status-bar { display: none; }
+
+/* ফোকাস মোডে ওয়ার্কস্পেস আরও শান্ত ব্যাকড্রপ — কাগজেই সব মনোযোগ */
+.app-root.focus-mode .workspace {
+  background:
+    radial-gradient(1200px 500px at 50% -8%, color-mix(in oklab, var(--primary) 5%, transparent), transparent 62%),
+    linear-gradient(180deg, oklch(0.965 0.004 265) 0%, oklch(0.945 0.006 265) 100%);
+}
+html.dark .app-root.focus-mode .workspace {
+  background:
+    radial-gradient(1200px 500px at 50% -8%, color-mix(in oklab, var(--primary) 6%, transparent), transparent 62%),
+    linear-gradient(180deg, oklch(0.17 0.016 265) 0%, oklch(0.14 0.014 265) 100%);
+}
+
+/* ফোকাস মোড থেকে বেরোনোর ভাসমান পিল (উপরে-ডানে, ছোট স্বচ্ছ গোল পিল) */
+.focus-exit-pill {
+  position: fixed;
+  top: 12px;
+  right: 16px;
+  z-index: 60;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, var(--primary) 22%, var(--border));
+  background: color-mix(in oklab, var(--popover) 72%, transparent);
+  backdrop-filter: blur(10px) saturate(1.15);
+  -webkit-backdrop-filter: blur(10px) saturate(1.15);
+  box-shadow: 0 4px 16px rgb(2 6 23 / 0.14), inset 0 1px 0 rgb(255 255 255 / 0.35);
+  font-size: 11.5px;
+  font-weight: 500;
+  color: color-mix(in oklab, var(--foreground) 78%, transparent);
+  cursor: pointer;
+  transition: background-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+}
+.focus-exit-pill:hover {
+  background: color-mix(in oklab, var(--popover) 88%, transparent);
+  box-shadow: 0 6px 20px rgb(2 6 23 / 0.18), inset 0 1px 0 rgb(255 255 255 / 0.4);
+  transform: translateY(-1px);
+}
+html.dark .focus-exit-pill { box-shadow: 0 4px 16px rgb(0 0 0 / 0.5), inset 0 1px 0 rgb(255 255 255 / 0.06); }
+.focus-exit-pill kbd {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 9.5px;
+  line-height: 1;
+  padding: 2px 5px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: color-mix(in oklab, var(--muted) 60%, transparent);
+  color: var(--muted-foreground);
+}
+
+/* সেশন-হিসাব মিনি-কার্ড (স্ট্যাটাস-বারের লক্ষ্য পপওভারে) */
+.session-stats-card {
+  border: 1px solid color-mix(in oklab, var(--primary) 14%, var(--border));
+  background: linear-gradient(180deg, color-mix(in oklab, var(--primary) 6%, var(--card)), var(--card));
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
+/* ═══════════════ প্রিন্ট পরিসর (Print Range — Task 10-d) ═══════════════ */
+
+/* নির্দিষ্ট পরিসর ছাপার সময় পরিসরের বাইরের পাতাগুলো (export-json.ts দ্বারা
+   চিহ্নিত .page-slot) প্রিন্ট আউটপুট থেকে সম্পূর্ণ বাদ — স্ক্রিনে কোনো প্রভাব নেই */
+@media print {
+  .print-range-skip { display: none !important; }
 }

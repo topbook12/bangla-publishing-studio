@@ -6,21 +6,51 @@
 'use client';
 
 import { useEffect } from 'react';
-import { BookOpenCheck, Loader2 } from 'lucide-react';
+import { BookOpenCheck, Loader2, Minimize2 } from 'lucide-react';
 import { AppHeader } from '@/components/app-header';
 import { Ribbon } from '@/components/ribbon/ribbon-shell';
 import { Workspace } from '@/components/editor/workspace';
+import { NavigatorPanel } from '@/components/navigator/navigator-panel';
 import { StatusBar } from '@/components/status-bar';
 import { Dialogs } from '@/components/dialogs/dialogs';
 import { useEditorStore } from '@/lib/store';
+import { useUiStore } from '@/lib/ui-store';
+import { useAutoToc } from '@/lib/toc';
+import { cn } from '@/lib/utils';
 
 export default function EditorApp() {
   const loaded = useEditorStore((s) => s.loaded);
   const init = useEditorStore((s) => s.init);
+  const navigatorOpen = useUiStore((s) => s.navigatorOpen);
+  const focusMode = useUiStore((s) => s.focusMode);
+  const setFocusMode = useUiStore((s) => s.setFocusMode);
+  const toggleFocusMode = useUiStore((s) => s.toggleFocusMode);
 
   useEffect(() => {
     void init();
   }, [init]);
+
+  // অটো-সূচিপত্র — শিরোনাম বদলালে TOC ব্লক নিজে থেকেই হালনাগাদ হয় (ডিবাউন্সড)
+  useAutoToc();
+
+  // ফোকাস-মোড কীবোর্ড শর্টকাট — Ctrl+Shift+F টগল, Esc বেরিয়ে যাওয়া
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && !e.altKey && (e.key === 'f' || e.key === 'F')) {
+        e.preventDefault();
+        toggleFocusMode();
+        return;
+      }
+      if (e.key === 'Escape' && useUiStore.getState().focusMode) {
+        // রাডিক্স ডায়ালগ খোলা থাকলে Esc সেটাকেই বন্ধ করুক — হাইজ্যাক নয়
+        if (document.querySelector('[role="dialog"], [role="alertdialog"]')) return;
+        e.preventDefault();
+        setFocusMode(false);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [setFocusMode, toggleFocusMode]);
 
   if (!loaded) {
     return (
@@ -38,12 +68,29 @@ export default function EditorApp() {
   }
 
   return (
-    <div className="app-root flex h-screen flex-col overflow-hidden">
+    <div className={cn('app-root flex h-screen flex-col overflow-hidden', focusMode && 'focus-mode')}>
       <AppHeader />
       <Ribbon />
-      <Workspace />
+      <div className="flex min-h-0 flex-1 overflow-hidden">
+        {navigatorOpen ? <NavigatorPanel /> : null}
+        <Workspace />
+      </div>
       <StatusBar />
       <Dialogs />
+      {focusMode ? (
+        <button
+          type="button"
+          className="focus-exit-pill no-print"
+          onClick={() => setFocusMode(false)}
+          aria-label="ফোকাস মোড বন্ধ করুন"
+          title="ফোকাস মোড বন্ধ (Esc)"
+        >
+          <Minimize2 size={12} aria-hidden="true" />
+          <span>ফোকাস মোড</span>
+          <span aria-hidden="true" className="opacity-50">·</span>
+          <kbd>Esc</kbd>
+        </button>
+      ) : null}
     </div>
   );
 }

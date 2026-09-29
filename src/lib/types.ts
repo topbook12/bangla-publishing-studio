@@ -65,6 +65,23 @@ export interface PageNumberSettings {
   prefix: string;
 }
 
+// ─── পানির ছাপ (Watermark) ───
+
+/** পাতার পেছনের হালকা ঘূর্ণিত লেখা — খসড়া/নমুনা/গোপনীয় কপি শনাক্ত করতে */
+export interface WatermarkSettings {
+  enabled: boolean;
+  /** ছাপের লেখা — যেমন 'খসড়া' */
+  text: string;
+  /** 0.04–0.35 — হালকা থেকে গাঢ় */
+  opacity: number;
+  /** ডিগ্রিতে ঘূর্ণন (-90 … 90) */
+  angle: number;
+  /** লেখার সাইজ (pt) */
+  fontSize: number;
+  /** hex রং */
+  color: string;
+}
+
 // ─── ডকুমেন্ট সেটিংস ───
 
 export interface DocumentSettings {
@@ -94,6 +111,8 @@ export interface DocumentSettings {
   pageBorderStyle?: PageBorderStyle;
   /** বর্ডার লাইনের প্রস্থ — পুরনো ডকুমেন্টে অনুপস্থিত হলে pageBorder থেকে ডেরাইভ হয় */
   pageBorderWidth?: PageBorderWidth;
+  /** প্রতিটি পাতার পেছনের পানির ছাপ — পুরনো ডকুমেন্টে অনুপস্থিত থাকলে ডিফল্ট ধরে নেওয়া হয় */
+  watermark: WatermarkSettings;
 }
 
 // ─── পৃষ্ঠা ও প্রজেক্ট ───

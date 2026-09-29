@@ -4,21 +4,29 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
-  AlignCenter, AlignJustify, AlignLeft, AlignRight, Bold, ChevronsDown, ChevronsUp, Eraser,
-  Highlighter, Italic, List, ListOrdered, Palette, Quote, Strikethrough,
+  AlignCenter, AlignJustify, AlignLeft, AlignRight, Bold, CaseSensitive, ChevronsDown, ChevronsUp, Eraser,
+  Highlighter, Italic, List, ListOrdered, Paintbrush, Palette, Quote, Strikethrough,
   Subscript as SubIcon, Superscript as SupIcon, Underline as UnderlineIcon,
 } from 'lucide-react';
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { RibbonButton, RibbonDivider, RibbonGroup, refocusActiveEditor, runCommand, useActiveEditor } from './ribbon-shell';
 import { FONT_OPTIONS, FONT_SIZE_OPTIONS, COLOR_SWATCHES, HIGHLIGHT_SWATCHES, fontStackOf } from '@/lib/paper';
 import { toBanglaNumber } from '@/lib/bangla';
+import {
+  captureFormat, disarmPainter, isPainterArmed, subscribePainter,
+} from '@/lib/format-painter';
+import {
+  banglaToEnglishDigits, englishToBanglaDigits, toLower, toTitle, toUpper,
+  toggleDropCap, transformSelection,
+} from '@/lib/text-transform';
 import { useEditorStore } from '@/lib/store';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 function FontFamilySelect() {
@@ -184,6 +192,86 @@ function LineHeightSelect() {
   );
 }
 
+/**
+ * ফরম্যাট পেইন্টার — MS Word-এর মতো ফরম্যাট কপি → সিলেকশনে পেস্ট।
+ * অ্যাম/ডিসআর্ম মডিউল-স্টেট (কীবোর্ড শর্টকাট Ctrl+Alt+C থেকেও হয়) —
+ * subscribePainter দিয়ে বাটনের active স্টেট রি-রেন্ডার করাই।
+ */
+function FormatPainterButton() {
+  const [, bump] = useState(0);
+  useEffect(() => subscribePainter(() => bump((v) => v + 1)), []);
+
+  return (
+    <RibbonButton
+      icon={Paintbrush}
+      label="Format Painter"
+      shortcut="Ctrl+Alt+C"
+      title="ফরম্যাট কপি/পেস্ট"
+      active={isPainterArmed()}
+      onClick={() => {
+        if (isPainterArmed()) {
+          disarmPainter();
+          return;
+        }
+        runCommand((ed) => {
+          captureFormat(ed);
+          toast.info('ফরম্যাট কপি হয়েছে — যে লেখায় বসাতে চান সেটি সিলেক্ট করুন');
+        });
+      }}
+    />
+  );
+}
+
+/**
+ * Text Tools ড্রপডাউন — কেস রূপান্তর, বাংলা↔ইংরেজি সংখ্যা, ড্রপ ক্যাপ।
+ * সব রূপান্তর মার্ক সংরক্ষণ করে (transformSelection)।
+ */
+function TextToolsMenu() {
+  const ed = useActiveEditor();
+  const runTransform = (fn: (s: string) => string) => {
+    runCommand((ed2) => {
+      if (!transformSelection(ed2, fn)) toast.info('আগে কিছু লেখা সিলেক্ট করুন');
+    });
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button type="button" className="ribbon-btn" aria-label="Text Tools" title="Text Tools — কেস/সংখ্যা রূপান্তর">
+          <CaseSensitive size={16} aria-hidden="true" />
+          <span className="ribbon-btn-label">Text Tools</span>
+          <span aria-hidden="true" className="text-[10px] opacity-60">▾</span>
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="start"
+        className="w-72"
+        onCloseAutoFocus={(e) => { e.preventDefault(); refocusActiveEditor(); }}
+      >
+        <DropdownMenuItem onClick={() => runTransform(banglaToEnglishDigits)}>
+          বাংলা সংখ্যা → ইংরেজি (১২৩ → 123)
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => runTransform(englishToBanglaDigits)}>
+          ইংরেজি → বাংলা সংখ্যা (123 → ১২৩)
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => runTransform(toUpper)}>UPPERCASE</DropdownMenuItem>
+        <DropdownMenuItem onClick={() => runTransform(toLower)}>lowercase</DropdownMenuItem>
+        <DropdownMenuItem onClick={() => runTransform(toTitle)}>Title Case</DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          className={cn(Boolean(ed && !ed.isDestroyed && ed.isActive('dropCap')) && 'bg-accent')}
+          onClick={() => runCommand((ed2) => {
+            if (!toggleDropCap(ed2)) toast.info('ড্রপ ক্যাপ প্রয়োগের জন্য প্যারাগ্রাফে কার্সর রাখুন');
+          })}
+        >
+          ড্রপ ক্যাপ টগল (প্রথম অক্ষর বড়)
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 export function HomeTab() {
   const ed = useActiveEditor();
 
@@ -214,6 +302,7 @@ export function HomeTab() {
           <ColorPicker />
           <RibbonButton icon={Highlighter} label="Highlight" shortcut="Ctrl+Shift+H" active={isActive((e) => e.isActive('highlight'))} onClick={() => cmd((e) => e.chain().focus().toggleHighlight({ color: '#fef08a' }).run())} />
           <RibbonButton icon={Eraser} label="Clear Formatting" onClick={() => cmd((e) => e.chain().focus().unsetAllMarks().clearNodes().run())} />
+          <FormatPainterButton />
         </div>
       </RibbonGroup>
       <RibbonDivider />
@@ -232,6 +321,7 @@ export function HomeTab() {
             <LineHeightSelect />
             <RibbonButton icon={ChevronsUp} label="Move Up" title="টেবিল/বক্স/ছবি সহ পুরো ব্লক উপরে সরান" shortcut="Alt+↑" onClick={() => cmd((e) => e.chain().focus().moveBlockUp().run())} />
             <RibbonButton icon={ChevronsDown} label="Move Down" title="টেবিল/বক্স/ছবি সহ পুরো ব্লক নিচে সরান" shortcut="Alt+↓" onClick={() => cmd((e) => e.chain().focus().moveBlockDown().run())} />
+            <TextToolsMenu />
           </div>
         </div>
       </RibbonGroup>

@@ -101,6 +101,14 @@ function inlineNodes(node: Node, keyPrefix: string): ReactNode[] {
         );
         break;
       case 'SPAN': case 'MARK': case 'CODE': {
+        // ড্রপ ক্যাপ — ক্লাস বহাল না রাখলে রিসাইকেল করা স্ট্যাটিক প্রিভিউতে
+        // প্রথম অক্ষর সাধারণ সাইজে দেখাত (লাইভ এডিটর/প্রিন্টে ঠিক থাকত)
+        if (el.classList.contains('drop-cap')) {
+          out.push(
+            <span key={key} className="drop-cap">{inlineNodes(el, key)}</span>,
+          );
+          break;
+        }
         // ডকুমেন্ট আইকন — data attrs থেকে সাইজ/রং, ভিতরের SVG সরাসরি
         if (el.classList.contains('doc-icon')) {
           const size = Number(el.getAttribute('data-size') ?? 22) || 22;
