@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Bangla Publishing Studio — ZRF Science Fair 2026 Project Summary</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Hind+Siliguri:wght@300;400;500;600;700&display=block" rel="stylesheet">
+<style>
+@page {
+    size: 210mm 297mm;
+    margin: 0;
+}
+:root {
+    --ink: #17281f;
+    --green: #0E4B33;
+    --green-soft: #eef6f0;
+    --gold: #FEC909;
+    --muted: #5a6b61;
+    --line: #dbe6de;
+}
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 210mm;
+    background: #ffffff;
+    color: var(--ink);
+    font-family: 'Inter', 'Hind Siliguri', sans-serif;
+    font-size: 10.5pt;
+    line-height: 1.62;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+@media screen {
+    html {
+        height: auto;
+        display: flex;
+        justify-content: center;
+        background: #243029;
+    }
+    body {
+        transform-origin: top center;
+        margin: 20px auto;
+        box-shadow: 0 10px 40px rgba(0,0,0,.35);
+    }
+}
+
+/* ============ COVER ============ */
+.cover {
+    width: 210mm;
+    height: 297mm;
+    box-sizing: border-box;
+    break-after: page;
+    position: relative;
+    background:
+        radial-gradient(circle at 102% -6%, transparent 0 118mm, rgba(254,201,9,0.32) 119mm 121mm, transparent 122mm),
+        radial-gradient(circle at -4% 106%, transparent 0 62mm, rgba(255,255,255,0.13) 63mm 65mm, transparent 66mm),
+        radial-gradient(circle 7mm at 90% 78%, rgba(254,201,9,0.28) 0 6.5mm, transparent 7mm),
+        linear-gradient(160deg, #0d2e1f 0%, #0E4B33 55%, #11603f 100%);
+    color: #f2f7f3;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 18mm;
+}
+.cover-topline {
+    position: absolute;
+    top: 16mm; left: 18mm; right: 18mm;
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 8pt; letter-spacing: 2.5px; text-transform: uppercase;
+    color: rgba(242,247,243,0.75);
+}
+.cover-topline .gold-dot { color: var(--gold); }
+.cover-badge {
+    display: inline-block;
+    background: var(--gold);
+    color: #17281f;
+    font-weight: 800;
+    font-size: 8.5pt;
+    letter-spacing: 1.6px;
+    text-transform: uppercase;
+    padding: 7px 16px;
+    border-radius: 999px;
+    margin-bottom: 10mm;
+    width: fit-content;
+}
+.cover-title-bn {
+    font-family: 'Hind Siliguri', sans-serif;
+    font-size: 15pt;
+    font-weight: 600;
+    color: var(--gold);
+    margin-bottom: 4mm;
+}
+.cover-title {
+    font-size: 39pt;
+    font-weight: 900;
+    line-height: 1.04;
+    letter-spacing: -1px;
+    margin-bottom: 6mm;
+}
+.cover-sub {
+    font-size: 12.5pt;
+    font-weight: 400;
+    line-height: 1.5;
+    color: rgba(242,247,243,0.88);
+    max-width: 150mm;
+    margin-bottom: 9mm;
+}
+.cover-theme {
+    font-family: 'Hind Siliguri', sans-serif;
+    font-size: 10pt;
+    color: #ffe27a;
+    border-left: 3px solid var(--gold);
+    padding-left: 12px;
+    margin-bottom: 12mm;
+}
+.cover-info {
+    border: 1px solid rgba(255,255,255,0.22);
+    border-radius: 10px;
+    padding: 7mm 8mm;
+    background: rgba(255,255,255,0.06);
+    max-width: 150mm;
+}
+.cover-info .row {
+    display: flex;
+    font-size: 10pt;
+    padding: 2.2mm 0;
+    border-bottom: 1px dashed rgba(255,255,255,0.14);
+}
+.cover-info .row:last-child { border-bottom: none; }
+.cover-info .k {
+    width: 44mm;
+    color: rgba(242,247,243,0.65);
+    font-size: 8pt; letter-spacing: 1.4px; text-transform: uppercase;
+    padding-top: 1px;
+}
+.cover-info .v { font-weight: 600; }
+.cover-bottom {
+    position: absolute;
+    bottom: 14mm; left: 18mm; right: 18mm;
+    display: flex; justify-content: space-between; align-items: flex-end;
+    font-size: 8pt; letter-spacing: 1.8px; text-transform: uppercase;
+    color: rgba(242,247,243,0.7);
+}
+
+/* ============ FLOWING CONTENT ============ */
+.main-content {
+    padding: 14mm 16mm 12mm 16mm;
+}
+.chapter-header {
+    break-after: avoid;
+    break-inside: avoid;
+    margin-top: 24px;
+}
+.chapter-header:first-child { margin-top: 0; }
+.section-tag {
+    display: inline-block;
+    font-size: 7.5pt;
+    font-weight: 800;
+    letter-spacing: 2.2px;
+    text-transform: uppercase;
+    color: var(--green);
+    background: var(--green-soft);
+    border: 1px solid var(--line);
+    padding: 3px 10px;
+    border-radius: 999px;
+    margin-bottom: 8px;
+}
+.section-title {
+    font-size: 17pt;
+    font-weight: 800;
+    color: var(--green);
+    line-height: 1.2;
+    margin-bottom: 4px;
+}
+.section-title .bn {
+    font-family: 'Hind Siliguri', sans-serif;
+    font-weight: 600;
+    color: var(--muted);
+    font-size: 11pt;
+    margin-left: 8px;
+}
+.divider {
+    height: 3px; width: 52px;
+    background: var(--gold);
+    border-radius: 2px;
+    margin-bottom: 12px;
+}
+.body-text { margin-bottom: 10px; text-align: justify; }
+.body-text b { color: var(--green); }
+.bn-inline { font-family: 'Hind Siliguri', sans-serif; }
+
+/* glance grid */
+.glance {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+.g-item {
+    break-inside: avoid;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 8px 12px;
+    background: #fbfdfb;
+}
+.g-item .k {
+    font-size: 7.5pt; letter-spacing: 1.6px; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 2px;
+}
+.g-item .v { font-weight: 600; font-size: 10pt; }
+
+/* numbered objective list */
+.obj {
+    break-inside: avoid;
+    display: flex;
+    gap: 12px;
+    padding: 9px 12px;
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--green);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    background: #fbfdfb;
+}
+.obj .num {
+    flex: 0 0 auto;
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--green);
+    color: #fff;
+    font-weight: 800;
+    font-size: 10pt;
+    display: flex; align-items: center; justify-content: center;
+    margin-top: 2px;
+}
+.obj .t { font-weight: 700; color: var(--green); margin-bottom: 1px; }
+.obj .d { font-size: 10pt; color: var(--ink); text-align: justify; }
+
+/* innovation cards */
+.inno-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+.inno {
+    break-inside: avoid;
+    border: 1px solid var(--line);
+    border-top: 4px solid var(--gold);
+    border-radius: 8px;
+    padding: 10px 12px;
+    background: #fffdf2;
+}
+.inno .t {
+    font-weight: 800; font-size: 10.5pt; color: var(--ink);
+    margin-bottom: 3px;
+}
+.inno .d { font-size: 9.5pt; color: #3d4a43; text-align: justify; }
+
+/* impact cards */
+.impact {
+    break-inside: avoid;
+    display: flex;
+    gap: 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    background: var(--green-soft);
+}
+.impact .icon {
+    flex: 0 0 auto;
+    width: 34px; height: 34px;
+    border-radius: 8px;
+    background: var(--green);
+    color: var(--gold);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 900; font-size: 13pt;
+}
+.impact .t { font-weight: 800; color: var(--green); margin-bottom: 2px; }
+.impact .d { font-size: 10pt; text-align: justify; }
+
+/* figures */
+figure {
+    display: block;
+    width: 100%;
+    margin: 10px auto 14px auto;
+    break-inside: avoid;
+}
+figure img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    box-shadow: 0 3px 14px rgba(14,75,51,0.10);
+}
+figcaption {
+    font-size: 8.5pt;
+    color: var(--muted);
+    padding: 5px 4px 0 4px;
+    text-align: center;
+}
+figcaption b { color: var(--green); }
+
+/* pipeline diagram */
+.pipeline {
+    break-inside: avoid;
+    display: flex;
+    align-items: stretch;
+    gap: 6px;
+    margin: 12px 0 14px 0;
+}
+.pipe-node {
+    flex: 1 1 0;
+    border: 1.5px solid #bcd8c5;
+    background: #f2faf4;
+    border-radius: 9px;
+    padding: 9px 6px;
+    text-align: center;
+}
+.pipe-node .bn {
+    font-family: 'Hind Siliguri', sans-serif;
+    font-weight: 700; font-size: 10.5pt; color: var(--green);
+    display: block;
+}
+.pipe-node .en {
+    font-size: 7.5pt; letter-spacing: 1.2px; text-transform: uppercase;
+    color: var(--muted); display: block; margin-top: 2px;
+}
+.pipe-node.hot { background: #fffdf2; border-color: #e8cf6a; }
+.pipe-arrow {
+    flex: 0 0 auto;
+    align-self: center;
+    color: var(--green);
+    font-weight: 900;
+    font-size: 13pt;
+}
+
+/* tech table */
+table.tech {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 8px 0 12px 0;
+    break-inside: avoid;
+    font-size: 9.5pt;
+}
+table.tech th {
+    background: var(--green);
+    color: #fff;
+    text-align: left;
+    padding: 7px 10px;
+    font-size: 8pt; letter-spacing: 1.4px; text-transform: uppercase;
+}
+table.tech td {
+    border: 1px solid var(--line);
+    padding: 7px 10px;
+    vertical-align: top;
+}
+table.tech tr:nth-child(even) td { background: #fafcfa; }
+table.tech td:first-child { font-weight: 700; color: var(--green); white-space: nowrap; }
+
+/* requirement mapping */
+.req {
+    break-inside: avoid;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 8px 12px;
+    border-bottom: 1px dashed var(--line);
+}
+.req:last-child { border-bottom: none; }
+.req .check {
+    flex: 0 0 auto;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: var(--gold);
+    color: #17281f;
+    font-weight: 900;
+    font-size: 10pt;
+    display: flex; align-items: center; justify-content: center;
+    margin-top: 2px;
+}
+.req .t { font-weight: 700; font-size: 10pt; color: var(--ink); }
+.req .d { font-size: 9.5pt; color: var(--muted); }
+
+/* roadmap */
+.phase {
+    break-inside: avoid;
+    display: flex;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+.phase .bar {
+    flex: 0 0 4px;
+    border-radius: 2px;
+    background: var(--line);
+}
+.phase.done .bar { background: var(--green); }
+.phase.now .bar { background: var(--gold); }
+.phase .t { font-weight: 800; font-size: 10.5pt; color: var(--ink); }
+.phase .t .state {
+    font-size: 7.5pt; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase;
+    padding: 2px 8px; border-radius: 999px; margin-left: 6px;
+    background: var(--green-soft); color: var(--green); border: 1px solid var(--line);
+}
+.phase.now .t .state { background: #fff6d6; color: #8a6d00; border-color: #eadf9e; }
+.phase .d { font-size: 9.5pt; color: var(--muted); text-align: justify; }
+
+/* ============ ENDING PAGE ============ */
+.ending {
+    width: 210mm;
+    height: 297mm;
+    box-sizing: border-box;
+    break-before: page;
+    position: relative;
+    background:
+        radial-gradient(circle at -5% -5%, transparent 0 85mm, rgba(14,75,51,0.14) 86mm 88mm, transparent 89mm),
+        radial-gradient(circle at 105% 104%, transparent 0 52mm, rgba(254,201,9,0.45) 53mm 55mm, transparent 56mm),
+        linear-gradient(160deg, #fbfdfb 0%, #eef6f0 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 20mm;
+}
+.ending .tag {
+    display: inline-block;
+    font-size: 8pt; font-weight: 800; letter-spacing: 2.2px; text-transform: uppercase;
+    color: var(--green);
+    background: #fff;
+    border: 1px solid var(--line);
+    padding: 4px 14px;
+    border-radius: 999px;
+    width: fit-content;
+    margin-bottom: 8mm;
+}
+.ending h2 {
+    font-size: 20pt;
+    font-weight: 900;
+    color: var(--green);
+    margin: 0 0 5mm 0;
+}
+.ending .dec-text {
+    font-size: 10.5pt;
+    text-align: justify;
+    color: #2c3a32;
+    margin-bottom: 10mm;
+    max-width: 158mm;
+}
+.sig-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    max-width: 158mm;
+    margin-bottom: 12mm;
+}
+.sig {
+    border-top: 1.5px solid var(--ink);
+    padding-top: 6px;
+    min-width: 60mm;
+}
+.sig .name { font-weight: 800; font-size: 11pt; color: var(--green); }
+.sig .role { font-size: 8.5pt; color: var(--muted); }
+.date-box {
+    border: 1px solid var(--line);
+    background: #fff;
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 9pt;
+    color: var(--ink);
+}
+.date-box .k { font-size: 7.5pt; letter-spacing: 1.6px; text-transform: uppercase; color: var(--muted); display: block; }
+.links {
+    border-top: 2px solid var(--gold);
+    padding-top: 6mm;
+    max-width: 158mm;
+}
+.links .row { display: flex; gap: 8px; font-size: 9.5pt; padding: 2mm 0; }
+.links .k { min-width: 42mm; font-weight: 700; color: var(--green); }
+.links .v { color: #2c3a32; overflow-wrap: break-word; }
+.ending-foot {
+    position: absolute;
+    bottom: 12mm; left: 20mm; right: 20mm;
+    display: flex; justify-content: space-between;
+    font-size: 7.5pt; letter-spacing: 1.6px; text-transform: uppercase;
+    color: var(--muted);
+}
+</style>
+</head>
+<body>
+
+<!-- ================= COVER ================= -->
+<div class="cover">
+    <div class="cover-topline">
+        <span>Ziaur Rahman Foundation</span>
+        <span>Project Summary <span class="gold-dot">&#9679;</span> Registration Upload</span>
+    </div>
+
+    <div class="cover-badge">ZRF Science Fair 2026</div>
+    <div class="cover-title-bn">ভবিষ্যৎ বিজ্ঞানীর খোঁজে ২০২৬</div>
+    <div class="cover-title">Bangla<br>Publishing Studio</div>
+    <div class="cover-sub">A free, zero-setup, web-based WYSIWYG book publishing platform that takes Bengali writers from first sentence to press-ready book — including the traditional Farma printing format of Bangladeshi presses.</div>
+    <div class="cover-theme">গবেষণা &nbsp;&#9670;&nbsp; উদ্ভাবন &nbsp;&#9670;&nbsp; প্রযুক্তি উন্নয়ন &nbsp;—&nbsp; Research &#183; Innovation &#183; Technology Development</div>
+
+    <div class="cover-info">
+        <div class="row"><div class="k">Participant</div><div class="v">Topu Biswas</div></div>
+        <div class="row"><div class="k">Class / Year</div><div class="v">B.Sc. (Engg.) 2nd Year, Department of ICE, University of Rajshahi</div></div>
+        <div class="row"><div class="k">Group</div><div class="v">Group C (18 years or above)</div></div>
+        <div class="row"><div class="k">Scientific Field</div><div class="v">Engineering &amp; Innovation</div></div>
+        <div class="row"><div class="k">Project Type</div><div class="v">Individual Project &#183; Working software prototype (open-source)</div></div>
+    </div>
+
+    <div class="cover-bottom">
+        <span>Submitted to &#8212; Ziaur Rahman Foundation</span>
+        <span>30 September 2026</span>
+    </div>
+</div>
+
+<!-- ================= MAIN CONTENT ================= -->
+<div class="main-content">
+
+    <!-- 1. GLANCE -->
+    <div class="chapter-header">
+        <div class="section-tag">Section 01</div>
+        <div class="section-title">Project at a Glance <span class="bn">এক নজরে প্রজেক্ট</span></div>
+        <div class="divider"></div>
+    </div>
+    <div class="glance">
+        <div class="g-item"><div class="k">Project Title</div><div class="v">Bangla Publishing Studio</div></div>
+        <div class="g-item"><div class="k">Scientific Field</div><div class="v">Engineering &amp; Innovation</div></div>
+        <div class="g-item"><div class="k">Group / Category</div><div class="v">Group C (18 years or above)</div></div>
+        <div class="g-item"><div class="k">Project Type</div><div class="v">Individual</div></div>
+        <div class="g-item"><div class="k">Participant</div><div class="v">Topu Biswas</div></div>
+        <div class="g-item"><div class="k">Institution</div><div class="v">University of Rajshahi, Rajshahi Division</div></div>
+        <div class="g-item"><div class="k">Status</div><div class="v">Working prototype, live &amp; open-source</div></div>
+        <div class="g-item"><div class="k">Keywords</div><div class="v">Bengali publishing &#183; WYSIWYG &#183; Farma imposition &#183; PWA</div></div>
+    </div>
+
+    <!-- 2. ABSTRACT -->
+    <div class="chapter-header">
+        <div class="section-tag">Section 02</div>
+        <div class="section-title">Project Abstract <span class="bn">সারসংক্ষেপ</span></div>
+        <div class="divider"></div>
+    </div>
+    <div class="body-text">Bangla Publishing Studio is a free, web-based WYSIWYG (What-You-See-Is-What-You-Get) word processor and book designer built specifically for Bengali-language publishing. While global tools such as MS Word or Adobe InDesign treat Bengali books as an afterthought, professional Bengali typesetting still depends on costly desktop software and skilled operators that most teachers, rural writers and small publishers cannot afford. This project removes that barrier completely: a writer opens a browser, starts writing on true print-sized pages (A4, Letter, Legal, Demy, Crown and other industry-standard sizes), and produces press-ready output without installing anything or paying anything.</div>
+    <div class="body-text">The platform implements a real pagination engine, page headers and footers, images with text wrapping, tables, icons, shapes, MCQ/exam boxes for coaching-centre textbooks, and Bengali fonts (Kalpurush, SolaimanLipi, Siyam Rupali, Hind Siliguri) with conjunct-safe typography. Its most distinctive capability is <b>Farma export</b> — the signature-imposition print format used by Bangladeshi printing presses (<span class="bn-inline">ছাপাখানা</span>) — which rearranges pages into correct printing signatures so that any local press can directly plate and bind the book. Documents auto-save offline in the browser (IndexedDB) and the app works as an installable PWA even on low-end devices with unreliable internet.</div>
+    <div class="body-text">Built with Next.js, TypeScript and TipTap, the working prototype is live and open-source, demonstrating the complete pipeline end-to-end: <b>write &#8594; design &#8594; paginate &#8594; export</b> print-ready PDF, DOCX, EPUB, or Farma imposition.</div>
+
+    <!-- 3. OBJECTIVES -->
+    <div class="chapter-header">
+        <div class="section-tag">Section 03</div>
+        <div class="section-title">Objectives <span class="bn">উদ্দেশ্যসমূহ</span></div>
+        <div class="divider"></div>
+    </div>
+    <div class="obj"><div class="num">1</div><div><div class="t">Democratise Bengali book publishing</div><div class="d">Provide a 100% free, zero-setup, browser-based alternative to expensive desktop publishing (DTP) software for teachers, students, rural writers and small publishers of Bangladesh.</div></div></div>
+    <div class="obj"><div class="num">2</div><div><div class="t">True WYSIWYG pagination on physical paper</div><div class="d">Implement real pagination on industry-standard paper sizes (A4, Letter, Legal, Demy, Crown) with margins and gutter, so that what the writer sees on screen is exactly what the printing press produces.</div></div></div>
+    <div class="obj"><div class="num">3</div><div><div class="t">Digitise the traditional press workflow (Farma)</div><div class="d">Bring the signature-imposition (<span class="bn-inline">ফরমা</span>) process of Bangladeshi printing presses inside a simple one-click export, including binding-safe margins and correct page ordering.</div></div></div>
+    <div class="obj"><div class="num">4</div><div><div class="t">Protect and promote Bengali typography</div><div class="d">Ensure correct Unicode Bengali rendering, <span class="bn-inline">যুক্তাক্ষর</span> (conjunct)-safe fonts, Bengali-first menus and typography controls so non-technical users feel at home.</div></div></div>
+    <div class="obj"><div class="num">5</div><div><div class="t">Uninterrupted writing anywhere</div><div class="d">Guarantee offline-first operation through a PWA with automatic local backup (IndexedDB) and one-click JSON backup/restore for regions with weak internet connectivity.</div></div></div>
+    <div class="obj"><div class="num">6</div><div><div class="t">Open foundation for other languages</div><div class="d">Create an open-source architecture that can be extended to other low-resource languages of Bangladesh and the region.</div></div></div>
+
+    <!-- 4. INNOVATION -->
+    <div class="chapter-header">
+        <div class="section-tag">Section 04</div>
+        <div class="section-title">Innovation / Novelty <span class="bn">উদ্ভাবন</span></div>
+        <div class="divider"></div>
+    </div>
+    <div class="inno-grid">
+        <div class="inno"><div class="t">First in-browser Farma imposition exporter</div><div class="d">Reproduces the signature page-ordering used by Bangladeshi printing presses — a workflow previously available only through professional DTP operators — directly inside a web page.</div></div>
+        <div class="inno"><div class="t">Real pagination engine in the browser</div><div class="d">Renders true physical pages (A4 to Crown/Demy with margins and gutter) while the writer types — not a print-preview guess — eliminating the screen-versus-print mismatch of ordinary word processors.</div></div>
+        <div class="inno"><div class="t">Bengali-first user experience</div><div class="d">Full Bengali interface, Bengali fonts, conjunct-safe spacing and letter-gap tools, MCQ/exam boxes and coaching-friendly templates designed from the real needs of Bangladeshi teachers.</div></div>
+        <div class="inno"><div class="t">Zero-setup PWA architecture</div><div class="d">Installs like an app, auto-saves offline, runs on low-cost hardware, needs no account or server — the writer's knowledge stays on the user's own device.</div></div>
+        <div class="inno"><div class="t">One integrated pipeline</div><div class="d">Write, design, paginate and export to Farma / print-ready PDF / DOCX / EPUB / HTML in a single tool, replacing three to four separate expensive software products.</div></div>
+        <div class="inno"><div class="t">Free and open-source</div><div class="d">No licence fee, no watermark, no subscription — the complete source code is publicly available for verification and community improvement.</div></div>
+    </div>
+
+    <!-- 5. IMPACT -->
+    <div class="chapter-header">
+        <div class="section-tag">Section 05</div>
+        <div class="section-title">Expected Impact <span class="bn">সম্ভাব্য প্রভাব</span></div>
+        <div class="divider"></div>
+    </div>
+    <div class="impact"><div class="icon">E</div><div><div class="t">Educational impact</div><div class="d">Thousands of teachers, tutors and coaching centres can produce their own professional textbooks, question banks and notes at near-zero cost, improving the quality and availability of Bengali learning materials nationwide.</div></div></div>
+    <div class="impact"><div class="icon">S</div><div><div class="t">Social and cultural impact</div><div class="d">Removes the language barrier in technology: a rural writer with only a low-end phone or laptop and an occasional internet connection can write and publish a complete book in Bangla — strengthening Bengali content in the digital age.</div></div></div>
+    <div class="impact"><div class="icon">$</div><div><div class="t">Economic impact</div><div class="d">Cuts pre-press and typesetting costs for small publishers and self-publishing writers; the project has a clear path to a sustainable startup serving Bangladesh's book market.</div></div></div>
+    <div class="impact"><div class="icon">T</div><div><div class="t">Technical impact</div><div class="d">Demonstrates that complex print-industry workflows can be replicated with open web technology, and the architecture can be extended to other Indic languages such as Assamese and Hindi.</div></div></div>
+    <div class="impact"><div class="icon">G</div><div><div class="t">Efficiency and environmental impact</div><div class="d">A digital-first workflow reduces trial prints and paper waste during book production, and encourages systematic digital archiving of manuscripts.</div></div></div>
+
+    <!-- 6. HOW IT WORKS -->
+    <div class="chapter-header">
+        <div class="section-tag">Section 06</div>
+        <div class="section-title">How It Works <span class="bn">কীভাবে কাজ করে</span></div>
+        <div class="divider"></div>
+    </div>
+    <div class="pipeline">
+        <div class="pipe-node"><span class="bn">লিখুন</span><span class="en">Write</span></div>
+        <div class="pipe-arrow">&#8594;</div>
+        <div class="pipe-node"><span class="bn">ডিজাইন</span><span class="en">Design</span></div>
+        <div class="pipe-arrow">&#8594;</div>
+        <div class="pipe-node"><span class="bn">পেজিনেট</span><span class="en">Paginate</span></div>
+        <div class="pipe-arrow">&#8594;</div>
+        <div class="pipe-node hot"><span class="bn">ফরমা</span><span class="en">Farma Imposition</span></div>
+        <div class="pipe-arrow">&#8594;</div>
+        <div class="pipe-node"><span class="bn">প্রিন্ট-রেডি বই</span><span class="en">Press-Ready Output</span></div>
+    </div>
+    <table class="tech">
+        <tr><th>Layer</th><th>Technology</th><th>Purpose</th></tr>
+        <tr><td>Frontend</td><td>Next.js 16, React 19, TypeScript, Tailwind CSS</td><td>Fast, reliable, modern interface that runs on any device</td></tr>
+        <tr><td>Editor engine</td><td>TipTap / ProseMirror with custom Bengali extensions</td><td>WYSIWYG editing, icons, text boxes, image wrapping, MCQ boxes</td></tr>
+        <tr><td>Pagination engine</td><td>Custom layout engine with real page metrics</td><td>True physical pages, headers/footers, content flow between pages</td></tr>
+        <tr><td>Print pipeline</td><td>Dynamic CSS print rules + Farma imposition</td><td>Press-ready PDF with signature page ordering and accurate margins</td></tr>
+        <tr><td>Storage</td><td>IndexedDB (Dexie) + JSON backup, PWA service worker</td><td>Offline autosave, instant restore, installable app experience</td></tr>
+        <tr><td>Hosting</td><td>Vercel + GitHub (open-source)</td><td>Globally accessible, zero-maintenance delivery</td></tr>
+    </table>
+
+    <!-- 7. WORKING PROTOTYPE -->
+    <div class="chapter-header">
+        <div class="section-tag">Section 07</div>
+        <div class="section-title">Working Prototype <span class="bn">কার্যকর মডেল</span></div>
+        <div class="divider"></div>
+    </div>
+    <div class="body-text">The project is not a concept on paper — it is a <b>working software model</b> that runs today in any modern browser. The following screenshots are taken directly from the live prototype.</div>
+
+    <figure>
+        <img src="shot_editor.png" alt="WYSIWYG Bengali editor with ribbon toolbar">
+        <figcaption><b>Fig. 1 — WYSIWYG Bengali editor:</b> ribbon toolbar with font, colour, highlight, alignment, lists, quote and move tools; live page view with header; autosave status and word count.</figcaption>
+    </figure>
+
+    <figure>
+        <img src="shot_layout.png" alt="Layout tab with paper size, margins, border, watermark and typography">
+        <figcaption><b>Fig. 2 — Print-layout controls:</b> physical paper sizes (A4, Letter, Legal, Demy, Crown...), portrait/landscape, margins and gutter, page border, watermark, content flow and default typography.</figcaption>
+    </figure>
+
+    <figure>
+        <img src="shot_export.png" alt="Export tab with Print PDF, Farma, Word, HTML, EPUB and backup">
+        <figcaption><b>Fig. 3 — Export centre:</b> Print / Save as PDF (normal or Farma press imposition with 100% accurate margins), Word (DOCX), HTML, EPUB e-book, Markdown, plain text and JSON backup.</figcaption>
+    </figure>
+
+    <!-- 8. ALIGNMENT -->
+    <div class="chapter-header">
+        <div class="section-tag">Section 08</div>
+        <div class="section-title">Alignment with ZRF Science Fair 2026 <span class="bn">প্রতিযোগিতার শর্ত অনুসারে</span></div>
+        <div class="divider"></div>
+    </div>
+    <div class="req"><div class="check">&#10003;</div><div><div class="t">Completely original and unique idea</div><div class="d">The platform is designed and built from scratch by the participant; source code is publicly available at the GitHub repository for verification. It has not been presented in any previous competition.</div></div></div>
+    <div class="req"><div class="check">&#10003;</div><div><div class="t">Written explanation with images</div><div class="d">This Project Summary PDF itself fulfils the required "written explanation with images" — full text plus live screenshots of the working model.</div></div></div>
+    <div class="req"><div class="check">&#10003;</div><div><div class="t">Working model for in-person presentation</div><div class="d">The software prototype is the model: it can be demonstrated live, on stage, in front of the judges — writing, designing and exporting a real book in minutes.</div></div></div>
+    <div class="req"><div class="check">&#10003;</div><div><div class="t">Video / PowerPoint presentation capability</div><div class="d">A presentation (video or slide form, within 15 minutes) demonstrating the complete workflow is prepared and will be submitted/presented as required by the organisers.</div></div></div>
+    <div class="req"><div class="check">&#10003;</div><div><div class="t">Individual participation (Group C)</div><div class="d">The participant is 18 years or above and competes individually; guidance from the Department of ICE, University of Rajshahi is gratefully acknowledged.</div></div></div>
+
+    <!-- 9. ROADMAP -->
+    <div class="chapter-header">
+        <div class="section-tag">Section 09</div>
+        <div class="section-title">Future Roadmap <span class="bn">ভবিষ্যৎ পরিকল্পনা</span></div>
+        <div class="divider"></div>
+    </div>
+    <div class="phase done"><div class="bar"></div><div><div class="t">Phase 1 — Core platform <span class="state">Completed</span></div><div class="d">WYSIWYG Bengali editor, true pagination, paper sizes, headers/footers, images, tables, MCQ boxes, export to PDF/DOCX/EPUB/HTML, offline autosave and PWA installation.</div></div></div>
+    <div class="phase now"><div class="bar"></div><div><div class="t">Phase 2 — Press-grade hardening <span class="state">In progress</span></div><div class="d">Per-page header/footer override, hyperlink preservation in PDF, advanced typography controls (word/letter spacing), cross-page content reflow and production-grade Farma imposition testing with local presses.</div></div></div>
+    <div class="phase"><div class="bar"></div><div><div class="t">Phase 3 — Intelligent assistance <span class="state">Planned</span></div><div class="d">Bengali spelling and grammar checking, AI-assisted proofreading, automatic table of contents and index generation for long books.</div></div></div>
+    <div class="phase"><div class="bar"></div><div><div class="t">Phase 4 — Ecosystem <span class="state">Planned</span></div><div class="d">Template marketplace, collaborative editing, and extension to other low-resource languages of the region.</div></div></div>
+
+    <!-- 10. CONCLUSION -->
+    <div class="chapter-header">
+        <div class="section-tag">Section 10</div>
+        <div class="section-title">Conclusion <span class="bn">উপসংহার</span></div>
+        <div class="divider"></div>
+    </div>
+    <div class="body-text">Every year, countless Bengali writers complete their manuscripts but never see them become books — professional typesetting is simply out of reach. Bangla Publishing Studio crosses that final mile: true WYSIWYG pagination, Bengali-first typography and the traditional Farma press workflow combined in one free platform that converts a writer's effort directly into a printed book.</div>
+
+</div>
+
+<!-- ================= ENDING / DECLARATION ================= -->
+<div class="ending">
+    <div class="tag">Declaration</div>
+    <h2>Declaration of Originality <span class="bn-inline" style="font-weight:600;">অঙ্গীকারনামা</span></h2>
+    <div class="dec-text">I hereby declare that the project <b>"Bangla Publishing Studio"</b> is my own original work, designed and developed by me. The idea is completely original and unique, and the project has not been submitted or presented in any previous competition or fair. The source code is openly available for verification. I agree to present my own model in person at the ZRF Science Fair 2026 and to abide by all rules and decisions of the organisers, Ziaur Rahman Foundation.</div>
+    <div class="sig-row">
+        <div class="sig">
+            <div class="name">Topu Biswas</div>
+            <div class="role">B.Sc. (Engg.) 2nd Year, Department of ICE<br>University of Rajshahi &#183; Group C</div>
+        </div>
+        <div class="date-box">
+            <span class="k">Date of Submission</span>
+            30 September 2026
+        </div>
+    </div>
+    <div class="links">
+        <div class="row"><div class="k">Source code</div><div class="v">https://github.com/topbook12/bangla-publishing-studio</div></div>
+        <div class="row"><div class="k">Submitted to</div><div class="v">ZRF Science Fair 2026 — "ভবিষ্যৎ বিজ্ঞানীর খোঁজে ২০২৬", Ziaur Rahman Foundation</div></div>
+    </div>
+    <div class="ending-foot">
+        <span>Bangla Publishing Studio</span>
+        <span>Project Summary &#183; Page of Declaration</span>
+    </div>
+</div>
+
+</body>
+</html>
