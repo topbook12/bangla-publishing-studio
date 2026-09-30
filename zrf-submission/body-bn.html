@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <title>বাংলা পাবলিশিং স্টুডিও&nbsp;— ZRF বিজ্ঞান মেলা ২০২৬ প্রকল্প সারসংক্ষেপ</title>
+  <link rel="stylesheet" href="fonts.css">
+  <style>
+    /* ---------- Page model (A4, running header/footer) ---------- */
+    @page {
+      size: 210mm 297mm;
+      margin: 24mm 18mm 22mm 18mm;
+      @top-left {
+        content: "বাংলা পাবলিশিং স্টুডিও";
+        font-family: 'Noto Sans Bengali', 'FreeSans', sans-serif;
+        font-size: 10px; color: #747b7e;
+      }
+      @top-right {
+        content: "ZRF বিজ্ঞান মেলা ২০২৬";
+        font-family: 'Noto Sans Bengali', 'FreeSans', sans-serif;
+        font-size: 10px; color: #747b7e;
+      }
+      @bottom-left {
+        content: "তপু বিশ্বাস  |  আইসিই বিভাগ, রাজশাহী বিশ্ববিদ্যালয়";
+        font-family: 'Noto Sans Bengali', 'FreeSans', sans-serif;
+        font-size: 10px; color: #747b7e;
+      }
+      @bottom-right {
+        content: "পৃষ্ঠা " counter(page, bengali);
+        font-family: 'Noto Sans Bengali', 'FreeSans', sans-serif;
+        font-size: 10px; color: #747b7e;
+      }
+    }
+
+    /* ---------- Palette (cascade, seed 42&nbsp;— same as English edition) ---------- */
+    :root {
+      --c-bg: #ffffff;
+      --c-accent: #1f6c92;
+      --c-accent-2: #c23a50;
+      --c-text: #131515;
+      --c-muted: #747b7e;
+      --c-mid: #32454e;
+      --c-surface: #e8eaeb;
+      --c-stripe: #ebeded;
+      --c-border: #acbdc5;
+    }
+    html, body {
+      margin: 0; padding: 0;
+      background: var(--c-bg);
+      color: var(--c-text);
+      font-family: 'Noto Serif Bengali', 'FreeSerif', serif;
+      font-size: 13.5px;
+      line-height: 1.85;
+    }
+    @media screen {
+      html { display: flex; justify-content: center; background: #e9ecee; }
+      body { width: 210mm; margin: 16px auto; box-shadow: 0 0 40px rgba(0,0,0,0.12); padding: 24mm 18mm; box-sizing: border-box; }
+    }
+    @media print { body { padding: 0; box-shadow: none; } }
+
+    /* ---------- Headings ---------- */
+    .section-head { break-after: avoid; break-inside: avoid; margin-top: 26px; margin-bottom: 4px; }
+    .section-head:first-child { margin-top: 0; }
+    .section-head h1 {
+      font-family: 'Noto Sans Bengali', 'FreeSans', sans-serif;
+      font-size: 22px; font-weight: 700; line-height: 1.5;
+      color: var(--c-mid); margin: 0;
+    }
+    .section-head .en {
+      font-family: 'Noto Sans Bengali', 'FreeSans', sans-serif;
+      font-size: 10px; font-weight: 600; letter-spacing: 1px;
+      color: var(--c-muted); text-transform: uppercase; margin-left: 8px;
+      white-space: nowrap;
+    }
+    .rule { height: 2px; background: var(--c-accent); margin: 6px 0 12px 0; }
+
+    /* ---------- Body text ---------- */
+    p { margin: 0 0 9px 0; text-align: justify; }
+    b, strong { font-weight: 700; }
+    .objectives { margin: 0; padding: 0; list-style: none; counter-reset: obj; }
+    .objectives li {
+      counter-increment: obj;
+      position: relative; padding-left: 30px; margin-bottom: 7px;
+      text-align: justify; break-inside: avoid;
+    }
+    .objectives li::before {
+      content: counter(obj, bengali) ".";
+      position: absolute; left: 4px; top: 0;
+      font-family: 'Noto Sans Bengali', 'FreeSans', sans-serif;
+      font-weight: 700; color: var(--c-accent);
+    }
+    .bullets { margin: 0; padding: 0; list-style: none; }
+    .bullets li {
+      position: relative; padding-left: 22px; margin-bottom: 7px;
+      text-align: justify; break-inside: avoid;
+    }
+    .bullets li::before {
+      content: "•";
+      position: absolute; left: 6px; top: 0;
+      color: var(--c-accent); font-weight: 700;
+    }
+
+    /* ---------- Identification table ---------- */
+    table { border-collapse: collapse; width: 100%; }
+    .ident td {
+      padding: 7px 10px; font-size: 12.5px; line-height: 1.7;
+      border-bottom: 0.6px solid var(--c-border); vertical-align: top;
+    }
+    .ident tr:last-child td { border-bottom: 1.4px solid var(--c-mid); }
+    .ident tr:first-child td { border-top: 1.4px solid var(--c-mid); }
+    .ident tr:nth-child(even) td { background: var(--c-stripe); }
+    .ident .lbl {
+      font-family: 'Noto Sans Bengali', 'FreeSans', sans-serif;
+      font-weight: 600; color: var(--c-muted); width: 28%;
+    }
+
+    /* ---------- Key stats callout ---------- */
+    .callout {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      background: var(--c-surface); border: 1px solid var(--c-accent);
+      margin: 16px 0 5px 0; break-inside: avoid;
+    }
+    .callout .cell {
+      padding: 13px 8px; text-align: center;
+      border-right: 0.6px solid var(--c-border);
+    }
+    .callout .cell:last-child { border-right: none; }
+    .callout .num {
+      font-family: 'Noto Sans Bengali', 'FreeSans', sans-serif;
+      font-size: 19px; font-weight: 800; color: var(--c-accent); line-height: 1.35;
+    }
+    .callout .cap {
+      font-family: 'Noto Sans Bengali', 'FreeSans', sans-serif;
+      font-size: 9.5px; color: var(--c-muted); line-height: 1.5; margin-top: 2px;
+    }
+    .caption {
+      font-family: 'Noto Sans Bengali', 'FreeSans', sans-serif;
+      font-size: 10px; color: var(--c-muted); text-align: center;
+      margin: 5px 0 12px 0;
+    }
+
+    /* ---------- Tech table ---------- */
+    .tech thead th {
+      background: var(--c-mid); color: #ffffff;
+      font-family: 'Noto Sans Bengali', 'FreeSans', sans-serif;
+      font-size: 12px; font-weight: 600; text-align: left;
+      padding: 7px 10px;
+    }
+    .tech td {
+      padding: 6px 10px; font-size: 12.5px; line-height: 1.7;
+      vertical-align: top; border-bottom: 0.5px solid var(--c-border);
+    }
+    .tech tr:nth-child(even) td { background: var(--c-stripe); }
+    .tech .layer {
+      font-family: 'Noto Sans Bengali', 'FreeSans', sans-serif;
+      font-weight: 600; color: var(--c-mid); width: 27%;
+    }
+    thead { display: table-header-group; }
+    tr { break-inside: avoid; }
+
+    /* ---------- Closing ---------- */
+    .closing {
+      margin-top: 14px; padding-top: 10px;
+      border-top: 0.7px solid var(--c-border);
+      font-family: 'Noto Sans Bengali', 'FreeSans', sans-serif;
+      font-size: 11.5px; color: var(--c-muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="main-content">
+
+    <!-- ===== প্রকল্প পরিচিতি ===== -->
+    <div class="section-head">
+      <h1>প্রকল্প পরিচিতি <span class="en">Project Identification</span></h1>
+      <div class="rule"></div>
+    </div>
+    <table class="ident">
+      <tbody>
+        <tr><td class="lbl">প্রকল্পের শিরোনাম</td><td>বাংলা পাবলিশিং স্টুডিও&nbsp;— এমএস-ওয়ার্ডের মতো সহজ বাংলা বই টাইপসেটিং ও প্রিন্ট-প্রেস ফরমা ইমপোজিশনসহ একটি ফ্রি, অফলাইন-সক্ষম ওয়েব প্ল্যাটফর্ম</td></tr>
+        <tr><td class="lbl">বৈজ্ঞানিক ক্ষেত্র</td><td>ইঞ্জিনিয়ারিং ও ইনোভেশন (Engineering &amp; Innovation)</td></tr>
+        <tr><td class="lbl">প্রকল্পের ধরন</td><td>একক প্রকল্প (Individual Project)</td></tr>
+        <tr><td class="lbl">অংশগ্রহণকারী</td><td>তপু বিশ্বাস (Topu Biswas)</td></tr>
+        <tr><td class="lbl">বর্তমান শ্রেণি / বর্ষ</td><td>বি.এসসি. (ইঞ্জিনিয়ারিং) ২য় বর্ষ</td></tr>
+        <tr><td class="lbl">প্রতিষ্ঠান</td><td>তথ্য ও যোগাযোগ প্রকৌশল (ICE) বিভাগ, রাজশাহী বিশ্ববিদ্যালয়</td></tr>
+        <tr><td class="lbl">বিভাগ / জেলা</td><td>রাজশাহী / রাজশাহী</td></tr>
+        <tr><td class="lbl">বয়সভিত্তিক গ্রুপ</td><td>গ্রুপ সি (১৮ বছর বা তার বেশি)</td></tr>
+        <tr><td class="lbl">ইভেন্ট</td><td>ZRF বিজ্ঞান মেলা ২০২৬&nbsp;— জিয়াউর রহমান ফাউন্ডেশন</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout">
+      <div class="cell"><div class="num">৫</div><div class="cap">কাগজের মাপ —<br>ডেমি ও ক্রাউনসহ</div></div>
+      <div class="cell"><div class="num">১ ক্লিক</div><div class="cap">প্রেসের জন্য<br>ফরমা পিডিএফ</div></div>
+      <div class="cell"><div class="num">১০০%</div><div class="cap">ফ্রি&nbsp;— কোনো<br>ইনস্টলেশন নেই</div></div>
+      <div class="cell"><div class="num">অফলাইন</div><div class="cap">PWA অটোসেভ —<br>ইন্টারনেট ছাড়াই</div></div>
+    </div>
+    <div class="caption">এক নজরে বাংলা পাবলিশিং স্টুডিওর মূল সক্ষমতা।</div>
+
+    <!-- ===== ১. প্রকল্পের সারসংক্ষেপ ===== -->
+    <div class="section-head">
+      <h1>১. প্রকল্পের সারসংক্ষেপ <span class="en">Project Abstract</span></h1>
+      <div class="rule"></div>
+    </div>
+    <p>বাংলাদেশে বই প্রকাশ এখনও নির্ভর করে ব্যয়বহুল ডেস্কটপ পাবলিশিং সফটওয়্যার, দুর্লভ ও মূল্যবান টাইপসেটিং অপারেটর এবং প্রেসে বারবার প্রুফ প্রিন্টের ওপর। শিক্ষক, কোচিং সেন্টার, গ্রামীণ লেখক ও ছোট প্রকাশকদের কাছে এই বাধাগুলোর কারণে বই প্রকাশনা হয়ে পড়ে ধীর, ঝুঁকিপূর্ণ ও ব্যয়সাপেক্ষ। <b>বাংলা পাবলিশিং স্টুডিও</b> সেই বাধাগুলোই দূর করে&nbsp;— এটি একটি ফ্রি, ইনস্টলেশন-বিহীন ওয়েব প্ল্যাটফর্ম, যা ব্যবহারে মাইক্রোসফট ওয়ার্ডের মতোই সহজ, অথচ বাংলায় সত্যিকারের প্রিন্ট-রেডি বই তৈরি করতে পারে।</p>
+    <p>সম্পূর্ণ ব্রাউজারেই চলা এই প্ল্যাটফর্মে রয়েছে প্রকৃত পৃষ্ঠাভিত্তিক বইয়ের লেআউট&nbsp;— স্ট্যান্ডার্ড ফিজিক্যাল কাগজের মাপে (A4, Letter, Legal, ডেমি ও ক্রাউন), নিজস্ব বাংলা ফন্টে (কালপুরুষ, সোলায়মানলিপি, সিয়াম রুপালী), টেবিল, ছবি, টেক্সট বক্স, শেপ, আইকন ও পৃষ্ঠা-হেডার/ফুটারসহ পূর্ণাঙ্গ WYSIWYG সম্পাদনা। প্রগ্রেসিভ ওয়েব অ্যাপ (PWA) প্রযুক্তির সৌজন্যে ইন্টারনেট ছাড়াই সম্পূর্ণ এডিটর ব্যবহারযোগ্য থাকে, আর IndexedDB অটোসেভ লেখকের প্রতিটি কিস্ট্রোককে সুরক্ষিত রাখে। এর সবচেয়ে স্বতন্ত্র সক্ষমতা <b>ফরমা</b> তৈরি&nbsp;— বাংলাদেশের ছাপাখানায় প্রচলিত ইন্ডাস্ট্রি-স্ট্যান্ডার্ড ইমপোজিশন পদ্ধতি, যেখানে অফসেট প্রিন্টিংয়ের জন্য বইয়ের পৃষ্ঠাগুলো সিগনেচার অনুসারে নতুন ক্রমে সাজানো হয়। এক ক্লিকেই একই ডকুমেন্ট থেকে প্রেস-রেডি ফরমা পিডিএফ, সাধারণ প্রিন্ট পিডিএফ, DOCX কিংবা স্বয়ংসম্পূর্ণ HTML ডকুমেন্ট এক্সপোর্ট করা যায়।</p>
+    <p>প্ল্যাটফর্মটি আধুনিক ওয়েব প্রযুক্তিতে (Next.js, React ও ProseMirror) নির্মিত এবং এর সব প্রসেসিং সম্পন্ন হয় ব্যবহারকারীর নিজের ডিভাইসেই&nbsp;— ফলে এটি দ্রুতগতির, প্রাইভেসি-সুরক্ষিত এবং সার্ভার-খরচমুক্ত। পরিচিত ওয়ার্ড-প্রসেসিংয়ের সরলতা আর পেশাদার প্রিন্ট প্রকৌশলকে একসূত্রে বেঁধে বাংলা পাবলিশিং স্টুডিও এমন কোটি কোটি বাংলাভাষী পাঠক, লেখক ও শিক্ষকের দুয়ার খুলতে চায়, যাঁরা এ পর্যন্ত ডিজিটাল পাবলিশিংয়ের বাইরে ছিলেন।</p>
+
+    <!-- ===== ২. উদ্দেশ্যসমূহ ===== -->
+    <div class="section-head">
+      <h1>২. উদ্দেশ্যসমূহ <span class="en">Objectives</span></h1>
+      <div class="rule"></div>
+    </div>
+    <ol class="objectives">
+      <li>এমন একটি ফ্রি, ব্রাউজারভিত্তিক WYSIWYG এডিটর তৈরি করা, যা ব্যবহারে মাইক্রোসফট ওয়ার্ডের মতোই পরিচিত লাগে, অথচ লেখাকে স্বয়ংক্রিয়ভাবে প্রকৃত বইয়ের পৃষ্ঠায় পেজিনেট করে।</li>
+      <li>বাংলাদেশে প্রচলিত স্ট্যান্ডার্ড বইয়ের মাপ&nbsp;— A4, Letter, Legal, ডেমি ও ক্রাউন&nbsp;— অনুযায়ী প্রকৃত প্রিন্ট পেজিনেশন বাস্তবায়ন করা।</li>
+      <li>ইন্ডাস্ট্রি-স্ট্যান্ডার্ড <b>ফরমা</b> (ইমপোজিশন) আউটপুট তৈরি করা&nbsp;— সিগনেচারভিত্তিক পৃষ্ঠা-ক্রম ও রেক্টো-ভার্সো জোড়াসহ&nbsp;— যাতে যেকোনো স্থানীয় প্রেস ব্যয়বহুল সফটওয়্যার ছাড়াই, হাতে পৃষ্ঠা সাজানোর ঝামেলা ছাড়াই সরাসরি ছাপাতে পারে।</li>
+      <li>PWA সার্ভিস ওয়ার্কার ও স্বয়ংক্রিয় লোকাল অটোসেভের মাধ্যমে অফলাইন-ফার্স্ট নির্ভরযোগ্যতা নিশ্চিত করা, যাতে অনিয়মিত ইন্টারনেটেও লেখকের কাজ কখনো নষ্ট না হয়।</li>
+      <li>একটিমাত্র সোর্স ফাইল থেকে এক ক্লিকে প্রিন্ট-রেডি পিডিএফ, ফরমা পিডিএফ, DOCX, স্বয়ংসম্পূর্ণ HTML ও JSON ব্যাকআপ তৈরির সুবিধা দেওয়া।</li>
+      <li>বাংলাদেশের শিক্ষার্থী, শিক্ষক, কোচিং সেন্টার, লেখক ও ছোট প্রকাশকের কাছে প্ল্যাটফর্মটিকে সম্পূর্ণ ফ্রি ও সহজলভ্য রাখা।</li>
+    </ol>
+
+    <!-- ===== ৩. উদ্ভাবন ও নতুনত্ব ===== -->
+    <div class="section-head">
+      <h1>৩. উদ্ভাবন ও নতুনত্ব <span class="en">Innovation / Novelty</span></h1>
+      <div class="rule"></div>
+    </div>
+    <p>বাংলা পাবলিশিং স্টুডিওর মূল উদ্ভাবন এই&nbsp;— আমাদের জানামতে এটিই প্রথম ব্রাউজারভিত্তিক প্ল্যাটফর্ম, যা তিনটি বিষয়কে একটিমাত্র ফ্রি টুলে একত্র করেছে: (ক) এমএস-ওয়ার্ডের মতো WYSIWYG সম্পাদনা, (খ) প্রকৃত ফিজিক্যাল-সাইজ বুক পেজিনেশন, এবং (গ) বাংলাদেশি ছাপাখানার ফরমা ইমপোজিশন পদ্ধতি। Adobe InDesign বা MS Publisher-এর মতো আন্তর্জাতিক সফটওয়্যার ডেমি/ক্রাউন কাগজের মাপ কিংবা স্থানীয় ইমপোজিশন রীতি&nbsp;— কোনোটিই সমর্থন করে না; ফলে বাংলাদেশি প্রেসকে লেআউটের কাজ আবার হাতে করে নিতে হয়। এই প্রকল্প স্থানীয় প্রেসের ঠিক সেই ভাষাতেই কথা বলে।</p>
+    <ul class="bullets">
+      <li><b>জিরো-সেটআপ স্থাপত্য:</b> প্রতিটি প্রসেসিং ধাপ ঘটে ক্লায়েন্ট-সাইডেই (Next.js + React + ProseMirror)। কিছুই ইনস্টল করতে হয় না, কোনো লাইসেন্স লাগে না, কোনো ডেটা সার্ভারে যায় না&nbsp;— গোপনীয়তা ও গতি নিশ্চিত হয় ডিজাইনেই।</li>
+      <li><b>অফলাইন-ফার্স্ট PWA:</b> প্রথম ভিজিটের পর থেকে সম্পূর্ণ এডিটর, বাংলা ফন্ট ও অটোসেভ ইন্টারনেট ছাড়াই চলে&nbsp;— অস্থিতিশীল সংযোগের গ্রামীণ ব্যবহারকারীদের জন্য এটি নির্ণায়ক সুবিধা।</li>
+      <li><b>প্রিন্ট-ইন্ডাস্ট্রি সচেতনতা:</b> সঠিক রেক্টো-ভার্সো জোড়াসহ সিগনেচারভিত্তিক ফরমা শিট প্রেসকে সেভাবেই কাজ করতে দেয়, যেভাবে প্রেস আজ ছাপায়, ভাঁজে ও বাঁধে&nbsp;— হাতে-করা ভুলের একটি পূর্ণ শ্রেণি এক মুভেই নির্মূল হয়।</li>
+      <li><b>প্রকাশনার গণতায়ন:</b> সঠিকভাবে টাইপসেট করা, প্রেস-রেডি বই ছাপানোর প্রবেশ-খরচ হাজার হাজার টাকা (সফটওয়্যার লাইসেন্স ও অপারেটর ফি) থেকে নেমে আসে শূন্যে।</li>
+      <li><b>স্থানীয় ভাষার প্রকৌশল:</b> বাংলা ফন্ট ও জটিল-লিপি রেন্ডারিং এখানে গৌণ সংযোজন নয়&nbsp;— প্রথম-শ্রেণির ফিচার হিসেবেই তৈরি।</li>
+    </ul>
+
+    <!-- ===== ৪. প্রত্যাশিত প্রভাব ===== -->
+    <div class="section-head">
+      <h1>৪. প্রত্যাশিত প্রভাব <span class="en">Expected Impact</span></h1>
+      <div class="rule"></div>
+    </div>
+    <p><b>শিক্ষাগত প্রভাব।</b> শিক্ষক ও কোচিং সেন্টার সপ্তাহের বদলে কয়েক ঘণ্টায় নিজেরাই পাঠ্যবই, গাইড ও প্রশ্নব্যাংক তৈরি করতে পারবে। বিশ্ববিদ্যালয়ের শিক্ষার্থীরা পাবে আধুনিক ওয়েব প্রকৌশলের একটি জীবন্ত উদাহরণ&nbsp;— প্রগ্রেসিভ ওয়েব অ্যাপ, অফলাইন-ফার্স্ট স্টোরেজ ও ব্রাউজারভিত্তিক প্রিন্ট প্রযুক্তি&nbsp;— যা তারা অধ্যয়ন, পুনঃব্যবহার এবং অন্য দক্ষিণ এশীয় ভাষার জন্য সম্প্রসারণও করতে পারবে।</p>
+    <p><b>সামাজিক ও অর্থনৈতিক প্রভাব।</b> গ্রামীণ ও নিম্ন-আয়ের লেখকরা কোনো মধ্যস্বত্বভোগী ছাড়াই উপন্যাস, কবিতা ও গবেষণা প্রকাশ করতে পারবেন, কারণ প্ল্যাটফর্ম একসঙ্গে সরিয়ে দেয় সফটওয়্যার খরচ, অপারেটর ফি এবং প্রি-প্রেস চক্রের দীর্ঘতম ধাপটুকু। ছোট প্রকাশকরা টাইপসেটিং খরচ ও সময় কমিয়ে প্রকাশনার মূল্যের অধিকতর অংশ স্থানীয় সমাজেই রাখতে পারবে।</p>
+    <p><b>সাংস্কৃতিক প্রভাব।</b> বাংলা বই প্রকাশকে ডকুমেন্ট টাইপ করার মতো সহজ করে প্রকল্পটি ডিজিটাল যুগে বাংলা ভাষায় জ্ঞান সৃষ্টি ও সংরক্ষণকে শক্তিশালী করবে&nbsp;— আরও পাঠ্যবই, আরও সাহিত্য আর আরও স্থানীয় ইতিহাস মুদ্রিত হবে মাতৃভাষায়।</p>
+    <p><b>সম্প্রসারণযোগ্যতা।</b> স্থাপত্যটি ইচ্ছাকৃতভাবেই উন্মুক্ত: ভবিষ্যৎ সংস্করণে আসবে আরও ইমপোজিশন স্কিম, পেশাদার বুক টেমপ্লেট, সহযোগিতামূলক সম্পাদনা ও এআই-সহায়ক লেআউট; সামান্য পরিবর্তনেই একই মডেল অন্যান্য অবহেলিত ভাষার জন্যও খাপ খেয়ে নিতে পারে।</p>
+
+    <!-- ===== ৫. প্রযুক্তিগত পরিচিতি ===== -->
+    <div class="section-head">
+      <h1>৫. প্রযুক্তিগত পরিচিতি <span class="en">Technical Overview</span></h1>
+      <div class="rule"></div>
+    </div>
+    <table class="tech">
+      <thead>
+        <tr><th style="width:27%">স্তর</th><th>প্রযুক্তি</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="layer">ফ্রন্টএন্ড ফ্রেমওয়ার্ক</td><td>Next.js 16 (App Router), React 19, TypeScript 5, Tailwind CSS</td></tr>
+        <tr><td class="layer">এডিটিং ইঞ্জিন</td><td>ProseMirror / TipTap&nbsp;— ছবি, টেক্সট বক্স, শেপ ও আইকনের কাস্টম নোডসহ</td></tr>
+        <tr><td class="layer">পেজিনেশন ইঞ্জিন</td><td>ক্লায়েন্ট-সাইড প্রকৃত-পৃষ্ঠা লেআউট (A4, Letter, Legal, ডেমি, ক্রাউন)</td></tr>
+        <tr><td class="layer">ইমপোজিশন ইঞ্জিন</td><td>অফসেট প্রিন্টিংয়ের জন্য সিগনেচারভিত্তিক ফরমা পৃষ্ঠা-সাজানো, রেক্টো-ভার্সো জোড়াসহ</td></tr>
+        <tr><td class="layer">স্টোরেজ</td><td>Dexie.js-ভিত্তিক IndexedDB অটোসেভ, সঙ্গে JSON প্রজেক্ট ব্যাকআপ ও রিস্টোর</td></tr>
+        <tr><td class="layer">অফলাইন সাপোর্ট</td><td>সার্ভিস ওয়ার্কারসহ প্রগ্রেসিভ ওয়েব অ্যাপ; ইনস্টলযোগ্য, সম্পূর্ণ অফলাইনে ব্যবহারযোগ্য</td></tr>
+        <tr><td class="layer">এক্সপোর্ট ফরম্যাট</td><td>প্রিন্ট পিডিএফ, ফরমা ইমপোজিশন পিডিএফ, DOCX, স্বয়ংসম্পূর্ণ HTML, JSON</td></tr>
+        <tr><td class="layer">বাংলা টাইপোগ্রাফি</td><td>কালপুরুষ, সোলায়মানলিপি ও সিয়াম রুপালী ফন্ট পরিবার, জটিল-লিপি রেন্ডারিংসহ</td></tr>
+      </tbody>
+    </table>
+    <div class="caption">টেবিল ১: বাংলা পাবলিশিং স্টুডিওর প্রযুক্তি স্তর।</div>
+
+    <!-- ===== ৬. বর্তমান অবস্থা ও রোডম্যাপ ===== -->
+    <div class="section-head">
+      <h1>৬. বর্তমান অবস্থা ও রোডম্যাপ <span class="en">Current Status &amp; Roadmap</span></h1>
+      <div class="rule"></div>
+    </div>
+    <p>বাংলা পাবলিশিং স্টুডিওর একটি সম্পূর্ণ কার্যকর প্রোটোটাইপ ইতিমধ্যেই পাবলিক ইন্টারনেটে ডিপ্লয় করা আছে এবং প্রকৃত ডকুমেন্ট তৈরিতে ব্যবহৃত হচ্ছে। প্রকল্পটি GitHub-এ ভার্সন-কন্ট্রোল করা আছে&nbsp;— পরিচ্ছন্ন ও অডিট-করা কোডবেস, অবিচ্ছিন্ন কোয়ালিটি চেক এবং প্রোডাকশন ডিপ্লয়মেন্ট পাইপলাইনসহ। মূল ফিচারগুলো&nbsp;— WYSIWYG সম্পাদনা, প্রকৃত পেজিনেশন, হেডার-ফুটার, অফলাইন অটোসেভ এবং PDF, DOCX, HTML ও JSON এক্সপোর্ট&nbsp;— আজই কার্যকর।</p>
+    <p>ডেভেলপমেন্ট রোডম্যাপে অগ্রাধিকার পাচ্ছে: (১) বাংলা যুক্তাক্ষরের জন্য সূক্ষ্মভাবে টিউন করা অ্যাডভান্সড টাইপোগ্রাফি নিয়ন্ত্রণ&nbsp;— শব্দ ও অক্ষরের ব্যবধান, অনুচ্ছেদ-গ্যাপ, ইনডেন্ট ও ড্রপ-ক্যাপ; (২) বাংলাদেশি প্রেসে প্রচলিত প্রতিটি সিগনেচার ফরম্যাট কভার করার জন্য ফরমা ইমপোজিশন ইঞ্জিনের সম্প্রসারণ; (৩) পেশাদার ফ্রন্ট-ম্যাটারের জন্য প্রতি-পৃষ্ঠা হেডার-ফুটার ওভাররাইড; (৪) এক্সপোর্ট করা পিডিএফে ক্লিকযোগ্য হাইপারলিংক; এবং (৫) সাধারণ বই-ঘরানার জন্য পেশাদার টেমপ্লেট লাইব্রেরি। প্রতিটি ধাপ প্ল্যাটফর্মটিকে বাংলাদেশের জন্য একটি সম্পূর্ণ, ফ্রি পাবলিশিং স্যুটের কাছে নিয়ে যাচ্ছে।</p>
+
+    <div class="closing">জমা দিয়েছেন: তপু বিশ্বাস, বি.এসসি. (ইঞ্জিনিয়ারিং) ২য় বর্ষ, তথ্য ও যোগাযোগ প্রকৌশল (ICE) বিভাগ, রাজশাহী বিশ্ববিদ্যালয়।</div>
+
+  </div>
+</body>
+</html>

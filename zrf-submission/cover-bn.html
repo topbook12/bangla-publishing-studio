@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <title>বাংলা পাবলিশিং স্টুডিও — ZRF বিজ্ঞান মেলা ২০২৬</title>
+  <link rel="stylesheet" href="fonts.css">
+  <style>
+    @page { size: 794px 1123px; margin: 0; }
+    :root {
+      /* Cascade palette (design_engine.py palette-cascade, seed 42) */
+      --c-bg: #f4f5f5;
+      --c-accent: #1f6c92;
+      --c-text: #131515;
+      --c-muted: #747b7e;
+      --c-mid: #32454e;
+      --c-surface: #e8eaeb;
+    }
+    html, body {
+      margin: 0; padding: 0;
+      width: 794px; height: 1123px;
+      background: var(--c-bg);
+      font-family: 'Noto Sans Bengali', 'FreeSans', sans-serif;
+      color: var(--c-text);
+    }
+    @media screen {
+      html { height: auto; display: flex; justify-content: center; min-height: 100vh; background: var(--c-bg); }
+      body { transform-origin: top center; scale: min(1, calc(100vw / 794), calc(100vh / 1123)); margin: 0 auto; box-shadow: 0 0 60px rgba(0,0,0,0.15); }
+    }
+    .cover {
+      width: 794px; height: 1123px; position: relative; box-sizing: border-box;
+      border: none; outline: none; box-shadow: none;
+    }
+    /* Layer 1 - background grid (subtle), clipped */
+    .layer-1 {
+      position: absolute; inset: 0; overflow: hidden; z-index: 1;
+      background-image:
+        linear-gradient(to right, rgba(31, 108, 146, 0.05) 0.5px, transparent 0.5px),
+        linear-gradient(to bottom, rgba(31, 108, 146, 0.05) 0.5px, transparent 0.5px);
+      background-size: 50px 50px;
+    }
+    /* Layer 2 - structure: thick left vertical anchor line */
+    .layer-2 { position: absolute; inset: 0; z-index: 2; }
+    .anchor-line {
+      position: absolute;
+      left: 95px;                 /* 0.12 * W */
+      top: 112px;                 /* 0.10 * H */
+      bottom: 112px;              /* 0.90 * H */
+      width: 6px;
+      background: var(--c-accent);
+    }
+    /* Layer 3 - content, left edge = line right edge (101px) + 44px gap */
+    .layer-3 { position: absolute; inset: 0; z-index: 3; }
+    .kicker {
+      position: absolute; left: 145px; top: 168px;   /* 0.15 * H */
+      font-size: 15pt; font-weight: 600;
+      letter-spacing: 1.5px;
+      color: var(--c-text); opacity: 0.65;
+      max-width: 580px;
+    }
+    .hero {
+      position: absolute; left: 145px; top: 296px;   /* zone B */
+      font-size: 50pt; font-weight: 800; line-height: 1.32;
+      color: var(--c-text);
+      max-width: 610px;
+    }
+    .hero .accent-word { color: var(--c-accent); }
+    .summary {
+      position: absolute; left: 145px; top: 600px;
+      font-size: 14.5pt; font-weight: 400; line-height: 1.78;
+      color: var(--c-text); opacity: 0.88;
+      max-width: 500px;
+    }
+    .meta {
+      position: absolute; left: 145px; top: 842px;   /* 0.75 * H */
+      font-size: 16pt; font-weight: 400; line-height: 1.62;
+      color: var(--c-text);
+      max-width: 580px;
+    }
+    .meta .name { font-weight: 700; }
+    .meta .muted { color: var(--c-muted); font-size: 13pt; }
+    .footer {
+      position: absolute; left: 145px; top: 1002px;  /* ~0.89 * H */
+      font-size: 13.5pt; font-weight: 600;
+      letter-spacing: 1.5px;
+      color: var(--c-text); opacity: 0.65;
+      max-width: 580px;
+    }
+  </style>
+</head>
+<body>
+  <div class="cover">
+    <div class="layer-1"></div>
+    <div class="layer-2">
+      <div class="anchor-line"></div>
+    </div>
+    <div class="layer-3">
+      <div class="kicker">ZRF বিজ্ঞান মেলা ২০২৬ · প্রকল্প সারসংক্ষেপ</div>
+      <div class="hero"><span class="accent-word">বাংলা</span><br>পাবলিশিং<br>স্টুডিও</div>
+      <div class="summary">
+        এমএস-ওয়ার্ডের মতো সহজ ব্যবহার দিয়ে বাংলা বই টাইপসেটিং — প্রকৃত পেজিনেশন,
+        স্ট্যান্ডার্ড বুক সাইজ এবং এক-ক্লিকে ফরমা (প্রিন্ট-প্রেস ইমপোজিশন)। বাংলাদেশের
+        প্রকাশনা শিল্পের জন্য একটি ফ্রি, অফলাইন-সক্ষম ওয়েব প্ল্যাটফর্ম।
+      </div>
+      <div class="meta">
+        <span class="name">তপু বিশ্বাস</span><br>
+        বি.এসসি. (ইঞ্জিনিয়ারিং) ২য় বর্ষ · আইসিই বিভাগ<br>
+        <span class="muted">রাজশাহী বিশ্ববিদ্যালয় · সেপ্টেম্বর ২০২৬</span>
+      </div>
+      <div class="footer">জিয়াউর রহমান ফাউন্ডেশনে জমা দেওয়ার জন্য</div>
+    </div>
+  </div>
+</body>
+</html>
