@@ -12,11 +12,14 @@ import {
 import { Button } from '@/components/ui/button';
 import { useEditorStore } from '@/lib/store';
 import { useUiStore } from '@/lib/ui-store';
-import { toBanglaNumber, banglaDateToday } from '@/lib/bangla';
+import { useT, useFmtNum, useFmtDate } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
 export function ProjectsDialog() {
+  const tt = useT();
+  const nf = useFmtNum();
+  const fd = useFmtDate();
   const openDialog = useUiStore((s) => s.openDialog);
   const close = useUiStore((s) => s.close);
   const open = openDialog === 'projects';
@@ -38,15 +41,15 @@ export function ProjectsDialog() {
     <Dialog open={open} onOpenChange={(v) => !v && close()}>
       <DialogContent className="max-w-xl">
         <DialogHeader>
-          <DialogTitle>আমার বইসমূহ</DialogTitle>
+          <DialogTitle>{tt('dlg1.projects.title')}</DialogTitle>
           <DialogDescription>
-            সব বই এই ব্রাউজারের IndexedDB-তে অফলাইনে সংরক্ষিত — {toBanglaNumber(projects.length)}টি বই পাওয়া গেছে
+            {tt('dlg1.projects.desc').split('{n}').join(nf(projects.length))}
           </DialogDescription>
         </DialogHeader>
 
         <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
           {projects.length === 0 ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">কোনো বই নেই — নতুন বই তৈরি করুন</p>
+            <p className="py-6 text-center text-sm text-muted-foreground">{tt('dlg1.projects.empty')}</p>
           ) : null}
           {projects.map((p) => (
             <div
@@ -59,17 +62,17 @@ export function ProjectsDialog() {
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold">{p.title}</p>
                 <p className="text-xs text-muted-foreground">
-                  শেষ সম্পাদনা: {banglaDateToday(new Date(p.updatedAt))}
+                  {tt('dlg1.projects.lastEdit').split('{d}').join(fd(new Date(p.updatedAt)))}
                 </p>
               </div>
               {p.id === projectId ? (
-                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">খোলা আছে</span>
+                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">{tt('dlg1.projects.openBadge')}</span>
               ) : (
                 <Button size="sm" variant="outline" className="gap-1" onClick={() => { void openProject(p.id); close(); }}>
-                  <FolderOpen size={13} /> খুলুন
+                  <FolderOpen size={13} /> {tt('dlg1.projects.open')}
                 </Button>
               )}
-              <Button size="icon" variant="ghost" className="h-7 w-7" title="কপি" aria-label="কপি" onClick={() => void duplicateProject(p.id)}>
+              <Button size="icon" variant="ghost" className="h-7 w-7" title={tt('dlg1.projects.copy')} aria-label={tt('dlg1.projects.copy')} onClick={() => void duplicateProject(p.id)}>
                 <Copy size={13} />
               </Button>
               {confirmDelete === p.id ? (
@@ -79,13 +82,13 @@ export function ProjectsDialog() {
                   onClick={async () => {
                     await removeProject(p.id);
                     setConfirmDelete(null);
-                    toast.success('বইটি মুছে ফেলা হয়েছে');
+                    toast.success(tt('dlg1.projects.toastDeleted'));
                   }}
                 >
-                  নিশ্চিত?
+                  {tt('dlg1.projects.confirmDelete')}
                 </Button>
               ) : (
-                <Button size="icon" variant="ghost" className="h-7 w-7 text-red-500" title="মুছুন" aria-label="মুছুন" onClick={() => setConfirmDelete(p.id)}>
+                <Button size="icon" variant="ghost" className="h-7 w-7 text-red-500" title={tt('dlg1.projects.delete')} aria-label={tt('dlg1.projects.delete')} onClick={() => setConfirmDelete(p.id)}>
                   <Trash2 size={13} />
                 </Button>
               )}
@@ -97,11 +100,11 @@ export function ProjectsDialog() {
           className="w-full gap-2"
           variant="secondary"
           onClick={() => {
-            void createProject('শিরোনামহীন বই', false);
+            void createProject(tt('hdr.book.untitled'), false);
             close();
           }}
         >
-          <FilePlus2 size={15} /> নতুন বই তৈরি করুন
+          <FilePlus2 size={15} /> {tt('dlg1.projects.new')}
         </Button>
       </DialogContent>
     </Dialog>

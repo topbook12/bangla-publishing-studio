@@ -26,6 +26,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useEditorStore } from '@/lib/store';
 import { getEditor } from '@/lib/editor-registry';
+import { useT } from '@/lib/i18n';
 import { CELL_BG_COLORS } from './table-cell-bg';
 import { cn } from '@/lib/utils';
 import './media-edit.css';
@@ -78,6 +79,7 @@ function resolveInfo(): ToolbarInfo | null {
 }
 
 export function TableToolbarHost({ suppressed = false }: { suppressed?: boolean }) {
+  const tt = useT();
   const selectionVersion = useEditorStore((s) => s.selectionVersion);
   const activePageId = useEditorStore((s) => s.activePageId);
   // Render-phase derivation — recomputed only when selection/page/suppression changes
@@ -132,20 +134,20 @@ export function TableToolbarHost({ suppressed = false }: { suppressed?: boolean 
       ref={barRef}
       className="bwp-table-toolbar no-print flex items-center gap-0.5 rounded-full border border-border bg-popover/95 px-1.5 py-1 shadow-lg backdrop-blur"
       role="toolbar"
-      aria-label="টেবিল টুলবার"
+      aria-label={tt('ws.tblbar.aria', 'Table toolbar')}
     >
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
             variant="ghost" size="icon"
             className="h-7 w-7 rounded-full"
-            aria-label="নিচে সারি যোগ করুন"
+            aria-label={tt('ws.tblbar.addRowBelow', 'Add row below')}
             onClick={() => run((ed) => ed.chain().focus().addRowAfter().run())}
           >
             <BetweenHorizontalEnd size={15} aria-hidden="true" />
           </Button>
         </TooltipTrigger>
-        <TooltipContent side="bottom">নিচে সারি যোগ করুন</TooltipContent>
+        <TooltipContent side="bottom">{tt('ws.tblbar.addRowBelow', 'Add row below')}</TooltipContent>
       </Tooltip>
 
       <Tooltip>
@@ -153,13 +155,13 @@ export function TableToolbarHost({ suppressed = false }: { suppressed?: boolean 
           <Button
             variant="ghost" size="icon"
             className="h-7 w-7 rounded-full"
-            aria-label="ডানে কলাম যোগ করুন"
+            aria-label={tt('ws.tblbar.addColRight', 'Add column right')}
             onClick={() => run((ed) => ed.chain().focus().addColumnAfter().run())}
           >
             <BetweenVerticalEnd size={15} aria-hidden="true" />
           </Button>
         </TooltipTrigger>
-        <TooltipContent side="bottom">ডানে কলাম যোগ করুন</TooltipContent>
+        <TooltipContent side="bottom">{tt('ws.tblbar.addColRight', 'Add column right')}</TooltipContent>
       </Tooltip>
 
       {/* মুছুন — সারি / কলাম / টেবিল */}
@@ -170,28 +172,28 @@ export function TableToolbarHost({ suppressed = false }: { suppressed?: boolean 
               <Button
                 variant="ghost" size="icon"
                 className="h-7 w-7 rounded-full text-red-600"
-                aria-label="মুছুন"
+                aria-label={tt('ws.ctx.hDelete', 'Delete')}
               >
                 <Trash2 size={15} aria-hidden="true" />
                 <ChevronDown size={10} aria-hidden="true" className="-ml-1" />
               </Button>
             </DropdownMenuTrigger>
           </TooltipTrigger>
-          <TooltipContent side="bottom">সারি / কলাম / টেবিল মুছুন</TooltipContent>
+          <TooltipContent side="bottom">{tt('ws.tblbar.deleteTip', 'Delete row / column / table')}</TooltipContent>
         </Tooltip>
         <DropdownMenuContent align="center">
           <DropdownMenuItem onClick={() => run((ed) => ed.chain().focus().deleteRow().run())}>
-            সারি মুছুন
+            {tt('ws.tbl.delRow', 'Delete row')}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => run((ed) => ed.chain().focus().deleteColumn().run())}>
-            কলাম মুছুন
+            {tt('ws.tbl.delCol', 'Delete column')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
             className="text-red-600 focus:text-red-600"
             onClick={() => run((ed) => ed.chain().focus().deleteTable().run())}
           >
-            টেবিল মুছুন
+            {tt('ws.tbl.delTable', 'Delete table')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -203,14 +205,14 @@ export function TableToolbarHost({ suppressed = false }: { suppressed?: boolean 
           <Button
             variant="ghost" size="icon"
             className="h-7 w-7 rounded-full"
-            aria-label="সেল মার্জ"
+            aria-label={tt('ws.tbl.merge', 'Merge cells')}
             disabled={!info.canMerge}
             onClick={() => run((ed) => ed.chain().focus().mergeCells().run())}
           >
             <Merge size={15} aria-hidden="true" />
           </Button>
         </TooltipTrigger>
-        <TooltipContent side="bottom">সেল মার্জ (একাধিক সেল সিলেক্ট করুন)</TooltipContent>
+        <TooltipContent side="bottom">{tt('ws.tblbar.mergeTip', 'Merge cells (select multiple cells)')}</TooltipContent>
       </Tooltip>
 
       <Tooltip>
@@ -218,13 +220,13 @@ export function TableToolbarHost({ suppressed = false }: { suppressed?: boolean 
           <Button
             variant="ghost" size="icon"
             className="h-7 w-7 rounded-full"
-            aria-label="সেল স্প্লিট"
+            aria-label={tt('ws.tbl.split', 'Split cell')}
             onClick={() => run((ed) => ed.chain().focus().splitCell().run())}
           >
             <Split size={15} aria-hidden="true" />
           </Button>
         </TooltipTrigger>
-        <TooltipContent side="bottom">সেল স্প্লিট</TooltipContent>
+        <TooltipContent side="bottom">{tt('ws.tbl.split', 'Split cell')}</TooltipContent>
       </Tooltip>
 
       <Tooltip>
@@ -232,14 +234,14 @@ export function TableToolbarHost({ suppressed = false }: { suppressed?: boolean 
           <Button
             variant="ghost" size="icon"
             className={cn('h-7 w-7 rounded-full', info.isHeaderActive && 'bg-primary/15 text-primary')}
-            aria-label="হেডার সারি চালু/বন্ধ"
+            aria-label={tt('ws.tbl.headerRowToggle', 'Toggle header row')}
             aria-pressed={info.isHeaderActive}
             onClick={() => run((ed) => ed.chain().focus().toggleHeaderRow().run())}
           >
             <PanelTop size={15} aria-hidden="true" />
           </Button>
         </TooltipTrigger>
-        <TooltipContent side="bottom">হেডার সারি চালু/বন্ধ</TooltipContent>
+        <TooltipContent side="bottom">{tt('ws.tbl.headerRowToggle', 'Toggle header row')}</TooltipContent>
       </Tooltip>
 
       {/* সেল ব্যাকগ্রাউন্ড */}
@@ -250,13 +252,13 @@ export function TableToolbarHost({ suppressed = false }: { suppressed?: boolean 
               <Button
                 variant="ghost" size="icon"
                 className="h-7 w-7 rounded-full"
-                aria-label="সেলের ব্যাকগ্রাউন্ড রং"
+                aria-label={tt('ws.tblbar.cellBg', 'Cell background color')}
               >
                 <Paintbrush size={15} aria-hidden="true" />
               </Button>
             </DropdownMenuTrigger>
           </TooltipTrigger>
-          <TooltipContent side="bottom">সেলের ব্যাকগ্রাউন্ড রং</TooltipContent>
+          <TooltipContent side="bottom">{tt('ws.tblbar.cellBg', 'Cell background color')}</TooltipContent>
         </Tooltip>
         <DropdownMenuContent align="center" className="w-auto">
           <div className="grid grid-cols-4 gap-1 p-1">
@@ -264,8 +266,8 @@ export function TableToolbarHost({ suppressed = false }: { suppressed?: boolean 
               <button
                 key={color}
                 type="button"
-                aria-label={color === 'transparent' ? 'রং ছাড়ান' : color}
-                title={color === 'transparent' ? 'রং ছাড়ান' : color}
+                aria-label={color === 'transparent' ? tt('ws.tblbar.noColor', 'No color') : color}
+                title={color === 'transparent' ? tt('ws.tblbar.noColor', 'No color') : color}
                 className={cn(
                   'h-5 w-5 rounded border border-black/20 transition hover:scale-110',
                   info.cellBg === color && 'ring-2 ring-primary ring-offset-1',

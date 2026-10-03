@@ -119,7 +119,8 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, sans-serif;
+    /* বাংলা + দেবনাগরী (হিন্দি) — UI ভাষা যাই হোক, সঠিক গ্লিফ কাছাকাছি ফন্ট থেকে */
+    font-family: "Hind Siliguri", "Noto Sans Bengali", "Hind", "Noto Sans Devanagari", ui-sans-serif, system-ui, sans-serif;
   }
 }
 
@@ -1982,4 +1983,27 @@ html.dark .focus-exit-pill { box-shadow: 0 4px 16px rgb(0 0 0 / 0.5), inset 0 1p
    চিহ্নিত .page-slot) প্রিন্ট আউটপুট থেকে সম্পূর্ণ বাদ — স্ক্রিনে কোনো প্রভাব নেই */
 @media print {
   .print-range-skip { display: none !important; }
+}
+
+/* ═══════════════ ভাষা সুইচার (Language Switcher — বাংলা / हिन्दी / English) ═══════════════ */
+
+/* হেডারের গ্লোব বাটন — অন্য header-action-দের সাথে সামঞ্জস্যপূর্ণ */
+.lang-btn-native {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  max-width: 64px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ভাষা মেনুর স্বদেশি নাম — তিন লিপিতেই পড়তে আরামদায়ক */
+.dropdown-menu [aria-pressed="true"] {
+  font-weight: 600;
+}
+
+/* হিন্দি UI-তে সংখ্যা/লেবেল দেবনাগরী ফন্ট থেকে রেন্ডার হয় — সংখ্যার ট্যাবুলার সারিবদ্ধতা রক্ষা করুন */
+.status-pill b, .save-indicator, .ribbon-tab-label, .ribbon-group-label {
+  font-variant-numeric: tabular-nums;
 }

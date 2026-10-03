@@ -19,7 +19,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useEditorStore, type SnapshotRecord } from '@/lib/store';
 import { useUiStore } from '@/lib/ui-store';
-import { banglaDateToday, banglaTimeNow, toBanglaNumber } from '@/lib/bangla';
+import { banglaDateToday, banglaTimeNow } from '@/lib/bangla';
+import { useT, useFmtNum } from '@/lib/i18n';
 import { toast } from 'sonner';
 
 export function SnapshotsDialog() {
@@ -31,6 +32,8 @@ export function SnapshotsDialog() {
   const takeSnapshot = useEditorStore((s) => s.takeSnapshot);
   const restoreSnapshot = useEditorStore((s) => s.restoreSnapshot);
   const deleteSnapshot = useEditorStore((s) => s.deleteSnapshot);
+  const tt = useT();
+  const ff = useFmtNum();
 
   const [snapshots, setSnapshots] = useState<SnapshotRecord[]>([]);
   const [loading, setLoading] = useState(false);
@@ -57,7 +60,7 @@ export function SnapshotsDialog() {
     setBusy(true);
     try {
       await takeSnapshot('manual');
-      toast.success('ব্যাকআপ নেওয়া হয়েছে');
+      toast.success(tt('dlg2.snap.toastSaved'));
       await refresh();
     } finally {
       setBusy(false);
@@ -71,14 +74,14 @@ export function SnapshotsDialog() {
     // পুরো বই বদলে যায় — ডায়ালগ সরিয়ে পুনরুদ্ধার-করা বইটাই দেখাই
     close();
     await restoreSnapshot(id);
-    toast.success('স্ন্যাপশট পুনরুদ্ধার হয়েছে');
+    toast.success(tt('dlg2.snap.toastRestored'));
   };
 
   const handleDelete = async (id: string) => {
     setConfirmDelete(null);
     await deleteSnapshot(id);
     setSnapshots((prev) => prev.filter((s) => s.id !== id));
-    toast.success('স্ন্যাপশট মুছে ফেলা হয়েছে');
+    toast.success(tt('dlg2.snap.toastDeleted'));
   };
 
   return (
@@ -87,26 +90,26 @@ export function SnapshotsDialog() {
         <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <History size={16} aria-hidden="true" /> স্ন্যাপশট ইতিহাস
+              <History size={16} aria-hidden="true" /> {tt('dlg2.snap.title')}
             </DialogTitle>
             <DialogDescription>
-              বইয়ের সংরক্ষিত অবস্থাসমূহ — পুরনো যেকোনো মুহূর্তে ফেরত যেতে পারবেন।
+              {tt('dlg2.snap.desc')}
             </DialogDescription>
           </DialogHeader>
 
           <Button className="w-full gap-2" onClick={() => void handleManual()} disabled={busy || !projectId}>
             {busy ? <Loader2 size={15} className="animate-spin" /> : <ArchiveRestore size={15} />}
-            এখন ব্যাকআপ নিন
+            {tt('dlg2.snap.takeNow')}
           </Button>
 
           <div className="nav-scroll max-h-96 space-y-2 overflow-y-auto pr-1">
             {loading ? (
               <p className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
-                <Loader2 size={15} className="animate-spin" /> লোড হচ্ছে…
+                <Loader2 size={15} className="animate-spin" /> {tt('app.loading')}
               </p>
             ) : snapshots.length === 0 ? (
               <p className="py-8 text-center text-sm text-muted-foreground">
-                এখনো কোনো স্ন্যাপশট নেই — প্রতি ৫ মিনিটে স্বয়ংক্রিয় ব্যাকআপ হয়।
+                {tt('dlg2.snap.empty')}
               </p>
             ) : (
               snapshots.map((snap) => (
@@ -118,12 +121,12 @@ export function SnapshotsDialog() {
                     <div className="flex items-center gap-2">
                       <p className="truncate text-sm font-semibold">{snap.title}</p>
                       <Badge variant={snap.kind === 'manual' ? 'default' : 'secondary'} className="shrink-0">
-                        {snap.kind === 'manual' ? 'ম্যানুয়াল' : 'স্বয়ংক্রিয়'}
+                        {snap.kind === 'manual' ? tt('dlg2.snap.kind.manual') : tt('dlg2.snap.kind.auto')}
                       </Badge>
                     </div>
                     <p className="mt-0.5 text-xs text-muted-foreground">
                       {banglaDateToday(new Date(snap.createdAt))} · {banglaTimeNow(new Date(snap.createdAt))} ·{' '}
-                      {toBanglaNumber(snap.pages.length)}টি পৃষ্ঠা
+                      {tt('dlg2.snap.pages').split('{n}').join(ff(snap.pages.length))}
                     </p>
                   </div>
                   <Button
@@ -132,7 +135,7 @@ export function SnapshotsDialog() {
                     className="h-9 shrink-0 gap-1"
                     onClick={() => setRestoreTarget(snap)}
                   >
-                    <RotateCcw size={13} /> পুনরুদ্ধার
+                    <RotateCcw size={13} /> {tt('dlg2.snap.restore')}
                   </Button>
                   {confirmDelete === snap.id ? (
                     <Button
@@ -141,15 +144,15 @@ export function SnapshotsDialog() {
                       className="h-9 shrink-0"
                       onClick={() => void handleDelete(snap.id)}
                     >
-                      নিশ্চিত?
+                      {tt('dlg2.snap.confirmDelete')}
                     </Button>
                   ) : (
                     <Button
                       size="icon"
                       variant="ghost"
                       className="h-9 w-9 shrink-0 text-red-500"
-                      title="মুছুন"
-                      aria-label={`মুছুন — ${snap.title}`}
+                      title={tt('dlg2.snap.delete')}
+                      aria-label={tt('dlg2.snap.deleteAria').split('{t}').join(snap.title)}
                       onClick={() => setConfirmDelete(snap.id)}
                     >
                       <Trash2 size={14} />
@@ -166,17 +169,15 @@ export function SnapshotsDialog() {
       <AlertDialog open={restoreTarget !== null} onOpenChange={(v) => !v && setRestoreTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>এই স্ন্যাপশটে ফেরত যাবেন?</AlertDialogTitle>
+            <AlertDialogTitle>{tt('dlg2.snap.restoreTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              “{restoreTarget?.title ?? ''}” স্ন্যাপশটের অবস্থায় পুরো বই ফিরে যাবে — এরপরের সব
-              সম্পাদনা মিলে যাবে। চিন্তা নেই: পুনরুদ্ধারের ঠিক আগে বর্তমান অবস্থার একটি
-              স্বয়ংক্রিয় ব্যাকআপ নেওয়া হবে — সেটি থেকেও ফেরা যাবে।
+              {tt('dlg2.snap.restoreDesc').split('{title}').join(restoreTarget?.title ?? '')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>বাতিল</AlertDialogCancel>
+            <AlertDialogCancel>{tt('hdr.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={() => void handleRestore()}>
-              হ্যাঁ, পুনরুদ্ধার করুন
+              {tt('dlg2.snap.restoreYes')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { useEditorStore } from '@/lib/store';
 import { useUiStore } from '@/lib/ui-store';
 import { getEditor } from '@/lib/editor-registry';
-import { toBanglaNumber } from '@/lib/bangla';
+import { useT, useFmtNum } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import type { PageData } from '@/lib/types';
 
@@ -49,6 +49,8 @@ export function NavigatorPanel() {
   const activePageId = useEditorStore((s) => s.activePageId);
   const setActivePage = useEditorStore((s) => s.setActivePage);
   const toggleNavigator = useUiStore((s) => s.toggleNavigator);
+  const tt = useT();
+  const fn = useFmtNum();
 
   const [filter, setFilter] = useState('');
   const [outline, setOutline] = useState<OutlineEntry[]>([]);
@@ -110,23 +112,25 @@ export function NavigatorPanel() {
     <nav
       className="flex h-full w-[264px] shrink-0 flex-col border-r bg-background/95 no-print"
       role="complementary"
-      aria-label="বইয়ের আউটলাইন"
+      aria-label={tt('ws.nav.aria', 'Book outline')}
     >
       {/* হেডার */}
       <div className="flex shrink-0 items-center gap-2 border-b px-3 py-2.5">
         <ListTree size={15} className="shrink-0 text-primary/80" aria-hidden="true" />
         <div className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate text-[13px] font-semibold leading-tight">আউটলাইন</span>
+          <span className="truncate text-[13px] font-semibold leading-tight">{tt('ws.nav.title', 'Outline')}</span>
           <span className="text-[10px] leading-tight text-muted-foreground">
-            {toBanglaNumber(chapterCount)}টি অধ্যায় · {toBanglaNumber(outline.length)}টি শিরোনাম
+            {tt('ws.nav.counts', '{a} chapters · {b} headings')
+              .split('{a}').join(fn(chapterCount))
+              .split('{b}').join(fn(outline.length))}
           </span>
         </div>
         <Button
           variant="ghost"
           size="icon"
           className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
-          aria-label="নেভিগেটর বন্ধ করুন"
-          title="নেভিগেটর বন্ধ করুন"
+          aria-label={tt('ws.nav.close', 'Close navigator')}
+          title={tt('ws.nav.close', 'Close navigator')}
           onClick={toggleNavigator}
         >
           <X size={14} />
@@ -143,8 +147,8 @@ export function NavigatorPanel() {
         <Input
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          placeholder="শিরোনাম খুঁজুন…"
-          aria-label="আউটলাইন ফিল্টার"
+          placeholder={tt('ws.nav.searchPh', 'Search headings…')}
+          aria-label={tt('ws.nav.filterAria', 'Outline filter')}
           className="h-8 pl-8 text-[12px]"
         />
       </div>
@@ -155,7 +159,7 @@ export function NavigatorPanel() {
           <div className="flex flex-col items-center gap-2.5 px-4 py-10 text-center">
             <ListTree size={22} className="text-muted-foreground/50" aria-hidden="true" />
             <p className="text-[12px] leading-relaxed text-muted-foreground">
-              কোনো শিরোনাম নেই — লেখায় H1/H2/H3 স্টাইল ব্যবহার করুন
+              {tt('ws.nav.empty', 'No headings yet — use the H1/H2/H3 styles in your text')}
             </p>
           </div>
         ) : (
@@ -186,7 +190,7 @@ export function NavigatorPanel() {
                       : 'border-border bg-muted/60 text-muted-foreground',
                   )}
                 >
-                  {toBanglaNumber(entry.pageIndex + 1)}
+                  {fn(entry.pageIndex + 1)}
                 </span>
               </button>
             );

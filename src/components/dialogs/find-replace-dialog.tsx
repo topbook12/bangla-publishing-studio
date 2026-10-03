@@ -25,11 +25,13 @@ import {
   findAllMatches, replaceAll, replaceMatch, revealMatch, selectionQueryOfActiveEditor,
   type FindMatch,
 } from '@/lib/find-replace';
-import { toBanglaNumber } from '@/lib/bangla';
+import { useT, useFmtNum } from '@/lib/i18n';
 
 export function FindReplaceDialog() {
   const open = useUiStore((s) => s.openDialog === 'findReplace');
   const close = useUiStore((s) => s.close);
+  const tt = useT();
+  const ff = useFmtNum();
 
   const [query, setQuery] = useState('');
   const [replacement, setReplacement] = useState('');
@@ -83,9 +85,9 @@ export function FindReplaceDialog() {
         setMatches(found);
         setCursor((c) => (found.length ? c % found.length : 0));
       }, 120);
-      setStatus('প্রতিস্থাপন হয়েছে');
+      setStatus(tt('dlg2.find.replaced'));
     } else {
-      setStatus('প্রতিস্থাপন করা যায়নি — আবার চেষ্টা করুন');
+      setStatus(tt('dlg2.find.replaceFail'));
     }
   };
 
@@ -97,7 +99,7 @@ export function FindReplaceDialog() {
       setMatches(found);
       setCursor(0);
     }, 160);
-    setStatus(n ? `${toBanglaNumber(n)}টি প্রতিস্থাপন হয়েছে` : 'কোনো মিল পাওয়া যায়নি');
+    setStatus(n ? tt('dlg2.find.replacedN').split('{n}').join(ff(n)) : tt('dlg2.find.noMatch'));
   };
 
   return (
@@ -106,16 +108,16 @@ export function FindReplaceDialog() {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Search size={16} className="text-primary" aria-hidden="true" />
-            খোঁজ ও প্রতিস্থাপন
+            {tt('dlg2.find.title')}
           </DialogTitle>
           <DialogDescription>
-            সম্পূর্ণ বইয়ের সব পাতায় একসাথে খোঁজা ও বদলানো যায়।
+            {tt('dlg2.find.desc')}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <Label htmlFor="find-query" className="text-xs">যা খুঁজবেন</Label>
+            <Label htmlFor="find-query" className="text-xs">{tt('dlg2.find.what')}</Label>
             <div className="flex gap-2">
               <Input
                 id="find-query"
@@ -129,14 +131,14 @@ export function FindReplaceDialog() {
                     if (e.shiftKey) findPrev(); else findNext();
                   }
                 }}
-                placeholder="লেখার টুকুনো লিখুন…"
+                placeholder={tt('dlg2.find.queryPh')}
               />
               <Button
                 variant="outline"
                 size="icon"
                 className={`shrink-0 gap-0 ${matchCase ? 'border-primary text-primary' : ''}`}
-                title={matchCase ? 'বড়-ছোট হরফ মিলবে' : 'বড়-ছোট হরফ উপেক্ষা'}
-                aria-label="Match case"
+                title={matchCase ? tt('dlg2.find.caseOn') : tt('dlg2.find.caseOff')}
+                aria-label={tt('dlg2.find.caseAria')}
                 aria-pressed={matchCase}
                 onClick={() => setMatchCase((v) => !v)}
               >
@@ -146,12 +148,12 @@ export function FindReplaceDialog() {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="find-replacement" className="text-xs">যা বসাবেন</Label>
+            <Label htmlFor="find-replacement" className="text-xs">{tt('dlg2.find.with')}</Label>
             <Input
               id="find-replacement"
               value={replacement}
               onChange={(e) => { setReplacement(e.target.value); setStatus(''); }}
-              placeholder="নতুন লেখা (খালি রাখলে মুছে যাবে)"
+              placeholder={tt('dlg2.find.replacePh')}
             />
           </div>
 
@@ -159,25 +161,25 @@ export function FindReplaceDialog() {
             <span className={matches.length ? 'text-foreground' : 'text-muted-foreground'} role="status">
               {query.trim()
                 ? matches.length
-                  ? `মিল পাওয়া গেছে: ${toBanglaNumber(matches.length)}টি — বর্তমান ${toBanglaNumber(cursor + 1)}`
-                  : 'কোনো মিল পাওয়া যায়নি'
-                : 'খুঁজতে যা চান তা লিখুন'}
+                  ? tt('dlg2.find.matchCount').split('{n}').join(ff(matches.length)).split('{c}').join(ff(cursor + 1))
+                  : tt('dlg2.find.noMatch')
+                : tt('dlg2.find.typeToFind')}
             </span>
             {status ? <span className="text-emerald-600 dark:text-emerald-400">{status}</span> : null}
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="outline" size="sm" className="gap-1.5" onClick={findPrev} disabled={!matches.length}>
-              <ArrowUp size={14} aria-hidden="true" /> আগের
+              <ArrowUp size={14} aria-hidden="true" /> {tt('dlg2.find.prev')}
             </Button>
             <Button variant="outline" size="sm" className="gap-1.5" onClick={findNext} disabled={!matches.length}>
-              <ArrowDown size={14} aria-hidden="true" /> পরের <kbd className="ml-0.5 rounded bg-muted px-1 text-[10px]">↵</kbd>
+              <ArrowDown size={14} aria-hidden="true" /> {tt('dlg2.find.next')} <kbd className="ml-0.5 rounded bg-muted px-1 text-[10px]">↵</kbd>
             </Button>
             <Button variant="secondary" size="sm" className="gap-1.5" onClick={doReplace} disabled={!matches.length}>
-              <Replace size={14} aria-hidden="true" /> প্রতিস্থাপন
+              <Replace size={14} aria-hidden="true" /> {tt('dlg2.find.replace')}
             </Button>
             <Button size="sm" className="gap-1.5" onClick={doReplaceAll} disabled={!matches.length}>
-              <ReplaceAll size={14} aria-hidden="true" /> সব প্রতিস্থাপন
+              <ReplaceAll size={14} aria-hidden="true" /> {tt('dlg2.find.replaceAll')}
             </Button>
           </div>
 
@@ -188,7 +190,7 @@ export function FindReplaceDialog() {
           ) : null}
 
           <p className="text-[11px] leading-snug text-muted-foreground">
-            টিপ: পাতায় লেখার একটি অংশ সিলেক্ট করে Ctrl+F চাপলে সেটিই আগে থেকে লেখা থাকবে।
+            {tt('dlg2.find.tip')}
           </p>
         </div>
       </DialogContent>

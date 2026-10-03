@@ -17,6 +17,7 @@ import {
 import { useEditorStore, flushSave } from '@/lib/store';
 import { useUiStore } from '@/lib/ui-store';
 import { getEditor } from '@/lib/editor-registry';
+import { t, useT, useFmtNum } from '@/lib/i18n';
 import { availableHeightOfEditor, fillFromNextPage } from './page-ops';
 import { getPageDimensionsMm, mmToPx } from '@/lib/paper';
 import { PaperPage } from './paper-page';
@@ -30,56 +31,57 @@ function PageMenu({ pageId, index }: { pageId: string; index: number }) {
   const movePage = useEditorStore((s) => s.movePage);
   const updatePage = useEditorStore((s) => s.updatePage);
   const totalPages = useEditorStore((s) => s.pages.length);
+  const tt = useT();
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="secondary" size="sm" className="page-menu-btn no-print" aria-label="পৃষ্ঠা মেনু">
-          পৃষ্ঠা মেনু <ChevronDown size={13} />
+        <Button variant="secondary" size="sm" className="page-menu-btn no-print" aria-label={tt('ws.page.menu', 'Page menu')}>
+          {tt('ws.page.menu', 'Page menu')} <ChevronDown size={13} />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="no-print">
         <DropdownMenuItem onClick={() => { const id = addPage(pageId); useEditorStore.getState().setActivePage(id); }}>
-          <FilePlus2 size={14} /> এই পৃষ্ঠার পরে নতুন
+          <FilePlus2 size={14} /> {tt('ws.page.newAfter', 'New page after this one')}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => duplicatePage(pageId)}>
-          <Copy size={14} /> পৃষ্ঠা ডুপ্লিকেট
+          <Copy size={14} /> {tt('ws.page.duplicate', 'Duplicate page')}
         </DropdownMenuItem>
         <DropdownMenuItem
           disabled={index >= useEditorStore.getState().pages.length - 1}
           onClick={() => {
             const editor = getEditor(pageId);
             if (!editor || editor.isDestroyed) {
-              toast.info('পাতাটি এখনো খোলেনি — পাতাটিতে ক্লিক করে আবার চেষ্টা করুন');
+              toast.info(tt('ws.toast.pullOpen', "That page isn't open yet — click on it and try again"));
               return;
             }
             void fillFromNextPage(editor, pageId, availableHeightOfEditor(pageId)).then((res) => {
               if (res.status === 'moved') {
-                toast.success('নিচের পাতা থেকে ফাঁকা জায়গামতো লেখা উঠে এসেছে');
+                toast.success(tt('ws.toast.pullMoved', 'Text was pulled up from the next page to fill the empty space'));
               } else if (res.status === 'absorbed') {
-                toast.success('পরের পাতার সব লেখা এই পাতায় উঠে এসেছে — খালি পাতাটি মুছে গেছে');
+                toast.success(tt('ws.toast.pullAbsorbed', 'All the text from the next page moved onto this page — the empty page was deleted'));
               } else if (res.status === 'none') {
-                toast.info('পরের পাতার প্রথম ব্লকটি ফাঁকা জায়গায় আঁটে না');
+                toast.info(tt('ws.toast.pullNoFit', "The next page's first block doesn't fit in the empty space"));
               } else {
-                toast.info('এই পাতার পরে টানার মতো কনটেন্ট নেই');
+                toast.info(tt('ws.toast.pullNone', 'There is no content after this page to pull'));
               }
             });
           }}
         >
-          <ArrowUpToLine size={14} /> নিচের পাতার লেখা এই পাতায় তুলুন
+          <ArrowUpToLine size={14} /> {tt('ws.page.pullUp', 'Pull text from the next page onto this page')}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => movePage(pageId, -1)} disabled={index === 0}>
-          <ArrowUp size={14} /> উপরে সরান
+          <ArrowUp size={14} /> {tt('ws.page.moveUp', 'Move up')}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => movePage(pageId, 1)} disabled={index >= totalPages - 1}>
-          <ArrowDown size={14} /> নিচে সরান
+          <ArrowDown size={14} /> {tt('ws.page.moveDown', 'Move down')}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => updatePage(pageId, { noChrome: !useEditorStore.getState().pages.find((p) => p.id === pageId)?.noChrome })}>
           {useEditorStore.getState().pages.find((p) => p.id === pageId)?.noChrome
-            ? <><Eye size={14} /> হেডার/ফুটার দেখান</>
-            : <><EyeOff size={14} /> হেডার/ফুটার লুকান</>}
+            ? <><Eye size={14} /> {tt('ws.page.showChrome', 'Show header/footer')}</>
+            : <><EyeOff size={14} /> {tt('ws.page.hideChrome', 'Hide header/footer')}</>}
         </DropdownMenuItem>
         {(() => {
           const pg = useEditorStore.getState().pages.find((p) => p.id === pageId);
@@ -87,16 +89,16 @@ function PageMenu({ pageId, index }: { pageId: string; index: number }) {
           return (
             <>
               <DropdownMenuItem onClick={() => useUiStore.getState().openPageChrome(pageId)}>
-                <Settings2 size={14} /> {hasCustom ? 'এই পাতার কাস্টম হেডার/ফুটার সম্পাদনা…' : 'এই পাতার হেডার/ফুটার কাস্টমাইজ…'}
+                <Settings2 size={14} /> {hasCustom ? tt('ws.page.editCustom', 'Edit this page’s custom header/footer…') : tt('ws.page.customizeChrome', 'Customize this page’s header/footer…')}
               </DropdownMenuItem>
               {hasCustom ? (
                 <DropdownMenuItem
                   onClick={() => {
                     updatePage(pageId, { headerOverride: null, footerOverride: null });
-                    toast.info('এই পাতার হেডার/ফুটার গ্লোবাল মাস্টার অনুযায়ী হালনাগাদ হয়েছে');
+                    toast.info(tt('ws.toast.chromeReset', "This page's header/footer has been reset to the global master"));
                   }}
                 >
-                  <RotateCcw size={14} /> গ্লোবাল হেডার/ফুটারে ফিরুন
+                  <RotateCcw size={14} /> {tt('ws.page.resetChrome', 'Revert to the global header/footer')}
                 </DropdownMenuItem>
               ) : null}
             </>
@@ -107,7 +109,7 @@ function PageMenu({ pageId, index }: { pageId: string; index: number }) {
           onClick={() => deletePage(pageId)}
           disabled={useEditorStore.getState().pages.length <= 1}
         >
-          <Trash2 size={14} /> পৃষ্ঠা মুছুন
+          <Trash2 size={14} /> {tt('ws.page.delete', 'Delete page')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -120,6 +122,8 @@ export function Workspace() {
   const zoom = useEditorStore((s) => s.zoom);
   const activePageId = useEditorStore((s) => s.activePageId);
   const setActivePage = useEditorStore((s) => s.setActivePage);
+  const tt = useT();
+  const fn = useFmtNum();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // অটোসেভ ফ্লাশ — ট্যাব বন্ধের আগে
@@ -140,7 +144,8 @@ export function Workspace() {
           if (cur.saveState.status !== 'error') {
             cur.setSaveState({ status: 'saved', at: Date.now() });
           }
-          toast.success('সংরক্ষিত হয়েছে — অটোসেভ সবসময় চালু আছে');
+          // এফেক্ট একবারই রেজিস্টার হয় — চলতি ভাষার টোস্টের জন্য t() (tt নয়)
+          toast.success(t('ws.toast.saved', 'Saved — autosave is always on'));
         });
       }
     };
@@ -169,13 +174,13 @@ export function Workspace() {
     <main
       ref={scrollRef}
       className="workspace flex-1 overflow-auto bg-slate-200/70 dark:bg-slate-900 print:!bg-white print:!overflow-visible"
-      aria-label="বইয়ের পৃষ্ঠাসমূহ"
+      aria-label={tt('ws.pages.aria', 'Book pages')}
     >
       <div className="workspace-inner" style={{ zoom }}>
         {pages.map((page, index) => (
-          <section key={page.id} className="page-slot relative" aria-label={`পৃষ্ঠা ${index + 1}`}>
+          <section key={page.id} className="page-slot relative" aria-label={tt('ws.page.n', 'Page {n}').split('{n}').join(fn(index + 1))}>
             <div className="page-toolbar no-print" aria-hidden="true">
-              <span className="page-slot-index">{index + 1}</span>
+              <span className="page-slot-index">{fn(index + 1)}</span>
               <PageMenu pageId={page.id} index={index} />
             </div>
             <PaperPage
@@ -201,7 +206,7 @@ export function Workspace() {
               useEditorStore.getState().setActivePage(id);
             }}
           >
-            <FilePlus2 size={15} /> নতুন পৃষ্ঠা যোগ করুন
+            <FilePlus2 size={15} /> {tt('ws.page.addNew', 'Add a new page')}
           </Button>
         </div>
       </div>

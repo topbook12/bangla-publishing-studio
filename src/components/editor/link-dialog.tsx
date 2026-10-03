@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { useT } from '@/lib/i18n';
 import type { Editor } from '@tiptap/react';
 
 export interface LinkDialogState {
@@ -57,6 +58,7 @@ export function LinkDialog({ state, onClose }: {
   state: LinkDialogState;
   onClose: () => void;
 }) {
+  const tt = useT();
   const [url, setUrl] = useState('');
   const [text, setText] = useState('');
   const [newTab, setNewTab] = useState(true);
@@ -150,25 +152,25 @@ export function LinkDialog({ state, onClose }: {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Link2 size={16} className="text-primary" aria-hidden="true" />
-            {isEdit ? 'লিংক সম্পাদনা' : state.mode === 'image' ? 'ছবিতে লিংক যোগ করুন' : 'লিংক যোগ করুন'}
+            {isEdit ? tt('ws.link.editTitle', 'Edit link') : state.mode === 'image' ? tt('ws.link.addImageTitle', 'Add link to image') : tt('ws.link.addTitle', 'Add link')}
           </DialogTitle>
           <DialogDescription>
             {state.mode === 'image'
-              ? 'ছবিতে ক্লিক করলে এই ওয়েবসাইটে যাবে — PDF ও HTML এক্সপোর্টেও কাজ করে।'
-              : 'লেখায় ক্লিকযোগ্য লিংক বসবে — PDF প্রিন্টেও ক্লিকযোগ্য থাকে।'}
+              ? tt('ws.link.descImage', 'Clicking the image will open this website — it also works in PDF & HTML export.')
+              : tt('ws.link.descText', 'A clickable link will be set in the text — it stays clickable in printed PDF too.')}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <Label htmlFor="link-url" className="text-xs">ওয়েবসাইটের লিংক (URL)</Label>
+            <Label htmlFor="link-url" className="text-xs">{tt('ws.link.urlLabel', 'Website link (URL)')}</Label>
             <Input
               id="link-url"
               autoFocus
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); apply(); } }}
-              placeholder="যেমন: www.example.com বা https://example.com/book"
+              placeholder={tt('ws.link.urlPh', 'e.g. www.example.com or https://example.com/book')}
               inputMode="url"
             />
           </div>
@@ -176,37 +178,36 @@ export function LinkDialog({ state, onClose }: {
           {state.mode === 'text' && state.initialText === '' ? (
             <div className="space-y-1.5">
               <Label htmlFor="link-text" className="text-xs">
-                প্রদর্শিত লেখা <span className="text-muted-foreground">(সিলেকশন খালি হলে)</span>
+                {tt('ws.link.textLabel', 'Text to display')} <span className="text-muted-foreground">{tt('ws.link.textHint', '(when the selection is empty)')}</span>
               </Label>
               <Input
                 id="link-text"
                 value={text}
                 onChange={(e) => setText(e.target.value)}
-                placeholder="যেমন: আমাদের ওয়েবসাইট"
+                placeholder={tt('ws.link.textPh', 'e.g. Our website')}
               />
             </div>
           ) : null}
 
           <div className="flex items-center gap-2">
             <Switch id="link-newtab" checked={newTab} onCheckedChange={setNewTab} />
-            <Label htmlFor="link-newtab" className="text-xs">নতুন ট্যাবে খুলুন</Label>
+            <Label htmlFor="link-newtab" className="text-xs">{tt('ws.link.newTab', 'Open in new tab')}</Label>
           </div>
 
           <p className="text-[11px] leading-snug text-muted-foreground">
-            টিপ: PDF বানাতে Export → Print / Save as PDF ব্যবহার করুন — Chrome-এর
-            &ldquo;Save as PDF&rdquo;-এ লিংকগুলো ক্লিকযোগ্য থাকে।
+            {tt('ws.link.tip', 'Tip: to build a PDF use Export → Print / Save as PDF — links stay clickable in Chrome’s “Save as PDF”.')}
           </p>
         </div>
 
         <DialogFooter className="gap-2 sm:gap-0">
           {isEdit ? (
             <Button variant="ghost" className="mr-auto gap-1.5 text-red-600 hover:text-red-600" onClick={removeLink}>
-              <Trash2 size={14} aria-hidden="true" /> লিংক মুছুন
+              <Trash2 size={14} aria-hidden="true" /> {tt('ws.link.remove', 'Remove link')}
             </Button>
           ) : null}
-          <Button variant="outline" onClick={onClose}>বাতিল</Button>
+          <Button variant="outline" onClick={onClose}>{tt('hdr.cancel', 'Cancel')}</Button>
           <Button onClick={apply} disabled={!url.trim()}>
-            {isEdit ? 'হালনাগাদ' : 'লিংক বসান'}
+            {isEdit ? tt('ws.link.update', 'Update') : tt('ws.link.apply', 'Set link')}
           </Button>
         </DialogFooter>
       </DialogContent>

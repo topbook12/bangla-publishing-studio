@@ -99,24 +99,36 @@ export interface FontOption {
   family: string;
   name: string;
   stack: string;
+  /** ফন্ট ড্রপডাউনে গ্রুপ শিরোনাম (বাংলা / দেবনাগরী) */
+  group?: 'bangla' | 'devanagari';
 }
 
 /**
- * বাংলা ফন্ট তালিকা — বান্ডেল করা (fontsource, অফলাইন) + CDN (Kalpurush ইত্যাদি)
+ * ফন্ট তালিকা — বাংলা + দেবনাগরী (হিন্দি)। বান্ডেল করা (fontsource, অফলাইন) + CDN (Kalpurush ইত্যাদি)
  */
 export const FONT_OPTIONS: FontOption[] = [
-  { family: 'Noto Serif Bengali', name: 'Noto Serif Bengali', stack: "'Noto Serif Bengali', serif" },
-  { family: 'Noto Sans Bengali', name: 'Noto Sans Bengali', stack: "'Noto Sans Bengali', sans-serif" },
-  { family: 'Hind Siliguri', name: 'Hind Siliguri', stack: "'Hind Siliguri', sans-serif" },
-  { family: 'Kalpurush', name: 'Kalpurush', stack: "'Kalpurush', 'Noto Sans Bengali', sans-serif" },
-  { family: 'SolaimanLipi', name: 'SolaimanLipi', stack: "'SolaimanLipi', 'Noto Sans Bengali', sans-serif" },
-  { family: 'Siyam Rupali', name: 'Siyam Rupali', stack: "'Siyam Rupali', 'Noto Sans Bengali', serif" },
-  { family: 'Tiro Bangla', name: 'Tiro Bangla', stack: "'Tiro Bangla', serif" },
-  { family: 'Baloo Da 2', name: 'Baloo Da 2', stack: "'Baloo Da 2', cursive" },
-  { family: 'Anek Bangla', name: 'Anek Bangla', stack: "'Anek Bangla', sans-serif" },
-  { family: 'Atma', name: 'Atma', stack: "'Atma', cursive" },
-  { family: 'Mina', name: 'Mina', stack: "'Mina', sans-serif" },
-  { family: 'Galada', name: 'Galada', stack: "'Galada', cursive" },
+  { family: 'Noto Serif Bengali', name: 'Noto Serif Bengali', stack: "'Noto Serif Bengali', serif", group: 'bangla' },
+  { family: 'Noto Sans Bengali', name: 'Noto Sans Bengali', stack: "'Noto Sans Bengali', sans-serif", group: 'bangla' },
+  { family: 'Hind Siliguri', name: 'Hind Siliguri', stack: "'Hind Siliguri', sans-serif", group: 'bangla' },
+  { family: 'Kalpurush', name: 'Kalpurush', stack: "'Kalpurush', 'Noto Sans Bengali', sans-serif", group: 'bangla' },
+  { family: 'SolaimanLipi', name: 'SolaimanLipi', stack: "'SolaimanLipi', 'Noto Sans Bengali', sans-serif", group: 'bangla' },
+  { family: 'Siyam Rupali', name: 'Siyam Rupali', stack: "'Siyam Rupali', 'Noto Sans Bengali', serif", group: 'bangla' },
+  { family: 'Tiro Bangla', name: 'Tiro Bangla', stack: "'Tiro Bangla', serif", group: 'bangla' },
+  { family: 'Baloo Da 2', name: 'Baloo Da 2', stack: "'Baloo Da 2', cursive", group: 'bangla' },
+  { family: 'Anek Bangla', name: 'Anek Bangla', stack: "'Anek Bangla', sans-serif", group: 'bangla' },
+  { family: 'Atma', name: 'Atma', stack: "'Atma', cursive", group: 'bangla' },
+  { family: 'Mina', name: 'Mina', stack: "'Mina', sans-serif", group: 'bangla' },
+  { family: 'Galada', name: 'Galada', stack: "'Galada', cursive", group: 'bangla' },
+  // দেবনাগরী (হিন্দি) — বান্ডেল করা, অফলাইনেও কাজ করে
+  { family: 'Noto Serif Devanagari', name: 'Noto Serif Devanagari', stack: "'Noto Serif Devanagari', serif", group: 'devanagari' },
+  { family: 'Noto Sans Devanagari', name: 'Noto Sans Devanagari', stack: "'Noto Sans Devanagari', sans-serif", group: 'devanagari' },
+  { family: 'Hind', name: 'Hind (Hindi)', stack: "'Hind', 'Noto Sans Devanagari', sans-serif", group: 'devanagari' },
+  { family: 'Tiro Devanagari Hindi', name: 'Tiro Devanagari Hindi', stack: "'Tiro Devanagari Hindi', serif", group: 'devanagari' },
+  { family: 'Martel', name: 'Martel', stack: "'Martel', serif", group: 'devanagari' },
+  { family: 'Mukta', name: 'Mukta', stack: "'Mukta', sans-serif", group: 'devanagari' },
+  { family: 'Rozha One', name: 'Rozha One', stack: "'Rozha One', serif", group: 'devanagari' },
+  { family: 'Baloo 2', name: 'Baloo 2 (Hindi)', stack: "'Baloo 2', cursive", group: 'devanagari' },
+  { family: 'Kalam', name: 'Kalam', stack: "'Kalam', cursive", group: 'devanagari' },
 ];
 
 export function fontStackOf(family: string): string {

@@ -487,7 +487,7 @@ export function buildStandaloneHtml(title: string, settings: DocumentSettings, p
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${escapeHtml(title)}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&family=Noto+Serif+Bengali:wght@400;600;700&family=Noto+Sans+Bengali:wght@400;600;700&family=Tiro+Bangla:ital@0;1&family=Baloo+Da+2:wght@400..800&family=Atma:wght@300..700&family=Anek+Bangla:wght@100..800&family=Galada&family=Mina&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&family=Noto+Serif+Bengali:wght@400;600;700&family=Noto+Sans+Bengali:wght@400;600;700&family=Tiro+Bangla:ital@0;1&family=Baloo+Da+2:wght@400..800&family=Atma:wght@300..700&family=Anek+Bangla:wght@100..800&family=Galada&family=Mina&family=Noto+Sans+Devanagari:wght@400;600;700&family=Noto+Serif+Devanagari:wght@400;600;700&family=Hind:wght@400;600;700&family=Tiro+Devanagari+Hindi&family=Martel:wght@400;700&family=Mukta:wght@400;600&family=Rozha+One&family=Baloo+2:wght@400..800&family=Kalam&display=swap" rel="stylesheet">
 <link href="https://fonts.maateen.me/kalpurush/font.css" rel="stylesheet">
 <link href="https://fonts.maateen.me/solaimanlipi/font.css" rel="stylesheet">
 <link href="https://fonts.maateen.me/siyam-rupali/font.css" rel="stylesheet">

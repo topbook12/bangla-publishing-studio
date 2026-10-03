@@ -32,6 +32,7 @@ import { banglaDateToday, banglaTimeNow } from '@/lib/bangla';
 import { useEditorStore } from '@/lib/store';
 import { getEditor } from '@/lib/editor-registry';
 import { cn } from '@/lib/utils';
+import { t, tFmt, tplNodes, useT } from '@/lib/i18n';
 import { toast } from 'sonner';
 import { EMPTY_LINK_DIALOG, LinkDialog, type LinkDialogState } from '@/components/editor/link-dialog';
 import { Link2Off } from 'lucide-react';
@@ -57,6 +58,7 @@ function refocusEditor(): void {
 }
 
 function TableInsert() {
+  const tt = useT();
   const [grid, setGrid] = useState<{ r: number; c: number } | null>(null);
 
   const insert = (rows: number, cols: number) => {
@@ -85,16 +87,16 @@ function TableInsert() {
       <Tooltip>
         <TooltipTrigger asChild>
           <PopoverTrigger asChild>
-            <button type="button" className="ribbon-btn" aria-label="Table">
+            <button type="button" className="ribbon-btn" aria-label={tt('ins.table')}>
               <TableIcon size={16} />
-              <span className="ribbon-btn-label">Table</span>
+              <span className="ribbon-btn-label">{tt('ins.table')}</span>
             </button>
           </PopoverTrigger>
         </TooltipTrigger>
-        <TooltipContent side="bottom">Table</TooltipContent>
+        <TooltipContent side="bottom">{tt('ins.table')}</TooltipContent>
       </Tooltip>
       <PopoverContent className="w-auto p-3" align="start">
-        <p className="mb-2 text-center text-xs text-muted-foreground">Select rows × columns</p>
+        <p className="mb-2 text-center text-xs text-muted-foreground">{tt('ins.table.grid')}</p>
         <div
           className="grid gap-1"
           style={{ gridTemplateColumns: `repeat(${maxC}, 22px)` }}
@@ -108,7 +110,7 @@ function TableInsert() {
               <button
                 key={i}
                 type="button"
-                aria-label={`Row ${r} · Column ${c}`}
+                aria-label={tFmt('ins.table.cell', { r, c }, 'Row {r} · Column {c}')}
                 className={cn('h-5 w-5 rounded-sm border', active ? 'border-primary bg-primary/70' : 'border-border bg-muted/60')}
                 onMouseEnter={() => setGrid({ r, c })}
                 onClick={() => insert(r, c)}
@@ -123,21 +125,22 @@ function TableInsert() {
 
 function TableOps() {
   const ed = useActiveEditor();
+  const tt = useT();
   const inTable = ed ? ed.isActive('table') : false;
   if (!inTable) return null;
   return (
     <>
       <RibbonDivider />
-      <RibbonGroup label="Table Tools">
+      <RibbonGroup label={tt('ins.group.tableTools')} accent="table tools">
         <div className="flex flex-col gap-1">
           <div className="flex gap-1">
-            <RibbonButton icon={TableIcon} label="Add Row" onClick={() => runCommand((e) => e.chain().focus().addRowAfter().run())} />
-            <RibbonButton icon={TableIcon} label="Add Column" onClick={() => runCommand((e) => e.chain().focus().addColumnAfter().run())} />
+            <RibbonButton icon={TableIcon} label={tt('ins.t.addRow')} onClick={() => runCommand((e) => e.chain().focus().addRowAfter().run())} />
+            <RibbonButton icon={TableIcon} label={tt('ins.t.addCol')} onClick={() => runCommand((e) => e.chain().focus().addColumnAfter().run())} />
           </div>
           <div className="flex gap-1">
-            <RibbonButton icon={Minus} label="Delete Row" danger onClick={() => runCommand((e) => e.chain().focus().deleteRow().run())} />
-            <RibbonButton icon={Minus} label="Delete Column" danger onClick={() => runCommand((e) => e.chain().focus().deleteColumn().run())} />
-            <RibbonButton icon={Minus} label="Delete Table" danger onClick={() => runCommand((e) => e.chain().focus().deleteTable().run())} />
+            <RibbonButton icon={Minus} label={tt('ins.t.delRow')} danger onClick={() => runCommand((e) => e.chain().focus().deleteRow().run())} />
+            <RibbonButton icon={Minus} label={tt('ins.t.delCol')} danger onClick={() => runCommand((e) => e.chain().focus().deleteColumn().run())} />
+            <RibbonButton icon={Minus} label={tt('ins.t.delTable')} danger onClick={() => runCommand((e) => e.chain().focus().deleteTable().run())} />
           </div>
         </div>
       </RibbonGroup>
@@ -146,11 +149,12 @@ function TableOps() {
 }
 
 function ImageInsert() {
+  const tt = useT();
   const inputRef = useRef<HTMLInputElement>(null);
   const onPick = (file: File | undefined) => {
     if (!file) return;
     if (file.size > 4 * 1024 * 1024) {
-      toast.error('Image is larger than 4 MB — please use a smaller image');
+      toast.error(t('ins.toast.imageBig', 'Image is larger than 4 MB — please use a smaller image'));
       return;
     }
     const reader = new FileReader();
@@ -169,44 +173,45 @@ function ImageInsert() {
         className="hidden"
         onChange={(e) => { onPick(e.target.files?.[0]); e.currentTarget.value = ''; }}
       />
-      <RibbonButton icon={ImageIcon} label="Image" onClick={() => inputRef.current?.click()} />
+      <RibbonButton icon={ImageIcon} label={tt('ins.image')} onClick={() => inputRef.current?.click()} />
     </>
   );
 }
 
 function DividerMenu() {
+  const tt = useT();
   return (
     <DropdownMenu>
       <Tooltip>
         <TooltipTrigger asChild>
           <DropdownMenuTrigger asChild>
-            <button type="button" className="ribbon-btn" aria-label="Divider">
+            <button type="button" className="ribbon-btn" aria-label={tt('ins.divider')}>
               <Minus size={16} />
-              <span className="ribbon-btn-label">Divider</span>
+              <span className="ribbon-btn-label">{tt('ins.divider')}</span>
               <ChevronDown size={11} />
             </button>
           </DropdownMenuTrigger>
         </TooltipTrigger>
-        <TooltipContent side="bottom">Decorative Divider</TooltipContent>
+        <TooltipContent side="bottom">{tt('ins.divider.title')}</TooltipContent>
       </Tooltip>
       <DropdownMenuContent align="start">
         <DropdownMenuItem onClick={() => runCommand((ed) => ed.chain().focus().insertContent(buildDividerHtml('single')).run())}>
-          ─── Single Line
+          {tt('ins.div.single')}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => runCommand((ed) => ed.chain().focus().insertContent(buildDividerHtml('double')).run())}>
-          ═══ Double Line
+          {tt('ins.div.double')}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => runCommand((ed) => ed.chain().focus().insertContent(buildDividerHtml('dotted')).run())}>
-          ┄┄┄ Dotted Line
+          {tt('ins.div.dotted')}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => runCommand((ed) => ed.chain().focus().insertContent(buildDividerHtml('flourish')).run())}>
-          ❦ ─── ❖ ─── ❦ Flourish
+          {tt('ins.div.flourish')}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => runCommand((ed) => ed.chain().focus().insertContent(buildDividerHtml('stars')).run())}>
-          ✦ ─── ✦ ─── ✦ Stars
+          {tt('ins.div.stars')}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => runCommand((ed) => ed.chain().focus().insertContent(buildDividerHtml('cut')).run())}>
-          ✂ ─ ─ ─ Cut Line (ফরমা কাটা)
+          {tt('ins.div.cut')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -214,16 +219,17 @@ function DividerMenu() {
 }
 
 function InsertToc() {
+  const tt = useT();
   return (
     <RibbonButton
       icon={ListTree}
-      label="Table of Contents"
-      title="Insert an auto-generated table of contents here"
+      label={tt('ins.toc')}
+      title={tt('ins.toc.title')}
       onClick={() => {
         const { pages, settings } = useEditorStore.getState();
         const entries = scanTocEntries(pages, settings);
         if (entries.length === 0) {
-          toast.info('No headings (H1/H2/H3) found yet — an empty TOC was inserted. Press "Update" later.');
+          toast.info(t('ins.toast.tocEmpty', 'No headings (H1/H2/H3) found yet — an empty TOC was inserted. Press "Update" later.'));
         }
         runCommand((ed) => ed.chain().focus().insertContent(tocInsertHtml(entries)).run());
       }}
@@ -235,18 +241,19 @@ function InsertToc() {
 
 const ICON_SIZES = [12, 14, 16, 18, 20, 22, 26, 32, 40, 48, 56, 64];
 
+// রং-এর title অভিধান-কী — রেন্ডারের সময় ভাষা অনুযায়ী দেখানো হয়
 const ICON_COLORS: Array<{ value: string; title: string }> = [
-  { value: '', title: 'স্বয়ংক্রিয় (লেখার রং)' },
-  { value: '#334155', title: 'ছাই' },
-  { value: '#dc2626', title: 'লাল' },
-  { value: '#ea580c', title: 'কমলা' },
-  { value: '#d97706', title: 'সরিষা' },
-  { value: '#16a34a', title: 'সবুজ' },
-  { value: '#0d9488', title: 'টিল' },
-  { value: '#0284c7', title: 'নীল' },
-  { value: '#7c3aed', title: 'বেগুনি' },
-  { value: '#db2777', title: 'গোলাপি' },
-  { value: '#78350f', title: 'বাদামি' },
+  { value: '', title: 'ins.color.auto' },
+  { value: '#334155', title: 'ins.color.ash' },
+  { value: '#dc2626', title: 'ins.color.red' },
+  { value: '#ea580c', title: 'ins.color.orange' },
+  { value: '#d97706', title: 'ins.color.mustard' },
+  { value: '#16a34a', title: 'ins.color.green' },
+  { value: '#0d9488', title: 'ins.color.teal' },
+  { value: '#0284c7', title: 'ins.color.blue' },
+  { value: '#7c3aed', title: 'ins.color.purple' },
+  { value: '#db2777', title: 'ins.color.pink' },
+  { value: '#78350f', title: 'ins.color.brown' },
 ];
 
 function IconLibraryDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
@@ -256,6 +263,7 @@ function IconLibraryDialog({ open, onOpenChange }: { open: boolean; onOpenChange
 }
 
 function IconLibraryDialogInner({ onOpenChange }: { onOpenChange: (v: boolean) => void }) {
+  const tt = useT();
   const [query, setQuery] = useState('');
   const [cat, setCat] = useState<string>('all');
   const [sel, setSel] = useState<string>('Star');
@@ -298,11 +306,10 @@ function IconLibraryDialogInner({ onOpenChange }: { onOpenChange: (v: boolean) =
       >
         <DialogHeader className="border-b px-5 pb-3 pt-4">
           <DialogTitle className="flex items-center gap-2">
-            <Shapes size={17} className="text-primary" /> আইকন লাইব্রেরি
+            <Shapes size={17} className="text-primary" /> {tt('ins.iconlib')}
           </DialogTitle>
           <DialogDescription>
-            {ICON_CATEGORIES.reduce((n, c) => n + c.icons.length, 0)}+ আইকন ও {ORNAMENTS.length}টি অলংকার চিহ্ন —
-            বাংলা বা ইংরেজিতে খুঁজুন, সাইজ ও রং ঠিক করে যোগ করুন।
+            {tFmt('ins.iconlib.desc', { a: ICON_CATEGORIES.reduce((n, c) => n + c.icons.length, 0), b: ORNAMENTS.length }, '{a}+ icons and {b} ornaments — search in Bangla or English, then set size & color and insert.')}
           </DialogDescription>
         </DialogHeader>
 
@@ -315,9 +322,9 @@ function IconLibraryDialogInner({ onOpenChange }: { onOpenChange: (v: boolean) =
             onKeyDown={(e) => {
               if (e.key === 'Enter') insertIcon(sel);
             }}
-            placeholder="খুঁজুন… (যেমন: তারা, বই, heart, arrow, ফুল)"
+            placeholder={tt('ins.iconlib.searchPh')}
             className="h-9"
-            aria-label="আইকন খুঁজুন"
+            aria-label={tt('ins.iconlib.searchAria')}
           />
           <div className="flex gap-1.5 overflow-x-auto pb-1">
             {!searching && (
@@ -326,7 +333,7 @@ function IconLibraryDialogInner({ onOpenChange }: { onOpenChange: (v: boolean) =
                 className={cn('chip', cat === 'all' && 'chip-active')}
                 onClick={() => setCat('all')}
               >
-                সব
+                {tt('ins.all')}
               </button>
             )}
             {ICON_CATEGORIES.map((c) => (
@@ -346,13 +353,13 @@ function IconLibraryDialogInner({ onOpenChange }: { onOpenChange: (v: boolean) =
         <div className="flex-1 overflow-y-auto px-5 py-4">
           {searching && results.total === 0 && (
             <p className="py-10 text-center text-sm text-muted-foreground">
-              &ldquo;{query}&rdquo; এর জন্য কোনো আইকন পাওয়া যায়নি — অন্য শব্দ চেষ্টা করুন।
+              {tplNodes(tt('ins.iconlib.noresult', 'No icons found for “{q}” — try another word.'), { q: query })}
             </p>
           )}
 
           {!searching && recents.length > 0 && (
             <section className="mb-4">
-              <h3 className="mb-2 text-xs font-semibold text-muted-foreground">সাম্প্রতিক ব্যবহৃত</h3>
+              <h3 className="mb-2 text-xs font-semibold text-muted-foreground">{tt('ins.iconlib.recent')}</h3>
               <div className="icon-grid">
                 {recents.map((name) => {
                   const entry = ICON_CATEGORIES.flatMap((c) => c.icons).find((i) => i.name === name);
@@ -380,7 +387,7 @@ function IconLibraryDialogInner({ onOpenChange }: { onOpenChange: (v: boolean) =
             <section key={c.id} className="mb-4">
               <h3 className="mb-2 text-xs font-semibold text-muted-foreground">
                 {c.label}
-                {searching ? <span className="ml-1 font-normal">— {c.icons.length}টি</span> : null}
+                {searching ? <span className="ml-1 font-normal">{tplNodes(tt('ins.iconlib.count', '— {n} icons'), { n: c.icons.length })}</span> : null}
               </h3>
               <div className="icon-grid">
                 {c.icons.map((entry) => {
@@ -407,7 +414,7 @@ function IconLibraryDialogInner({ onOpenChange }: { onOpenChange: (v: boolean) =
           {!searching && (
             <section className="mb-2">
               <h3 className="mb-2 text-xs font-semibold text-muted-foreground">
-                অলংকার চিহ্ন <span className="font-normal">— ক্লিক করলেই বসে যাবে</span>
+                {tt('ins.iconlib.ornaments')} <span className="font-normal">{tt('ins.iconlib.ornamentsHint')}</span>
               </h3>
               <div className="icon-grid">
                 {ORNAMENTS.map((o) => (
@@ -436,12 +443,12 @@ function IconLibraryDialogInner({ onOpenChange }: { onOpenChange: (v: boolean) =
             {SelIcon ? <SelIcon size={Math.min(size, 34)} color={color || undefined} strokeWidth={1.8} /> : '—'}
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] text-muted-foreground">সাইজ</label>
+            <label className="text-[10px] text-muted-foreground">{tt('ins.iconlib.size')}</label>
             <select
               className="h-7 rounded-md border bg-background px-1 text-xs"
               value={size}
               onChange={(e) => setSize(Number(e.target.value))}
-              aria-label="আইকনের সাইজ"
+              aria-label={tt('ins.iconlib.sizeAria')}
             >
               {ICON_SIZES.map((s) => (
                 <option key={s} value={s}>{s}px</option>
@@ -449,7 +456,7 @@ function IconLibraryDialogInner({ onOpenChange }: { onOpenChange: (v: boolean) =
             </select>
           </div>
           <div className="flex flex-col gap-1">
-            <span className="text-[10px] text-muted-foreground">রং</span>
+            <span className="text-[10px] text-muted-foreground">{tt('ins.iconlib.color')}</span>
             <div className="flex items-center gap-1">
               {ICON_COLORS.map((c) => (
                 <button
@@ -458,8 +465,8 @@ function IconLibraryDialogInner({ onOpenChange }: { onOpenChange: (v: boolean) =
                   className={cn('color-dot', !c.value && 'color-dot-auto', color === c.value && 'color-dot-active')}
                   style={c.value ? { background: c.value } : undefined}
                   onClick={() => setColor(c.value)}
-                  title={c.title}
-                  aria-label={c.title}
+                  title={tt(c.title)}
+                  aria-label={tt(c.title)}
                 />
               ))}
               <input
@@ -467,21 +474,21 @@ function IconLibraryDialogInner({ onOpenChange }: { onOpenChange: (v: boolean) =
                 className="doc-tool-color ml-0.5"
                 value={/^#[0-9a-fA-F]{6}$/.test(color) ? color : '#334155'}
                 onChange={(e) => setColor(e.target.value)}
-                title="নিজের রং"
-                aria-label="নিজের রং"
+                title={tt('ins.iconlib.customColor')}
+                aria-label={tt('ins.iconlib.customColor')}
               />
             </div>
           </div>
           <div className="ml-auto flex items-center gap-2">
             <p className="hidden text-right text-[11px] leading-tight text-muted-foreground sm:block">
-              এক ক্লিকে নির্বাচন,<br />ডাবল ক্লিকে সরাসরি বসবে
+              {tt('ins.iconlib.clickSel')}<br />{tt('ins.iconlib.dclickIns')}
             </p>
             <button
               type="button"
               className="h-9 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
               onClick={() => insertIcon(sel)}
             >
-              যোগ করুন
+              {tt('ins.iconlib.insert')}
             </button>
           </div>
         </div>
@@ -495,6 +502,7 @@ function IconLibraryDialogInner({ onOpenChange }: { onOpenChange: (v: boolean) =
 const BOX_VARIANTS = Object.keys(DOC_BOX_LABELS) as DocBoxVariant[];
 
 function TextBoxMenu() {
+  const tt = useT();
   const insert = (variant: DocBoxVariant) => {
     runCommand((ed) => ed.chain().focus().insertDesignBox(variant).run());
   };
@@ -504,14 +512,14 @@ function TextBoxMenu() {
       <Tooltip>
         <TooltipTrigger asChild>
           <DropdownMenuTrigger asChild>
-            <button type="button" className="ribbon-btn" aria-label="Text Box">
+            <button type="button" className="ribbon-btn" aria-label={tt('ins.textbox')}>
               <Square size={16} />
-              <span className="ribbon-btn-label">Text Box</span>
+              <span className="ribbon-btn-label">{tt('ins.textbox')}</span>
               <ChevronDown size={11} />
             </button>
           </DropdownMenuTrigger>
         </TooltipTrigger>
-        <TooltipContent side="bottom">Bordered Box — ভিতরে লেখা যায়</TooltipContent>
+        <TooltipContent side="bottom">{tt('ins.textbox.title')}</TooltipContent>
       </Tooltip>
       <DropdownMenuContent
         align="start"
@@ -525,7 +533,7 @@ function TextBoxMenu() {
           </DropdownMenuItem>
         ))}
         <div className="border-t px-2 pb-1.5 pt-2 text-[11px] leading-snug text-muted-foreground">
-          বক্স বসানোর পর ভিতরে ক্লিক করে লিখুন। বক্সে মাউস রাখলে রং/আকৃতি বদলানোর টুল দেখা যাবে।
+          {tt('ins.textbox.hint')}
         </div>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -535,7 +543,8 @@ function TextBoxMenu() {
 // ═══════════════════ ডিজাইন শেপ গ্যালারি ═══════════════════
 
 /** শেপ প্রিভিউ — ক্যাটালগ ডেফ থেকে সরাসরি রেন্ডার (এডিটরের মতোই দেখায়) */
-export function ShapePreview({ shapeId, sample = 'শিরোনাম' }: { shapeId: string; sample?: string }) {
+export function ShapePreview({ shapeId, sample }: { shapeId: string; sample?: string }) {
+  const tt = useT();
   const def = getShape(shapeId);
   if (!def) return null;
   const eff = fullShapeAttrs(shapeId);
@@ -555,7 +564,7 @@ export function ShapePreview({ shapeId, sample = 'শিরোনাম' }: { sh
         />
       ))}
       <span className="doc-shape-content" style={def.content(eff) as CSSProperties}>
-        {sample}
+        {sample ?? tt('ins.shape.sample', 'Title')}
       </span>
     </span>
   );
@@ -567,6 +576,7 @@ function ShapeGalleryDialog({ open, onOpenChange }: { open: boolean; onOpenChang
 }
 
 function ShapeGalleryDialogInner({ onOpenChange }: { onOpenChange: (v: boolean) => void }) {
+  const tt = useT();
   const [cat, setCat] = useState<string>('all');
 
   const defs = cat === 'all' ? SHAPE_DEFS : SHAPE_DEFS.filter((d) => d.cat === cat);
@@ -586,11 +596,10 @@ function ShapeGalleryDialogInner({ onOpenChange }: { onOpenChange: (v: boolean) 
       >
         <DialogHeader className="border-b px-5 pb-3 pt-4">
           <DialogTitle className="flex items-center gap-2">
-            <Frame size={17} className="text-primary" /> ডিজাইন শেপ লাইব্রেরি
+            <Frame size={17} className="text-primary" /> {tt('ins.shapes.title')}
           </DialogTitle>
           <DialogDescription>
-            অলংকৃত ব্যানার, ফ্রেম ও ব্যাজ — {SHAPE_DEFS.length}টি শেপ। বসানোর পর ভিতরে ক্লিক করে
-            সরাসরি লিখুন; শেপে মাউস রাখলে আকৃতি ও রং বদলানোর টুল দেখা যাবে।
+            {tFmt('ins.shapes.desc', { n: SHAPE_DEFS.length }, 'Ornate banners, frames and badges — {n} shapes. Click inside to write after inserting; hover a shape for shape & color tools.')}
           </DialogDescription>
         </DialogHeader>
 
@@ -600,7 +609,7 @@ function ShapeGalleryDialogInner({ onOpenChange }: { onOpenChange: (v: boolean) 
             className={cn('chip', cat === 'all' && 'chip-active')}
             onClick={() => setCat('all')}
           >
-            সব <span className="text-[10px] opacity-60">({SHAPE_DEFS.length})</span>
+            {tt('ins.all')} <span className="text-[10px] opacity-60">({SHAPE_DEFS.length})</span>
           </button>
           {SHAPE_CATEGORIES.map((c) => (
             <button
@@ -622,7 +631,7 @@ function ShapeGalleryDialogInner({ onOpenChange }: { onOpenChange: (v: boolean) 
                 type="button"
                 className="shape-card"
                 onClick={() => insert(d.id)}
-                title={`${d.label} — ক্লিক করে বসান`}
+                title={tFmt('ins.shapes.cardTip', { s: d.label }, '{s} — click to insert')}
                 aria-label={d.label}
               >
                 <span className="shape-card-preview">
@@ -633,7 +642,7 @@ function ShapeGalleryDialogInner({ onOpenChange }: { onOpenChange: (v: boolean) 
             ))}
           </div>
           <p className="mt-4 text-center text-[11px] leading-snug text-muted-foreground">
-            টিপস: একই শেপ বারবার লাগলে বসিয়ে কপি (Ctrl+C / Ctrl+V) করুন — সব অলংকারসহ থাকবে।
+            {tt('ins.shapes.tip')}
           </p>
         </div>
       </DialogContent>
@@ -646,6 +655,7 @@ function ShapeGalleryDialogInner({ onOpenChange }: { onOpenChange: (v: boolean) 
 export function InsertTab() {
   const ed = useActiveEditor();
   void ed;
+  const tt = useT();
   const [iconOpen, setIconOpen] = useState(false);
   const [shapeOpen, setShapeOpen] = useState(false);
   const [linkDialog, setLinkDialog] = useState<LinkDialogState>(EMPTY_LINK_DIALOG);
@@ -656,8 +666,8 @@ export function InsertTab() {
     if (!editor || !activePageId) {
       // কভার/অমাউন্ট পাতায় নীরব no-op নয় — স্পষ্ট বার্তা
       const pg = pages.find((p) => p.id === activePageId);
-      if (pg && pg.kind !== 'normal') toast.info('কভার পাতায় পেজ ব্রেক প্রযোজ্য নয়');
-      else toast.info('পাতাটি এখন খোলা নেই — আগে পাতাটিতে স্ক্রল করুন');
+      if (pg && pg.kind !== 'normal') toast.info(t('ins.toast.breakCover'));
+      else toast.info(t('rb.toast.notopen'));
       return;
     }
     pageBreakOnEditor(editor, activePageId);
@@ -669,7 +679,7 @@ export function InsertTab() {
   const openLinkDialog = () => {
     const editor = getActiveEditorForLink();
     if (!editor) {
-      toast.error('আগে কোনো পাতায় ক্লিক করুন, তারপর লিংক যোগ করুন');
+      toast.error(t('ins.toast.linkFirst'));
       return;
     }
     const linkAttrs = editor.getAttributes('link');
@@ -690,7 +700,7 @@ export function InsertTab() {
 
   return (
     <div className="ribbon-scroll flex items-stretch gap-1">
-      <RibbonGroup label="Tables & Media">
+      <RibbonGroup label={tt('ins.group.tablesMedia')} accent="tables & media">
         <div className="flex gap-1">
           <TableInsert />
           <ImageInsert />
@@ -698,19 +708,19 @@ export function InsertTab() {
       </RibbonGroup>
       <TableOps />
       <RibbonDivider />
-      <RibbonGroup label="Icons & Design">
+      <RibbonGroup label={tt('ins.group.iconsDesign')} accent="icons & design">
         <div className="flex flex-col gap-1">
           <div className="flex gap-1">
             <RibbonButton
               icon={Shapes}
-              label="Icon Library"
-              title="৩০০+ আইকন ও অলংকার চিহ্ন — সার্চ করে যোগ করুন"
+              label={tt('ins.iconlib')}
+              title={tt('ins.iconlib.tip')}
               onClick={() => setIconOpen(true)}
             />
             <RibbonButton
               icon={Frame}
-              label="Design Shapes"
-              title="অলংকৃত ব্যানার/ফ্রেম/ব্যাজ — ভিতরে লেখা যায়"
+              label={tt('ins.shapes')}
+              title={tt('ins.shapes.tipTitle')}
               onClick={() => setShapeOpen(true)}
             />
           </div>
@@ -720,56 +730,56 @@ export function InsertTab() {
         </div>
       </RibbonGroup>
       <RibbonDivider />
-      <RibbonGroup label="Academic Blocks">
+      <RibbonGroup label={tt('ins.group.academic')} accent="academic blocks">
         <div className="flex flex-col gap-1">
           <div className="flex gap-1">
-            <RibbonButton icon={Lightbulb} label="Concept Box" onClick={() => runCommand((e) => e.commands.insertCallout('concept', 'মূল ধারণা'))} />
-            <RibbonButton icon={AlertTriangle} label="Warning Box" onClick={() => runCommand((e) => e.commands.insertCallout('warning', 'সতর্কতা'))} />
-            <RibbonButton icon={BookOpen} label="Formula Box" onClick={() => runCommand((e) => e.commands.insertCallout('formula', 'সূত্র'))} />
+            <RibbonButton icon={Lightbulb} label={tt('ins.conceptBox')} onClick={() => runCommand((e) => e.commands.insertCallout('concept', t('ins.callout.concept')))} />
+            <RibbonButton icon={AlertTriangle} label={tt('ins.warningBox')} onClick={() => runCommand((e) => e.commands.insertCallout('warning', t('ins.callout.warning')))} />
+            <RibbonButton icon={BookOpen} label={tt('ins.formulaBox')} onClick={() => runCommand((e) => e.commands.insertCallout('formula', t('ins.callout.formula')))} />
           </div>
           <div className="flex gap-1">
-            <RibbonButton icon={Pin} label="Note Box" onClick={() => runCommand((e) => e.commands.insertCallout('note', 'নোট'))} />
-            <RibbonButton icon={HelpCircle} label="MCQ" onClick={() => runCommand((e) => e.commands.insertMcq())} />
+            <RibbonButton icon={Pin} label={tt('ins.noteBox')} onClick={() => runCommand((e) => e.commands.insertCallout('note', t('ins.callout.note')))} />
+            <RibbonButton icon={HelpCircle} label={tt('ins.mcq')} onClick={() => runCommand((e) => e.commands.insertMcq())} />
             <RibbonButton
               icon={Hash}
-              label="Footnote"
+              label={tt('ins.footnote')}
               onClick={() => {
                 runCommand((e) => e.commands.insertFootnote(''));
-                toast.info('Footnote added — click the ▾ marker to write its text');
+                toast.info(t('ins.toast.footnote'));
               }}
             />
           </div>
         </div>
       </RibbonGroup>
       <RibbonDivider />
-      <RibbonGroup label="Page & Decor">
+      <RibbonGroup label={tt('ins.group.pageDecor')} accent="page & decor">
         <div className="flex flex-col gap-1">
           <div className="flex gap-1">
-            <RibbonButton icon={FilePlus2} label="Page Break" shortcut="Ctrl+Enter" onClick={breakPage} />
+            <RibbonButton icon={FilePlus2} label={tt('ins.pageBreak')} shortcut="Ctrl+Enter" onClick={breakPage} />
             <DividerMenu />
             <InsertToc />
           </div>
           <div className="flex gap-1">
             <RibbonButton
               icon={CalendarDays}
-              label="Today's Date"
-              title="Insert Bangla date & time"
+              label={tt('ins.todayDate')}
+              title={tt('ins.todayDate.title')}
               onClick={() => insertRaw(`<p>${banglaDateToday()} — ${banglaTimeNow()}</p>`)}
             />
             <RibbonButton
               icon={Link2}
-              label={ed?.isActive('link') ? 'Edit Link' : 'Link'}
-              title="লেখা বা ছবিতে ক্লিকযোগ্য লিংক — PDF এক্সপোর্টেও কাজ করে"
+              label={ed?.isActive('link') ? tt('ins.link.edit') : tt('ins.link')}
+              title={tt('ins.link.title')}
               onClick={openLinkDialog}
             />
             <RibbonButton
               icon={Link2Off}
-              label="Remove Link"
-              title="সিলেকশন থেকে লিংক সরান"
+              label={tt('ins.link.remove')}
+              title={tt('ins.link.removeTitle')}
               onClick={() => {
                 const editor = getActiveEditorForLink();
                 if (!editor) {
-                  toast.error('আগে কোনো পাতায় ক্লিক করুন, তারপর লিংক সরান');
+                  toast.error(t('ins.toast.unlinkFirst'));
                   return;
                 }
                 editor.chain().focus().extendMarkRange('link').unsetLink().run();

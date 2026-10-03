@@ -24,9 +24,29 @@ import "@fontsource/galada/400.css";
 import "@fontsource/anek-bangla/400.css";
 import "@fontsource/anek-bangla/600.css";
 
+// দেবনাগরী (হিন্দি) ফন্ট — বান্ডেল (অফলাইনেও কাজ করে)
+import "@fontsource/noto-sans-devanagari/400.css";
+import "@fontsource/noto-sans-devanagari/600.css";
+import "@fontsource/noto-sans-devanagari/700.css";
+import "@fontsource/noto-serif-devanagari/400.css";
+import "@fontsource/noto-serif-devanagari/600.css";
+import "@fontsource/noto-serif-devanagari/700.css";
+import "@fontsource/tiro-devanagari-hindi/400.css";
+import "@fontsource/hind/400.css";
+import "@fontsource/hind/600.css";
+import "@fontsource/hind/700.css";
+import "@fontsource/martel/400.css";
+import "@fontsource/martel/700.css";
+import "@fontsource/mukta/400.css";
+import "@fontsource/mukta/600.css";
+import "@fontsource/rozha-one/400.css";
+import "@fontsource/baloo-2/400.css";
+import "@fontsource/baloo-2/600.css";
+import "@fontsource/kalam/400.css";
+
 const APP_NAME = "বাংলা পাবলিশিং স্টুডিও";
 const APP_DESCRIPTION =
-  "বাংলা বই, কোচিং ম্যাটেরিয়াল ও প্রকাশনার জন্য অফলাইন-ফার্স্ট WYSIWYG ওয়ার্ড প্রসেসর";
+  "বাংলা ও হিন্দি বই, কোচিং ম্যাটেরিয়াল ও প্রকাশনার জন্য অফলাইন-ফার্স্ট WYSIWYG ওয়ার্ড প্রসেসর — Bangla & Hindi book typesetting studio";
 
 export const metadata: Metadata = {
   // Vercel-এ স্বয়ংক্রিয় সঠিক ডোমেইন; লোকালে localhost fallback
@@ -34,7 +54,7 @@ export const metadata: Metadata = {
     process.env.NEXT_PUBLIC_SITE_URL ??
       (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000")
   ),
-  title: `${APP_NAME} — বাংলা ওয়ার্ড প্রসেসর ও বুক ডিজাইনার`,
+  title: `${APP_NAME} — বাংলা ও হিন্দি ওয়ার্ড প্রসেসর ও বুক ডিজাইনার`,
   description: APP_DESCRIPTION,
   applicationName: APP_NAME,
   manifest: "/manifest.webmanifest",

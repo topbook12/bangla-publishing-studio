@@ -16,6 +16,7 @@ import type { DocumentSettings, HeaderFooterSettings } from '@/lib/types';
 import { displayPageNumber, gutterSide, isEvenPage } from '@/lib/pagenum';
 import { fontStackOf } from '@/lib/paper';
 import { useEditorStore } from '@/lib/store';
+import { useT } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
 interface ChromeProps {
@@ -38,9 +39,6 @@ function mirrorIfEven(index: number, oddEven: boolean, startAt: number): boolean
 type ChromeTextField = 'leftText' | 'centerText' | 'rightText';
 type ChromeSection = 'header' | 'footer';
 
-const EDIT_HINT = 'Double-click to edit';
-const AUTO_HINT = 'Automatic content — edit via Header & Footer';
-
 /**
  * ডাবল-ক্লিকে এডিটেবল হয়ে ওঠা হেডার/ফুটার টেক্সট জোন।
  * কমিট (blur বা Enter) onCommit কলব্যাকে যায় — গ্লোবাল সেটিংস অথবা
@@ -59,6 +57,7 @@ function EditableZone({
   /** কমিট করার টার্গেট (গ্লোবাল অথবা পেজ override) */
   onCommit: (next: HeaderFooterSettings) => void;
 }) {
+  const tt = useT();
   const shown = value ?? hf[field];
   const [editing, setEditing] = useState(false);
   const cancelRef = useRef(false);
@@ -104,7 +103,7 @@ function EditableZone({
         contentEditable
         suppressContentEditableWarning
         spellCheck={false}
-        aria-label="Header/footer text"
+        aria-label={tt('ws.chrome.zoneAria', 'Header/footer text')}
         onBlur={commit}
         onKeyDown={(e) => {
           // অ্যাপ-লেভেল শর্টকাট যেন ট্রিগার না হয়
@@ -132,7 +131,7 @@ function EditableZone({
   return (
     <span
       className={cn('chrome-editable', className)}
-      title={EDIT_HINT}
+      title={tt('ws.chrome.editHint', 'Double-click to edit')}
       onDoubleClick={(e) => {
         e.stopPropagation();
         e.preventDefault();
@@ -157,6 +156,7 @@ function centerFallback(hf: HeaderFooterSettings, mirrored: boolean): { field: C
 }
 
 function HeaderBar({ hf, mirrored, onCommit }: { hf: HeaderFooterSettings; mirrored: boolean; onCommit: (next: HeaderFooterSettings) => void }) {
+  const tt = useT();
   const left = mirrored ? hf.rightText : hf.leftText;
   const right = mirrored ? hf.leftText : hf.rightText;
   const accent = hf.accentColor;
@@ -178,9 +178,9 @@ function HeaderBar({ hf, mirrored, onCommit }: { hf: HeaderFooterSettings; mirro
     return (
       <div className="hdr-royal" style={{ color: accent }}>
         <div className="hdr-royal-row">
-          <span className="hdr-royal-flourish" style={{ color: accent }} title={AUTO_HINT}>❦</span>
+          <span className="hdr-royal-flourish" style={{ color: accent }} title={tt('ws.chrome.autoHint', 'Automatic content — edit via Header & Footer')}>❦</span>
           <EditableZone section="header" hf={hf} field={title.field} value={title.value} className="hdr-royal-title" onCommit={onCommit} />
-          <span className="hdr-royal-flourish" style={{ color: accent }} title={AUTO_HINT}>❦</span>
+          <span className="hdr-royal-flourish" style={{ color: accent }} title={tt('ws.chrome.autoHint', 'Automatic content — edit via Header & Footer')}>❦</span>
         </div>
         <div className="hdr-royal-line" style={{ borderColor: accent }} />
       </div>
@@ -210,6 +210,7 @@ function FooterBar({
   numPos: 'left' | 'center' | 'right';
   onCommit: (next: HeaderFooterSettings) => void;
 }) {
+  const tt = useT();
   const left = mirrored ? hf.rightText : hf.leftText;
   const right = mirrored ? hf.leftText : hf.rightText;
   const accent = hf.accentColor;
@@ -219,9 +220,9 @@ function FooterBar({
       <div className="ftr-royal" style={{ color: accent }}>
         <div className="hdr-royal-line" style={{ borderColor: accent }} />
         <div className="ftr-royal-row" style={{ justifyContent: numPos === 'left' ? 'flex-start' : numPos === 'right' ? 'flex-end' : 'center' }}>
-          <span className="hdr-royal-flourish" style={{ color: accent }} title={AUTO_HINT}>❧</span>
+          <span className="hdr-royal-flourish" style={{ color: accent }} title={tt('ws.chrome.autoHint', 'Automatic content — edit via Header & Footer')}>❧</span>
           {numberHtml}
-          <span className="hdr-royal-flourish" style={{ color: accent }} title={AUTO_HINT}>❧</span>
+          <span className="hdr-royal-flourish" style={{ color: accent }} title={tt('ws.chrome.autoHint', 'Automatic content — edit via Header & Footer')}>❧</span>
         </div>
       </div>
     );
@@ -265,6 +266,7 @@ function FooterBar({
 }
 
 export function PageHeader({ index, settings, pageKind, noChrome, pageId, headerOverride }: ChromeProps): ReactNode {
+  const tt = useT();
   const { pageNumber } = settings;
   const header = headerOverride ?? settings.header;
   if (pageKind === 'cover' || noChrome) return null;
@@ -292,7 +294,7 @@ export function PageHeader({ index, settings, pageKind, noChrome, pageId, header
   };
 
   const numberHtml = numberInHeader && num ? (
-    <span className="page-number" style={{ color: header.accentColor }} title={AUTO_HINT}>
+    <span className="page-number" style={{ color: header.accentColor }} title={tt('ws.chrome.autoHint', 'Automatic content — edit via Header & Footer')}>
       {pageNumber.prefix ? <span className="page-number-prefix">{pageNumber.prefix}</span> : null}
       {num}
     </span>
@@ -325,6 +327,7 @@ export function PageHeader({ index, settings, pageKind, noChrome, pageId, header
 }
 
 export function PageFooter({ index, settings, pageKind, noChrome, pageId, footerOverride }: ChromeProps): ReactNode {
+  const tt = useT();
   const { pageNumber } = settings;
   const footer = footerOverride ?? settings.footer;
   if (pageKind === 'cover' || noChrome) return null;
@@ -347,7 +350,7 @@ export function PageFooter({ index, settings, pageKind, noChrome, pageId, footer
   };
 
   const numberHtml = numberInFooter && num ? (
-    <span className="page-number" style={{ color: footer.accentColor }} title={AUTO_HINT}>
+    <span className="page-number" style={{ color: footer.accentColor }} title={tt('ws.chrome.autoHint', 'Automatic content — edit via Header & Footer')}>
       {pageNumber.prefix ? <span className="page-number-prefix">{pageNumber.prefix}</span> : null}
       {num}
     </span>

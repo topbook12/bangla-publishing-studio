@@ -7,6 +7,7 @@
 
 import type { ReactNode } from 'react';
 import { parseMcqData, docBoxInlineStyle } from '@/lib/nodes-html';
+import { t, useT } from '@/lib/i18n';
 import {
   SHAPE_BY_ID, SHAPE_DEFS, cssTextToStyle, readShapeAttrs,
 } from '@/lib/shape-catalog';
@@ -84,7 +85,7 @@ function inlineNodes(node: Node, keyPrefix: string): ReactNode[] {
           <img
             key={key}
             src={imgEl.getAttribute('src') ?? ''}
-            alt={imgEl.getAttribute('alt') ?? 'ছবি'}
+            alt={imgEl.getAttribute('alt') ?? t('ws.static.imgAlt', 'Image')}
             style={imgCss}
           />,
         );
@@ -294,7 +295,8 @@ function blockNodes(container: Element, keyPrefix: string): ReactNode[] {
           out.push(
             <div key={key} className={`callout-box callout-${variant}`} data-variant={variant} data-title={title}>
               <div className="callout-head">
-                <span className="callout-badge">{title || (variant === 'warning' ? 'সতর্কতা' : variant === 'formula' ? 'সূত্র' : variant === 'note' ? 'নোট' : 'মূল ধারণা')}</span>
+                {/* ফলব্যাক ব্যাজ — ins.callout.* কী পুনর্ব্যবহার (সন্নিবেশ-ট্যাবের অনুবাদের সাথে সামঞ্জস্য) */}
+                <span className="callout-badge">{title || (variant === 'warning' ? t('ins.callout.warning', 'সতর্কতা') : variant === 'formula' ? t('ins.callout.formula', 'সূত্র') : variant === 'note' ? t('ins.callout.note', 'নোট') : t('ins.callout.concept', 'মূল ধারণা'))}</span>
               </div>
               <div className="callout-content">{blockNodes(el, key)}</div>
             </div>,
@@ -303,7 +305,7 @@ function blockNodes(container: Element, keyPrefix: string): ReactNode[] {
           const data = parseMcqData(el as HTMLElement);
           out.push(
             <div key={key} className="mcq-block" data-question={data.question}>
-              <div className="mcq-head"><span className="mcq-tag">প্রশ্ন</span></div>
+              <div className="mcq-head"><span className="mcq-tag">{t('ws.static.mcqTag', 'প্রশ্ন')}</span></div>
               <div className="mcq-view">
                 <p className="mcq-question">{data.question}</p>
                 <div className="mcq-options">
@@ -325,7 +327,7 @@ function blockNodes(container: Element, keyPrefix: string): ReactNode[] {
           } catch { /* উপেক্ষা */ }
           out.push(
             <div key={key} className="toc-block">
-              <div className="toc-head"><span className="toc-title">{el.getAttribute('data-title') ?? 'সূচিপত্র'}</span></div>
+              <div className="toc-head"><span className="toc-title">{el.getAttribute('data-title') ?? t('dsn.toc.title', 'সূচিপত্র')}</span></div>
               <ol className="toc-list">
                 {entries.map((e, ei) => (
                   <li key={ei} className={`toc-entry toc-level-${e.level}`}>
@@ -353,6 +355,8 @@ function blockNodes(container: Element, keyPrefix: string): ReactNode[] {
 }
 
 export function StaticContent({ html }: { html: string }) {
+  // ভাষা বদলালে স্ট্যাটিক প্রিভিউও রি-রেন্ডার হয় — t() ফলব্যাক লেবেলগুলো নতুন ভাষায় আসে
+  useT();
   const doc = typeof DOMParser !== 'undefined'
     ? new DOMParser().parseFromString(`<div id="root">${html}</div>`, 'text/html')
     : null;

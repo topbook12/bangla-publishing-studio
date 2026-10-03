@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import { useEditorStore } from '@/lib/store';
 import { getEditor } from '@/lib/editor-registry';
 import type { RibbonTab } from '@/lib/types';
+import { t, useT } from '@/lib/i18n';
 import { toast } from 'sonner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { HomeTab } from './home-tab';
@@ -67,18 +68,22 @@ export function useActiveEditor() {
   return getEditor(activePageId);
 }
 
-export const RIBBON_TABS: Array<{ id: RibbonTab; label: string }> = [
-  { id: 'home', label: 'Home' },
-  { id: 'insert', label: 'Insert' },
-  { id: 'layout', label: 'Layout' },
-  { id: 'design', label: 'Design' },
-  { id: 'review', label: 'Review' },
-  { id: 'export', label: 'Export' },
+export const RIBBON_TABS: Array<{ id: RibbonTab; i18nKey: string; fallback: string }> = [
+  { id: 'home', i18nKey: 'rb.tab.home', fallback: 'Home' },
+  { id: 'insert', i18nKey: 'rb.tab.insert', fallback: 'Insert' },
+  { id: 'layout', i18nKey: 'rb.tab.layout', fallback: 'Layout' },
+  { id: 'design', i18nKey: 'rb.tab.design', fallback: 'Design' },
+  { id: 'review', i18nKey: 'rb.tab.review', fallback: 'Review' },
+  { id: 'export', i18nKey: 'rb.tab.export', fallback: 'Export' },
 ];
 
-export function RibbonGroup({ label, children, className }: { label: string; children: ReactNode; className?: string }) {
+/**
+ * Ribbon group — label is translated by the caller; `accent` preserves the
+ * decorative tint (GROUP_ACCENTS is keyed by the original English label).
+ */
+export function RibbonGroup({ label, accent, children, className }: { label: string; accent?: string; children: ReactNode; className?: string }) {
   return (
-    <div className={cn('ribbon-group no-print', className)} data-accent={accentOf(label)}>
+    <div className={cn('ribbon-group no-print', className)} data-accent={accentOf(accent ?? label)}>
       <div className="ribbon-group-body">{children}</div>
       <div className="ribbon-group-label">{label}</div>
     </div>
@@ -138,12 +143,12 @@ export function runCommand(fn: (editor: NonNullable<ReturnType<typeof getEditor>
     const activePage = pages.find((p) => p.id === activePageId);
     if (activePage && activePage.kind !== 'normal') {
       // কভার পাতায় এডিটর নেই — নীরবে প্রথম মাউন্ট করা পাতায় ফরম্যাট চাপার বদলে স্পষ্ট বার্তা
-      toast.info('কভার পাতায় ফরম্যাট/সন্নিবেশ প্রযোজ্য নয়');
+      toast.info(t('rb.toast.cover'));
       return false;
     }
     // সক্রিয় পাতার এডিটর মাউন্ট নেই (দূরের পাতা) — ভুল পাতায় ফরম্যাট গেলে
     // ব্যবহারকারী বুঝতই না; স্পষ্ট বার্তা দেখাই
-    toast.info('পাতাটি এখন খোলা নেই — আগে পাতাটিতে স্ক্রল করুন');
+    toast.info(t('rb.toast.notopen'));
     return false;
   }
   editor.commands.focus();
@@ -173,6 +178,7 @@ export function refocusActiveEditor(): void {
  * (ট্যাব কলাপ্সড থাকলেও)। MS Word-এর QAT-এর মতোই ট্যাবস্ট্রিপের বাঁয়ে বসে।
  */
 function QuickAccess() {
+  const tt = useT();
   const ed = useActiveEditor();
   const alive = !!ed && !ed.isDestroyed;
   const canUndo = alive && (() => { try { return ed.can().undo(); } catch { return false; } })();
@@ -198,7 +204,7 @@ function QuickAccess() {
             <Undo2 size={15} aria-hidden="true" />
           </button>
         </TooltipTrigger>
-        <TooltipContent side="bottom">Undo · Ctrl+Z</TooltipContent>
+        <TooltipContent side="bottom">{tt('rb.undo')}</TooltipContent>
       </Tooltip>
       <Tooltip>
         <TooltipTrigger asChild>
@@ -212,13 +218,14 @@ function QuickAccess() {
             <Redo2 size={15} aria-hidden="true" />
           </button>
         </TooltipTrigger>
-        <TooltipContent side="bottom">Redo · Ctrl+Y</TooltipContent>
+        <TooltipContent side="bottom">{tt('rb.redo')}</TooltipContent>
       </Tooltip>
     </div>
   );
 }
 
 export function Ribbon() {
+  const tt = useT();
   const activeTab = useEditorStore((s) => s.activeRibbonTab);
   const setTab = useEditorStore((s) => s.setRibbonTab);
   const [collapsed, setCollapsed] = useState(false);
@@ -252,7 +259,7 @@ export function Ribbon() {
                     transition={{ type: 'spring', bounce: 0.21, duration: 0.5 }}
                   />
                 ) : null}
-                <span className="ribbon-tab-label">{tab.label}</span>
+                <span className="ribbon-tab-label">{tt(tab.i18nKey, tab.fallback)}</span>
               </button>
             ))}
           </MotionConfig>
@@ -263,7 +270,7 @@ export function Ribbon() {
               type="button"
               className="ribbon-collapse-btn"
               aria-expanded={!collapsed}
-              aria-label={collapsed ? 'Expand ribbon' : 'Collapse ribbon'}
+              aria-label={collapsed ? tt('rb.expand') : tt('rb.collapse')}
               onClick={() => setCollapsed((v) => !v)}
             >
               <ChevronDown
@@ -273,7 +280,7 @@ export function Ribbon() {
               />
             </button>
           </TooltipTrigger>
-          <TooltipContent side="bottom">{collapsed ? 'Expand Ribbon' : 'Collapse Ribbon'}</TooltipContent>
+          <TooltipContent side="bottom">{collapsed ? tt('rb.expand') : tt('rb.collapse')}</TooltipContent>
         </Tooltip>
       </div>
       <div className={cn('ribbon-collapse', collapsed && 'ribbon-collapse-closed')}>

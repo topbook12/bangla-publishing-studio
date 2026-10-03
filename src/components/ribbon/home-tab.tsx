@@ -4,7 +4,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import {
   AlignCenter, AlignJustify, AlignLeft, AlignRight, Bold, CaseSensitive, ChevronsDown, ChevronsUp, Eraser,
   Highlighter, Italic, List, ListOrdered, Paintbrush, Palette, Quote, Strikethrough,
@@ -18,7 +18,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { RibbonButton, RibbonDivider, RibbonGroup, refocusActiveEditor, runCommand, useActiveEditor } from './ribbon-shell';
 import { AdvancedTextGroup } from './advanced-text';
 import { FONT_OPTIONS, FONT_SIZE_OPTIONS, COLOR_SWATCHES, HIGHLIGHT_SWATCHES, fontStackOf } from '@/lib/paper';
-import { toBanglaNumber } from '@/lib/bangla';
+import { useFmtNum, useT } from '@/lib/i18n';
 import {
   captureFormat, disarmPainter, isPainterArmed, subscribePainter,
 } from '@/lib/format-painter';
@@ -32,6 +32,7 @@ import { cn } from '@/lib/utils';
 
 function FontFamilySelect() {
   const ed = useActiveEditor();
+  const tt = useT();
   const attrs = ed?.getAttributes('textStyle');
   const current = (attrs?.fontFamily as string | undefined)?.split(',')[0]?.replace(/'/g, '') ?? '';
   const [open, setOpen] = useState(false);
@@ -39,8 +40,8 @@ function FontFamilySelect() {
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
-        <button type="button" className="ribbon-select w-40" title="Font" style={{ fontFamily: current ? fontStackOf(current) : undefined }}>
-          <span className="truncate">{current || 'Font'}</span>
+        <button type="button" className="ribbon-select w-40" title={tt('home.font')} style={{ fontFamily: current ? fontStackOf(current) : undefined }}>
+          <span className="truncate">{current || tt('home.font')}</span>
           <span aria-hidden="true">▾</span>
         </button>
       </DropdownMenuTrigger>
@@ -49,16 +50,27 @@ function FontFamilySelect() {
         className="max-h-80 w-56 overflow-y-auto"
         onCloseAutoFocus={(e) => { e.preventDefault(); refocusActiveEditor(); }}
       >
-        {FONT_OPTIONS.map((f) => (
-          <DropdownMenuItem
-            key={f.family}
-            style={{ fontFamily: f.stack }}
-            className={cn(current === f.family && 'bg-accent')}
-            onClick={() => runCommand((ed2) => ed2.chain().focus().setFontFamily(f.family).run())}
-          >
-            {f.name}
-          </DropdownMenuItem>
-        ))}
+        {/* বাংলা → দেবনাগরী ক্রমে গ্রুপ-শিরোনাম — গ্রুপ বদলালেই নন-ইন্টারঅ্যাকটিভ হেডার */}
+        {FONT_OPTIONS.map((f, i) => {
+          const prev = FONT_OPTIONS[i - 1];
+          const showGroup = Boolean(f.group && f.group !== prev?.group);
+          return (
+            <Fragment key={f.family}>
+              {showGroup ? (
+                <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground" role="presentation">
+                  {f.group === 'devanagari' ? tt('home.fontgroup.devanagari') : tt('home.fontgroup.bangla')}
+                </div>
+              ) : null}
+              <DropdownMenuItem
+                style={{ fontFamily: f.stack }}
+                className={cn(current === f.family && 'bg-accent')}
+                onClick={() => runCommand((ed2) => ed2.chain().focus().setFontFamily(f.family).run())}
+              >
+                {f.name}
+              </DropdownMenuItem>
+            </Fragment>
+          );
+        })}
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -66,6 +78,8 @@ function FontFamilySelect() {
 
 function FontSizeSelect() {
   const ed = useActiveEditor();
+  const tt = useT();
+  const fmtN = useFmtNum();
   const attrs = ed?.getAttributes('textStyle');
   const sizeStr = attrs?.fontSize as string | undefined;
   const current = sizeStr ? Math.round(parseFloat(sizeStr)) : null;
@@ -73,8 +87,8 @@ function FontSizeSelect() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button type="button" className="ribbon-select w-20 justify-center" title="Font Size">
-          {current ? toBanglaNumber(current) : 'Size'} <span aria-hidden="true">▾</span>
+        <button type="button" className="ribbon-select w-20 justify-center" title={tt('home.fontsize')}>
+          {current ? fmtN(current) : tt('home.size')} <span aria-hidden="true">▾</span>
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
@@ -88,7 +102,7 @@ function FontSizeSelect() {
             className={cn(current === size && 'bg-accent')}
             onClick={() => runCommand((ed2) => ed2.chain().focus().setFontSize(`${size}pt`).run())}
           >
-            {toBanglaNumber(size)}
+            {fmtN(size)}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>
@@ -97,45 +111,46 @@ function FontSizeSelect() {
 }
 
 function ColorPicker() {
+  const tt = useT();
   const [open, setOpen] = useState(false);
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <Tooltip>
         <TooltipTrigger asChild>
           <PopoverTrigger asChild>
-            <button type="button" className="ribbon-btn" aria-label="Color & Highlight">
+            <button type="button" className="ribbon-btn" aria-label={tt('home.color.tip')}>
               <Palette size={16} />
-              <span className="ribbon-btn-label">Color</span>
+              <span className="ribbon-btn-label">{tt('home.color')}</span>
             </button>
           </PopoverTrigger>
         </TooltipTrigger>
-        <TooltipContent side="bottom">Color & Highlight</TooltipContent>
+        <TooltipContent side="bottom">{tt('home.color.tip')}</TooltipContent>
       </Tooltip>
       <PopoverContent
         className="w-60 p-3"
         align="start"
         onCloseAutoFocus={(e) => { e.preventDefault(); refocusActiveEditor(); }}
       >
-        <p className="mb-2 text-xs font-semibold text-muted-foreground">Text Color</p>
+        <p className="mb-2 text-xs font-semibold text-muted-foreground">{tt('home.color.text')}</p>
         <div className="grid grid-cols-7 gap-1.5">
           {COLOR_SWATCHES.map((c) => (
             <button
               key={c}
               type="button"
-              aria-label={`Color ${c}`}
+              aria-label={`${tt('home.color')} ${c}`}
               className="h-6 w-6 rounded-md border border-black/10 transition hover:scale-110"
               style={{ backgroundColor: c }}
               onClick={() => { runCommand((ed) => ed.chain().focus().setColor(c).run()); setOpen(false); }}
             />
           ))}
         </div>
-        <p className="mb-2 mt-3 text-xs font-semibold text-muted-foreground">Highlighter</p>
+        <p className="mb-2 mt-3 text-xs font-semibold text-muted-foreground">{tt('home.highlighter')}</p>
         <div className="grid grid-cols-5 gap-1.5">
           {HIGHLIGHT_SWATCHES.map((c) => (
             <button
               key={c}
               type="button"
-              aria-label={`Highlight ${c}`}
+              aria-label={`${tt('home.highlight')} ${c}`}
               className="h-6 w-6 rounded-md border border-black/10 transition hover:scale-110"
               style={{ backgroundColor: c }}
               onClick={() => { runCommand((ed) => ed.chain().focus().setHighlight({ color: c }).run()); setOpen(false); }}
@@ -147,7 +162,7 @@ function ColorPicker() {
           className="mt-3 text-xs text-red-600 hover:underline"
           onClick={() => { runCommand((ed) => ed.chain().focus().unsetColor().unsetHighlight().run()); setOpen(false); }}
         >
-          Clear color & highlight
+          {tt('home.color.clear')}
         </button>
       </PopoverContent>
     </Popover>
@@ -156,6 +171,8 @@ function ColorPicker() {
 
 function LineHeightSelect() {
   const ed = useActiveEditor();
+  const tt = useT();
+  const fmtN = useFmtNum();
   const defaultLineHeight = useEditorStore((s) => s.settings.lineHeight);
   const options = ['1', '1.15', '1.3', '1.5', '1.75', '2', '2.5'];
   // ট্রিগারে সিলেকশনের বর্তমান লাইন-হাইট দেখাই — হেডিংয়ের ভিতরে থাকলে heading-এর
@@ -172,8 +189,8 @@ function LineHeightSelect() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button type="button" className="ribbon-select w-16 justify-center" title="Line Height">
-          {toBanglaNumber(shown)}▾
+        <button type="button" className="ribbon-select w-16 justify-center" title={tt('home.lineheight')}>
+          {fmtN(shown)}▾
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
@@ -182,11 +199,11 @@ function LineHeightSelect() {
       >
         {options.map((v) => (
           <DropdownMenuItem key={v} onClick={() => runCommand((ed2) => ed2.chain().focus().setLineHeight(v).run())}>
-            {toBanglaNumber(v)}
+            {fmtN(v)}
           </DropdownMenuItem>
         ))}
         <DropdownMenuItem onClick={() => runCommand((ed2) => ed2.chain().focus().unsetLineHeight().run())}>
-          Default
+          {tt('home.lineheight.default')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -199,15 +216,16 @@ function LineHeightSelect() {
  * subscribePainter দিয়ে বাটনের active স্টেট রি-রেন্ডার করাই।
  */
 function FormatPainterButton() {
+  const tt = useT();
   const [, bump] = useState(0);
   useEffect(() => subscribePainter(() => bump((v) => v + 1)), []);
 
   return (
     <RibbonButton
       icon={Paintbrush}
-      label="Format Painter"
+      label={tt('home.formatpainter')}
       shortcut="Ctrl+Alt+C"
-      title="ফরম্যাট কপি/পেস্ট"
+      title={tt('home.formatpainter.tip')}
       active={isPainterArmed()}
       onClick={() => {
         if (isPainterArmed()) {
@@ -216,7 +234,7 @@ function FormatPainterButton() {
         }
         runCommand((ed) => {
           captureFormat(ed);
-          toast.info('ফরম্যাট কপি হয়েছে — যে লেখায় বসাতে চান সেটি সিলেক্ট করুন');
+          toast.info(tt('home.formatpainter.copied'));
         });
       }}
     />
@@ -229,18 +247,19 @@ function FormatPainterButton() {
  */
 function TextToolsMenu() {
   const ed = useActiveEditor();
+  const tt = useT();
   const runTransform = (fn: (s: string) => string) => {
     runCommand((ed2) => {
-      if (!transformSelection(ed2, fn)) toast.info('আগে কিছু লেখা সিলেক্ট করুন');
+      if (!transformSelection(ed2, fn)) toast.info(tt('home.texttools.noselection'));
     });
   };
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button type="button" className="ribbon-btn" aria-label="Text Tools" title="Text Tools — কেস/সংখ্যা রূপান্তর">
+        <button type="button" className="ribbon-btn" aria-label={tt('home.texttools')} title={tt('home.texttools.tip')}>
           <CaseSensitive size={16} aria-hidden="true" />
-          <span className="ribbon-btn-label">Text Tools</span>
+          <span className="ribbon-btn-label">{tt('home.texttools')}</span>
           <span aria-hidden="true" className="text-[10px] opacity-60">▾</span>
         </button>
       </DropdownMenuTrigger>
@@ -250,23 +269,23 @@ function TextToolsMenu() {
         onCloseAutoFocus={(e) => { e.preventDefault(); refocusActiveEditor(); }}
       >
         <DropdownMenuItem onClick={() => runTransform(banglaToEnglishDigits)}>
-          বাংলা সংখ্যা → ইংরেজি (১২৩ → 123)
+          {tt('home.texttools.bn2en')}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => runTransform(englishToBanglaDigits)}>
-          ইংরেজি → বাংলা সংখ্যা (123 → ১২৩)
+          {tt('home.texttools.en2bn')}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => runTransform(toUpper)}>UPPERCASE</DropdownMenuItem>
-        <DropdownMenuItem onClick={() => runTransform(toLower)}>lowercase</DropdownMenuItem>
-        <DropdownMenuItem onClick={() => runTransform(toTitle)}>Title Case</DropdownMenuItem>
+        <DropdownMenuItem onClick={() => runTransform(toUpper)}>{tt('home.texttools.upper')}</DropdownMenuItem>
+        <DropdownMenuItem onClick={() => runTransform(toLower)}>{tt('home.texttools.lower')}</DropdownMenuItem>
+        <DropdownMenuItem onClick={() => runTransform(toTitle)}>{tt('home.texttools.titlecase')}</DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
           className={cn(Boolean(ed && !ed.isDestroyed && ed.isActive('dropCap')) && 'bg-accent')}
           onClick={() => runCommand((ed2) => {
-            if (!toggleDropCap(ed2)) toast.info('ড্রপ ক্যাপ প্রয়োগের জন্য প্যারাগ্রাফে কার্সর রাখুন');
+            if (!toggleDropCap(ed2)) toast.info(tt('home.texttools.dropcap.need'));
           })}
         >
-          ড্রপ ক্যাপ টগল (প্রথম অক্ষর বড়)
+          {tt('home.texttools.dropcap')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -275,6 +294,7 @@ function TextToolsMenu() {
 
 export function HomeTab() {
   const ed = useActiveEditor();
+  const tt = useT();
 
   const cmd = (fn: (editor: NonNullable<typeof ed>) => unknown) => runCommand(fn);
   const isActive = (fn: (editor: NonNullable<typeof ed>) => boolean): boolean => {
@@ -284,44 +304,44 @@ export function HomeTab() {
 
   return (
     <div className="ribbon-scroll flex items-stretch gap-1">
-      <RibbonGroup label="Font">
+      <RibbonGroup label={tt('home.group.font')} accent="font">
         <div className="flex flex-col gap-1">
           <div className="flex gap-1">
             <FontFamilySelect />
             <FontSizeSelect />
           </div>
           <div className="flex gap-1">
-            <RibbonButton icon={Bold} label="Bold" shortcut="Ctrl+B" active={isActive((e) => e.isActive('bold'))} onClick={() => cmd((e) => e.chain().focus().toggleBold().run())} />
-            <RibbonButton icon={Italic} label="Italic" shortcut="Ctrl+I" active={isActive((e) => e.isActive('italic'))} onClick={() => cmd((e) => e.chain().focus().toggleItalic().run())} />
-            <RibbonButton icon={UnderlineIcon} label="Underline" shortcut="Ctrl+U" active={isActive((e) => e.isActive('underline'))} onClick={() => cmd((e) => e.chain().focus().toggleUnderline().run())} />
-            <RibbonButton icon={Strikethrough} label="Strikethrough" shortcut="Ctrl+Shift+X" active={isActive((e) => e.isActive('strike'))} onClick={() => cmd((e) => e.chain().focus().toggleStrike().run())} />
-            <RibbonButton icon={SupIcon} label="Superscript" shortcut="Ctrl+." active={isActive((e) => e.isActive('superscript'))} onClick={() => cmd((e) => e.chain().focus().toggleSuperscript().run())} />
-            <RibbonButton icon={SubIcon} label="Subscript" shortcut="Ctrl+," active={isActive((e) => e.isActive('subscript'))} onClick={() => cmd((e) => e.chain().focus().toggleSubscript().run())} />
+            <RibbonButton icon={Bold} label={tt('home.bold')} shortcut="Ctrl+B" active={isActive((e) => e.isActive('bold'))} onClick={() => cmd((e) => e.chain().focus().toggleBold().run())} />
+            <RibbonButton icon={Italic} label={tt('home.italic')} shortcut="Ctrl+I" active={isActive((e) => e.isActive('italic'))} onClick={() => cmd((e) => e.chain().focus().toggleItalic().run())} />
+            <RibbonButton icon={UnderlineIcon} label={tt('home.underline')} shortcut="Ctrl+U" active={isActive((e) => e.isActive('underline'))} onClick={() => cmd((e) => e.chain().focus().toggleUnderline().run())} />
+            <RibbonButton icon={Strikethrough} label={tt('home.strike')} shortcut="Ctrl+Shift+X" active={isActive((e) => e.isActive('strike'))} onClick={() => cmd((e) => e.chain().focus().toggleStrike().run())} />
+            <RibbonButton icon={SupIcon} label={tt('home.sup')} shortcut="Ctrl+." active={isActive((e) => e.isActive('superscript'))} onClick={() => cmd((e) => e.chain().focus().toggleSuperscript().run())} />
+            <RibbonButton icon={SubIcon} label={tt('home.sub')} shortcut="Ctrl+," active={isActive((e) => e.isActive('subscript'))} onClick={() => cmd((e) => e.chain().focus().toggleSubscript().run())} />
           </div>
         </div>
         <div className="mt-1 flex gap-1">
           <ColorPicker />
-          <RibbonButton icon={Highlighter} label="Highlight" shortcut="Ctrl+Shift+H" active={isActive((e) => e.isActive('highlight'))} onClick={() => cmd((e) => e.chain().focus().toggleHighlight({ color: '#fef08a' }).run())} />
-          <RibbonButton icon={Eraser} label="Clear Formatting" onClick={() => cmd((e) => e.chain().focus().unsetAllMarks().clearNodes().run())} />
+          <RibbonButton icon={Highlighter} label={tt('home.highlight')} shortcut="Ctrl+Shift+H" active={isActive((e) => e.isActive('highlight'))} onClick={() => cmd((e) => e.chain().focus().toggleHighlight({ color: '#fef08a' }).run())} />
+          <RibbonButton icon={Eraser} label={tt('home.clearformat')} onClick={() => cmd((e) => e.chain().focus().unsetAllMarks().clearNodes().run())} />
           <FormatPainterButton />
         </div>
       </RibbonGroup>
       <RibbonDivider />
-      <RibbonGroup label="Paragraph">
+      <RibbonGroup label={tt('home.group.paragraph')} accent="paragraph">
         <div className="flex flex-col gap-1">
           <div className="flex gap-1">
-            <RibbonButton icon={AlignLeft} label="Align Left" active={isActive((e) => e.isActive({ textAlign: 'left' }))} onClick={() => cmd((e) => e.chain().focus().setTextAlign('left').run())} />
-            <RibbonButton icon={AlignCenter} label="Center" active={isActive((e) => e.isActive({ textAlign: 'center' }))} onClick={() => cmd((e) => e.chain().focus().setTextAlign('center').run())} />
-            <RibbonButton icon={AlignRight} label="Align Right" active={isActive((e) => e.isActive({ textAlign: 'right' }))} onClick={() => cmd((e) => e.chain().focus().setTextAlign('right').run())} />
-            <RibbonButton icon={AlignJustify} label="Justify" active={isActive((e) => e.isActive({ textAlign: 'justify' }))} onClick={() => cmd((e) => e.chain().focus().setTextAlign('justify').run())} />
+            <RibbonButton icon={AlignLeft} label={tt('home.alignleft')} active={isActive((e) => e.isActive({ textAlign: 'left' }))} onClick={() => cmd((e) => e.chain().focus().setTextAlign('left').run())} />
+            <RibbonButton icon={AlignCenter} label={tt('home.center')} active={isActive((e) => e.isActive({ textAlign: 'center' }))} onClick={() => cmd((e) => e.chain().focus().setTextAlign('center').run())} />
+            <RibbonButton icon={AlignRight} label={tt('home.alignright')} active={isActive((e) => e.isActive({ textAlign: 'right' }))} onClick={() => cmd((e) => e.chain().focus().setTextAlign('right').run())} />
+            <RibbonButton icon={AlignJustify} label={tt('home.justify')} active={isActive((e) => e.isActive({ textAlign: 'justify' }))} onClick={() => cmd((e) => e.chain().focus().setTextAlign('justify').run())} />
           </div>
           <div className="flex gap-1">
-            <RibbonButton icon={List} label="Bullets" active={isActive((e) => e.isActive('bulletList'))} onClick={() => cmd((e) => e.chain().focus().toggleBulletList().run())} />
-            <RibbonButton icon={ListOrdered} label="Numbering" active={isActive((e) => e.isActive('orderedList'))} onClick={() => cmd((e) => e.chain().focus().toggleOrderedList().run())} />
-            <RibbonButton icon={Quote} label="Quote" active={isActive((e) => e.isActive('blockquote'))} onClick={() => cmd((e) => e.chain().focus().toggleBlockquote().run())} />
+            <RibbonButton icon={List} label={tt('home.bullets')} active={isActive((e) => e.isActive('bulletList'))} onClick={() => cmd((e) => e.chain().focus().toggleBulletList().run())} />
+            <RibbonButton icon={ListOrdered} label={tt('home.numbering')} active={isActive((e) => e.isActive('orderedList'))} onClick={() => cmd((e) => e.chain().focus().toggleOrderedList().run())} />
+            <RibbonButton icon={Quote} label={tt('home.quote')} active={isActive((e) => e.isActive('blockquote'))} onClick={() => cmd((e) => e.chain().focus().toggleBlockquote().run())} />
             <LineHeightSelect />
-            <RibbonButton icon={ChevronsUp} label="Move Up" title="টেবিল/বক্স/ছবি সহ পুরো ব্লক উপরে সরান" shortcut="Alt+↑" onClick={() => cmd((e) => e.chain().focus().moveBlockUp().run())} />
-            <RibbonButton icon={ChevronsDown} label="Move Down" title="টেবিল/বক্স/ছবি সহ পুরো ব্লক নিচে সরান" shortcut="Alt+↓" onClick={() => cmd((e) => e.chain().focus().moveBlockDown().run())} />
+            <RibbonButton icon={ChevronsUp} label={tt('home.moveup')} title={tt('home.moveup.tip')} shortcut="Alt+↑" onClick={() => cmd((e) => e.chain().focus().moveBlockUp().run())} />
+            <RibbonButton icon={ChevronsDown} label={tt('home.movedown')} title={tt('home.movedown.tip')} shortcut="Alt+↓" onClick={() => cmd((e) => e.chain().focus().moveBlockDown().run())} />
             <TextToolsMenu />
           </div>
         </div>
@@ -329,13 +349,13 @@ export function HomeTab() {
       <RibbonDivider />
       <AdvancedTextGroup />
       <RibbonDivider />
-      <RibbonGroup label="Styles">
+      <RibbonGroup label={tt('home.group.styles')} accent="styles">
         <div className="flex flex-col gap-1">
-          <button type="button" className={cn('ribbon-heading ribbon-heading-h1', isActive((e) => e.isActive('heading', { level: 1 })) && 'ribbon-btn-active')} onClick={() => runCommand((e2) => e2.chain().focus().toggleHeading({ level: 1 }).run())}>Heading 1</button>
+          <button type="button" className={cn('ribbon-heading ribbon-heading-h1', isActive((e) => e.isActive('heading', { level: 1 })) && 'ribbon-btn-active')} onClick={() => runCommand((e2) => e2.chain().focus().toggleHeading({ level: 1 }).run())}>{tt('home.h1')}</button>
           <div className="flex gap-1">
-            <button type="button" className={cn('ribbon-heading ribbon-heading-h2', isActive((e) => e.isActive('heading', { level: 2 })) && 'ribbon-btn-active')} onClick={() => runCommand((e2) => e2.chain().focus().toggleHeading({ level: 2 }).run())}>Heading 2</button>
-            <button type="button" className={cn('ribbon-heading ribbon-heading-h3', isActive((e) => e.isActive('heading', { level: 3 })) && 'ribbon-btn-active')} onClick={() => runCommand((e2) => e2.chain().focus().toggleHeading({ level: 3 }).run())}>Heading 3</button>
-            <button type="button" className={cn('ribbon-heading', isActive((e) => e.isActive('paragraph')) && 'ribbon-btn-active')} onClick={() => runCommand((e2) => e2.chain().focus().setParagraph().run())}>Normal Text</button>
+            <button type="button" className={cn('ribbon-heading ribbon-heading-h2', isActive((e) => e.isActive('heading', { level: 2 })) && 'ribbon-btn-active')} onClick={() => runCommand((e2) => e2.chain().focus().toggleHeading({ level: 2 }).run())}>{tt('home.h2')}</button>
+            <button type="button" className={cn('ribbon-heading ribbon-heading-h3', isActive((e) => e.isActive('heading', { level: 3 })) && 'ribbon-btn-active')} onClick={() => runCommand((e2) => e2.chain().focus().toggleHeading({ level: 3 }).run())}>{tt('home.h3')}</button>
+            <button type="button" className={cn('ribbon-heading', isActive((e) => e.isActive('paragraph')) && 'ribbon-btn-active')} onClick={() => runCommand((e2) => e2.chain().focus().setParagraph().run())}>{tt('home.normal')}</button>
           </div>
         </div>
       </RibbonGroup>

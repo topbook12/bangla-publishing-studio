@@ -19,22 +19,25 @@ import { AlertTriangle, BookOpen, Lightbulb, Pin, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { t, tFmt, useT } from '@/lib/i18n';
 import { parseMcqData, type DividerStyle, type McqData } from '@/lib/nodes-html';
 
 // ─────────────────────────── কলআউট বক্স ───────────────────────────
 
-const CALLOUT_META: Record<string, { label: string; Icon: typeof Lightbulb; className: string }> = {
-  concept: { label: 'মূল ধারণা', Icon: Lightbulb, className: 'callout-concept' },
-  warning: { label: 'সতর্কতা', Icon: AlertTriangle, className: 'callout-warning' },
-  formula: { label: 'সূত্র', Icon: BookOpen, className: 'callout-formula' },
-  note: { label: 'নোট', Icon: Pin, className: 'callout-note' },
+const CALLOUT_META: Record<string, { labelKey: string; Icon: typeof Lightbulb; className: string }> = {
+  concept: { labelKey: 'ins.callout.concept', Icon: Lightbulb, className: 'callout-concept' },
+  warning: { labelKey: 'ins.callout.warning', Icon: AlertTriangle, className: 'callout-warning' },
+  formula: { labelKey: 'ins.callout.formula', Icon: BookOpen, className: 'callout-formula' },
+  note: { labelKey: 'ins.callout.note', Icon: Pin, className: 'callout-note' },
 };
 
 function CalloutNodeView({ node, updateAttributes, deleteNode }: NodeViewProps) {
+  const tt = useT();
   const variant = (node.attrs.variant as string) ?? 'concept';
   const title = (node.attrs.title as string) ?? '';
   const meta = CALLOUT_META[variant] ?? CALLOUT_META.concept;
   const Icon = meta.Icon;
+  const label = tt(meta.labelKey);
 
   return (
     <NodeViewWrapper as="div" className={cn('callout-box', meta.className)} data-variant={variant} data-title={title}>
@@ -43,18 +46,18 @@ function CalloutNodeView({ node, updateAttributes, deleteNode }: NodeViewProps) 
           <Icon size={14} aria-hidden="true" />
           <input
             className="callout-title-input"
-            value={title || meta.label}
-            placeholder={meta.label}
+            value={title || label}
+            placeholder={label}
             onChange={(e) => updateAttributes({ title: e.target.value })}
-            aria-label="বক্সের শিরোনাম"
+            aria-label={tt('ws.callout.titleAria')}
           />
         </span>
         <button
           type="button"
           className="callout-delete"
           onClick={deleteNode}
-          title="বক্স মুছুন"
-          aria-label="বক্স মুছুন"
+          title={tt('ws.callout.delete')}
+          aria-label={tt('ws.callout.delete')}
         >
           <Trash2 size={13} aria-hidden="true" />
         </button>
@@ -129,6 +132,7 @@ function mcqLabel(i: number): string {
 }
 
 function McqNodeView({ node, updateAttributes, deleteNode, selected }: NodeViewProps) {
+  const tt = useT();
   // attrs থেকে সরাসরি পড়া (parseMcqData ফলব্যাক)
   const fallback = parseMcqData(document.createElement('div'));
   const question = (node.attrs.question as string) ?? fallback.question;
@@ -150,17 +154,17 @@ function McqNodeView({ node, updateAttributes, deleteNode, selected }: NodeViewP
   return (
     <NodeViewWrapper as="div" className={cn('mcq-block', selected && 'mcq-selected')} data-question={question}>
       <div className="mcq-head" contentEditable={false}>
-        <span className="mcq-tag">প্রশ্ন</span>
-        <button type="button" className="callout-delete" onClick={() => setManuallyEditing((v) => !v)} title="সম্পাদনা">
+        <span className="mcq-tag">{tt('ws.static.mcqTag')}</span>
+        <button type="button" className="callout-delete" onClick={() => setManuallyEditing((v) => !v)} title={tt('ws.mcq.edit')}>
           {editing ? '✕' : '✎'}
         </button>
-        <button type="button" className="callout-delete" onClick={deleteNode} title="মুছুন" aria-label="প্রশ্ন মুছুন">
+        <button type="button" className="callout-delete" onClick={deleteNode} title={tt('ws.delete')} aria-label={tt('ws.mcq.deleteAria')}>
           <Trash2 size={13} aria-hidden="true" />
         </button>
       </div>
       {!editing ? (
         <div className="mcq-view" contentEditable={false}>
-          <p className="mcq-question">{question || 'প্রশ্ন লিখুন (✎ চাপুন)'}</p>
+          <p className="mcq-question">{question || tt('ws.mcq.qEmpty')}</p>
           <div className="mcq-options">
             {options.map((opt, i) => (
               <span key={i} className={cn('mcq-option', answer === i && 'mcq-answer')}>
@@ -172,14 +176,14 @@ function McqNodeView({ node, updateAttributes, deleteNode, selected }: NodeViewP
         </div>
       ) : (
         <div className="mcq-edit" contentEditable={false}>
-          <Input value={question} onChange={(e) => update({ question: e.target.value })} placeholder="প্রশ্ন লিখুন" className="mcq-input" />
+          <Input value={question} onChange={(e) => update({ question: e.target.value })} placeholder={tt('ws.mcq.qPlaceholder')} className="mcq-input" />
           {options.map((opt, i) => (
             <div key={i} className="flex items-center gap-2">
               <button
                 type="button"
                 className={cn('mcq-answer-btn', answer === i && 'mcq-answer-btn-active')}
                 onClick={() => update({ answer: i })}
-                title="সঠিক উত্তর চিহ্নিত করুন"
+                title={tt('ws.mcq.answerTitle')}
               >
                 ({mcqLabel(i)})
               </button>
@@ -190,13 +194,13 @@ function McqNodeView({ node, updateAttributes, deleteNode, selected }: NodeViewP
                   next[i] = e.target.value;
                   update({ options: next as McqData['options'] });
                 }}
-                placeholder={`অপশন (${mcqLabel(i)})`}
+                placeholder={tFmt('ws.mcq.optPlaceholder', { n: mcqLabel(i) })}
                 className="mcq-input"
               />
             </div>
           ))}
-          <Input value={explanation} onChange={(e) => update({ explanation: e.target.value })} placeholder="ব্যাখ্যা (ঐচ্ছিক)" className="mcq-input" />
-          <Button size="sm" variant="secondary" className="h-7" onClick={() => setManuallyEditing(false)}>সম্পন্ন</Button>
+          <Input value={explanation} onChange={(e) => update({ explanation: e.target.value })} placeholder={tt('ws.mcq.explPlaceholder')} className="mcq-input" />
+          <Button size="sm" variant="secondary" className="h-7" onClick={() => setManuallyEditing(false)}>{tt('ws.mcq.done')}</Button>
         </div>
       )}
     </NodeViewWrapper>
@@ -260,6 +264,7 @@ declare module '@tiptap/core' {
 // ─────────────────────────── ফুটনোট ───────────────────────────
 
 function FootnoteNodeView({ node, updateAttributes, deleteNode, selected }: NodeViewProps) {
+  const tt = useT();
   const note = (node.attrs.note as string) ?? '';
   const [manuallyOpen, setManuallyOpen] = useState(false);
   const open = manuallyOpen || selected;
@@ -281,12 +286,12 @@ function FootnoteNodeView({ node, updateAttributes, deleteNode, selected }: Node
           <Input
             value={note}
             autoFocus
-            placeholder="ফুটনোটের লেখা…"
+            placeholder={tt('ws.fn.placeholder')}
             onChange={(e) => updateAttributes({ note: e.target.value })}
             onKeyDown={(e) => { if (e.key === 'Escape') setManuallyOpen(false); }}
             className="footnote-input"
           />
-          <button type="button" className="callout-delete" onClick={deleteNode} title="ফুটনোট মুছুন" aria-label="ফুটনোট মুছুন">
+          <button type="button" className="callout-delete" onClick={deleteNode} title={tt('ws.fn.delete')} aria-label={tt('ws.fn.delete')}>
             <Trash2 size={12} aria-hidden="true" />
           </button>
         </span>
@@ -396,23 +401,24 @@ interface TocEntryAttr {
 }
 
 function TocNodeView({ node, deleteNode }: NodeViewProps) {
+  const tt = useT();
   let entries: TocEntryAttr[] = [];
   try {
     const raw = node.attrs.entries;
     if (Array.isArray(raw)) entries = raw as TocEntryAttr[];
   } catch { /* উপেক্ষা */ }
-  const title = (node.attrs.title as string) ?? 'সূচিপত্র';
+  const title = (node.attrs.title as string) || tt('dsn.toc.title');
 
   return (
     <NodeViewWrapper as="div" className="toc-block">
       <div className="toc-head" contentEditable={false}>
         <span className="toc-title">{title}</span>
-        <button type="button" className="callout-delete" onClick={deleteNode} title="সূচিপত্র মুছুন" aria-label="সূচিপত্র মুছুন">
+        <button type="button" className="callout-delete" onClick={deleteNode} title={tt('ws.toc.delete')} aria-label={tt('ws.toc.delete')}>
           <Trash2 size={13} aria-hidden="true" />
         </button>
       </div>
       {entries.length === 0 ? (
-        <p className="toc-empty">এখনো কোনো শিরোনাম নেই — H1/H2/H3 লিখে ডিজাইন ট্যাব থেকে “সূচিপত্র হালনাগাদ” চাপুন।</p>
+        <p className="toc-empty">{tt('ws.toc.empty').split('{btn}').join(tt('dsn.btn.updateToc'))}</p>
       ) : (
         <ol className="toc-list">
           {entries.map((e, i) => (

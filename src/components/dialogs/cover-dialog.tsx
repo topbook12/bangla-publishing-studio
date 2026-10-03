@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useEditorStore } from '@/lib/store';
 import { useUiStore } from '@/lib/ui-store';
+import { useT } from '@/lib/i18n';
 import { CoverView } from '@/components/editor/cover-view';
 import type { CoverData } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -20,10 +21,11 @@ import { toast } from 'sonner';
 
 const ACCENTS = ['#4f46e5', '#7f1d1d', '#0f766e', '#b45309', '#be185d', '#0f172a'];
 
-const STYLES: Array<{ id: CoverData['style']; name: string }> = [
-  { id: 'classic', name: 'ক্লাসিক (সাহিত্য)' },
-  { id: 'modern', name: 'আধুনিক' },
-  { id: 'coaching', name: 'কোচিং/একাডেমি' },
+/** স্টাইলের নাম অভিধান-কী হিসেবে — রেন্ডারের সময় ভাষা অনুযায়ী সমাধান */
+const STYLES: Array<{ id: CoverData['style']; nameKey: string }> = [
+  { id: 'classic', nameKey: 'dlg1.cover.style.classic' },
+  { id: 'modern', nameKey: 'dlg1.cover.style.modern' },
+  { id: 'coaching', nameKey: 'dlg1.cover.style.coaching' },
 ];
 
 export function CoverDialog() {
@@ -38,6 +40,7 @@ export function CoverDialog() {
 }
 
 function CoverDialogBody({ open }: { open: boolean }) {
+  const tt = useT();
   const close = useUiStore((s) => s.close);
   const title = useEditorStore((s) => s.title);
   const addCoverPage = useEditorStore((s) => s.addCoverPage);
@@ -61,40 +64,40 @@ function CoverDialogBody({ open }: { open: boolean }) {
     <Dialog open={open} onOpenChange={(v) => !v && close()}>
       <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{existing ? 'কভার পেজ সম্পাদনা' : 'কভার পেজ জেনারেটর'}</DialogTitle>
+          <DialogTitle>{existing ? tt('dlg1.cover.edit') : tt('dlg1.cover.new')}</DialogTitle>
           <DialogDescription>
-            তথ্য দিন — প্রথম পৃষ্ঠায় সুন্দর প্রচ্ছদ তৈরি হবে (হেডার/ফুটার ছাড়া)
+            {tt('dlg1.cover.desc')}
           </DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-3">
             <div className="space-y-1">
-              <Label className="text-xs">বইয়ের নাম *</Label>
-              <Input value={data.title} onChange={(e) => set({ title: e.target.value })} placeholder="যেমন: মাধ্যমিক গণিত সম্পূর্ণ গাইড" />
+              <Label className="text-xs">{tt('dlg1.cover.bookTitle')}</Label>
+              <Input value={data.title} onChange={(e) => set({ title: e.target.value })} placeholder={tt('dlg1.cover.phTitle')} />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">সাবটাইটেল</Label>
-              <Input value={data.subtitle} onChange={(e) => set({ subtitle: e.target.value })} placeholder="যেমন: অধ্যায় ১-১০ সমাধানসহ" />
+              <Label className="text-xs">{tt('dlg1.cover.subtitle')}</Label>
+              <Input value={data.subtitle} onChange={(e) => set({ subtitle: e.target.value })} placeholder={tt('dlg1.cover.phSubtitle')} />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">প্রতিষ্ঠান</Label>
-              <Input value={data.organization} onChange={(e) => set({ organization: e.target.value })} placeholder="যেমন: উজ্জ্বল একাডেমি" />
+              <Label className="text-xs">{tt('dlg1.cover.org')}</Label>
+              <Input value={data.organization} onChange={(e) => set({ organization: e.target.value })} placeholder={tt('dlg1.cover.phOrg')} />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">শ্রেণি/কোর্স</Label>
-              <Input value={data.course} onChange={(e) => set({ course: e.target.value })} placeholder="যেমন: নবম-দশম শ্রেণি" />
+              <Label className="text-xs">{tt('dlg1.cover.course')}</Label>
+              <Input value={data.course} onChange={(e) => set({ course: e.target.value })} placeholder={tt('dlg1.cover.phCourse')} />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">লেখক/সংকলক</Label>
+              <Label className="text-xs">{tt('dlg1.cover.author')}</Label>
               <Input value={data.author} onChange={(e) => set({ author: e.target.value })} />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">সাল/সংস্করণ</Label>
+              <Label className="text-xs">{tt('dlg1.cover.year')}</Label>
               <Input value={data.year} onChange={(e) => set({ year: e.target.value })} />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">স্টাইল</Label>
+              <Label className="text-xs">{tt('dlg1.cover.styleLabel')}</Label>
               <div className="flex gap-1.5">
                 {STYLES.map((s) => (
                   <button
@@ -103,25 +106,25 @@ function CoverDialogBody({ open }: { open: boolean }) {
                     className={cn('rounded-md border px-2 py-1 text-xs', data.style === s.id && 'border-primary bg-accent')}
                     onClick={() => set({ style: s.id })}
                   >
-                    {s.name}
+                    {tt(s.nameKey)}
                   </button>
                 ))}
               </div>
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">অ্যাকসেন্ট রং</Label>
+              <Label className="text-xs">{tt('dlg1.cover.accent')}</Label>
               <div className="flex gap-1.5">
                 {ACCENTS.map((c) => (
                   <button
                     key={c}
                     type="button"
-                    aria-label={`রং ${c}`}
+                    aria-label={tt('dlg1.color.named').split('{c}').join(c)}
                     className={cn('h-6 w-6 rounded-full border-2', data.accentColor === c ? 'border-foreground scale-110' : 'border-transparent')}
                     style={{ backgroundColor: c }}
                     onClick={() => set({ accentColor: c })}
                   />
                 ))}
-                <input type="color" aria-label="কাস্টম রং" className="h-6 w-9 cursor-pointer" value={data.accentColor} onChange={(e) => set({ accentColor: e.target.value })} />
+                <input type="color" aria-label={tt('dlg1.color.custom')} className="h-6 w-9 cursor-pointer" value={data.accentColor} onChange={(e) => set({ accentColor: e.target.value })} />
               </div>
             </div>
           </div>
@@ -144,15 +147,15 @@ function CoverDialogBody({ open }: { open: boolean }) {
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={close}>বাতিল</Button>
+          <Button variant="outline" onClick={close}>{tt('hdr.cancel')}</Button>
           <Button
             onClick={() => {
               addCoverPage({ ...data, title: data.title || title });
-              toast.success(existing ? 'কভার হালনাগাদ হয়েছে' : 'কভার পেজ প্রথম পৃষ্ঠায় যোগ হয়েছে');
+              toast.success(existing ? tt('dlg1.cover.toastUpdated') : tt('dlg1.cover.toastAdded'));
               close();
             }}
           >
-            {existing ? 'হালনাগাদ করুন' : 'কভার তৈরি করুন'}
+            {existing ? tt('dlg1.cover.update') : tt('dlg1.cover.create')}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
+import { useT, useFmtNum } from '@/lib/i18n';
 import { imageLayoutStyle, type ImageAlign, type ImageFloat } from './image-ext';
 
 export interface ImageDialogState {
@@ -36,11 +37,12 @@ export interface ImageDialogState {
 
 type Unit = 'px' | 'cm' | 'mm' | '%';
 
-const UNITS: Array<{ id: Unit; label: string }> = [
-  { id: 'cm', label: 'সেমি (cm)' },
-  { id: 'mm', label: 'মিমি (mm)' },
-  { id: '%', label: '% (কনটেন্ট প্রস্থ)' },
-  { id: 'px', label: 'পিক্সেল (px)' },
+// একক লেবেল — মডিউল-স্কোপে ডিকশনারি কী, রেন্ডারের সময় tt() দিয়ে রেজল্ভ হয়
+const UNITS: Array<{ id: Unit; k: string; fb: string }> = [
+  { id: 'cm', k: 'ws.imgunit.cm', fb: 'সেমি (cm)' },
+  { id: 'mm', k: 'ws.imgunit.mm', fb: 'মিমি (mm)' },
+  { id: '%', k: 'ws.imgunit.pct', fb: '% (কনটেন্ট প্রস্থ)' },
+  { id: 'px', k: 'ws.imgunit.px', fb: 'পিক্সেল (px)' },
 ];
 
 const PX_PER_CM = 96 / 2.54;
@@ -85,13 +87,15 @@ function fmt(px: number | null, unit: Unit, contentWidth: number): string {
   return String(Math.round(v * 100) / 100);
 }
 
-const WRAP_OPTIONS: Array<{ id: ImageFloat; label: string; hint: string }> = [
-  { id: 'none', label: 'লেখার সাথে ইনলাইন', hint: 'ছবি নিজস্ব লাইনে থাকবে — টেক্সট মোড়াবে না' },
-  { id: 'left', label: 'বামে ভাসমান (টেক্সট মোড়ে)', hint: 'ছবি বাঁ দিকে ভেসে থাকবে, লেখা পাশ দিয়ে মোড়াবে' },
-  { id: 'right', label: 'ডানে ভাসমান', hint: 'ছবি ডান দিকে ভেসে থাকবে, লেখা পাশ দিয়ে মোড়াবে' },
+const WRAP_OPTIONS: Array<{ id: ImageFloat; k: string; fb: string; hk: string; hfb: string }> = [
+  { id: 'none', k: 'ws.wrap.inline', fb: 'লেখার সাথে ইনলাইন', hk: 'ws.wrap.inlineHint', hfb: 'ছবি নিজস্ব লাইনে থাকবে — টেক্সট মোড়াবে না' },
+  { id: 'left', k: 'ws.wrap.left', fb: 'বামে ভাসমান (টেক্সট মোড়ে)', hk: 'ws.wrap.leftHint', hfb: 'ছবি বাঁ দিকে ভেসে থাকবে, লেখা পাশ দিয়ে মোড়াবে' },
+  { id: 'right', k: 'ws.wrap.right', fb: 'ডানে ভাসমান', hk: 'ws.wrap.rightHint', hfb: 'ছবি ডান দিকে ভেসে থাকবে, লেখা পাশ দিয়ে মোড়াবে' },
 ];
 
 export function ImageSizeDialog({ state, onClose }: { state: ImageDialogState; onClose: () => void }) {
+  const tt = useT();
+  const fn = useFmtNum();
   const { editor, pos, attrs } = state;
 
   // কনটেন্ট কলামের প্রস্থ (% একক ও "ফিট করুন"-এর ভিত্তি)
@@ -200,10 +204,10 @@ export function ImageSizeDialog({ state, onClose }: { state: ImageDialogState; o
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Ruler size={16} aria-hidden="true" /> ছবির সাইজ ও পজিশন
+            <Ruler size={16} aria-hidden="true" /> {tt('ws.img.title', 'Image size & position')}
           </DialogTitle>
           <DialogDescription>
-            প্রস্থ-উচ্চতা, অ্যালাইনমেন্ট ও টেক্সট র‍্যাপিং নির্দিষ্ট করুন। প্রিন্টে হুবহু একই সাইজ আসবে।
+            {tt('ws.img.desc', 'Set width/height, alignment and text wrapping. It prints at exactly the same size.')}
           </DialogDescription>
         </DialogHeader>
 
@@ -211,7 +215,7 @@ export function ImageSizeDialog({ state, onClose }: { state: ImageDialogState; o
         <div className="space-y-3">
           <div className="grid grid-cols-[1fr_1fr_150px] items-end gap-2">
             <div className="space-y-1.5">
-              <Label htmlFor="img-w" className="text-xs">প্রস্থ</Label>
+              <Label htmlFor="img-w" className="text-xs">{tt('ws.img.width', 'Width')}</Label>
               <Input
                 id="img-w"
                 type="number"
@@ -222,7 +226,7 @@ export function ImageSizeDialog({ state, onClose }: { state: ImageDialogState; o
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="img-h" className="text-xs">উচ্চতা</Label>
+              <Label htmlFor="img-h" className="text-xs">{tt('ws.img.height', 'Height')}</Label>
               <Input
                 id="img-h"
                 type="number"
@@ -233,14 +237,14 @@ export function ImageSizeDialog({ state, onClose }: { state: ImageDialogState; o
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">একক</Label>
+              <Label className="text-xs">{tt('ws.img.unit', 'Unit')}</Label>
               <Select value={unit} onValueChange={(v) => chooseUnit(v as Unit)}>
-                <SelectTrigger aria-label="একক">
+                <SelectTrigger aria-label={tt('ws.img.unit', 'Unit')}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {UNITS.map((u) => (
-                    <SelectItem key={u.id} value={u.id}>{u.label}</SelectItem>
+                    <SelectItem key={u.id} value={u.id}>{tt(u.k, u.fb)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -250,35 +254,35 @@ export function ImageSizeDialog({ state, onClose }: { state: ImageDialogState; o
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <Switch id="img-lock" checked={lock} onCheckedChange={setLock} />
-              <Label htmlFor="img-lock" className="text-xs">অনুপাত লক করুন (প্রস্থ-উচ্চতা যুক্ত)</Label>
+              <Label htmlFor="img-lock" className="text-xs">{tt('ws.img.lock', 'Lock aspect ratio (width and height linked)')}</Label>
             </div>
             <span className="text-[11px] text-muted-foreground">
-              {wPx !== null ? `≈ ${Math.round(wPx)} px` : '—'}
-              {unit !== 'px' && contentWidth ? ` · কনটেন্ট প্রস্থ ${contentWidth} px` : ''}
+              {wPx !== null ? `≈ ${fn(Math.round(wPx))} px` : '—'}
+              {unit !== 'px' && contentWidth ? ` ${tt('ws.img.contentWidth', '· content width {n} px').split('{n}').join(fn(contentWidth))}` : ''}
             </span>
           </div>
 
           <div className="flex flex-wrap gap-2">
             <Button type="button" variant="outline" size="sm" className="h-7 gap-1.5 text-xs" onClick={resetNatural} disabled={!naturalW}>
-              <RotateCcw size={12} aria-hidden="true" /> মূল সাইজে ফিরুন{naturalW ? ` (${naturalW}×${naturalH})` : ''}
+              <RotateCcw size={12} aria-hidden="true" /> {tt('ws.img.resetNatural', 'Reset to original size')}{naturalW ? ` (${fn(naturalW)}×${fn(naturalH ?? 0)})` : ''}
             </Button>
             <Button type="button" variant="outline" size="sm" className="h-7 text-xs" onClick={fitContent}>
-              কনটেন্টের প্রস্থে ফিট করুন
+              {tt('ws.img.fitContent', 'Fit to content width')}
             </Button>
           </div>
         </div>
 
         {/* ── পজিশন / অ্যালাইনমেন্ট ── */}
         <div className="space-y-2">
-          <Label className="text-xs">পজিশন / অ্যালাইনমেন্ট {float !== 'none' ? '(ভাসমান অবস্থায় প্রযোজ্য নয়)' : ''}</Label>
+          <Label className="text-xs">{tt('ws.img.posLabel', 'Position / alignment')}{float !== 'none' ? ` ${tt('ws.img.posFloatNote', '(not applicable while floating)')}` : ''}</Label>
           <div className="grid grid-cols-3 gap-1.5">
             {(
               [
-                { id: 'left', label: 'বামে', Icon: AlignLeft },
-                { id: 'center', label: 'মাঝখানে', Icon: AlignCenter },
-                { id: 'right', label: 'ডানে', Icon: AlignRight },
+                { id: 'left', k: 'ws.align.left', fb: 'বামে', Icon: AlignLeft },
+                { id: 'center', k: 'ws.align.center', fb: 'মাঝখানে', Icon: AlignCenter },
+                { id: 'right', k: 'ws.align.right', fb: 'ডানে', Icon: AlignRight },
               ] as const
-            ).map(({ id, label, Icon }) => (
+            ).map(({ id, k, fb, Icon }) => (
               <button
                 key={id}
                 type="button"
@@ -292,7 +296,7 @@ export function ImageSizeDialog({ state, onClose }: { state: ImageDialogState; o
                   float !== 'none' && 'opacity-40',
                 )}
               >
-                <Icon size={13} aria-hidden="true" /> {label}
+                <Icon size={13} aria-hidden="true" /> {tt(k, fb)}
               </button>
             ))}
           </div>
@@ -300,7 +304,7 @@ export function ImageSizeDialog({ state, onClose }: { state: ImageDialogState; o
 
         {/* ── টেক্সট র‍্যাপিং ── */}
         <div className="space-y-2">
-          <Label className="text-xs">টেক্সট র‍্যাপিং</Label>
+          <Label className="text-xs">{tt('ws.img.wrapLabel', 'Text wrapping')}</Label>
           <div className="space-y-1.5">
             {WRAP_OPTIONS.map((opt) => (
               <button
@@ -321,8 +325,8 @@ export function ImageSizeDialog({ state, onClose }: { state: ImageDialogState; o
                   )}
                   aria-hidden="true"
                 />
-                {opt.label}
-                <span className="ml-auto text-[10px] text-muted-foreground">{opt.hint}</span>
+                {tt(opt.k, opt.fb)}
+                <span className="ml-auto text-[10px] text-muted-foreground">{tt(opt.hk, opt.hfb)}</span>
               </button>
             ))}
           </div>
@@ -330,12 +334,12 @@ export function ImageSizeDialog({ state, onClose }: { state: ImageDialogState; o
 
         {/* লাইভ প্রিভিউ (স্টাইল স্ট্রিং) */}
         <p className="truncate rounded bg-muted/60 px-2 py-1 font-mono text-[10px] text-muted-foreground" title={previewStyle}>
-          style: {previewStyle || '(default)'}
+          style: {previewStyle || tt('ws.img.styleDefault', 'default')}
         </p>
 
         <DialogFooter className="gap-2">
-          <Button type="button" variant="outline" size="sm" onClick={onClose}>বাতিল</Button>
-          <Button type="button" size="sm" onClick={apply}>সংরক্ষণ করুন</Button>
+          <Button type="button" variant="outline" size="sm" onClick={onClose}>{tt('hdr.cancel', 'Cancel')}</Button>
+          <Button type="button" size="sm" onClick={apply}>{tt('ws.img.save', 'Save')}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

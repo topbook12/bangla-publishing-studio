@@ -23,7 +23,7 @@ import {
   effectivePageBorderStyle, effectivePageBorderWidth, FONT_OPTIONS, fontStackOf, MARGIN_PRESETS,
   PAGE_BORDER_WIDTH_PX, PAPER_PRESETS,
 } from '@/lib/paper';
-import { toBanglaNumber } from '@/lib/bangla';
+import { tFmt, useFmtNum, useT } from '@/lib/i18n';
 import type { DocumentSettings, Margins, PageBorderStyle, PageBorderWidth, PaperColor, WatermarkSettings } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
@@ -59,35 +59,37 @@ function NumberInput({ value, onChange, step = 0.1, min = 0, max = 4 }: {
   );
 }
 
-const PAPER_COLORS: Array<{ id: PaperColor; name: string; bg: string }> = [
-  { id: 'white', name: 'White', bg: '#ffffff' },
-  { id: 'cream', name: 'Cream (Book Paper)', bg: '#f7edd8' },
-  { id: 'dark', name: 'Dark Mode', bg: '#1e293b' },
+// k = অভিধান-কী, name = ইংরেজি ফলব্যাক
+const PAPER_COLORS: Array<{ id: PaperColor; k: string; name: string; bg: string }> = [
+  { id: 'white', k: 'lay.color.white', name: 'White', bg: '#ffffff' },
+  { id: 'cream', k: 'lay.color.cream', name: 'Cream (Book Paper)', bg: '#f7edd8' },
+  { id: 'dark', k: 'lay.color.dark', name: 'Dark Mode', bg: '#1e293b' },
 ];
 
 /** বর্ডার লাইনের প্রিসেট রং — প্রথমটি (Black) ডিফল্ট লুক */
-const BORDER_LINE_COLORS: Array<{ hex: string; name: string }> = [
-  { hex: '#1e293b', name: 'Black' },
-  { hex: '#64748b', name: 'Slate' },
-  { hex: '#9f1239', name: 'Maroon' },
-  { hex: '#4f46e5', name: 'Indigo' },
-  { hex: '#059669', name: 'Emerald' },
-  { hex: '#d97706', name: 'Amber' },
-  { hex: '#e11d48', name: 'Rose' },
-  { hex: '#ca8a04', name: 'Gold' },
+const BORDER_LINE_COLORS: Array<{ hex: string; k: string; name: string }> = [
+  { hex: '#1e293b', k: 'lay.lcolor.black', name: 'Black' },
+  { hex: '#64748b', k: 'lay.lcolor.slate', name: 'Slate' },
+  { hex: '#9f1239', k: 'lay.lcolor.maroon', name: 'Maroon' },
+  { hex: '#4f46e5', k: 'lay.lcolor.indigo', name: 'Indigo' },
+  { hex: '#059669', k: 'lay.lcolor.emerald', name: 'Emerald' },
+  { hex: '#d97706', k: 'lay.lcolor.amber', name: 'Amber' },
+  { hex: '#e11d48', k: 'lay.lcolor.rose', name: 'Rose' },
+  { hex: '#ca8a04', k: 'lay.lcolor.gold', name: 'Gold' },
 ];
 
-const BORDER_STYLE_LABELS: Record<PageBorderStyle, string> = { solid: 'Solid', double: 'Double', dashed: 'Dashed' };
-const BORDER_WIDTH_LABELS: Record<PageBorderWidth, string> = { thin: 'Thin', medium: 'Medium', thick: 'Thick' };
+// মান = অভিধান-কী (dict-layout)
+const BORDER_STYLE_LABELS: Record<PageBorderStyle, string> = { solid: 'lay.bstyle.solid', double: 'lay.bstyle.double', dashed: 'lay.bstyle.dashed' };
+const BORDER_WIDTH_LABELS: Record<PageBorderWidth, string> = { thin: 'lay.bwidth.thin', medium: 'lay.bwidth.medium', thick: 'lay.bwidth.thick' };
 
 // ─── পানির ছাপ (Watermark) ───
 
-/** এক-ক্লিক প্রিসেট — লেখা + চালু করে দেয় (বাকি স্টাইল অপরিবর্তিত) */
-const WATERMARK_PRESETS: Array<{ text: string; label: string; note: string }> = [
-  { text: 'খসড়া', label: 'খসড়া (Draft)', note: 'লেখা চলাকালীন প্রিন্ট-প্রুফ শনাক্ত করতে' },
-  { text: 'নমুনা', label: 'নমুনা (Sample)', note: 'রিভিউ/প্রুফ কপির জন্য' },
-  { text: 'গোপনীয়', label: 'গোপনীয় (Confidential)', note: 'সংবেদনশীল ডকুমেন্টে' },
-  { text: 'COPY', label: 'COPY', note: 'অননুমোদিত কপি চিহ্নিত করতে' },
+/** এক-ক্লিক প্রিসেট — লেখা + চালু করে দেয় (বাকি স্টাইল অপরিবর্তিত)। lk/nk = অভিধান-কী, label/note = ফলব্যাক */
+const WATERMARK_PRESETS: Array<{ text: string; lk: string; label: string; nk: string; note: string }> = [
+  { text: 'খসড়া', lk: 'lay.wm.p1.label', label: 'খসড়া (Draft)', nk: 'lay.wm.p1.note', note: 'লেখা চলাকালীন প্রিন্ট-প্রুফ শনাক্ত করতে' },
+  { text: 'নমুনা', lk: 'lay.wm.p2.label', label: 'নমুনা (Sample)', nk: 'lay.wm.p2.note', note: 'রিভিউ/প্রুফ কপির জন্য' },
+  { text: 'গোপনীয়', lk: 'lay.wm.p3.label', label: 'গোপনীয় (Confidential)', nk: 'lay.wm.p3.note', note: 'সংবেদনশীল ডকুমেন্টে' },
+  { text: 'COPY', lk: 'lay.wm.p4.label', label: 'COPY', nk: 'lay.wm.p4.note', note: 'অননুমোদিত কপি চিহ্নিত করতে' },
 ];
 
 /** ছাপের রং — ধূসর/নীল/লাল প্রিসেট + কাস্টম পিকার */
@@ -101,6 +103,8 @@ const WATERMARK_DEFAULTS: WatermarkSettings = {
 export function LayoutTab() {
   const settings = useEditorStore((s) => s.settings);
   const update = useEditorStore((s) => s.updateSettings);
+  const tt = useT();
+  const fnum = useFmtNum();
 
   const setMargins = (patch: Partial<Margins>) => update({ margins: { ...settings.margins, ...patch } });
 
@@ -115,36 +119,37 @@ export function LayoutTab() {
     if (!pageId) return;
     const editor = getEditor(pageId);
     if (!editor || editor.isDestroyed) {
-      toast.error('পাতাটি এখনো খোলেনি — পাতাটিতে একবার ক্লিক করে আবার চাপুন');
+      toast.error(tt('lay.toast.pageNotOpen'));
       return;
     }
     void fillFromNextPage(editor, pageId, availableHeightOfEditor(pageId)).then((res) => {
       if (res.status === 'moved') {
-        toast.success(`${toBanglaNumber(res.blocks)}টি ব্লক নিচের পাতা থেকে উঠে এসেছে`);
+        toast.success(tFmt('lay.toast.moved', { n: fnum(res.blocks) }));
       } else if (res.status === 'absorbed') {
-        toast.success('পরের পাতার সব লেখা এই পাতায় উঠে এসেছে — খালি পাতাটি মুছে গেছে');
+        toast.success(tt('lay.toast.absorbed'));
       } else if (res.status === 'none') {
-        toast.info('পরের পাতার প্রথম ব্লকটি ফাঁকা জায়গায় আঁটে না — আর তোলা যায়নি');
+        toast.info(tt('lay.toast.nofit'));
       } else {
-        toast.info('এই পাতার পরে টানার মতো কনটেন্ট নেই');
+        toast.info(tt('lay.toast.nothing'));
       }
     });
   };
 
   const smartFlow = () => {
     toast.promise(smartFlowWholeBook(), {
-      loading: 'স্মার্ট ফ্লো চলছে — ফাঁকা পাতাগুলো পূরণ করতে স্বয়ংক্রিয়ভাবে স্ক্রল হচ্ছে…',
+      loading: tt('lay.toast.smartLoading'),
       success: (st) => st.blocksMoved > 0
-        ? `${toBanglaNumber(st.blocksMoved)}টি ব্লক ${toBanglaNumber(st.pagesFilled)}টি পাতায় উঠে গেছে${st.pagesDeleted > 0 ? ` · ${toBanglaNumber(st.pagesDeleted)}টি পাতা মুছে গেছে` : ''}`
-        : 'সব পাতা আগে থেকেই সুন্দরভাবে সাজানো — কিছু করার নেই',
-      error: 'স্মার্ট ফ্লো চালাতে সমস্যা হয়েছে',
+        ? tFmt('lay.toast.smartMoved', { a: fnum(st.blocksMoved), b: fnum(st.pagesFilled) })
+          + (st.pagesDeleted > 0 ? ` · ${tFmt('lay.toast.smartDeleted', { n: fnum(st.pagesDeleted) })}` : '')
+        : tt('lay.toast.smartClean'),
+      error: tt('lay.toast.smartError'),
     });
   };
 
   const removeEmpty = () => {
     const n = removeEmptyPages();
-    if (n > 0) toast.success(`${toBanglaNumber(n)}টি ফাঁকা পাতা মুছে ফেলা হয়েছে`);
-    else toast.info('কোনো ফাঁকা পাতা পাওয়া যায়নি');
+    if (n > 0) toast.success(tFmt('lay.toast.removed', { n: fnum(n) }));
+    else toast.info(tt('lay.toast.noneFound'));
   };
 
   // ── পানির ছাপ: পুরনো ডকুমেন্টে settings.watermark অনুপস্থিত হতে পারে — ডিফল্ট ধরে নেই ──
@@ -164,7 +169,7 @@ export function LayoutTab() {
 
   return (
     <div className="ribbon-scroll flex items-stretch gap-1">
-      <RibbonGroup label="Paper Size">
+      <RibbonGroup label={tt('lay.group.paper')} accent="paper size">
         <div className="flex flex-col gap-1">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -177,7 +182,7 @@ export function LayoutTab() {
                 <DropdownMenuItem key={p.id} onClick={() => update({ paperSize: p.id })}>
                   <span className="flex flex-col">
                     <span className={cn(settings.paperSize === p.id && 'font-bold')}>{p.name}</span>
-                    <span className="text-[10px] text-muted-foreground">{p.note} — {toBanglaNumber(p.widthMm)}×{toBanglaNumber(p.heightMm)} mm</span>
+                    <span className="text-[10px] text-muted-foreground">{p.note} — {fnum(p.widthMm)}×{fnum(p.heightMm)} {tt('lay.mm')}</span>
                   </span>
                 </DropdownMenuItem>
               ))}
@@ -188,22 +193,22 @@ export function LayoutTab() {
               type="button"
               className={cn('ribbon-toggle', settings.orientation === 'portrait' && 'ribbon-toggle-active')}
               onClick={() => update({ orientation: 'portrait' })}
-              title="Portrait"
+              title={tt('lay.orient.portrait')}
             >
-              ▯ Portrait
+              ▯ {tt('lay.orient.portrait')}
             </button>
             <button
               type="button"
               className={cn('ribbon-toggle', settings.orientation === 'landscape' && 'ribbon-toggle-active')}
               onClick={() => update({ orientation: 'landscape' })}
-              title="Landscape"
+              title={tt('lay.orient.landscape')}
             >
-              ▭ Landscape
+              ▭ {tt('lay.orient.landscape')}
             </button>
           </div>
           {settings.paperSize === 'custom' ? (
             <div className="flex gap-2">
-              <Field label="Width (mm)">
+              <Field label={tt('lay.paper.width')}>
                 <input
                   type="number"
                   className="ribbon-number w-16"
@@ -213,7 +218,7 @@ export function LayoutTab() {
                   onChange={(e) => update({ customPaper: { ...settings.customPaper, widthMm: Math.max(80, Math.min(600, Number(e.target.value) || 210)) } })}
                 />
               </Field>
-              <Field label="Height (mm)">
+              <Field label={tt('lay.paper.height')}>
                 <input
                   type="number"
                   className="ribbon-number w-16"
@@ -228,12 +233,12 @@ export function LayoutTab() {
         </div>
       </RibbonGroup>
       <RibbonDivider />
-      <RibbonGroup label="Margins (in)">
+      <RibbonGroup label={tt('lay.group.margins')} accent="margins (in)">
         <div className="flex flex-col gap-1">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button type="button" className="ribbon-select w-44">
-                Preset Margins <span aria-hidden="true">▾</span>
+                {tt('lay.margins.preset')} <span aria-hidden="true">▾</span>
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-56">
@@ -245,34 +250,34 @@ export function LayoutTab() {
             </DropdownMenuContent>
           </DropdownMenu>
           <div className="flex flex-wrap gap-x-3 gap-y-1">
-            <Field label="Top">
+            <Field label={tt('lay.margin.top')}>
               <NumberInput value={settings.margins.top} onChange={(v) => setMargins({ top: v })} />
             </Field>
-            <Field label="Bottom">
+            <Field label={tt('lay.margin.bottom')}>
               <NumberInput value={settings.margins.bottom} onChange={(v) => setMargins({ bottom: v })} />
             </Field>
-            <Field label="Left">
+            <Field label={tt('lay.margin.left')}>
               <NumberInput value={settings.margins.left} onChange={(v) => setMargins({ left: v })} />
             </Field>
-            <Field label="Right">
+            <Field label={tt('lay.margin.right')}>
               <NumberInput value={settings.margins.right} onChange={(v) => setMargins({ right: v })} />
             </Field>
-            <Field label="Gutter">
+            <Field label={tt('lay.margin.gutter')}>
               <NumberInput value={settings.margins.gutter} onChange={(v) => setMargins({ gutter: v })} max={1.5} />
             </Field>
           </div>
         </div>
       </RibbonGroup>
       <RibbonDivider />
-      <RibbonGroup label="Paper & Border">
+      <RibbonGroup label={tt('lay.group.paperBorder')} accent="paper & border">
         <div className="flex flex-col gap-1.5">
           <div className="flex gap-1">
             {PAPER_COLORS.map((c) => (
               <button
                 key={c.id}
                 type="button"
-                title={c.name}
-                aria-label={c.name}
+                title={tt(c.k, c.name)}
+                aria-label={tt(c.k, c.name)}
                 onClick={() => update({ paperColor: c.id })}
                 className={cn(
                   'h-7 w-7 rounded-full border-2 transition',
@@ -285,56 +290,56 @@ export function LayoutTab() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button type="button" className="ribbon-select w-40">
-                <SwatchBook size={13} /> Page Border: {
-                  settings.pageBorder === 'none' ? 'None' : settings.pageBorder === 'thin' ? 'Thin' : settings.pageBorder === 'double' ? 'Double' : 'Ornamental'
+                <SwatchBook size={13} /> {tt('lay.border.label')} {
+                  settings.pageBorder === 'none' ? tt('lay.border.none') : settings.pageBorder === 'thin' ? tt('lay.border.thin') : settings.pageBorder === 'double' ? tt('lay.border.double') : tt('lay.border.ornamental')
                 } <span aria-hidden="true">▾</span>
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
-              <DropdownMenuItem onClick={() => update({ pageBorder: 'none' })}>None</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => update({ pageBorder: 'thin', pageBorderStyle: 'solid', pageBorderWidth: 'thin' })}>Thin Line</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => update({ pageBorder: 'double', pageBorderStyle: 'double', pageBorderWidth: 'thick' })}>Double Line (Book)</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => update({ pageBorder: 'ornamental' })}>Ornamental Frame</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => update({ pageBorder: 'none' })}>{tt('lay.border.none')}</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => update({ pageBorder: 'thin', pageBorderStyle: 'solid', pageBorderWidth: 'thin' })}>{tt('lay.border.thinline')}</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => update({ pageBorder: 'double', pageBorderStyle: 'double', pageBorderWidth: 'thick' })}>{tt('lay.border.doublebook')}</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => update({ pageBorder: 'ornamental' })}>{tt('lay.border.ornframe')}</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           <div className="flex gap-1">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button type="button" className="ribbon-select w-28" title="Border line style">
-                  Style: {BORDER_STYLE_LABELS[borderStyle]} <span aria-hidden="true">▾</span>
+                <button type="button" className="ribbon-select w-28" title={tt('lay.border.styleTip')}>
+                  {tt('lay.border.stylePrefix')} {tt(BORDER_STYLE_LABELS[borderStyle])} <span aria-hidden="true">▾</span>
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
                 {(['solid', 'double', 'dashed'] as PageBorderStyle[]).map((st) => (
                   <DropdownMenuItem key={st} onClick={() => update({ pageBorderStyle: st })}>
-                    <span className={cn(borderStyle === st && 'font-bold')}>{BORDER_STYLE_LABELS[st]}</span>
+                    <span className={cn(borderStyle === st && 'font-bold')}>{tt(BORDER_STYLE_LABELS[st])}</span>
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button type="button" className="ribbon-select w-28" title="Border line width">
-                  Width: {BORDER_WIDTH_LABELS[borderWidth]} <span aria-hidden="true">▾</span>
+                <button type="button" className="ribbon-select w-28" title={tt('lay.border.widthTip')}>
+                  {tt('lay.border.widthPrefix')} {tt(BORDER_WIDTH_LABELS[borderWidth])} <span aria-hidden="true">▾</span>
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
                 {(['thin', 'medium', 'thick'] as PageBorderWidth[]).map((w) => (
                   <DropdownMenuItem key={w} onClick={() => update({ pageBorderWidth: w })}>
-                    <span className={cn(borderWidth === w && 'font-bold')}>{BORDER_WIDTH_LABELS[w]} — {PAGE_BORDER_WIDTH_PX[w]}px</span>
+                    <span className={cn(borderWidth === w && 'font-bold')}>{tt(BORDER_WIDTH_LABELS[w])} — {fnum(PAGE_BORDER_WIDTH_PX[w])}px</span>
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="whitespace-nowrap text-xs text-muted-foreground">Line Color</span>
+            <span className="whitespace-nowrap text-xs text-muted-foreground">{tt('lay.line.color')}</span>
             {BORDER_LINE_COLORS.map((c) => (
               <button
                 key={c.hex}
                 type="button"
-                title={`${c.name} (${c.hex})`}
-                aria-label={`Border line color ${c.name}`}
+                title={`${tt(c.k, c.name)} (${c.hex})`}
+                aria-label={tt('lay.line.colorAria').split('{name}').join(tt(c.k, c.name))}
                 onClick={() => update({ pageBorderColor: c.hex })}
                 className={cn(
                   'h-5 w-5 rounded-full border-2 transition',
@@ -345,8 +350,8 @@ export function LayoutTab() {
             ))}
             <input
               type="color"
-              aria-label="Custom border color"
-              title="Custom color"
+              aria-label={tt('lay.color.customBorderAria')}
+              title={tt('lay.color.custom')}
               className="h-5 w-7 cursor-pointer rounded border border-border bg-transparent p-0"
               value={/^#[0-9a-fA-F]{6}$/.test(settings.pageBorderColor) ? settings.pageBorderColor : '#1e293b'}
               onChange={(e) => update({ pageBorderColor: e.target.value })}
@@ -355,28 +360,28 @@ export function LayoutTab() {
         </div>
       </RibbonGroup>
       <RibbonDivider />
-      <RibbonGroup label="Watermark">
+      <RibbonGroup label={tt('lay.group.watermark')} accent="indigo">
         <div className="flex flex-col gap-1">
           <RibbonButton
             icon={Droplet}
-            label="Watermark"
-            title="প্রতিটি পাতায় হালকা ঘূর্ণিত পানির ছাপ — প্রিন্ট ও ফরমার খসড়া কপিতেও ছাপা হয়"
+            label={tt('lay.wm.label')}
+            title={tt('lay.wm.tip')}
             active={wm.enabled}
             onClick={toggleWatermark}
           />
           <div className="flex gap-1">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button type="button" className="ribbon-select w-28" title="Watermark preset">
-                  <span className="truncate">{wm.text.trim() || 'Preset'}</span> <span aria-hidden="true">▾</span>
+                <button type="button" className="ribbon-select w-28" title={tt('lay.wm.preset')}>
+                  <span className="truncate">{wm.text.trim() || tt('lay.wm.presetShort')}</span> <span aria-hidden="true">▾</span>
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-56">
                 {WATERMARK_PRESETS.map((p) => (
                   <DropdownMenuItem key={p.text} onClick={() => applyWatermarkPreset(p.text)}>
                     <span className="flex flex-col">
-                      <span className={cn(wm.text === p.text && 'font-bold')}>{p.label}</span>
-                      <span className="text-[10px] text-muted-foreground">{p.note}</span>
+                      <span className={cn(wm.text === p.text && 'font-bold')}>{tt(p.lk, p.label)}</span>
+                      <span className="text-[10px] text-muted-foreground">{tt(p.nk, p.note)}</span>
                     </span>
                   </DropdownMenuItem>
                 ))}
@@ -384,19 +389,19 @@ export function LayoutTab() {
             </DropdownMenu>
             <Popover>
               <PopoverTrigger asChild>
-                <button type="button" className="ribbon-select w-36" title="Watermark customization">
-                  <SlidersHorizontal size={13} /> Customize… <span aria-hidden="true">▾</span>
+                <button type="button" className="ribbon-select w-36" title={tt('lay.wm.customizeTitle')}>
+                  <SlidersHorizontal size={13} /> {tt('lay.wm.customizeBtn')} <span aria-hidden="true">▾</span>
                 </button>
               </PopoverTrigger>
               <PopoverContent className="w-72 p-3" align="start">
-                <p className="mb-1 text-xs font-semibold text-muted-foreground">Watermark Text</p>
+                <p className="mb-1 text-xs font-semibold text-muted-foreground">{tt('lay.wm.text')}</p>
                 <Input
                   value={wm.text}
                   onChange={(e) => setWm({ text: e.target.value })}
-                  placeholder="খসড়া"
+                  placeholder={tt('lay.wm.ph')}
                   className="h-8 text-sm"
                 />
-                <p className="mb-1 mt-2.5 text-xs font-semibold text-muted-foreground">Preview</p>
+                <p className="mb-1 mt-2.5 text-xs font-semibold text-muted-foreground">{tt('lay.wm.preview')}</p>
                 <div className="flex h-14 items-center justify-center overflow-hidden rounded-md border border-border bg-background">
                   <span
                     aria-hidden="true"
@@ -409,39 +414,39 @@ export function LayoutTab() {
                       fontFamily: fontStackOf(settings.defaultFont),
                     }}
                   >
-                    {wm.text.trim() || 'খসড়া'}
+                    {wm.text.trim() || tt('lay.wm.ph')}
                   </span>
                 </div>
                 <div className="mt-3 space-y-2.5">
                   <div>
                     <div className="mb-1 flex items-center justify-between text-xs">
-                      <span className="text-muted-foreground">Opacity</span>
-                      <span className="tabular-nums">{Math.round(wm.opacity * 100)}%</span>
+                      <span className="text-muted-foreground">{tt('lay.wm.opacity')}</span>
+                      <span className="tabular-nums">{fnum(Math.round(wm.opacity * 100))}%</span>
                     </div>
                     <Slider value={[wm.opacity]} min={0.04} max={0.35} step={0.01} onValueChange={(v) => setWm({ opacity: v[0] ?? wm.opacity })} />
                   </div>
                   <div>
                     <div className="mb-1 flex items-center justify-between text-xs">
-                      <span className="text-muted-foreground">Angle</span>
-                      <span className="tabular-nums">{wm.angle}°</span>
+                      <span className="text-muted-foreground">{tt('lay.wm.angle')}</span>
+                      <span className="tabular-nums">{fnum(wm.angle)}°</span>
                     </div>
                     <Slider value={[wm.angle]} min={-90} max={90} step={5} onValueChange={(v) => setWm({ angle: v[0] ?? wm.angle })} />
                   </div>
                   <div>
                     <div className="mb-1 flex items-center justify-between text-xs">
-                      <span className="text-muted-foreground">Font Size (pt)</span>
-                      <span className="tabular-nums">{wm.fontSize}</span>
+                      <span className="text-muted-foreground">{tt('lay.wm.fontSize')}</span>
+                      <span className="tabular-nums">{fnum(wm.fontSize)}</span>
                     </div>
                     <Slider value={[wm.fontSize]} min={24} max={120} step={4} onValueChange={(v) => setWm({ fontSize: v[0] ?? wm.fontSize })} />
                   </div>
                 </div>
-                <p className="mb-1 mt-3 text-xs font-semibold text-muted-foreground">Color</p>
+                <p className="mb-1 mt-3 text-xs font-semibold text-muted-foreground">{tt('lay.wm.color')}</p>
                 <div className="flex flex-wrap items-center gap-1.5">
                   {WATERMARK_COLORS.map((c) => (
                     <button
                       key={c}
                       type="button"
-                      aria-label={`Watermark color ${c}`}
+                      aria-label={tt('lay.wm.colorAria').split('{name}').join(c)}
                       title={c}
                       onClick={() => setWm({ color: c })}
                       className={cn(
@@ -453,15 +458,15 @@ export function LayoutTab() {
                   ))}
                   <input
                     type="color"
-                    aria-label="Custom watermark color"
-                    title="Custom color"
+                    aria-label={tt('lay.wm.customWmAria')}
+                    title={tt('lay.color.custom')}
                     className="h-6 w-8 cursor-pointer rounded border border-border bg-transparent p-0"
                     value={/^#[0-9a-fA-F]{6}$/.test(wm.color) ? wm.color : '#64748b'}
                     onChange={(e) => setWm({ color: e.target.value })}
                   />
                 </div>
                 <p className="mt-2.5 text-[10px] leading-snug text-muted-foreground">
-                  ছাপটি প্রিন্ট ও ফরমা PDF-এও আসে — চূড়ান্ত PDF বানানোর আগে Watermark টগল বন্ধ করে নিন।
+                  {tt('lay.wm.warn')}
                 </p>
               </PopoverContent>
             </Popover>
@@ -469,31 +474,31 @@ export function LayoutTab() {
         </div>
       </RibbonGroup>
       <RibbonDivider />
-      <RibbonGroup label="Content Flow">
+      <RibbonGroup label={tt('lay.group.flow')} accent="content flow">
         <div className="flex flex-col gap-1">
           <RibbonButton
             icon={ArrowUpToLine}
-            label="Fill Empty Space"
-            title="নিচের পাতার লেখা/ছবি/টেবিল এই পাতার ফাঁকা জায়গায় তুলুন"
+            label={tt('lay.flow.fill')}
+            title={tt('lay.flow.fill.tip')}
             onClick={fillFromNext}
           />
           <RibbonButton
             icon={Wand2}
-            label="Smart Flow — Whole Book"
-            title="পুরো বই স্ক্যান করে প্রতিটি পাতার ফাঁকা জায়গা নিচের পাতার কনটেন্ট দিয়ে ভরাবে"
+            label={tt('lay.flow.smart')}
+            title={tt('lay.flow.smart.tip')}
             onClick={smartFlow}
           />
           <RibbonButton
             icon={Eraser}
-            label="Remove Empty Pages"
-            title="শুধু খালি পাতাগুলো মুছে ফেলুন"
+            label={tt('lay.flow.remove')}
+            title={tt('lay.flow.remove.tip')}
             onClick={removeEmpty}
             danger
           />
         </div>
       </RibbonGroup>
       <RibbonDivider />
-      <RibbonGroup label="Default Typography">
+      <RibbonGroup label={tt('lay.group.typo')} accent="default typography">
         <div className="flex flex-col gap-1">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -510,13 +515,13 @@ export function LayoutTab() {
             </DropdownMenuContent>
           </DropdownMenu>
           <div className="flex flex-wrap gap-x-3 gap-y-1">
-            <Field label="Size (pt)">
+            <Field label={tt('lay.typo.size')}>
               <NumberInput value={settings.defaultFontSize} onChange={(v) => update({ defaultFontSize: v })} step={0.5} min={8} max={28} />
             </Field>
-            <Field label="Line Height">
+            <Field label={tt('lay.typo.lineHeight')}>
               <NumberInput value={settings.lineHeight} onChange={(v) => update({ lineHeight: v })} step={0.05} min={1} max={3} />
             </Field>
-            <Field label="Paragraph Gap (px)">
+            <Field label={tt('lay.typo.paraGap')}>
               <NumberInput value={settings.paragraphSpacing} onChange={(v) => update({ paragraphSpacing: v })} step={1} min={0} max={28} />
             </Field>
           </div>

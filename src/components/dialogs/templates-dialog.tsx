@@ -27,6 +27,7 @@ import {
 } from '@/lib/page-templates';
 import { StaticContent } from '@/components/editor/static-content';
 import { fontStackOf } from '@/lib/paper';
+import { useT, useFmtNum } from '@/lib/i18n';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { ArrowDownToLine, Replace } from 'lucide-react';
@@ -98,6 +99,8 @@ function TemplateCard({ tpl, onPick, onReplace, canReplace }: {
   onReplace: (t: PageTemplate) => void;
   canReplace: boolean;
 }) {
+  const tt = useT();
+  const nf = useFmtNum();
   const rows = templatePreviewRows(tpl.kind);
   return (
     <div className="group relative flex flex-col gap-2 rounded-xl border border-border bg-card p-3 transition hover:border-primary hover:shadow-md">
@@ -105,7 +108,7 @@ function TemplateCard({ tpl, onPick, onReplace, canReplace }: {
         type="button"
         onClick={() => onPick(tpl)}
         className="flex flex-col gap-2 rounded-lg text-left focus-visible:outline-2 focus-visible:outline-ring"
-        aria-label={`${tpl.name} টেমপ্লেট নতুন পাতায় যোগ করুন`}
+        aria-label={tt('dlg1.tpl.ariaAdd').split('{name}').join(tpl.name)}
       >
         <TemplatePreview tpl={tpl} />
         <div>
@@ -127,23 +130,25 @@ function TemplateCard({ tpl, onPick, onReplace, canReplace }: {
                 'absolute right-2 top-2 z-10 flex items-center gap-1 rounded-md border border-border bg-white/95 px-1.5 py-1 text-[10px] font-medium text-slate-600 shadow-sm transition',
                 canReplace ? 'hover:border-primary hover:text-primary' : 'cursor-not-allowed opacity-40',
               )}
-              aria-label={`বর্তমান পাতার লেখা বদলে “${tpl.name}” বসান`}
+              aria-label={tt('dlg1.tpl.ariaReplace').split('{name}').join(tpl.name)}
             >
-              <Replace size={11} /> এই পাতায়
+              <Replace size={11} /> {tt('dlg1.tpl.thisPage')}
             </button>
           </TooltipTrigger>
           <TooltipContent side="left">
-            {canReplace ? 'বর্তমান পাতার লেখা মুছে এই ডিজাইন বসান' : 'কভার পাতায় প্রয়োগ করা যাবে না'}
+            {canReplace ? tt('dlg1.tpl.replaceTip') : tt('dlg1.tpl.replaceNo')}
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
       {/* ফলব্যাক প্রিভিউ ডেটা (স্ক্রিন-রিডারের জন্য বর্ণনা সংরক্ষণ) */}
-      <span className="sr-only">{rows.length} উপাদানের প্রিভিউ</span>
+      <span className="sr-only">{tt('dlg1.tpl.previewRows').split('{n}').join(nf(rows.length))}</span>
     </div>
   );
 }
 
 export function TemplatesDialog() {
+  const tt = useT();
+  const nf = useFmtNum();
   const openDialog = useUiStore((s) => s.openDialog);
   const close = useUiStore((s) => s.close);
   const open = openDialog === 'templates';
@@ -155,8 +160,8 @@ export function TemplatesDialog() {
     const afterId = s.activePageId ?? s.pages[s.pages.length - 1]?.id ?? null;
     const newId = s.addPage(afterId, tpl.html);
     s.setActivePage(newId);
-    toast.success(`“${tpl.name}” নতুন পাতায় যোগ হয়েছে`, {
-      description: 'পাতাটি বর্তমান পাতার ঠিক পরে বসেছে — এখন নিজের মতো এডিট করুন।',
+    toast.success(tt('dlg1.tpl.toastAdded').split('{name}').join(tpl.name), {
+      description: tt('dlg1.tpl.toastAddedDesc'),
     });
     close();
   };
@@ -171,7 +176,7 @@ export function TemplatesDialog() {
     if (!pageId) return;
     s.replacePageHtml(pageId, replaceTarget.html);
     s.setActivePage(pageId);
-    toast.success(`বর্তমান পাতায় “${replaceTarget.name}” বসানো হয়েছে`);
+    toast.success(tt('dlg1.tpl.toastReplaced').split('{name}').join(replaceTarget.name));
     setReplaceTarget(null);
     close();
   };
@@ -184,19 +189,19 @@ export function TemplatesDialog() {
         <DialogContent className="max-h-[90vh] max-w-4xl overflow-hidden">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              📚 বইয়ের পেজ টেমপ্লেট
+              {tt('dlg1.tpl.title')}
               <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
-                {PAGE_TEMPLATES.length}টি প্রো ডিজাইন
+                {tt('dlg1.tpl.badge').split('{n}').join(nf(PAGE_TEMPLATES.length))}
               </span>
             </DialogTitle>
             <DialogDescription>
-              কার্ডে যে ডিজাইন দেখছেন — ক্লিক করলে ঠিক সেটিই নতুন পাতা বসবে (বর্তমান পাতার পরে)।
-              <span className="hidden sm:inline"> “এই পাতায়” বোতামে বর্তমান পাতার লেখা বদলে ডিজাইনটি বসে।</span>
+              {tt('dlg1.tpl.desc')}
+              <span className="hidden sm:inline">{tt('dlg1.tpl.descMore')}</span>
             </DialogDescription>
           </DialogHeader>
 
           {/* ক্যাটাগরি ফিল্টার */}
-          <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="টেমপ্লেট ক্যাটাগরি">
+          <div className="flex flex-wrap gap-1.5" role="tablist" aria-label={tt('dlg1.tpl.catAria')}>
             {(['all', ...TEMPLATE_CATEGORY_ORDER] as const).map((c) => {
               const count = c === 'all' ? PAGE_TEMPLATES.length : PAGE_TEMPLATES.filter((t) => t.category === c).length;
               return (
@@ -213,8 +218,8 @@ export function TemplatesDialog() {
                       : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
                   )}
                 >
-                  {c === 'all' ? 'সবগুলো' : TEMPLATE_CATEGORY_LABELS[c as TemplateCategory]}
-                  <span className={cn('ml-1 opacity-70')}>({count})</span>
+                  {c === 'all' ? tt('dlg1.tpl.all') : TEMPLATE_CATEGORY_LABELS[c as TemplateCategory]}
+                  <span className={cn('ml-1 opacity-70')}>({nf(count)})</span>
                 </button>
               );
             })}
@@ -234,7 +239,7 @@ export function TemplatesDialog() {
             </div>
             <p className="flex items-center justify-center gap-1.5 pb-3 text-center text-[11px] text-muted-foreground">
               <ArrowDownToLine size={12} />
-              টিপস: প্লেসহোল্ডার লেখাগুলো মুছে নিজের তথ্য বসান — ছবি, আইকন ও বক্স সবই পরে বদলানো যায়।
+              {tt('dlg1.tpl.tip')}
             </p>
           </ScrollArea>
         </DialogContent>
@@ -244,15 +249,14 @@ export function TemplatesDialog() {
       <AlertDialog open={replaceTarget !== null} onOpenChange={(v) => !v && setReplaceTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>বর্তমান পাতার লেখা বদলে বসান?</AlertDialogTitle>
+            <AlertDialogTitle>{tt('dlg1.tpl.confirmTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              এই পাতার এখনকার সব লেখা মুছে “{replaceTarget?.name}” ডিজাইনটি বসবে। এটি ফেরানো যাবে না —
-              গুরুত্বপূর্ণ লেখা থাকলে আগে নতুন পাতা হিসেবে যোগ করুন।
+              {tt('dlg1.tpl.confirmDesc').split('{name}').join(replaceTarget?.name ?? '')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>বাতিল</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmReplace}>হ্যাঁ, বদলে বসান</AlertDialogAction>
+            <AlertDialogCancel>{tt('hdr.cancel')}</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmReplace}>{tt('dlg1.tpl.confirmYes')}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

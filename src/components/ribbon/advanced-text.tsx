@@ -24,7 +24,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { RibbonButton, RibbonGroup, refocusActiveEditor, runCommand, useActiveEditor } from './ribbon-shell';
 import { COLOR_SWATCHES, fontStackOf } from '@/lib/paper';
-import { toBanglaNumber } from '@/lib/bangla';
+import { tFmt, useFmtNum, useT } from '@/lib/i18n';
 import { useEditorStore } from '@/lib/store';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -108,6 +108,7 @@ function PopField({ label, children }: { label: string; children: React.ReactNod
 
 /** প্যারা-সেটিংস প্রিভিউ — বর্তমান অ্যাট্রিবিউট দিয়েই নমুনা লাইন আঁকি */
 function ParaPreview({ a }: { a: BlockAttrs }) {
+  const tt = useT();
   const font = useEditorStore((s) => s.settings.defaultFont);
   const style: CSSProperties = {
     fontFamily: fontStackOf(font),
@@ -121,7 +122,7 @@ function ParaPreview({ a }: { a: BlockAttrs }) {
   return (
     <div className="rounded-md border border-border bg-background p-2">
       <p className="text-xs leading-relaxed" style={style}>
-        আমার সোনার বাংলা — এই নমুনা লাইনে আপনার সব ফাঁক ও ইনডেন্ট যেভাবে দেখাবে, বইয়ে ঠিক তেমনই ছাপা হবে।
+        {tt('adv.preview.sample')}
       </p>
     </div>
   );
@@ -129,27 +130,29 @@ function ParaPreview({ a }: { a: BlockAttrs }) {
 
 // ─────────────────────── Word Gap (শব্দের ফাঁক) ───────────────────────
 
-const WORD_GAP_PRESETS: Array<{ v: string | null; label: string }> = [
-  { v: null, label: 'সাধারণ (ডিফল্ট)' },
-  { v: '-1px', label: 'সংকুচিত (−১px)' },
-  { v: '1px', label: `১px ফাঁক` },
-  { v: '2px', label: `২px ফাঁক` },
-  { v: '3px', label: `৩px ফাঁক` },
-  { v: '5px', label: `৫px ফাঁক` },
-  { v: '8px', label: `৮px ফাঁক (ঢিলা)` },
-  { v: '0.12em', label: 'বই-জাস্টিফাইড (০.১২em)' },
-  { v: '0.25em', label: 'বই-জাস্টিফাইড বড় (০.২৫em)' },
+const WORD_GAP_PRESETS: Array<{ v: string | null; key: string }> = [
+  { v: null, key: 'adv.preset.default' },
+  { v: '-1px', key: 'adv.wordgap.tight' },
+  { v: '1px', key: 'adv.wordgap.1' },
+  { v: '2px', key: 'adv.wordgap.2' },
+  { v: '3px', key: 'adv.wordgap.3' },
+  { v: '5px', key: 'adv.wordgap.5' },
+  { v: '8px', key: 'adv.wordgap.8' },
+  { v: '0.12em', key: 'adv.wordgap.book' },
+  { v: '0.25em', key: 'adv.wordgap.booklg' },
 ];
 
 function WordGapMenu() {
   const a = useBlockAttrs();
+  const tt = useT();
+  const fmtN = useFmtNum();
   const cur = a.wordSpacing ?? null;
-  const triggerLabel = cur ? `Word Gap · ${toBanglaNumber(numOf(cur) ?? 0)}` : 'Word Gap';
+  const triggerLabel = cur ? `${tt('adv.wordgap')} · ${fmtN(numOf(cur) ?? 0)}` : tt('adv.wordgap');
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button type="button" className={cn('ribbon-btn', cur && 'ribbon-btn-active')} aria-label="Word spacing">
+        <button type="button" className={cn('ribbon-btn', cur && 'ribbon-btn-active')} aria-label={tt('adv.wordgap')}>
           <MoveHorizontal size={16} aria-hidden="true" />
           <span className="ribbon-btn-label">{triggerLabel}</span>
           <span aria-hidden="true" className="text-[10px] opacity-60">▾</span>
@@ -160,17 +163,17 @@ function WordGapMenu() {
         className="w-60"
         onCloseAutoFocus={(e) => { e.preventDefault(); refocusActiveEditor(); }}
       >
-        <DropdownMenuLabel className="text-xs text-muted-foreground">শব্দের মাঝের ফাঁক</DropdownMenuLabel>
+        <DropdownMenuLabel className="text-xs text-muted-foreground">{tt('adv.wordgap.label')}</DropdownMenuLabel>
         {WORD_GAP_PRESETS.map((p) => (
           <DropdownMenuItem
-            key={p.label}
+            key={p.key}
             className={cn((p.v ?? null) === cur && 'bg-accent')}
             onClick={() => runCommand((ed) => {
               if (p.v === null) ed.chain().focus().unsetWordSpacing().run();
               else ed.chain().focus().setWordSpacing(p.v).run();
             })}
           >
-            {p.label}
+            {tt(p.key)}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>
@@ -183,6 +186,8 @@ function WordGapMenu() {
 function CharGapMenu() {
   const a = useBlockAttrs();
   const ed = useActiveEditor();
+  const tt = useT();
+  const fmtN = useFmtNum();
   const cur = a.letterSpacing ?? null;
   const selCur = (() => {
     if (!ed || ed.isDestroyed) return null;
@@ -201,9 +206,9 @@ function CharGapMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button type="button" className={cn('ribbon-btn', (cur || selCur) && 'ribbon-btn-active')} aria-label="Character spacing">
+        <button type="button" className={cn('ribbon-btn', (cur || selCur) && 'ribbon-btn-active')} aria-label={tt('adv.chargap')}>
           <Type size={16} aria-hidden="true" />
-          <span className="ribbon-btn-label">{cur ? `Char Gap · ${toBanglaNumber(numOf(cur) ?? 0)}` : 'Char Gap'}</span>
+          <span className="ribbon-btn-label">{cur ? `${tt('adv.chargap')} · ${fmtN(numOf(cur) ?? 0)}` : tt('adv.chargap')}</span>
           <span aria-hidden="true" className="text-[10px] opacity-60">▾</span>
         </button>
       </DropdownMenuTrigger>
@@ -212,26 +217,26 @@ function CharGapMenu() {
         className="w-64"
         onCloseAutoFocus={(e) => { e.preventDefault(); refocusActiveEditor(); }}
       >
-        <DropdownMenuLabel className="text-xs text-muted-foreground">প্যারাগ্রাফ জুড়ে (শিরোনামে দারুণ মানায়)</DropdownMenuLabel>
+        <DropdownMenuLabel className="text-xs text-muted-foreground">{tt('adv.chargap.para')}</DropdownMenuLabel>
         {[
-          { v: null, label: 'সাধারণ' },
-          { v: '-0.5px', label: 'সংকুচিত (−০.৫px)' },
-          { v: '0.5px', label: 'প্রশস্ত (০.৫px)' },
-          { v: '1px', label: '১px' },
-          { v: '2px', label: '২px' },
+          { v: null, label: tt('adv.normal') },
+          { v: '-0.5px', label: tt('adv.chargap.tight') },
+          { v: '0.5px', label: tt('adv.chargap.wide') },
+          { v: '1px', label: tt('adv.chargap.1') },
+          { v: '2px', label: tt('adv.chargap.2') },
         ].map((p) => (
           <DropdownMenuItem key={`p-${p.label}`} className={cn((p.v ?? null) === cur && 'bg-accent')} onClick={() => setPara(p.v)}>
             {p.label}
           </DropdownMenuItem>
         ))}
         <DropdownMenuSeparator />
-        <DropdownMenuLabel className="text-xs text-muted-foreground">শুধু সিলেক্ট করা লেখায়</DropdownMenuLabel>
+        <DropdownMenuLabel className="text-xs text-muted-foreground">{tt('adv.chargap.sel')}</DropdownMenuLabel>
         {[
-          { v: null, label: 'সাধারণ' },
-          { v: '-0.5px', label: 'সংকুচিত (−০.৫px)' },
-          { v: '0.5px', label: 'প্রশস্ত (০.৫px)' },
-          { v: '1px', label: '১px' },
-          { v: '2px', label: '২px' },
+          { v: null, label: tt('adv.normal') },
+          { v: '-0.5px', label: tt('adv.chargap.tight') },
+          { v: '0.5px', label: tt('adv.chargap.wide') },
+          { v: '1px', label: tt('adv.chargap.1') },
+          { v: '2px', label: tt('adv.chargap.2') },
         ].map((p) => (
           <DropdownMenuItem key={`s-${p.label}`} className={cn((p.v ?? null) === selCur && 'bg-accent')} onClick={() => setSel(p.v)}>
             {p.label}
@@ -246,22 +251,23 @@ function CharGapMenu() {
 
 function ParaSpaceMenu() {
   const a = useBlockAttrs();
+  const tt = useT();
   const active = a.spaceBefore != null || a.spaceAfter != null;
 
   const presets = [
-    { label: 'সাধারণ (ডিফল্ট)', before: null as string | null, after: null as string | null },
-    { label: 'টাইট — ৩pt', before: '3pt', after: '3pt' },
-    { label: 'মাঝারি — ৬pt', before: '6pt', after: '6pt' },
-    { label: 'ঢিলা — ১২pt', before: '12pt', after: '12pt' },
-    { label: 'অধ্যায়-বিরতি — আগে ২৪pt', before: '24pt', after: null },
+    { label: tt('adv.preset.default'), before: null as string | null, after: null as string | null },
+    { label: tt('adv.paragap.tight'), before: '3pt', after: '3pt' },
+    { label: tt('adv.paragap.medium'), before: '6pt', after: '6pt' },
+    { label: tt('adv.paragap.loose'), before: '12pt', after: '12pt' },
+    { label: tt('adv.paragap.chapter'), before: '24pt', after: null },
   ];
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button type="button" className={cn('ribbon-btn', active && 'ribbon-btn-active')} aria-label="Paragraph spacing">
+        <button type="button" className={cn('ribbon-btn', active && 'ribbon-btn-active')} aria-label={tt('adv.paragap')}>
           <AlignVerticalSpaceAround size={16} aria-hidden="true" />
-          <span className="ribbon-btn-label">{active ? 'Para Gap ✓' : 'Para Gap'}</span>
+          <span className="ribbon-btn-label">{active ? `${tt('adv.paragap')} ✓` : tt('adv.paragap')}</span>
           <span aria-hidden="true" className="text-[10px] opacity-60">▾</span>
         </button>
       </DropdownMenuTrigger>
@@ -270,7 +276,7 @@ function ParaSpaceMenu() {
         className="w-60"
         onCloseAutoFocus={(e) => { e.preventDefault(); refocusActiveEditor(); }}
       >
-        <DropdownMenuLabel className="text-xs text-muted-foreground">প্যারার আগে/পরে ফাঁক</DropdownMenuLabel>
+        <DropdownMenuLabel className="text-xs text-muted-foreground">{tt('adv.paragap.label')}</DropdownMenuLabel>
         {presets.map((p) => (
           <DropdownMenuItem
             key={p.label}
@@ -292,18 +298,19 @@ function ParaSpaceMenu() {
 // ─────────────────────── Indent / First Line ───────────────────────
 
 function IndentButtons() {
+  const tt = useT();
   return (
     <>
       <RibbonButton
         icon={IndentIncrease}
-        label="Indent"
-        title="বামে ইনডেন্ট বাড়ান (+০.৫em)"
+        label={tt('adv.indent')}
+        title={tt('adv.indent.tip')}
         onClick={() => runCommand((ed) => ed.chain().focus().adjustIndent('indentLeft', 0.5).run())}
       />
       <RibbonButton
         icon={IndentDecrease}
-        label="Outdent"
-        title="ইনডেন্ট কমান (−০.৫em)"
+        label={tt('adv.outdent')}
+        title={tt('adv.outdent.tip')}
         onClick={() => runCommand((ed) => ed.chain().focus().adjustIndent('indentLeft', -0.5).run())}
       />
     </>
@@ -312,14 +319,16 @@ function IndentButtons() {
 
 function FirstLineMenu() {
   const a = useBlockAttrs();
+  const tt = useT();
+  const fmtN = useFmtNum();
   const cur = a.firstLineIndent ?? null;
   const presets = [
-    { v: null, label: 'নেই' },
-    { v: '0.5em', label: '০.৫em' },
-    { v: '1em', label: '১em (চার্টার্ড)' },
-    { v: '1.25em', label: '১.২৫em' },
-    { v: '1.5em', label: '১.৫em' },
-    { v: '2em', label: '২em' },
+    { v: null, label: tt('adv.none') },
+    { v: '0.5em', label: tt('adv.firstline.05') },
+    { v: '1em', label: tt('adv.firstline.1') },
+    { v: '1.25em', label: tt('adv.firstline.125') },
+    { v: '1.5em', label: tt('adv.firstline.15') },
+    { v: '2em', label: tt('adv.firstline.2') },
   ];
 
   return (
@@ -327,12 +336,12 @@ function FirstLineMenu() {
       <Tooltip>
         <TooltipTrigger asChild>
           <DropdownMenuTrigger asChild>
-            <button type="button" className={cn('ribbon-select w-24 justify-center', cur && 'ring-1 ring-primary')} title="প্রথম লাইন ইনডেন্ট">
-              {cur ? `১ম লাইন ${toBanglaNumber(numOf(cur) ?? 0)}` : '১ম লাইন'} <span aria-hidden="true">▾</span>
+            <button type="button" className={cn('ribbon-select w-24 justify-center', cur && 'ring-1 ring-primary')} title={tt('adv.firstline')}>
+              {cur ? `${tt('adv.firstline.short')} ${fmtN(numOf(cur) ?? 0)}` : tt('adv.firstline.short')} <span aria-hidden="true">▾</span>
             </button>
           </DropdownMenuTrigger>
         </TooltipTrigger>
-        <TooltipContent side="bottom">প্রথম লাইন ইনডেন্ট — প্যারা শুরুর ফাঁক (বাংলা বইয়ের রীতি)</TooltipContent>
+        <TooltipContent side="bottom">{tt('adv.firstline.tip')}</TooltipContent>
       </Tooltip>
       <DropdownMenuContent
         align="start"
@@ -357,68 +366,69 @@ function FirstLineMenu() {
 
 // ─────────────────────── Special Characters (বিশেষ চিহ্ন) ───────────────────────
 
-const CHAR_GROUPS: Array<{ label: string; chars: Array<{ ch: string; label: string }> }> = [
+const CHAR_GROUPS: Array<{ key: string; chars: Array<{ ch: string; key: string }> }> = [
   {
-    label: 'বাংলা',
+    key: 'adv.chargroup.bangla',
     chars: [
-      { ch: '।', label: 'দাঁড়ি' },
-      { ch: '॥', label: 'ডবল দাঁড়ি' },
-      { ch: '৳', label: 'টাকা চিহ্ন' },
-      { ch: 'ঽ', label: 'অবগ্রহ' },
+      { ch: '।', key: 'adv.char.dari' },
+      { ch: '॥', key: 'adv.char.daridari' },
+      { ch: '৳', key: 'adv.char.taka' },
+      { ch: 'ঽ', key: 'adv.char.avagraha' },
     ],
   },
   {
-    label: 'ড্যাশ ও উদ্ধৃতি',
+    key: 'adv.chargroup.dashes',
     chars: [
-      { ch: '-', label: 'হাইফেন' },
-      { ch: '–', label: 'এন ড্যাশ' },
-      { ch: '—', label: 'এম ড্যাশ' },
-      { ch: '…', label: 'ইলিপসিস' },
-      { ch: '‘', label: 'কোট বাম' },
-      { ch: '’', label: 'কোট ডান' },
-      { ch: '“', label: 'ডাবল কোট বাম' },
-      { ch: '”', label: 'ডাবল কোট ডান' },
+      { ch: '-', key: 'adv.char.hyphen' },
+      { ch: '–', key: 'adv.char.endash' },
+      { ch: '—', key: 'adv.char.emdash' },
+      { ch: '…', key: 'adv.char.ellipsis' },
+      { ch: '‘', key: 'adv.char.quotel' },
+      { ch: '’', key: 'adv.char.quoter' },
+      { ch: '“', key: 'adv.char.dquotel' },
+      { ch: '”', key: 'adv.char.dquoter' },
     ],
   },
   {
-    label: 'স্পেস ও যুক্তবর্ণ নিয়ন্ত্রণ',
+    key: 'adv.chargroup.spaces',
     chars: [
-      { ch: '\u00A0', label: 'নন-ব্রেকিং স্পেস' },
-      { ch: '\u200B', label: 'জিরো-উইডথ স্পেস' },
-      { ch: '\u200C', label: 'ZWNJ — যুক্তবর্ণ ভাঙুন' },
-      { ch: '\u200D', label: 'ZWJ — যুক্তবর্ণ জোড়া রাখুন' },
-      { ch: '\u00AD', label: 'সফট হাইফেন' },
+      { ch: '\u00A0', key: 'adv.char.nbsp' },
+      { ch: '\u200B', key: 'adv.char.zwsp' },
+      { ch: '\u200C', key: 'adv.char.zwnj' },
+      { ch: '\u200D', key: 'adv.char.zwj' },
+      { ch: '\u00AD', key: 'adv.char.shy' },
     ],
   },
   {
-    label: 'অন্যান্য',
+    key: 'adv.chargroup.other',
     chars: [
-      { ch: '•', label: 'বুলেট' },
-      { ch: '×', label: 'গুণ' },
-      { ch: '÷', label: 'ভাগ' },
-      { ch: '±', label: 'প্লাস-মাইনাস' },
-      { ch: '°', label: 'ডিগ্রি' },
-      { ch: '©', label: 'কপিরাইট' },
-      { ch: '®', label: 'রেজিস্টার্ড' },
-      { ch: '™', label: 'ট্রেডমার্ক' },
+      { ch: '•', key: 'adv.char.bullet' },
+      { ch: '×', key: 'adv.char.times' },
+      { ch: '÷', key: 'adv.char.divide' },
+      { ch: '±', key: 'adv.char.plusminus' },
+      { ch: '°', key: 'adv.char.degree' },
+      { ch: '©', key: 'adv.char.copyright' },
+      { ch: '®', key: 'adv.char.registered' },
+      { ch: '™', key: 'adv.char.trademark' },
     ],
   },
 ];
 
 function SpecialCharsMenu() {
+  const tt = useT();
   const insert = (ch: string, label: string) => runCommand((ed) => {
     ed.chain().focus().insertContent(ch).run();
     if (/^[\u200B-\u200D\u00AD\u00A0]$/.test(ch)) {
-      toast.info(`${label} বসানো হয়েছে — অদৃশ্য চিহ্ন, লেখায় প্রভাব ফেলে`);
+      toast.info(tFmt('adv.char.inserted', { c: label }));
     }
   });
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button type="button" className="ribbon-btn" aria-label="Special characters">
+        <button type="button" className="ribbon-btn" aria-label={tt('adv.specialchars')}>
           <Omega size={16} aria-hidden="true" />
-          <span className="ribbon-btn-label">Symbols</span>
+          <span className="ribbon-btn-label">{tt('adv.symbols')}</span>
           <span aria-hidden="true" className="text-[10px] opacity-60">▾</span>
         </button>
       </DropdownMenuTrigger>
@@ -428,22 +438,25 @@ function SpecialCharsMenu() {
         onCloseAutoFocus={(e) => { e.preventDefault(); refocusActiveEditor(); }}
       >
         {CHAR_GROUPS.map((g, gi) => (
-          <div key={g.label}>
+          <div key={g.key}>
             {gi > 0 ? <DropdownMenuSeparator /> : null}
-            <DropdownMenuLabel className="text-xs text-muted-foreground">{g.label}</DropdownMenuLabel>
+            <DropdownMenuLabel className="text-xs text-muted-foreground">{tt(g.key)}</DropdownMenuLabel>
             <div className="grid grid-cols-4 gap-1 px-1 pb-1">
-              {g.chars.map((c) => (
-                <button
-                  key={c.label}
-                  type="button"
-                  title={c.label}
-                  aria-label={c.label}
-                  onClick={() => insert(c.ch, c.label)}
-                  className="flex h-8 items-center justify-center rounded-md border border-border text-base transition hover:bg-accent hover:scale-105"
-                >
-                  {/^[\u200B-\u200D\u00AD]$/.test(c.ch) ? <span className="text-[9px] text-muted-foreground">{c.ch === '\u200C' ? 'ZWNJ' : c.ch === '\u200D' ? 'ZWJ' : c.ch === '\u00AD' ? 'H-' : '␣'}</span> : c.ch}
-                </button>
-              ))}
+              {g.chars.map((c) => {
+                const label = tt(c.key);
+                return (
+                  <button
+                    key={c.key}
+                    type="button"
+                    title={label}
+                    aria-label={label}
+                    onClick={() => insert(c.ch, label)}
+                    className="flex h-8 items-center justify-center rounded-md border border-border text-base transition hover:bg-accent hover:scale-105"
+                  >
+                    {/^[\u200B-\u200D\u00AD]$/.test(c.ch) ? <span className="text-[9px] text-muted-foreground">{c.ch === '\u200C' ? 'ZWNJ' : c.ch === '\u200D' ? 'ZWJ' : c.ch === '\u00AD' ? 'H-' : '␣'}</span> : c.ch}
+                  </button>
+                );
+              })}
             </div>
           </div>
         ))}
@@ -456,6 +469,7 @@ function SpecialCharsMenu() {
 
 function AdvancedSpacingPopover() {
   const a = useBlockAttrs();
+  const tt = useT();
   const [open, setOpen] = useState(false);
 
   const num = (key: keyof BlockAttrs): number | null => numOf(a[key]);
@@ -478,13 +492,13 @@ function AdvancedSpacingPopover() {
       <Tooltip>
         <TooltipTrigger asChild>
           <PopoverTrigger asChild>
-            <button type="button" className="ribbon-btn" aria-label="Spacing and indent">
+            <button type="button" className="ribbon-btn" aria-label={tt('adv.spacing.aria')}>
               <SlidersHorizontal size={16} aria-hidden="true" />
-              <span className="ribbon-btn-label">Spacing</span>
+              <span className="ribbon-btn-label">{tt('adv.spacing')}</span>
             </button>
           </PopoverTrigger>
         </TooltipTrigger>
-        <TooltipContent side="bottom">Spacing & Indent — সব ফাঁক ও ইনডেন্ট এক জায়গায়</TooltipContent>
+        <TooltipContent side="bottom">{tt('adv.spacing.tip')}</TooltipContent>
       </Tooltip>
       <PopoverContent
         className="max-h-[70vh] w-80 space-y-2.5 overflow-y-auto p-3"
@@ -493,57 +507,57 @@ function AdvancedSpacingPopover() {
       >
         <ParaPreview a={a} />
 
-        <PopField label="শব্দের ফাঁক">
+        <PopField label={tt('adv.pop.wordgap')}>
           <MiniNum
             value={num('wordSpacing')}
             min={-5}
             max={30}
-            ariaLabel="শব্দের ফাঁক"
+            ariaLabel={tt('adv.pop.wordgap')}
             onCommit={(v) => setLen('wordSpacing', v)}
           />
           <span className="text-[10px] text-muted-foreground">{unit('wordSpacing')}</span>
         </PopField>
 
-        <PopField label="অক্ষরের ফাঁক">
+        <PopField label={tt('adv.pop.chargap')}>
           <MiniNum
             value={num('letterSpacing')}
             min={-3}
             max={20}
             step={0.5}
-            ariaLabel="অক্ষরের ফাঁক"
+            ariaLabel={tt('adv.pop.chargap')}
             onCommit={(v) => setLen('letterSpacing', v)}
           />
           <span className="text-[10px] text-muted-foreground">px</span>
         </PopField>
 
-        <PopField label="প্যারার আগে ফাঁক (pt)">
-          <MiniNum value={num('spaceBefore')} max={72} ariaLabel="প্যারার আগে ফাঁক" onCommit={(v) => setPt('spaceBefore', v)} />
+        <PopField label={tt('adv.pop.before')}>
+          <MiniNum value={num('spaceBefore')} max={72} ariaLabel={tt('adv.pop.before')} onCommit={(v) => setPt('spaceBefore', v)} />
         </PopField>
 
-        <PopField label="প্যারার পরে ফাঁক (pt)">
-          <MiniNum value={num('spaceAfter')} max={72} ariaLabel="প্যারার পরে ফাঁক" onCommit={(v) => setPt('spaceAfter', v)} />
+        <PopField label={tt('adv.pop.after')}>
+          <MiniNum value={num('spaceAfter')} max={72} ariaLabel={tt('adv.pop.after')} onCommit={(v) => setPt('spaceAfter', v)} />
         </PopField>
 
-        <PopField label="১ম লাইন ইনডেন্ট (em)">
-          <MiniNum value={num('firstLineIndent')} max={5} step={0.25} ariaLabel="প্রথম লাইন ইনডেন্ট" onCommit={(v) => setLen('firstLineIndent', v)} />
+        <PopField label={tt('adv.pop.firstline')}>
+          <MiniNum value={num('firstLineIndent')} max={5} step={0.25} ariaLabel={tt('adv.firstline')} onCommit={(v) => setLen('firstLineIndent', v)} />
         </PopField>
 
-        <PopField label="বাম ইনডেন্ট (em)">
-          <MiniNum value={num('indentLeft')} max={8} step={0.25} ariaLabel="বাম ইনডেন্ট" onCommit={(v) => setLen('indentLeft', v)} />
+        <PopField label={tt('adv.pop.left')}>
+          <MiniNum value={num('indentLeft')} max={8} step={0.25} ariaLabel={tt('adv.pop.left')} onCommit={(v) => setLen('indentLeft', v)} />
         </PopField>
 
-        <PopField label="ডান ইনডেন্ট (em)">
-          <MiniNum value={num('indentRight')} max={8} step={0.25} ariaLabel="ডান ইনডেন্ট" onCommit={(v) => setLen('indentRight', v)} />
+        <PopField label={tt('adv.pop.right')}>
+          <MiniNum value={num('indentRight')} max={8} step={0.25} ariaLabel={tt('adv.pop.right')} onCommit={(v) => setLen('indentRight', v)} />
         </PopField>
 
         <div>
-          <p className="mb-1.5 text-xs text-muted-foreground">প্যারা পটভূমি (Shading)</p>
+          <p className="mb-1.5 text-xs text-muted-foreground">{tt('adv.pop.shading')}</p>
           <div className="flex flex-wrap items-center gap-1.5">
             {COLOR_SWATCHES.map((c) => (
               <button
                 key={c}
                 type="button"
-                aria-label={`প্যারা পটভূমি ${c}`}
+                aria-label={`${tt('adv.pop.shading.swatch')} ${c}`}
                 className={cn(
                   'h-5 w-5 rounded border border-black/10 transition hover:scale-110',
                   a.shading?.toLowerCase() === c.toLowerCase() && 'ring-2 ring-primary ring-offset-1',
@@ -554,8 +568,8 @@ function AdvancedSpacingPopover() {
             ))}
             <input
               type="color"
-              aria-label="কাস্টম প্যারা পটভূমি রং"
-              title="কাস্টম রং"
+              aria-label={tt('adv.pop.shading.custom')}
+              title={tt('adv.pop.colorcustom')}
               className="h-5 w-7 cursor-pointer rounded border border-border bg-transparent p-0"
               onChange={(e) => runCommand((ed) => ed.chain().focus().setParagraphShading(e.target.value).run())}
             />
@@ -564,7 +578,7 @@ function AdvancedSpacingPopover() {
               className="text-[10px] text-muted-foreground underline hover:text-foreground"
               onClick={() => runCommand((ed) => ed.chain().focus().unsetParagraphShading().run())}
             >
-              নেই
+              {tt('adv.none')}
             </button>
           </div>
         </div>
@@ -574,10 +588,10 @@ function AdvancedSpacingPopover() {
           className="w-full rounded-md border border-border py-1.5 text-xs text-red-600 transition hover:bg-red-50 dark:hover:bg-red-950"
           onClick={() => {
             runCommand((ed) => ed.chain().focus().resetParagraphFormatting().run());
-            toast.info('প্যারার উন্নত ফরম্যাট রিসেট হয়েছে');
+            toast.info(tt('adv.pop.reset.toast'));
           }}
         >
-          সব রিসেট করুন (ফাঁক + ইনডেন্ট + পটভূমি)
+          {tt('adv.pop.reset')}
         </button>
       </PopoverContent>
     </Popover>
@@ -587,8 +601,9 @@ function AdvancedSpacingPopover() {
 // ─────────────────────── রিবন গ্রুপ ───────────────────────
 
 export function AdvancedTextGroup() {
+  const tt = useT();
   return (
-    <RibbonGroup label="Advanced Text">
+    <RibbonGroup label={tt('adv.group.title')} accent="advanced text">
       <div className="flex flex-col gap-1">
         <div className="flex gap-1">
           <WordGapMenu />

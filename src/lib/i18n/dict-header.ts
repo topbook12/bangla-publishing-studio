@@ -1,0 +1,94 @@
+/**
+ * অভিধান — হেডার, রিবন-শেল, স্ট্যাটাস-বার, স্প্ল্যাশ (মূল ক্রোম)
+ * কী-প্রিফিক্স: app. / hdr. / rb. / st. / lang.
+ */
+
+import type { Dict } from './core';
+
+export const dictHeader: Dict = {
+  // ─── ব্র্যান্ড / অ্যাপ ───
+  'app.brand': { bn: 'বাংলা পাবলিশিং স্টুডিও', hi: 'बांग्ला पब्लिशिंग स्टूडियो', en: 'Bangla Publishing Studio' },
+  'app.tagline': { bn: 'বাংলা ও হিন্দি বইয়ের টাইপসেটিং স্টুডিও', hi: 'बांग्ला · हिंदी पुस्तक टाइपसेटिंग स्टूडियो', en: 'Bangla & Hindi book typesetting studio' },
+  'app.loading': { bn: 'লোড হচ্ছে…', hi: 'लोड हो रहा है…', en: 'Loading…' },
+  'app.preparing': { bn: 'স্টুডিও প্রস্তুত হচ্ছে…', hi: 'स्टूडियो तैयार हो रहा है…', en: 'Preparing your studio…' },
+  'app.focusMode': { bn: 'ফোকাস মোড', hi: 'फ़ोकस मोड', en: 'Focus Mode' },
+  'app.focusExit': { bn: 'ফোকাস মোড বন্ধ (Esc)', hi: 'फ़ोकस मोड बंद करें (Esc)', en: 'Exit focus mode (Esc)' },
+
+  // ─── হেডার ───
+  'hdr.save.saving': { bn: 'সেভ হচ্ছে…', hi: 'सेव हो रहा है…', en: 'Saving…' },
+  'hdr.save.saved': { bn: 'সেভ হয়েছে', hi: 'सेव हो गया', en: 'Saved' },
+  'hdr.save.failed': { bn: 'সেভ ব্যর্থ', hi: 'सेव विफल', en: 'Save failed' },
+  'hdr.save.offline': { bn: 'অফলাইনে প্রস্তুত', hi: 'ऑफ़लाइन तैयार', en: 'Offline ready' },
+  'hdr.theme.tip': { bn: 'থিম বদলান (লাইট/ডার্ক)', hi: 'थीम बदलें (लाइट/डार्क)', en: 'Toggle theme (light / dark)' },
+  'hdr.navigator': { bn: 'আউটলাইন নেভিগেটর', hi: 'आउटलाइन नेविगेटर', en: 'Outline Navigator' },
+  'hdr.navigator.tip': { bn: 'আউটলাইন নেভিগেটর (অধ্যায় তালিকা)', hi: 'आउटलाइन नेविगेटर (अध्याय सूची)', en: 'Outline Navigator (chapter list)' },
+  'hdr.focus.tip': { bn: 'ফোকাস মোড (Ctrl+Shift+F)', hi: 'फ़ोकस मोड (Ctrl+Shift+F)', en: 'Focus Mode (Ctrl+Shift+F)' },
+  'hdr.rename.title': { bn: 'বইয়ের নাম বদলান', hi: 'पुस्तक का नाम बदलें', en: 'Rename Book' },
+  'hdr.rename.placeholder': { bn: 'বইয়ের নাম', hi: 'पुस्तक का नाम', en: 'Book name' },
+  'hdr.rename.btn': { bn: 'নাম বদলান', hi: 'नाम बदलें', en: 'Rename' },
+  'hdr.cancel': { bn: 'বাতিল', hi: 'रद्द करें', en: 'Cancel' },
+  'hdr.save': { bn: 'সেভ', hi: 'सेव', en: 'Save' },
+  'hdr.menu.projects': { bn: 'প্রজেক্টসমূহ', hi: 'प्रोजेक्ट्स', en: 'Projects' },
+  'hdr.menu.new': { bn: 'নতুন বই', hi: 'नई पुस्तक', en: 'New Book' },
+  'hdr.menu.duplicate': { bn: 'এই বইয়ের অনুলিপি', hi: 'इस पुस्तक की प्रतिलिपि', en: 'Duplicate This Book' },
+  'hdr.menu.saved': { bn: 'সেভ করা বইসমূহ', hi: 'सेव की गई पुस्तकें', en: 'Saved Books' },
+  'hdr.menu.none': { bn: 'এখনও কোনো বই নেই', hi: 'अभी कोई पुस्तक नहीं', en: 'No books yet' },
+  'hdr.menu.all': { bn: 'সব বই (ম্যানেজার)', hi: 'सभी पुस्तकें (मैनेजर)', en: 'All Books (Manager)' },
+  'hdr.menu.snapshots': { bn: 'স্ন্যাপশট ইতিহাস (ভার্সন ব্যাকআপ)', hi: 'स्नैपशॉट इतिहास (संस्करण बैकअप)', en: 'Snapshot History (Version Backup)' },
+  'hdr.menu.delete': { bn: 'এই বইটি মুছুন', hi: 'यह पुस्तक मिटाएँ', en: 'Delete This Book' },
+  'hdr.book.untitled': { bn: 'শিরোনামহীন বই', hi: 'शीर्षकहीन पुस्तक', en: 'Untitled Book' },
+  'hdr.help': { bn: 'ব্যবহার নির্দেশিকা (Help)', hi: 'सहायता / उपयोग गाइड', en: 'Help / User Guide' },
+  'hdr.proofing': { bn: 'প্রুফিং', hi: 'प्रूफिंग', en: 'Proofing' },
+  'hdr.delete.title': { bn: 'পুরো বইটি মুছে ফেলবেন?', hi: 'पूरी पुस्तक मिटाएँ?', en: 'Delete this entire book?' },
+  'hdr.delete.desc': { bn: '“{title}” বইটির সব পাতা ও সেটিংস স্থায়ীভাবে মুছে যাবে — এটি আর ফেরানো যাবে না।', hi: '“{title}” — इस पुस्तक के सभी पृष्ठ और सेटिंग स्थायी रूप से मिट जाएँगे; यह पुनः प्राप्त नहीं होगी।', en: 'All pages and settings of “{title}” will be permanently deleted — this cannot be undone.' },
+  'hdr.delete.yes': { bn: 'হ্যাঁ, মুছে ফেলুন', hi: 'हाँ, मिटाएँ', en: 'Yes, delete it' },
+
+  // ─── ভাষা সুইচার ───
+  'lang.label': { bn: 'ভাষা', hi: 'भाषा', en: 'Language' },
+  'lang.tip': { bn: 'ইন্টারফেস ভাষা বদলান', hi: 'इंटरफ़ेस भाषा बदलें', en: 'Change interface language' },
+
+  // ─── রিবন-শেল ───
+  'rb.tab.home': { bn: 'হোম', hi: 'होम', en: 'Home' },
+  'rb.tab.insert': { bn: 'সন্নিবেশ', hi: 'इन्सर्ट', en: 'Insert' },
+  'rb.tab.layout': { bn: 'লেআউট', hi: 'लेआउट', en: 'Layout' },
+  'rb.tab.design': { bn: 'ডিজাইন', hi: 'डिज़ाइन', en: 'Design' },
+  'rb.tab.review': { bn: 'রিভিউ', hi: 'रिव्यू', en: 'Review' },
+  'rb.tab.export': { bn: 'এক্সপোর্ট', hi: 'एक्सपोर्ट', en: 'Export' },
+  'rb.undo': { bn: 'আনডু · Ctrl+Z', hi: 'अनडू · Ctrl+Z', en: 'Undo · Ctrl+Z' },
+  'rb.redo': { bn: 'রিডু · Ctrl+Y', hi: 'रीडू · Ctrl+Y', en: 'Redo · Ctrl+Y' },
+  'rb.toast.cover': { bn: 'কভার পাতায় ফরম্যাট/সন্নিবেশ প্রযোজ্য নয়', hi: 'कवर पृष्ठ पर फ़ॉर्मैट/इन्सर्ट लागू नहीं होता', en: 'Formatting/insertion is not applicable on the cover page' },
+  'rb.toast.notopen': { bn: 'পাতাটি এখন খোলা নেই — আগে পাতাটিতে স্ক্রল করুন', hi: 'पृष्ठ अभी खुला नहीं है — पहले उस पृष्ठ पर स्क्रॉल करें', en: 'That page is not open right now — scroll to it first' },
+  'rb.expand': { bn: 'রিবন খুলুন', hi: 'रिबन खोलें', en: 'Expand Ribbon' },
+  'rb.collapse': { bn: 'রিবন ভাঁজ করুন', hi: 'रिबन समेटें', en: 'Collapse Ribbon' },
+
+  // ─── স্ট্যাটাস-বার ───
+  'st.page': { bn: 'পৃষ্ঠা', hi: 'पृष्ठ', en: 'Page' },
+  'st.page.cover': { bn: 'প্রচ্ছদ', hi: 'कवर', en: 'Cover' },
+  'st.page.nochrome': { bn: 'পৃষ্ঠা {n} (হেডার ছাড়া)', hi: 'पृष्ठ {n} (हेडर रहित)', en: 'Page {n} (no header)' },
+  'st.page.jump': { bn: 'যেকোনো পাতায় যান', hi: 'किसी भी पृष्ठ पर जाएँ', en: 'Go to any page' },
+  'st.page.goto': { bn: 'পাতায় যান', hi: 'पृष्ठ पर जाएँ', en: 'Go to page' },
+  'st.prev': { bn: 'আগের পাতা', hi: 'पिछला पृष्ठ', en: 'Previous page' },
+  'st.next': { bn: 'পরের পাতা', hi: 'अगला पृष्ठ', en: 'Next page' },
+  'st.words': { bn: 'শব্দ', hi: 'शब्द', en: 'Words' },
+  'st.goal.reached': { bn: 'লক্ষ্য পূর্ণ', hi: 'लक्ष्य पूर्ण', en: 'of goal' },
+  'st.goal.set': { bn: 'লক্ষ্য নির্ধারণ', hi: 'लक्ष्य निर्धारित करें', en: 'Set goal' },
+  'st.goal.title': { bn: 'লেখার লক্ষ্য ও সেশন', hi: 'लेखन लक्ष्य और सेशन', en: 'Writing goal & session' },
+  'st.goal.progress': { bn: 'লক্ষ্য অগ্রগতি', hi: 'लक्ष्य प्रगति', en: 'Goal progress' },
+  'st.goal.ofWords': { bn: 'মোট {a} শব্দ · লক্ষ্য {b} শব্দ', hi: 'कुल {a} शब्द · लक्ष्य {b} शब्द', en: 'Total {a} words · goal {b} words' },
+  'st.goal.ofPages': { bn: 'মোট {a} পৃষ্ঠা · লক্ষ্য {b} পৃষ্ঠা', hi: 'कुल {a} पृष्ठ · लक्ष्य {b} पृष्ठ', en: 'Total {a} pages · goal {b} pages' },
+  'st.goal.hint': { bn: 'প্রতিদিন/প্রতি সেশনে কত লিখবেন — লক্ষ্য ঠিক করে নিন, অগ্রগতি এখানেই দেখা যাবে।', hi: 'रोज़/प्रति सेशन कितना लिखेंगे — लक्ष्य तय करें, प्रगति यहीं दिखेगी।', en: 'Set how much you want to write per day/session — progress will appear right here.' },
+  'st.session.label': { bn: 'এই সেশন', hi: 'यह सेशन', en: 'This session' },
+  'st.session.wpm': { bn: 'শব্দ/মিনিট', hi: 'शब्द/मिनट', en: 'wpm' },
+  'st.session.min': { bn: 'মিনিট', hi: 'मिनट', en: 'min' },
+  'st.goal.type.words': { bn: 'শব্দ', hi: 'शब्द', en: 'Words' },
+  'st.goal.type.pages': { bn: 'পৃষ্ঠা', hi: 'पृष्ठ', en: 'Pages' },
+  'st.goal.ph.words': { bn: 'যেমন: ৫০০০ শব্দ', hi: 'जैसे: ५००० शब्द', en: 'e.g. 5000 words' },
+  'st.goal.ph.pages': { bn: 'যেমন: ৫০ পৃষ্ঠা', hi: 'जैसे: ५० पृष्ठ', en: 'e.g. 50 pages' },
+  'st.goal.count': { bn: 'লক্ষ্যের সংখ্যা', hi: 'लक्ष्य संख्या', en: 'Goal number' },
+  'st.clear': { bn: 'মুছুন', hi: 'मिटाएँ', en: 'Clear' },
+  'st.autosave': { bn: 'অটোসেভ · IndexedDB', hi: 'ऑटोसेव · IndexedDB', en: 'AutoSave · IndexedDB' },
+  'st.mm': { bn: 'মিমি', hi: 'मिमी', en: 'mm' },
+  'st.zoom.out': { bn: 'জুম আউট', hi: 'ज़ूम आउट', en: 'Zoom out' },
+  'st.zoom.in': { bn: 'জুম ইন', hi: 'ज़ूम इन', en: 'Zoom in' },
+  'st.zoom.reset': { bn: '১০০%-এ ফেরান', hi: '१००% पर रीसेट', en: 'Reset to 100%' },
+};

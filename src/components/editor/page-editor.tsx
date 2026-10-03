@@ -31,6 +31,7 @@ import { FormatPainterPlugin } from '@/lib/format-painter';
 import { DropCapMark } from '@/lib/text-transform';
 import { useEditorStore } from '@/lib/store';
 import { registerEditor, unregisterEditor } from '@/lib/editor-registry';
+import { t } from '@/lib/i18n';
 import { customExtensions } from './extensions';
 import { designExtensions } from './design-ext';
 import { BlockMover } from './block-mover';
@@ -164,7 +165,8 @@ export function PageEditor({ page, index, isFirstPage }: PageEditorProps) {
       TableRow,
       TableHeaderWithBg,
       TableCellWithBg,
-      Placeholder.configure({ placeholder: 'লিখতে শুরু করুন…' }),
+      // প্লেসহোল্ডার ফাংশন-ফর্মে — t() ডেকোরেশনের সময় চলে, ভাষা বদলালে নতুন ভাষায় দেখায়
+      Placeholder.configure({ placeholder: () => t('ws.placeholder', 'লিখতে শুরু করুন…') }),
       Subscript,
       Superscript,
       FormatPainterPlugin,

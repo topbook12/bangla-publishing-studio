@@ -7,15 +7,26 @@
 /** বাংলা সংখ্যা অক্ষরমালা (০-৯) */
 export const BANGLA_DIGITS: readonly string[] = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
 
+/** দেবনागরী সংখ্যা অক্ষরমালা (०-९) — হিন্দি পৃষ্ঠা নম্বরের জন্য */
+export const DEVANAGARI_DIGITS: readonly string[] = ['०', '१', '२', '३', '४', '५', '६', '७', '८', '९'];
+
 /** সংখ্যা বা স্ট্রিং-এর ভেতরের সব ইংরেজি ডিজিট বাংলায় রূপান্তর করে (অন্য ক্যারেক্টার অক্ষত থাকে) */
 export function toBanglaNumber(n: number | string): string {
   const s = typeof n === 'number' ? String(n) : n;
   return s.replace(/[0-9]/g, (d) => BANGLA_DIGITS[Number(d)]);
 }
 
-/** বাংলা ডিজিটযুক্ত স্ট্রিং থেকে ইংরেজি ডিজিটে রূপান্তর */
+/** সংখ্যা বা স্ট্রিং-এর ইংরেজি ডিজিট দেবনাগরীতে রূপান্তর (হিন্দি পৃষ্ঠা নম্বর) */
+export function toDevanagariNumber(n: number | string): string {
+  const s = typeof n === 'number' ? String(n) : n;
+  return s.replace(/[0-9]/g, (d) => DEVANAGARI_DIGITS[Number(d)]);
+}
+
+/** বাংলা/দেবনাগরী ডিজিটযুক্ত স্ট্রিং থেকে ইংরেজি ডিজিটে রূপান্তর (লক্ষ্য-ইনপুট ইত্যাদি) */
 export function toEnglishDigits(s: string): string {
-  return s.replace(/[০-৯]/g, (d) => String(BANGLA_DIGITS.indexOf(d)));
+  return s
+    .replace(/[০-৯]/g, (d) => String(BANGLA_DIGITS.indexOf(d)))
+    .replace(/[०-९]/g, (d) => String(DEVANAGARI_DIGITS.indexOf(d)));
 }
 
 /** সংখ্যাকে রোমান সংখ্যায় রূপান্তর (১-৩৯৯৯); অবৈধ ইনপুটে খালি স্ট্রিং */
@@ -37,13 +48,15 @@ export function toRomanNumber(n: number): string {
   return out;
 }
 
-export type PageNumberFormat = 'bangla' | 'english' | 'roman';
+export type PageNumberFormat = 'bangla' | 'english' | 'roman' | 'hindi';
 
-/** পৃষ্ঠা নম্বর নির্দিষ্ট ফরম্যাটে (বাংলা/ইংরেজি/রোমান) প্রদর্শন */
+/** পৃষ্ঠা নম্বর নির্দিষ্ট ফরম্যাটে (বাংলা/ইংরেজি/রোমান/হিন্দি) প্রদর্শন */
 export function formatPageNumber(n: number, format: PageNumberFormat): string {
   switch (format) {
     case 'bangla':
       return toBanglaNumber(n);
+    case 'hindi':
+      return toDevanagariNumber(n);
     case 'roman':
       return toRomanNumber(n) || toBanglaNumber(n);
     case 'english':

@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { useT } from '@/lib/i18n';
 import { getEditor } from '@/lib/editor-registry';
 import { COLOR_SWATCHES, HIGHLIGHT_SWATCHES } from '@/lib/paper';
 import { CELL_BG_COLORS } from './table-cell-bg';
@@ -172,6 +173,7 @@ function SwatchRow({
   current?: string | null;
   onPick: (color: string) => void;
 }) {
+  const tt = useT();
   return (
     <div
       role="menuitem"
@@ -186,8 +188,8 @@ function SwatchRow({
           <button
             key={color}
             type="button"
-            aria-label={color === 'transparent' ? 'None' : color}
-            title={color === 'transparent' ? 'None' : color}
+            aria-label={color === 'transparent' ? tt('ws.swatch.none', 'None') : color}
+            title={color === 'transparent' ? tt('ws.swatch.none', 'None') : color}
             className={cn(
               'h-4 w-4 shrink-0 rounded border border-black/20 transition hover:scale-110',
               current === color && 'ring-2 ring-primary ring-offset-1',
@@ -208,6 +210,7 @@ function SwatchRow({
 // ─────────────────────────── host controller ───────────────────────────
 
 export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTMLElement | null> }) {
+  const tt = useT();
   const [menu, setMenu] = useState<MenuState | null>(null);
   const [pos, setPos] = useState({ x: 0, y: 0 });
   const [sizeDialog, setSizeDialog] = useState<ImageDialogState | null>(null);
@@ -441,11 +444,11 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
 
   const imageSections: CtxSection[] = [
     {
-      header: 'সাইজ',
+      header: tt('ws.ctx.hSize', 'Size'),
       items: [
         {
           id: 'img-size-dialog',
-          label: 'ছবির সাইজ ও পজিশন…',
+          label: tt('ws.img.sizeDialog', 'Image size & position…'),
           icon: Ruler,
           onSelect: () => {
             if (menu.imagePos === null) return;
@@ -453,34 +456,34 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
             setMenu(null);
           },
         },
-        { id: 'img-w30', label: 'ছোট — ৩০%', icon: Minimize2, active: imgWidth === '30%', onSelect: () => setImage({ width: '30%' }) },
-        { id: 'img-w55', label: 'মাঝারি — ৫৫%', icon: SquareDashed, active: imgWidth === '55%', onSelect: () => setImage({ width: '55%' }) },
-        { id: 'img-w80', label: 'বড় — ৮০%', icon: Maximize2, active: imgWidth === '80%', onSelect: () => setImage({ width: '80%' }) },
-        { id: 'img-w100', label: 'পূর্ণ প্রস্থ — ১০০%', icon: Expand, active: imgWidth === '100%', onSelect: () => setImage({ width: '100%' }) },
+        { id: 'img-w30', label: tt('ws.img.small', 'Small — 30%'), icon: Minimize2, active: imgWidth === '30%', onSelect: () => setImage({ width: '30%' }) },
+        { id: 'img-w55', label: tt('ws.img.medium', 'Medium — 55%'), icon: SquareDashed, active: imgWidth === '55%', onSelect: () => setImage({ width: '55%' }) },
+        { id: 'img-w80', label: tt('ws.img.large', 'Large — 80%'), icon: Maximize2, active: imgWidth === '80%', onSelect: () => setImage({ width: '80%' }) },
+        { id: 'img-w100', label: tt('ws.img.full', 'Full width — 100%'), icon: Expand, active: imgWidth === '100%', onSelect: () => setImage({ width: '100%' }) },
       ],
     },
     {
-      header: 'অ্যালাইন',
+      header: tt('ws.ctx.hAlign', 'Align'),
       items: [
-        { id: 'img-left', label: 'বামে', icon: AlignLeft, active: imgAlign === 'left', onSelect: () => setImage({ textAlign: 'left', float: 'none' }) },
-        { id: 'img-center', label: 'মাঝখানে', icon: AlignCenter, active: imgAlign === 'center', onSelect: () => setImage({ textAlign: 'center', float: 'none' }) },
-        { id: 'img-right', label: 'ডানে', icon: AlignRight, active: imgAlign === 'right', onSelect: () => setImage({ textAlign: 'right', float: 'none' }) },
+        { id: 'img-left', label: tt('ws.align.left', 'Left'), icon: AlignLeft, active: imgAlign === 'left', onSelect: () => setImage({ textAlign: 'left', float: 'none' }) },
+        { id: 'img-center', label: tt('ws.align.center', 'Center'), icon: AlignCenter, active: imgAlign === 'center', onSelect: () => setImage({ textAlign: 'center', float: 'none' }) },
+        { id: 'img-right', label: tt('ws.align.right', 'Right'), icon: AlignRight, active: imgAlign === 'right', onSelect: () => setImage({ textAlign: 'right', float: 'none' }) },
       ],
     },
     {
-      header: 'টেক্সট র‍্যাপ',
+      header: tt('ws.ctx.hWrap', 'Text wrap'),
       items: [
-        { id: 'img-float-left', label: 'ছবি বাঁয়ে — লেখা ডান পাশে', icon: WrapText, active: imgFloat === 'left', onSelect: () => setImage({ float: 'left' }) },
-        { id: 'img-float-right', label: 'ছবি ডানে — লেখা বাঁ পাশে', icon: WrapText, active: imgFloat === 'right', onSelect: () => setImage({ float: 'right' }) },
-        { id: 'img-float-none', label: 'র‍্যাপ বন্ধ (নিজস্ব লাইনে)', icon: UnfoldVertical, active: imgFloat === 'none', onSelect: () => setImage({ float: 'none' }) },
+        { id: 'img-float-left', label: tt('ws.img.floatLeft', 'Image left — text on the right'), icon: WrapText, active: imgFloat === 'left', onSelect: () => setImage({ float: 'left' }) },
+        { id: 'img-float-right', label: tt('ws.img.floatRight', 'Image right — text on the left'), icon: WrapText, active: imgFloat === 'right', onSelect: () => setImage({ float: 'right' }) },
+        { id: 'img-float-none', label: tt('ws.img.noWrap', 'No wrap (its own line)'), icon: UnfoldVertical, active: imgFloat === 'none', onSelect: () => setImage({ float: 'none' }) },
       ],
     },
     {
-      header: 'ফ্রেম',
+      header: tt('ws.ctx.hFrame', 'Frame'),
       items: [
         {
           id: 'img-frame',
-          label: imgFramed ? 'বর্ডার সরান' : 'বর্ডার যোগ করুন',
+          label: imgFramed ? tt('ws.img.removeBorder', 'Remove border') : tt('ws.img.addBorder', 'Add border'),
           icon: Frame,
           active: imgFramed,
           onSelect: () => setImage({ framed: !imgFramed }),
@@ -488,11 +491,11 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
       ],
     },
     {
-      header: 'লিংক',
+      header: tt('ws.ctx.hLink', 'Link'),
       items: [
         {
           id: 'img-link-add',
-          label: imgLinkHref ? 'লিংক সম্পাদনা…' : 'ছবিতে লিংক যোগ করুন…',
+          label: imgLinkHref ? tt('ws.img.linkEdit', 'Edit link…') : tt('ws.img.linkAdd', 'Add link to image…'),
           icon: Link2,
           active: Boolean(imgLinkHref),
           onSelect: () => {
@@ -512,7 +515,7 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
           ? [
               {
                 id: 'img-link-open' as const,
-                label: 'লিংক খুলুন',
+                label: tt('ws.link.open', 'Open link'),
                 icon: ExternalLink,
                 onSelect: () => {
                   setMenu(null);
@@ -521,7 +524,7 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
               },
               {
                 id: 'img-link-remove' as const,
-                label: 'লিংক মুছুন',
+                label: tt('ws.link.remove', 'Remove link'),
                 icon: Link2Off,
                 onSelect: () => setImage({ linkHref: null, linkTarget: null }),
               },
@@ -533,14 +536,14 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
       items: [
         {
           id: 'img-copy',
-          label: 'ছবি কপি করুন',
+          label: tt('ws.img.copy', 'Copy image'),
           icon: Copy,
           onSelect: () => {
             const src = typeof menu.imageAttrs.src === 'string' ? menu.imageAttrs.src : '';
             setMenu(null);
             if (!src) return;
             const fallback = () => {
-              navigator.clipboard?.writeText(src).catch(() => toast.error('ছবি কপি করা যায়নি'));
+              navigator.clipboard?.writeText(src).catch(() => toast.error(tt('ws.toast.imgCopyFail', 'Could not copy the image')));
             };
             try {
               fetch(src)
@@ -559,7 +562,7 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
         },
         {
           id: 'img-delete',
-          label: 'ছবি মুছুন',
+          label: tt('ws.img.delete', 'Delete image'),
           icon: Trash2,
           danger: true,
           onSelect: () =>
@@ -574,38 +577,38 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
 
   const tableSections: CtxSection[] = [
     {
-      header: 'যোগ করুন',
+      header: tt('ws.ctx.hAdd', 'Insert'),
       items: [
-        { id: 'row-above', label: 'উপরে সারি যোগ', icon: ArrowUpToLine, onSelect: () => closeAndRun((editor) => { editor.chain().focus().addRowBefore().run(); }) },
-        { id: 'row-below', label: 'নিচে সারি যোগ', icon: ArrowDownToLine, onSelect: () => closeAndRun((editor) => { editor.chain().focus().addRowAfter().run(); }) },
-        { id: 'col-left', label: 'বামে কলাম', icon: ArrowLeftToLine, onSelect: () => closeAndRun((editor) => { editor.chain().focus().addColumnBefore().run(); }) },
-        { id: 'col-right', label: 'ডানে কলাম', icon: ArrowRightToLine, onSelect: () => closeAndRun((editor) => { editor.chain().focus().addColumnAfter().run(); }) },
+        { id: 'row-above', label: tt('ws.tbl.rowAbove', 'Add row above'), icon: ArrowUpToLine, onSelect: () => closeAndRun((editor) => { editor.chain().focus().addRowBefore().run(); }) },
+        { id: 'row-below', label: tt('ws.tbl.rowBelow', 'Add row below'), icon: ArrowDownToLine, onSelect: () => closeAndRun((editor) => { editor.chain().focus().addRowAfter().run(); }) },
+        { id: 'col-left', label: tt('ws.tbl.colLeft', 'Column left'), icon: ArrowLeftToLine, onSelect: () => closeAndRun((editor) => { editor.chain().focus().addColumnBefore().run(); }) },
+        { id: 'col-right', label: tt('ws.tbl.colRight', 'Column right'), icon: ArrowRightToLine, onSelect: () => closeAndRun((editor) => { editor.chain().focus().addColumnAfter().run(); }) },
       ],
     },
     {
-      header: 'হেডার',
+      header: tt('ws.ctx.hHeader', 'Header'),
       items: [
-        { id: 'header-row', label: 'হেডার সারি চালু/বন্ধ', icon: PanelTop, onSelect: () => closeAndRun((editor) => { editor.chain().focus().toggleHeaderRow().run(); }) },
-        { id: 'header-col', label: 'হেডার কলাম চালু/বন্ধ', icon: PanelLeft, onSelect: () => closeAndRun((editor) => { editor.chain().focus().toggleHeaderColumn().run(); }) },
+        { id: 'header-row', label: tt('ws.tbl.headerRowToggle', 'Toggle header row'), icon: PanelTop, onSelect: () => closeAndRun((editor) => { editor.chain().focus().toggleHeaderRow().run(); }) },
+        { id: 'header-col', label: tt('ws.tbl.headerColToggle', 'Toggle header column'), icon: PanelLeft, onSelect: () => closeAndRun((editor) => { editor.chain().focus().toggleHeaderColumn().run(); }) },
       ],
     },
     {
-      header: 'সেল',
+      header: tt('ws.ctx.hCell', 'Cell'),
       items: [
         {
           id: 'merge-cells',
-          label: 'সেল মার্জ',
+          label: tt('ws.tbl.merge', 'Merge cells'),
           icon: Merge,
           disabled: !menu.canMergeCells,
           onSelect: () => closeAndRun((editor) => { editor.chain().focus().mergeCells().run(); }),
         },
-        { id: 'split-cell', label: 'সেল স্প্লিট', icon: Split, onSelect: () => closeAndRun((editor) => { editor.chain().focus().splitCell().run(); }) },
-        { id: 'v-align-top', label: 'সেল ভার্টিক্যাল অ্যালাইন — উপরে', icon: AlignStartVertical, active: !cellVAlign || cellVAlign === 'top', onSelect: () => closeAndRun((editor) => { editor.chain().focus().setCellAttribute('verticalAlign', 'top').run(); }) },
-        { id: 'v-align-middle', label: 'সেল ভার্টিক্যাল অ্যালাইন — মাঝখানে', icon: AlignCenterVertical, active: cellVAlign === 'middle', onSelect: () => closeAndRun((editor) => { editor.chain().focus().setCellAttribute('verticalAlign', 'middle').run(); }) },
-        { id: 'v-align-bottom', label: 'সেল ভার্টিক্যাল অ্যালাইন — নিচে', icon: AlignEndVertical, active: cellVAlign === 'bottom', onSelect: () => closeAndRun((editor) => { editor.chain().focus().setCellAttribute('verticalAlign', 'bottom').run(); }) },
+        { id: 'split-cell', label: tt('ws.tbl.split', 'Split cell'), icon: Split, onSelect: () => closeAndRun((editor) => { editor.chain().focus().splitCell().run(); }) },
+        { id: 'v-align-top', label: tt('ws.tbl.vTop', 'Cell vertical align — top'), icon: AlignStartVertical, active: !cellVAlign || cellVAlign === 'top', onSelect: () => closeAndRun((editor) => { editor.chain().focus().setCellAttribute('verticalAlign', 'top').run(); }) },
+        { id: 'v-align-middle', label: tt('ws.tbl.vMiddle', 'Cell vertical align — middle'), icon: AlignCenterVertical, active: cellVAlign === 'middle', onSelect: () => closeAndRun((editor) => { editor.chain().focus().setCellAttribute('verticalAlign', 'middle').run(); }) },
+        { id: 'v-align-bottom', label: tt('ws.tbl.vBottom', 'Cell vertical align — bottom'), icon: AlignEndVertical, active: cellVAlign === 'bottom', onSelect: () => closeAndRun((editor) => { editor.chain().focus().setCellAttribute('verticalAlign', 'bottom').run(); }) },
         {
           id: 'reset-colwidth',
-          label: 'সেলের প্রস্থ রিসেট',
+          label: tt('ws.tbl.resetWidth', 'Reset cell width'),
           icon: RotateCcw,
           onSelect: () => closeAndRun((editor) => { editor.chain().focus().setCellAttribute('colwidth', null).run(); }),
         },
@@ -614,7 +617,7 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
           render: () => (
             <SwatchRow
               icon={Paintbrush}
-              label="সেলের রং"
+              label={tt('ws.tbl.cellColor', 'Cell color')}
               colors={CELL_BG_COLORS}
               current={cellBg}
               onPick={(color) =>
@@ -628,39 +631,39 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
       ],
     },
     {
-      header: 'অ্যালাইন',
+      header: tt('ws.ctx.hAlign', 'Align'),
       items: [
-        { id: 'cell-left', label: 'বামে', icon: AlignLeft, active: cellAlign === 'left', onSelect: () => closeAndRun((editor) => { editor.chain().focus().setTextAlign('left').run(); }) },
-        { id: 'cell-center', label: 'মাঝখানে', icon: AlignCenter, active: cellAlign === 'center', onSelect: () => closeAndRun((editor) => { editor.chain().focus().setTextAlign('center').run(); }) },
-        { id: 'cell-right', label: 'ডানে', icon: AlignRight, active: cellAlign === 'right', onSelect: () => closeAndRun((editor) => { editor.chain().focus().setTextAlign('right').run(); }) },
+        { id: 'cell-left', label: tt('ws.align.left', 'Left'), icon: AlignLeft, active: cellAlign === 'left', onSelect: () => closeAndRun((editor) => { editor.chain().focus().setTextAlign('left').run(); }) },
+        { id: 'cell-center', label: tt('ws.align.center', 'Center'), icon: AlignCenter, active: cellAlign === 'center', onSelect: () => closeAndRun((editor) => { editor.chain().focus().setTextAlign('center').run(); }) },
+        { id: 'cell-right', label: tt('ws.align.right', 'Right'), icon: AlignRight, active: cellAlign === 'right', onSelect: () => closeAndRun((editor) => { editor.chain().focus().setTextAlign('right').run(); }) },
       ],
     },
     {
-      header: 'সরান',
+      header: tt('ws.ctx.hMove', 'Move'),
       items: [
-        { id: 'tbl-move-up', label: 'টেবিল উপরে সরান', icon: ChevronsUp, shortcut: 'Alt+↑', onSelect: () => closeAndRun((editor) => { editor.chain().focus().moveBlockUp().run(); }) },
-        { id: 'tbl-move-down', label: 'টেবিল নিচে সরান', icon: ChevronsDown, shortcut: 'Alt+↓', onSelect: () => closeAndRun((editor) => { editor.chain().focus().moveBlockDown().run(); }) },
-        { id: 'tbl-line-above', label: 'উপরে ফাঁকা লাইন', icon: ArrowUpToLine, onSelect: () => closeAndRun((editor) => { editor.chain().focus().insertLineAbove().run(); }) },
-        { id: 'tbl-line-below', label: 'নিচে ফাঁকা লাইন', icon: ArrowDownToLine, onSelect: () => closeAndRun((editor) => { editor.chain().focus().insertLineAfter().run(); }) },
+        { id: 'tbl-move-up', label: tt('ws.tbl.moveUp', 'Move table up'), icon: ChevronsUp, shortcut: 'Alt+↑', onSelect: () => closeAndRun((editor) => { editor.chain().focus().moveBlockUp().run(); }) },
+        { id: 'tbl-move-down', label: tt('ws.tbl.moveDown', 'Move table down'), icon: ChevronsDown, shortcut: 'Alt+↓', onSelect: () => closeAndRun((editor) => { editor.chain().focus().moveBlockDown().run(); }) },
+        { id: 'tbl-line-above', label: tt('ws.tbl.lineAbove', 'Empty line above'), icon: ArrowUpToLine, onSelect: () => closeAndRun((editor) => { editor.chain().focus().insertLineAbove().run(); }) },
+        { id: 'tbl-line-below', label: tt('ws.tbl.lineBelow', 'Empty line below'), icon: ArrowDownToLine, onSelect: () => closeAndRun((editor) => { editor.chain().focus().insertLineAfter().run(); }) },
       ],
     },
     {
-      header: 'মুছুন',
+      header: tt('ws.ctx.hDelete', 'Delete'),
       items: [
-        { id: 'del-row', label: 'সারি মুছুন', icon: Trash2, danger: true, onSelect: () => closeAndRun((editor) => { editor.chain().focus().deleteRow().run(); }) },
-        { id: 'del-col', label: 'কলাম মুছুন', icon: Trash2, danger: true, onSelect: () => closeAndRun((editor) => { editor.chain().focus().deleteColumn().run(); }) },
-        { id: 'del-table', label: 'টেবিল মুছুন', icon: Trash2, danger: true, onSelect: () => closeAndRun((editor) => { editor.chain().focus().deleteTable().run(); }) },
+        { id: 'del-row', label: tt('ws.tbl.delRow', 'Delete row'), icon: Trash2, danger: true, onSelect: () => closeAndRun((editor) => { editor.chain().focus().deleteRow().run(); }) },
+        { id: 'del-col', label: tt('ws.tbl.delCol', 'Delete column'), icon: Trash2, danger: true, onSelect: () => closeAndRun((editor) => { editor.chain().focus().deleteColumn().run(); }) },
+        { id: 'del-table', label: tt('ws.tbl.delTable', 'Delete table'), icon: Trash2, danger: true, onSelect: () => closeAndRun((editor) => { editor.chain().focus().deleteTable().run(); }) },
       ],
     },
   ];
 
   const textSections: CtxSection[] = [
     {
-      header: 'Clipboard',
+      header: tt('ws.ctx.hClipboard', 'Clipboard'),
       items: [
         {
           id: 'cut',
-          label: 'Cut',
+          label: tt('ws.ctx.cut', 'Cut'),
           icon: Scissors,
           shortcut: 'Ctrl+X',
           onSelect: () =>
@@ -672,7 +675,7 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
         },
         {
           id: 'copy',
-          label: 'Copy',
+          label: tt('ws.ctx.copy', 'Copy'),
           icon: Copy,
           shortcut: 'Ctrl+C',
           onSelect: () =>
@@ -684,45 +687,45 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
         },
         {
           id: 'paste',
-          label: 'Paste',
+          label: tt('ws.ctx.paste', 'Paste'),
           icon: ClipboardPaste,
           shortcut: 'Ctrl+V',
           onSelect: () =>
             closeAndRun((editor) => {
               const clipboard = navigator.clipboard;
               if (!clipboard?.readText) {
-                toast.error('এই ব্রাউজার ক্লিপবোর্ড পড়তে দেয় না — Ctrl+V চাপুন');
+                toast.error(tt('ws.toast.pasteNoRead', "This browser doesn't allow reading the clipboard — press Ctrl+V"));
                 return;
               }
               clipboard
                 .readText()
                 .then((text) => insertPlainText(editor, text))
-                .catch(() => toast.error('ক্লিপবোর্ড পড়া গেল না — Ctrl+V চাপুন'));
+                .catch(() => toast.error(tt('ws.toast.pasteFail', 'Could not read the clipboard — press Ctrl+V')));
             }),
         },
-        { id: 'select-all', label: 'Select All', icon: TextCursorInput, shortcut: 'Ctrl+A', onSelect: () => closeAndRun((editor) => { editor.chain().focus().selectAll().run(); }) },
+        { id: 'select-all', label: tt('ws.ctx.selectAll', 'Select All'), icon: TextCursorInput, shortcut: 'Ctrl+A', onSelect: () => closeAndRun((editor) => { editor.chain().focus().selectAll().run(); }) },
       ],
     },
     {
-      header: 'Format',
+      header: tt('ws.ctx.hFormat', 'Format'),
       items: [
-        { id: 'bold', label: 'Bold', icon: Bold, shortcut: 'Ctrl+B', active: ed.isActive('bold'), onSelect: () => closeAndRun((editor) => { editor.chain().focus().toggleBold().run(); }) },
-        { id: 'italic', label: 'Italic', icon: Italic, shortcut: 'Ctrl+I', active: ed.isActive('italic'), onSelect: () => closeAndRun((editor) => { editor.chain().focus().toggleItalic().run(); }) },
-        { id: 'underline', label: 'Underline', icon: UnderlineIcon, shortcut: 'Ctrl+U', active: ed.isActive('underline'), onSelect: () => closeAndRun((editor) => { editor.chain().focus().toggleUnderline().run(); }) },
-        { id: 'strike', label: 'Strikethrough', icon: Strikethrough, active: ed.isActive('strike'), onSelect: () => closeAndRun((editor) => { editor.chain().focus().toggleStrike().run(); }) },
-        { id: 'superscript', label: 'Superscript', icon: SupIcon, active: ed.isActive('superscript'), onSelect: () => closeAndRun((editor) => { editor.chain().focus().toggleSuperscript().run(); }) },
-        { id: 'subscript', label: 'Subscript', icon: SubIcon, active: ed.isActive('subscript'), onSelect: () => closeAndRun((editor) => { editor.chain().focus().toggleSubscript().run(); }) },
+        { id: 'bold', label: tt('ws.ctx.bold', 'Bold'), icon: Bold, shortcut: 'Ctrl+B', active: ed.isActive('bold'), onSelect: () => closeAndRun((editor) => { editor.chain().focus().toggleBold().run(); }) },
+        { id: 'italic', label: tt('ws.ctx.italic', 'Italic'), icon: Italic, shortcut: 'Ctrl+I', active: ed.isActive('italic'), onSelect: () => closeAndRun((editor) => { editor.chain().focus().toggleItalic().run(); }) },
+        { id: 'underline', label: tt('ws.ctx.underline', 'Underline'), icon: UnderlineIcon, shortcut: 'Ctrl+U', active: ed.isActive('underline'), onSelect: () => closeAndRun((editor) => { editor.chain().focus().toggleUnderline().run(); }) },
+        { id: 'strike', label: tt('ws.ctx.strike', 'Strikethrough'), icon: Strikethrough, active: ed.isActive('strike'), onSelect: () => closeAndRun((editor) => { editor.chain().focus().toggleStrike().run(); }) },
+        { id: 'superscript', label: tt('ws.ctx.superscript', 'Superscript'), icon: SupIcon, active: ed.isActive('superscript'), onSelect: () => closeAndRun((editor) => { editor.chain().focus().toggleSuperscript().run(); }) },
+        { id: 'subscript', label: tt('ws.ctx.subscript', 'Subscript'), icon: SubIcon, active: ed.isActive('subscript'), onSelect: () => closeAndRun((editor) => { editor.chain().focus().toggleSubscript().run(); }) },
       ],
     },
     {
-      header: 'Color',
+      header: tt('ws.ctx.hColor', 'Color'),
       items: [
         {
           id: 'text-color-row',
           render: () => (
             <SwatchRow
               icon={Palette}
-              label="Text"
+              label={tt('ws.ctx.textColor', 'Text')}
               colors={TEXT_COLORS}
               current={currentColor}
               onPick={(color) => closeAndRun((editor) => { editor.chain().focus().setColor(color).run(); })}
@@ -734,22 +737,22 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
           render: () => (
             <SwatchRow
               icon={Highlighter}
-              label="Highlight"
+              label={tt('ws.ctx.highlight', 'Highlight')}
               colors={HIGHLIGHT_COLORS}
               current={currentHighlight}
               onPick={(color) => closeAndRun((editor) => { editor.chain().focus().setHighlight({ color }).run(); })}
             />
           ),
         },
-        { id: 'color-default', label: 'Default', icon: Eraser, onSelect: () => closeAndRun((editor) => { editor.chain().focus().unsetColor().unsetHighlight().run(); }) },
+        { id: 'color-default', label: tt('ws.ctx.default', 'Default'), icon: Eraser, onSelect: () => closeAndRun((editor) => { editor.chain().focus().unsetColor().unsetHighlight().run(); }) },
       ],
     },
     {
-      header: 'Link',
+      header: tt('ws.ctx.hLink', 'Link'),
       items: [
         {
           id: 'tx-link-add',
-          label: activeLink ? 'লিংক সম্পাদনা…' : 'লিংক যোগ করুন…',
+          label: activeLink ? tt('ws.img.linkEdit', 'Edit link…') : tt('ws.link.addTitle', 'Add link…'),
           icon: Link2,
           active: Boolean(activeLink),
           onSelect: () => {
@@ -772,7 +775,7 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
           ? [
               {
                 id: 'tx-link-open' as const,
-                label: 'লিংক খুলুন',
+                label: tt('ws.link.open', 'Open link'),
                 icon: ExternalLink,
                 onSelect: () => {
                   setMenu(null);
@@ -781,17 +784,17 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
               },
               {
                 id: 'tx-link-copy' as const,
-                label: 'লিংক ঠিকানা কপি',
+                label: tt('ws.link.copyAddr', 'Copy link address'),
                 icon: Copy,
                 onSelect: () => {
                   setMenu(null);
                   navigator.clipboard?.writeText(activeLink).catch(() => {});
-                  toast.success('লিংক কপি হয়েছে');
+                  toast.success(tt('ws.toast.linkCopied', 'Link copied'));
                 },
               },
               {
                 id: 'tx-link-remove' as const,
-                label: 'লিংক মুছুন',
+                label: tt('ws.link.remove', 'Remove link'),
                 icon: Link2Off,
                 onSelect: () => closeAndRun((editor) => { editor.chain().focus().extendMarkRange('link').unsetLink().run(); }),
               },
@@ -800,24 +803,24 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
       ],
     },
     {
-      header: 'Paragraph',
+      header: tt('ws.ctx.hParagraph', 'Paragraph'),
       items: [
-        { id: 'align-left', label: 'Align Left', icon: AlignLeft, active: ed.isActive({ textAlign: 'left' }), onSelect: () => closeAndRun((editor) => { editor.chain().focus().setTextAlign('left').run(); }) },
-        { id: 'align-center', label: 'Align Center', icon: AlignCenter, active: ed.isActive({ textAlign: 'center' }), onSelect: () => closeAndRun((editor) => { editor.chain().focus().setTextAlign('center').run(); }) },
-        { id: 'align-right', label: 'Align Right', icon: AlignRight, active: ed.isActive({ textAlign: 'right' }), onSelect: () => closeAndRun((editor) => { editor.chain().focus().setTextAlign('right').run(); }) },
-        { id: 'align-justify', label: 'Justify', icon: AlignJustify, active: ed.isActive({ textAlign: 'justify' }), onSelect: () => closeAndRun((editor) => { editor.chain().focus().setTextAlign('justify').run(); }) },
-        { id: 'bullets', label: 'Bullets', icon: List, active: ed.isActive('bulletList'), onSelect: () => closeAndRun((editor) => { editor.chain().focus().toggleBulletList().run(); }) },
-        { id: 'numbering', label: 'Numbering', icon: ListOrdered, active: ed.isActive('orderedList'), onSelect: () => closeAndRun((editor) => { editor.chain().focus().toggleOrderedList().run(); }) },
-        { id: 'clear-format', label: 'Clear Formatting', icon: Eraser, onSelect: () => closeAndRun((editor) => { editor.chain().focus().unsetAllMarks().clearNodes().run(); }) },
+        { id: 'align-left', label: tt('ws.ctx.alignLeft', 'Align Left'), icon: AlignLeft, active: ed.isActive({ textAlign: 'left' }), onSelect: () => closeAndRun((editor) => { editor.chain().focus().setTextAlign('left').run(); }) },
+        { id: 'align-center', label: tt('ws.ctx.alignCenter', 'Align Center'), icon: AlignCenter, active: ed.isActive({ textAlign: 'center' }), onSelect: () => closeAndRun((editor) => { editor.chain().focus().setTextAlign('center').run(); }) },
+        { id: 'align-right', label: tt('ws.ctx.alignRight', 'Align Right'), icon: AlignRight, active: ed.isActive({ textAlign: 'right' }), onSelect: () => closeAndRun((editor) => { editor.chain().focus().setTextAlign('right').run(); }) },
+        { id: 'align-justify', label: tt('ws.ctx.justify', 'Justify'), icon: AlignJustify, active: ed.isActive({ textAlign: 'justify' }), onSelect: () => closeAndRun((editor) => { editor.chain().focus().setTextAlign('justify').run(); }) },
+        { id: 'bullets', label: tt('ws.ctx.bullets', 'Bullets'), icon: List, active: ed.isActive('bulletList'), onSelect: () => closeAndRun((editor) => { editor.chain().focus().toggleBulletList().run(); }) },
+        { id: 'numbering', label: tt('ws.ctx.numbering', 'Numbering'), icon: ListOrdered, active: ed.isActive('orderedList'), onSelect: () => closeAndRun((editor) => { editor.chain().focus().toggleOrderedList().run(); }) },
+        { id: 'clear-format', label: tt('ws.ctx.clearFormat', 'Clear Formatting'), icon: Eraser, onSelect: () => closeAndRun((editor) => { editor.chain().focus().unsetAllMarks().clearNodes().run(); }) },
       ],
     },
     {
-      header: 'Block',
+      header: tt('ws.ctx.hBlock', 'Block'),
       items: [
-        { id: 'blk-move-up', label: 'ব্লক উপরে সরান', icon: ChevronsUp, shortcut: 'Alt+↑', onSelect: () => closeAndRun((editor) => { editor.chain().focus().moveBlockUp().run(); }) },
-        { id: 'blk-move-down', label: 'ব্লক নিচে সরান', icon: ChevronsDown, shortcut: 'Alt+↓', onSelect: () => closeAndRun((editor) => { editor.chain().focus().moveBlockDown().run(); }) },
-        { id: 'blk-line-above', label: 'উপরে ফাঁকা লাইন', icon: ArrowUpToLine, onSelect: () => closeAndRun((editor) => { editor.chain().focus().insertLineAbove().run(); }) },
-        { id: 'blk-line-below', label: 'নিচে ফাঁকা লাইন', icon: ArrowDownToLine, onSelect: () => closeAndRun((editor) => { editor.chain().focus().insertLineAfter().run(); }) },
+        { id: 'blk-move-up', label: tt('ws.ctx.blkUp', 'Move block up'), icon: ChevronsUp, shortcut: 'Alt+↑', onSelect: () => closeAndRun((editor) => { editor.chain().focus().moveBlockUp().run(); }) },
+        { id: 'blk-move-down', label: tt('ws.ctx.blkDown', 'Move block down'), icon: ChevronsDown, shortcut: 'Alt+↓', onSelect: () => closeAndRun((editor) => { editor.chain().focus().moveBlockDown().run(); }) },
+        { id: 'blk-line-above', label: tt('ws.tbl.lineAbove', 'Empty line above'), icon: ArrowUpToLine, onSelect: () => closeAndRun((editor) => { editor.chain().focus().insertLineAbove().run(); }) },
+        { id: 'blk-line-below', label: tt('ws.tbl.lineBelow', 'Empty line below'), icon: ArrowDownToLine, onSelect: () => closeAndRun((editor) => { editor.chain().focus().insertLineAfter().run(); }) },
       ],
     },
   ];
@@ -839,7 +842,7 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
         <div
           ref={menuRef}
           role="menu"
-          aria-label="Content menu"
+          aria-label={tt('ws.ctx.menuAria', 'Content menu')}
           tabIndex={-1}
           className="bwp-context-menu fixed z-[1000] max-h-[70vh] min-w-[230px] overflow-y-auto rounded-xl border border-border bg-popover py-1.5 text-popover-foreground shadow-lg focus:outline-none"
           style={{ left: pos.x, top: pos.y }}

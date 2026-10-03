@@ -15,23 +15,26 @@ import { COLOR_SWATCHES } from '@/lib/paper';
 import { useEditorStore } from '@/lib/store';
 import { useUiStore } from '@/lib/ui-store';
 import type { HeaderFooterStyle } from '@/lib/types';
+import { useT, useFmtNum } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
-const STYLES: Array<{ id: HeaderFooterStyle; name: string; desc: string }> = [
-  { id: 'parallel', name: 'প্যারালাল TEXT (উদ্ভাস স্টাইল)', desc: 'ডাবল দাগ, বামে টপিক ট্যাগ, ডানে বইয়ের নাম' },
-  { id: 'royal', name: 'ক্লাসিক বুক (রয়্যাল ফ্লোরিশ)', desc: 'সেন্টারে অলংকৃত ফ্লোরিশ ও শিরোনাম' },
-  { id: 'academic', name: 'একাডেমিক মিনিমাল', desc: 'স্লিম বর্ডার ও বাম-ডান টেক্সট' },
-  { id: 'plain', name: 'সাধারণ', desc: 'শুধু টেক্সট, দাগ নেই' },
-  { id: 'none', name: 'নেই', desc: 'হেডার/ফুটার বন্ধ' },
+/** স্টাইলের নাম/বর্ণনা অভিধান-কী হিসেবে — রেন্ডারের সময় ভাষা অনুযায়ী সমাধান */
+const STYLES: Array<{ id: HeaderFooterStyle; nameKey: string; descKey: string }> = [
+  { id: 'parallel', nameKey: 'dlg1.hf.style.parallel', descKey: 'dlg1.hf.styleDesc.parallel' },
+  { id: 'royal', nameKey: 'dlg1.hf.style.royal', descKey: 'dlg1.hf.styleDesc.royal' },
+  { id: 'academic', nameKey: 'dlg1.hf.style.academic', descKey: 'dlg1.hf.styleDesc.academic' },
+  { id: 'plain', nameKey: 'dlg1.hf.style.plain', descKey: 'dlg1.hf.styleDesc.plain' },
+  { id: 'none', nameKey: 'dlg1.hf.style.none', descKey: 'dlg1.hf.styleDesc.none' },
 ];
 
 function StylePreview({ style, accent }: { style: HeaderFooterStyle; accent: string }) {
+  const tt = useT();
   if (style === 'parallel') {
     return (
       <div className="rounded border border-border p-1.5 text-[10px]">
         <div className="border-t-[3px]" style={{ borderColor: accent, borderTopStyle: 'double' }} />
         <div className="flex justify-between px-1 py-0.5" style={{ color: accent }}>
-          <span>অধ্যায় ১ — টপিক</span><span>বইয়ের নাম</span>
+          <span>{tt('dlg1.hf.prev.chapterTopic')}</span><span>{tt('dlg1.hf.prev.bookName')}</span>
         </div>
         <div className="border-t-[3px]" style={{ borderColor: accent, borderTopStyle: 'double' }} />
       </div>
@@ -40,7 +43,7 @@ function StylePreview({ style, accent }: { style: HeaderFooterStyle; accent: str
   if (style === 'royal') {
     return (
       <div className="rounded border border-border p-1.5 text-center text-[10px]" style={{ color: accent }}>
-        <div>❦ বইয়ের নাম ❦</div>
+        <div>{tt('dlg1.hf.prev.bookOrnament')}</div>
         <div className="mt-0.5 border-t" style={{ borderColor: accent }} />
       </div>
     );
@@ -48,17 +51,19 @@ function StylePreview({ style, accent }: { style: HeaderFooterStyle; accent: str
   if (style === 'academic') {
     return (
       <div className="flex justify-between rounded border border-border px-1.5 py-1 text-[10px]" style={{ borderBottomColor: accent }}>
-        <span style={{ color: accent }}>অধ্যায়ের নাম</span><span>প্রতিষ্ঠান</span>
+        <span style={{ color: accent }}>{tt('dlg1.hf.prev.chapterName')}</span><span>{tt('dlg1.hf.prev.org')}</span>
       </div>
     );
   }
   if (style === 'plain') {
-    return <div className="rounded border border-border p-1.5 text-center text-[10px]">বইয়ের নাম</div>;
+    return <div className="rounded border border-border p-1.5 text-center text-[10px]">{tt('dlg1.hf.prev.bookName')}</div>;
   }
-  return <div className="rounded border border-border p-1.5 text-center text-[10px] text-muted-foreground">(বন্ধ)</div>;
+  return <div className="rounded border border-border p-1.5 text-center text-[10px] text-muted-foreground">{tt('dlg1.hf.prev.off')}</div>;
 }
 
 export function HeaderFooterDialog() {
+  const tt = useT();
+  const nf = useFmtNum();
   const openDialog = useUiStore((s) => s.openDialog);
   const close = useUiStore((s) => s.close);
   const settings = useEditorStore((s) => s.settings);
@@ -73,18 +78,18 @@ export function HeaderFooterDialog() {
     <Dialog open={open} onOpenChange={(v) => !v && close()}>
       <DialogContent className="max-h-[88vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>হেডার, ফুটার ও পেজ নম্বর মাস্টার</DialogTitle>
+          <DialogTitle>{tt('dlg1.hf.title')}</DialogTitle>
           <DialogDescription>
-            একবার সেট করলে সব পাতায় স্বয়ংক্রিয়ভাবে প্রযোজ্য হবে (Lock Across Pages)
+            {tt('dlg1.hf.desc')}
           </DialogDescription>
         </DialogHeader>
 
         {/* হেডার */}
         <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold">হেডার</h3>
+            <h3 className="text-sm font-bold">{tt('dlg1.hf.header')}</h3>
             <div className="flex items-center gap-2">
-              <Label htmlFor="hdr-on" className="text-xs">চালু</Label>
+              <Label htmlFor="hdr-on" className="text-xs">{tt('dlg1.hf.on')}</Label>
               <Switch id="hdr-on" checked={header.enabled} onCheckedChange={(v) => update({ header: { ...header, enabled: v } })} />
             </div>
           </div>
@@ -93,7 +98,7 @@ export function HeaderFooterDialog() {
               <button
                 key={s.id}
                 type="button"
-                title={s.desc}
+                title={tt(s.descKey)}
                 onClick={() => update({ header: { ...header, style: s.id } })}
                 className={cn(
                   'rounded-lg border p-2 text-left transition hover:border-primary',
@@ -101,32 +106,32 @@ export function HeaderFooterDialog() {
                 )}
               >
                 <StylePreview style={s.id} accent={header.accentColor} />
-                <p className="mt-1.5 text-[11px] font-semibold leading-tight">{s.name}</p>
+                <p className="mt-1.5 text-[11px] font-semibold leading-tight">{tt(s.nameKey)}</p>
               </button>
             ))}
           </div>
           <div className="grid gap-2 sm:grid-cols-3">
             <div className="space-y-1">
-              <Label className="text-xs">বাম টেক্সট (টপিক/অধ্যায়)</Label>
+              <Label className="text-xs">{tt('dlg1.hf.leftTopic')}</Label>
               <Input value={header.leftText} onChange={(e) => update({ header: { ...header, leftText: e.target.value } })} />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">মাঝের টেক্সট</Label>
+              <Label className="text-xs">{tt('dlg1.hf.center')}</Label>
               <Input value={header.centerText} onChange={(e) => update({ header: { ...header, centerText: e.target.value } })} />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">ডান টেক্সট (বইয়ের নাম)</Label>
+              <Label className="text-xs">{tt('dlg1.hf.rightBook')}</Label>
               <Input value={header.rightText} onChange={(e) => update({ header: { ...header, rightText: e.target.value } })} />
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-1.5">
-              <Label className="text-xs">দাগের রং:</Label>
+              <Label className="text-xs">{tt('dlg1.hf.lineColor')}</Label>
               {['#4f46e5', '#7f1d1d', '#0f766e', '#b45309', '#0f172a'].map((c) => (
                 <button
                   key={c}
                   type="button"
-                  aria-label={`রং ${c}`}
+                  aria-label={tt('dlg1.color.named').split('{c}').join(c)}
                   className={cn('h-5 w-5 rounded-full border-2', header.accentColor === c ? 'border-foreground' : 'border-transparent')}
                   style={{ backgroundColor: c }}
                   onClick={() => update({ header: { ...header, accentColor: c }, footer: { ...footer, accentColor: c } })}
@@ -134,14 +139,14 @@ export function HeaderFooterDialog() {
               ))}
               <input
                 type="color"
-                aria-label="কাস্টম রং"
+                aria-label={tt('dlg1.color.custom')}
                 className="h-5 w-8 cursor-pointer"
                 value={header.accentColor}
                 onChange={(e) => update({ header: { ...header, accentColor: e.target.value }, footer: { ...footer, accentColor: e.target.value } })}
               />
             </div>
             <div className="flex items-center gap-1.5">
-              <Label className="text-xs">ফন্ট সাইজ (pt):</Label>
+              <Label className="text-xs">{tt('dlg1.hf.fontSize')}</Label>
               <input
                 type="number"
                 className="ribbon-number w-14"
@@ -159,23 +164,23 @@ export function HeaderFooterDialog() {
         {/* ফুটার */}
         <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold">ফুটার</h3>
+            <h3 className="text-sm font-bold">{tt('dlg1.hf.footer')}</h3>
             <div className="flex items-center gap-2">
-              <Label htmlFor="ftr-on" className="text-xs">চালু</Label>
+              <Label htmlFor="ftr-on" className="text-xs">{tt('dlg1.hf.on')}</Label>
               <Switch id="ftr-on" checked={footer.enabled} onCheckedChange={(v) => update({ footer: { ...footer, enabled: v } })} />
             </div>
           </div>
           <div className="grid gap-2 sm:grid-cols-3">
             <div className="space-y-1">
-              <Label className="text-xs">বাম টেক্সট</Label>
+              <Label className="text-xs">{tt('dlg1.hf.left')}</Label>
               <Input value={footer.leftText} onChange={(e) => update({ footer: { ...footer, leftText: e.target.value } })} />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">মাঝের টেক্সট</Label>
+              <Label className="text-xs">{tt('dlg1.hf.center')}</Label>
               <Input value={footer.centerText} onChange={(e) => update({ footer: { ...footer, centerText: e.target.value } })} />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">ডান টেক্সট</Label>
+              <Label className="text-xs">{tt('dlg1.hf.right')}</Label>
               <Input value={footer.rightText} onChange={(e) => update({ footer: { ...footer, rightText: e.target.value } })} />
             </div>
           </div>
@@ -186,42 +191,44 @@ export function HeaderFooterDialog() {
         {/* পেজ নম্বর */}
         <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold">পেজ নম্বর</h3>
+            <h3 className="text-sm font-bold">{tt('dlg1.hf.pagenum')}</h3>
             <div className="flex items-center gap-2">
-              <Label htmlFor="pn-on" className="text-xs">চালু</Label>
+              <Label htmlFor="pn-on" className="text-xs">{tt('dlg1.hf.on')}</Label>
               <Switch id="pn-on" checked={pn.enabled} onCheckedChange={(v) => update({ pageNumber: { ...pn, enabled: v } })} />
             </div>
           </div>
           <div className="grid gap-2 sm:grid-cols-4">
             <div className="space-y-1">
-              <Label className="text-xs">ফরম্যাট</Label>
+              <Label className="text-xs">{tt('dlg1.hf.format')}</Label>
               <select
                 className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm"
                 value={pn.format}
                 onChange={(e) => update({ pageNumber: { ...pn, format: e.target.value as typeof pn.format } })}
               >
-                <option value="bangla">বাংলা (১, ২, ৩)</option>
-                <option value="english">ইংরেজি (1, 2, 3)</option>
-                <option value="roman">রোমান (I, II, III)</option>
+                {/* 'hindi' = দেবনাগরী সংখ্যা (०१२३) — নতুন ফরম্যাট */}
+                <option value="bangla">{tt('dlg1.pnfmt.bangla')}</option>
+                <option value="hindi">{tt('dlg1.pnfmt.hindi')}</option>
+                <option value="english">{tt('dlg1.pnfmt.english')}</option>
+                <option value="roman">{tt('dlg1.pnfmt.roman')}</option>
               </select>
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">অবস্থান</Label>
+              <Label className="text-xs">{tt('dlg1.hf.position')}</Label>
               <select
                 className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm"
                 value={pn.position}
                 onChange={(e) => update({ pageNumber: { ...pn, position: e.target.value as typeof pn.position } })}
               >
-                <option value="bottom-center">নিচে-মাঝে</option>
-                <option value="bottom-right">নিচে-ডানে</option>
-                <option value="bottom-left">নিচে-বাঁয়ে</option>
-                <option value="top-center">উপরে-মাঝে</option>
-                <option value="top-right">উপরে-ডানে</option>
-                <option value="top-left">উপরে-বাঁয়ে</option>
+                <option value="bottom-center">{tt('dlg1.pos.bottom-center')}</option>
+                <option value="bottom-right">{tt('dlg1.pos.bottom-right')}</option>
+                <option value="bottom-left">{tt('dlg1.pos.bottom-left')}</option>
+                <option value="top-center">{tt('dlg1.pos.top-center')}</option>
+                <option value="top-right">{tt('dlg1.pos.top-right')}</option>
+                <option value="top-left">{tt('dlg1.pos.top-left')}</option>
               </select>
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">প্রথম নম্বর</Label>
+              <Label className="text-xs">{tt('dlg1.hf.startAt')}</Label>
               <Input
                 type="number"
                 value={pn.startAt}
@@ -237,27 +244,27 @@ export function HeaderFooterDialog() {
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">প্রিফিক্স</Label>
-              <Input value={pn.prefix} placeholder="যেমন: পৃষ্ঠা " onChange={(e) => update({ pageNumber: { ...pn, prefix: e.target.value } })} />
+              <Label className="text-xs">{tt('dlg1.hf.prefix')}</Label>
+              <Input value={pn.prefix} placeholder={tt('dlg1.hf.prefixPh')} onChange={(e) => update({ pageNumber: { ...pn, prefix: e.target.value } })} />
             </div>
           </div>
           <div className="flex flex-wrap gap-4">
             <div className="flex items-center gap-2">
               <Switch id="df-first" checked={pn.differentFirst} onCheckedChange={(v) => update({ pageNumber: { ...pn, differentFirst: v } })} />
-              <Label htmlFor="df-first" className="text-xs">ভিন্ন প্রথম পৃষ্ঠা (কভারে লুকান)</Label>
+              <Label htmlFor="df-first" className="text-xs">{tt('dlg1.hf.diffFirst')}</Label>
             </div>
             <div className="flex items-center gap-2">
               <Switch id="odd-even" checked={pn.oddEven} onCheckedChange={(v) => update({ pageNumber: { ...pn, oddEven: v } })} />
-              <Label htmlFor="odd-even" className="text-xs">অজর/জোড় পাতায় বিপরীত অ্যালাইনমেন্ট</Label>
+              <Label htmlFor="odd-even" className="text-xs">{tt('dlg1.hf.oddEven')}</Label>
             </div>
           </div>
           <p className="text-xs text-muted-foreground">
-            টিপ: নির্দিষ্ট পৃষ্ঠার “পৃষ্ঠা মেনু” থেকে সেই পাতার হেডার/ফুটার আলাদাভাবে লুকানো যায় (অধ্যায়ের শুরুর পাতার জন্য)।
+            {tt('dlg1.hf.tip')}
           </p>
         </section>
 
         <p className="text-[10px] text-muted-foreground">
-          রং প্যালেট: {COLOR_SWATCHES.length}টি প্রিসেট রঙ লেখার রং হিসেবে হোম ট্যাবে পাওয়া যায়।
+          {tt('dlg1.hf.palette').split('{n}').join(nf(COLOR_SWATCHES.length))}
         </p>
       </DialogContent>
     </Dialog>

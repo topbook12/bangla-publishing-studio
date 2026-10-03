@@ -16,9 +16,12 @@ import { Dialogs } from '@/components/dialogs/dialogs';
 import { useEditorStore } from '@/lib/store';
 import { useUiStore } from '@/lib/ui-store';
 import { useAutoToc } from '@/lib/toc';
+import { useT, useLangStore } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
 export default function EditorApp() {
+  const tt = useT();
+  const lang = useLangStore((s) => s.lang);
   const loaded = useEditorStore((s) => s.loaded);
   const init = useEditorStore((s) => s.init);
   const navigatorOpen = useUiStore((s) => s.navigatorOpen);
@@ -29,6 +32,11 @@ export default function EditorApp() {
   useEffect(() => {
     void init();
   }, [init]);
+
+  // <html lang> ভাষা অনুযায়ী সিঙ্ক — স্ক্রিন রিডার ও সঠিক অক্ষর-রূপায়ণের জন্য
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
 
   // অটো-সূচিপত্র — শিরোনাম বদলালে TOC ব্লক নিজে থেকেই হালনাগাদ হয় (ডিবাউন্সড)
   useAutoToc();
@@ -59,8 +67,8 @@ export default function EditorApp() {
           <BookOpenCheck size={36} />
         </div>
         <div className="space-y-1 text-center">
-          <p className="app-splash-title">বাংলা পাবলিশিং স্টুডিও</p>
-          <p className="text-sm text-muted-foreground">স্টুডিও প্রস্তুত হচ্ছে…</p>
+          <p className="app-splash-title">{tt('app.brand')}</p>
+          <p className="text-sm text-muted-foreground">{tt('app.preparing')}</p>
         </div>
         <Loader2 className="h-5 w-5 animate-spin text-primary/70" aria-hidden="true" />
       </div>
@@ -82,11 +90,11 @@ export default function EditorApp() {
           type="button"
           className="focus-exit-pill no-print"
           onClick={() => setFocusMode(false)}
-          aria-label="ফোকাস মোড বন্ধ করুন"
-          title="ফোকাস মোড বন্ধ (Esc)"
+          aria-label={tt('app.focusExit')}
+          title={tt('app.focusExit')}
         >
           <Minimize2 size={12} aria-hidden="true" />
-          <span>ফোকাস মোড</span>
+          <span>{tt('app.focusMode')}</span>
           <span aria-hidden="true" className="opacity-50">·</span>
           <kbd>Esc</kbd>
         </button>

@@ -10,13 +10,22 @@
         "@dnd-kit/utilities": "^3.2.2",
         "@fontsource/anek-bangla": "^5.3.0",
         "@fontsource/atma": "^5.3.0",
+        "@fontsource/baloo-2": "^5.3.0",
         "@fontsource/baloo-da-2": "^5.3.0",
         "@fontsource/galada": "^5.3.0",
+        "@fontsource/hind": "^5.3.0",
         "@fontsource/hind-siliguri": "^5.3.0",
+        "@fontsource/kalam": "^5.3.0",
+        "@fontsource/martel": "^5.3.0",
         "@fontsource/mina": "^5.3.0",
+        "@fontsource/mukta": "^5.3.0",
         "@fontsource/noto-sans-bengali": "^5.3.0",
+        "@fontsource/noto-sans-devanagari": "^5.3.0",
         "@fontsource/noto-serif-bengali": "^5.3.0",
+        "@fontsource/noto-serif-devanagari": "^5.3.0",
+        "@fontsource/rozha-one": "^5.3.0",
         "@fontsource/tiro-bangla": "^5.3.0",
+        "@fontsource/tiro-devanagari-hindi": "^5.3.0",
         "@hookform/resolvers": "^5.1.1",
         "@radix-ui/react-accordion": "^1.2.11",
         "@radix-ui/react-alert-dialog": "^1.1.14",
@@ -196,19 +205,37 @@
 
     "@fontsource/atma": ["@fontsource/atma@5.3.0", "", {}, "sha512-Fa6dLzixzy0Yr34LtUbiqop1bAZF9VATa4hxwAUCURN0sZjbzpethWVkGL62+x/EKb9cgxzaQ9/v1rWUOvF87g=="],
 
+    "@fontsource/baloo-2": ["@fontsource/baloo-2@5.3.0", "", {}, "sha512-CBuxZ27jvMmD5+KaaPkMWv/yjdRNppVAd5/002yAyvyQyLNL3aZCbkx6gbAT/bjxPd1A0VMdDQjfcELI8chccQ=="],
+
     "@fontsource/baloo-da-2": ["@fontsource/baloo-da-2@5.3.0", "", {}, "sha512-jujnLa2d6xPt4HGmWf8/aoWgV2BC9CSyrx5wF3KUFzbNOxxUndQ+0IPKMk723LVGmJcALcexab5MK2KBEGsdew=="],
 
     "@fontsource/galada": ["@fontsource/galada@5.3.0", "", {}, "sha512-WCEb6q/YAHk2TYYtpl8uUcge+FSBzcwoyAGHXOpmfSWomtr2yEv2XoWDg/g4FtcDNWU3gkB0mX7L4Cl/H0yQ3g=="],
 
+    "@fontsource/hind": ["@fontsource/hind@5.3.0", "", {}, "sha512-tN9N0AurZa2N8JakQw8Eqs5/1Rzpw7J6YA1mYpkkHZ3iTw1JjbSHq6V6hGjhRdZlUMHk1sN+jOhPmuF+RkRKEg=="],
+
     "@fontsource/hind-siliguri": ["@fontsource/hind-siliguri@5.3.0", "", {}, "sha512-jTxXVXLTUYpiCqQ8zGzX9gK4pHkJ6nOn05nKqFjPEpqf3VY6gGREKAIvHfHprE/6N4ittSudnHsMPT10QQfgtw=="],
+
+    "@fontsource/kalam": ["@fontsource/kalam@5.3.0", "", {}, "sha512-FDkVoDfPDCSN/eO81FOYtUI67eMgpVBJmjBtAqSL0PmEhJyeFY2biC+CR+yEttksgXR9+swpFdYmQTyjwBq80Q=="],
+
+    "@fontsource/martel": ["@fontsource/martel@5.3.0", "", {}, "sha512-E/L2GnnmYkcjgt6IMN9ISgr2ldDzSeO1J+aTMwWsOy+Ti4EEC8B9RHiU32kUMGiyI9Ot8JLzQ4FA39HH1tFfbQ=="],
 
     "@fontsource/mina": ["@fontsource/mina@5.3.0", "", {}, "sha512-i7IEGcTyghSBfKWocHbKS1rKWGX65J+Xja2Fb8TQ5gotlq5++uJ246fUxBWrcrtdqwCAtas2b0yHYt+uj2UBXA=="],
 
+    "@fontsource/mukta": ["@fontsource/mukta@5.3.0", "", {}, "sha512-BIM9rx9SmHOcVR8cmOba9LnaFwhfiaFcclwgKV9rH4DIdCmD/tBBhtY02GGukuayxSbqfZ6pXzSO88IigTewDw=="],
+
     "@fontsource/noto-sans-bengali": ["@fontsource/noto-sans-bengali@5.3.0", "", {}, "sha512-EFBMU0UvzyFSc1ERK369zfqEu6DMRuWmCQ2+2ahhQTQAIDPEyN1UYlQdQeFkheu2DWG2hfdwrhiLlGFl2sSr/A=="],
+
+    "@fontsource/noto-sans-devanagari": ["@fontsource/noto-sans-devanagari@5.3.0", "", {}, "sha512-7khYmipS/5KAUUmrO1DKir8yL8XI00d0+ZE9BqbS8XF1jzObv6CpPOk3UeYxF+Pvi8bx9bBvprBCOcbx/eQWTQ=="],
 
     "@fontsource/noto-serif-bengali": ["@fontsource/noto-serif-bengali@5.3.0", "", {}, "sha512-CTEX03yqXP5A1GZUHiNOgNoHBWcwfrc7JskLSseAcOVMxopD8Wgc32naa58YRhMhXeZZoyoCjhfODwOiIxAQyA=="],
 
+    "@fontsource/noto-serif-devanagari": ["@fontsource/noto-serif-devanagari@5.3.0", "", {}, "sha512-POketgM+TcAbtQCpl5GUmlCVvV7zGnFmLlQTIVxp0ePZkKTJ1UhpeyscIpgljOzHjrVzXPj7x1lSXl2W/wI3Gg=="],
+
+    "@fontsource/rozha-one": ["@fontsource/rozha-one@5.3.0", "", {}, "sha512-/IUdv9LTshBBIqym7gbgOp/RbyD4HxwYOb+5lZKcv78m1xrD0wWWTWp20PNN9W5RVOQfAYQRkT76inav6uAPqg=="],
+
     "@fontsource/tiro-bangla": ["@fontsource/tiro-bangla@5.3.0", "", {}, "sha512-lwmDyUWLPgASmZFjfVtN6eShFoTIQ6o4Ch7hzrAf5XHbF4Tdo0S3GPCyw+IuNrwWi4FceTZazcNhR9KTmupAzA=="],
+
+    "@fontsource/tiro-devanagari-hindi": ["@fontsource/tiro-devanagari-hindi@5.3.0", "", {}, "sha512-nlREPH/UItPmrRg2RY4O/oQNBtbwAzKyHk3ZexW1b75p8YrjmhdiPWOg9rm6dyM5v8FnIR392BG3Fdhu3+wTkg=="],
 
     "@hookform/resolvers": ["@hookform/resolvers@5.2.2", "https://registry.npmjs.com/@hookform/resolvers/-/resolvers-5.2.2.tgz", { "dependencies": { "@standard-schema/utils": "^0.3.0" }, "peerDependencies": { "react-hook-form": "^7.55.0" } }, "sha512-A/IxlMLShx3KjV/HeTcTfaMxdwy690+L/ZADoeaTltLx+CVuzkeVIPuybK3jrRfw7YZnmdKsVVHAlEPIAEUNlA=="],
 
