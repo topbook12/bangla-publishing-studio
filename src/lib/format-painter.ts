@@ -10,6 +10,7 @@
 
 import { Extension } from '@tiptap/core';
 import type { Editor } from '@tiptap/react';
+import { quoteFontFamily } from '@/lib/paper';
 
 /** কপি করা ফরম্যাটের স্ন্যাপশট — false/undefined মানে ওই বৈশিষ্ট্যটি "অনুপস্থিত" */
 export interface FormatSnapshot {
@@ -97,7 +98,10 @@ export function captureFormat(editor: Editor): FormatSnapshot {
   };
 
   if (typeof styleAttrs.color === 'string' && styleAttrs.color) snap.color = styleAttrs.color;
-  if (typeof styleAttrs.fontFamily === 'string' && styleAttrs.fontFamily) snap.fontFamily = styleAttrs.fontFamily;
+  if (typeof styleAttrs.fontFamily === 'string' && styleAttrs.fontFamily) {
+    // multi-word ফন্ট CSSOM-এ টিকতে কোট দরকার — applyFormat-এ setFontFamily বরাবর কোটেড ভ্যালু পাক
+    snap.fontFamily = quoteFontFamily(styleAttrs.fontFamily);
+  }
   if (typeof styleAttrs.fontSize === 'string' && styleAttrs.fontSize) snap.fontSize = styleAttrs.fontSize;
   if (safeActive('highlight')) {
     // multicolor কনফিগ — রং অ্যাট্রিবিউট থাকে; না থাকলে রিবনের ডিফল্ট হাইলাইট রং

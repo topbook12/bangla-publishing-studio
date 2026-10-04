@@ -16,6 +16,8 @@ const CACHE = 'bwp-v3';
 function isImmutable(url) {
   // Next.js বিল্ড আউটপুট (হ্যাশ-যুক্ত ফাইলনাম)
   if (url.pathname.startsWith('/_next/static/')) return true;
+  // বান্ডেল করা ফন্ট ফাইল (/fonts/...) — ফাইলনামেই ভার্সন, অপরিবর্তনশীল
+  if (url.pathname.startsWith('/fonts/')) return true;
   // ফন্ট CDN — অপরিবর্তনশীল
   if (url.hostname === 'fonts.maateen.me') return true;
   if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com') return true;

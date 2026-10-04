@@ -442,6 +442,43 @@ function coverHtml(coverData: NonNullable<PageData['coverData']>, settings: Docu
   </div>`;
 }
 
+/**
+ * বান্ডেল করা হিন্দি ফন্টের @font-face — এক্সপোর্ট করা HTML অন্য মেশিনে খুললেও
+ * Kruti Dev / DevLys / Mangal ইত্যাদি সাইটের /fonts/ থেকে লোড হয়ে ঠিক দেখাবে।
+ * (ক্লায়েন্ট-সাইড এক্সপোর্ট — window.location.origin পাওয়া যায়)
+ */
+function bundledHindiFontFaceCss(): string {
+  const files: Array<[family: string, file: string, weight?: string]> = [
+    ['Kruti Dev 010', 'KrutiDev-010.ttf'],
+    ['Kruti Dev 011', 'KrutiDev-011.ttf'],
+    ['Kruti Dev 012', 'KrutiDev-012.ttf', '400'],
+    ['Kruti Dev 014', 'KrutiDev-014.ttf'],
+    ['Kruti Dev 016', 'KrutiDev-016.ttf', '300'],
+    ['Kruti Dev 021', 'KrutiDev-021.ttf', '700'],
+    ['Kruti Dev 025', 'KrutiDev-025.ttf'],
+    ['Kruti Dev 030', 'KrutiDev-030.ttf'],
+    ['Kruti Dev 041', 'KrutiDev-041.ttf', '700'],
+    ['Kruti Dev 050', 'KrutiDev-050.ttf'],
+    ['Kruti Dev 060', 'KrutiDev-060.ttf'],
+    ['Kruti Dev 070', 'KrutiDev-070.ttf'],
+    ['DevLys 010', 'DevLys-010.ttf'],
+    ['Chanakya', 'Chanakya.ttf'],
+    ['Mangal', 'mangal.ttf', '400'],
+    ['Mangal', 'mangal-bold.ttf', '700'],
+    ['Aparajita', 'aparajita.ttf', '400'],
+    ['Aparajita', 'aparajita-bold.ttf', '700'],
+    ['Kokila', 'kokila.ttf'],
+    ['Utsaah', 'utsaah.ttf'],
+    ['Sanskrit Text', 'sanskrit-text.ttf'],
+    ['Nirmala UI', 'nirmala-ui.ttf'],
+    ['Sahadeva', 'sahadeva.ttf'],
+  ];
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  return files
+    .map(([family, file, weight]) => `@font-face{font-family:'${family}';src:url('${origin}/fonts/hindi/${file}') format('truetype');font-weight:${weight ?? '400'};font-style:normal;font-display:swap;}`)
+    .join('\n');
+}
+
 export function buildStandaloneHtml(title: string, settings: DocumentSettings, pages: PageData[]): string {
   const preset = getPaperPreset(settings.paperSize);
   const size = settings.paperSize === 'custom'
@@ -487,10 +524,11 @@ export function buildStandaloneHtml(title: string, settings: DocumentSettings, p
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${escapeHtml(title)}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&family=Noto+Serif+Bengali:wght@400;600;700&family=Noto+Sans+Bengali:wght@400;600;700&family=Tiro+Bangla:ital@0;1&family=Baloo+Da+2:wght@400..800&family=Atma:wght@300..700&family=Anek+Bangla:wght@100..800&family=Galada&family=Mina&family=Noto+Sans+Devanagari:wght@400;600;700&family=Noto+Serif+Devanagari:wght@400;600;700&family=Hind:wght@400;600;700&family=Tiro+Devanagari+Hindi&family=Martel:wght@400;700&family=Mukta:wght@400;600&family=Rozha+One&family=Baloo+2:wght@400..800&family=Kalam&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&family=Noto+Serif+Bengali:wght@400;600;700&family=Noto+Sans+Bengali:wght@400;600;700&family=Tiro+Bangla:ital@0;1&family=Baloo+Da+2:wght@400..800&family=Atma:wght@300..700&family=Anek+Bangla:wght@100..800&family=Galada&family=Mina&family=Noto+Sans+Devanagari:wght@400;600;700&family=Noto+Serif+Devanagari:wght@400;600;700&family=Hind:wght@400;600;700&family=Tiro+Devanagari+Hindi&family=Martel:wght@400;700&family=Mukta:wght@400;600&family=Rozha+One&family=Baloo+2:wght@400..800&family=Kalam&family=Anek+Devanagari:wght@400..700&family=Rajdhani:wght@400;600;700&family=Teko:wght@400;600&family=Sahitya&family=Halant:wght@400;600&family=Karma:wght@400;700&family=Laila:wght@400;600&family=Khula:wght@400;700&family=Yantramanav:wght@400;700&family=Yatra+One&display=swap" rel="stylesheet">
 <link href="https://fonts.maateen.me/kalpurush/font.css" rel="stylesheet">
 <link href="https://fonts.maateen.me/solaimanlipi/font.css" rel="stylesheet">
 <link href="https://fonts.maateen.me/siyam-rupali/font.css" rel="stylesheet">
+<style>${bundledHindiFontFaceCss()}</style>
 <style>${EXPORT_CSS}</style>
 <style>
   :root { --p-gap: ${settings.paragraphSpacing}px; }

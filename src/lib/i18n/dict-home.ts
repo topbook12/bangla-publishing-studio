@@ -15,7 +15,13 @@ export const dictHome: Dict = {
   'home.fontsize': { bn: 'ফন্ট সাইজ', hi: 'फ़ॉन्ट साइज़', en: 'Font Size' },
   'home.size': { bn: 'সাইজ', hi: 'साइज़', en: 'Size' },
   'home.fontgroup.bangla': { bn: 'বাংলা ফন্ট', hi: 'बांग्ला फ़ॉन्ट', en: 'Bengali fonts' },
-  'home.fontgroup.devanagari': { bn: 'দেবনাগরী (হিন্দি) ফন্ট', hi: 'देवनागरी (हिंदी) फ़ॉन्ट', en: 'Devanagari (Hindi) fonts' },
+  'home.fontgroup.devanagari': { bn: 'দেবনাগরী (হিন্দি) ফন্ট — ইউনিকোড', hi: 'देवनागरी (हिंदी) फ़ॉन्ट — यूनिकोड', en: 'Devanagari (Hindi) fonts — Unicode' },
+  'home.fontgroup.hindilegacy': { bn: 'হিন্দি লিগ্যাসি ফন্ট — Kruti Dev / DevLys', hi: 'हिन्दी लीगेसी फ़ॉन्ट — Kruti Dev / DevLys', en: 'Hindi legacy fonts — Kruti Dev / DevLys' },
+  'home.legacy.tip': {
+    bn: 'নন-ইউনিকোড ফন্ট — ভারতীয় ছাপাখানার DTP স্ট্যান্ডার্ড। Remington Gail কীবোর্ড লেআউটে টাইপ করলেই দেবনাগরী গ্লিফ দেখায় (MS Word-এ Kruti Dev-এর মতোই)। ইউনিকোড ফন্টে টাইপ করা লেখা এসব ফন্টে সঠিক দেখাবে না।',
+    hi: 'नॉन-यूनिकोड फ़ॉन्ट — भारतीय प्रिंटिंग DTP मानक। Remington Gail कीबोर्ड लेआउट से टाइप करने पर देवनागरी ग्लिफ़ दिखते हैं (MS Word में Kruti Dev की तरह)। यूनिकोड फ़ॉन्ट में टाइप किया टेक्स्ट इन फ़ॉन्ट्स में सही नहीं दिखेगा।',
+    en: 'Non-Unicode fonts — the Indian printing DTP standard. Type with the Remington Gail keyboard layout to see Devanagari glyphs (same as Kruti Dev in MS Word). Unicode text will not display correctly in these fonts.',
+  },
 
   'home.bold': { bn: 'বোল্ড', hi: 'बोल्ड', en: 'Bold' },
   'home.italic': { bn: 'ইটালিক', hi: 'इटैलिक', en: 'Italic' },

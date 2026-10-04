@@ -7,7 +7,7 @@
 import { Fragment, useEffect, useState } from 'react';
 import {
   AlignCenter, AlignJustify, AlignLeft, AlignRight, Bold, CaseSensitive, ChevronsDown, ChevronsUp, Eraser,
-  Highlighter, Italic, List, ListOrdered, Paintbrush, Palette, Quote, Strikethrough,
+  Highlighter, Info, Italic, List, ListOrdered, Paintbrush, Palette, Quote, Strikethrough,
   Subscript as SubIcon, Superscript as SupIcon, Underline as UnderlineIcon,
 } from 'lucide-react';
 import {
@@ -15,10 +15,10 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { RibbonButton, RibbonDivider, RibbonGroup, refocusActiveEditor, runCommand, useActiveEditor } from './ribbon-shell';
+import { RibbonButton, RibbonDivider, RibbonGroup, refocusActiveEditor, reapplyFontMark, runCommand, useActiveEditor } from './ribbon-shell';
 import { AdvancedTextGroup } from './advanced-text';
-import { FONT_OPTIONS, FONT_SIZE_OPTIONS, COLOR_SWATCHES, HIGHLIGHT_SWATCHES, fontStackOf } from '@/lib/paper';
-import { useFmtNum, useT } from '@/lib/i18n';
+import { FONT_OPTIONS, FONT_SIZE_OPTIONS, COLOR_SWATCHES, HIGHLIGHT_SWATCHES, bareFontFamily, fontStackOf, quoteFontFamily } from '@/lib/paper';
+import { useFmtNum, useLangStore, useT } from '@/lib/i18n';
 import {
   captureFormat, disarmPainter, isPainterArmed, subscribePainter,
 } from '@/lib/format-painter';
@@ -33,40 +33,62 @@ import { cn } from '@/lib/utils';
 function FontFamilySelect() {
   const ed = useActiveEditor();
   const tt = useT();
+  const lang = useLangStore((s) => s.lang);
   const attrs = ed?.getAttributes('textStyle');
-  const current = (attrs?.fontFamily as string | undefined)?.split(',')[0]?.replace(/'/g, '') ?? '';
+  const current = attrs?.fontFamily ? bareFontFamily(attrs.fontFamily as string) : '';
   const [open, setOpen] = useState(false);
+  const groupKeys: Record<string, string> = {
+    bangla: 'home.fontgroup.bangla',
+    devanagari: 'home.fontgroup.devanagari',
+    'hindi-legacy': 'home.fontgroup.hindilegacy',
+  };
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
-        <button type="button" className="ribbon-select w-40" title={tt('home.font')} style={{ fontFamily: current ? fontStackOf(current) : undefined }}>
+        <button type="button" className="ribbon-select w-44" title={tt('home.font')} style={{ fontFamily: current ? fontStackOf(current) : undefined }}>
           <span className="truncate">{current || tt('home.font')}</span>
           <span aria-hidden="true">▾</span>
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="start"
-        className="max-h-80 w-56 overflow-y-auto"
+        className="max-h-[24rem] w-72 overflow-y-auto"
         onCloseAutoFocus={(e) => { e.preventDefault(); refocusActiveEditor(); }}
       >
-        {/* বাংলা → দেবনাগরী ক্রমে গ্রুপ-শিরোনাম — গ্রুপ বদলালেই নন-ইন্টারঅ্যাকটিভ হেডার */}
+        {/* বাংলা → দেবনাগরী (ইউনিকোড) → হিন্দি লিগ্যাসি ক্রমে গ্রুপ-শিরোনাম */}
         {FONT_OPTIONS.map((f, i) => {
           const prev = FONT_OPTIONS[i - 1];
           const showGroup = Boolean(f.group && f.group !== prev?.group);
           return (
             <Fragment key={f.family}>
-              {showGroup ? (
-                <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground" role="presentation">
-                  {f.group === 'devanagari' ? tt('home.fontgroup.devanagari') : tt('home.fontgroup.bangla')}
+              {showGroup && f.group ? (
+                <div
+                  className="flex items-center gap-1 px-2 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground first:pt-1"
+                  role="presentation"
+                  title={f.group === 'hindi-legacy' ? tt('home.legacy.tip') : undefined}
+                >
+                  <span className="truncate">{tt(groupKeys[f.group])}</span>
+                  {f.group === 'hindi-legacy' ? <Info className="h-3 w-3 shrink-0 opacity-60" aria-hidden="true" /> : null}
                 </div>
               ) : null}
               <DropdownMenuItem
                 style={{ fontFamily: f.stack }}
-                className={cn(current === f.family && 'bg-accent')}
-                onClick={() => runCommand((ed2) => ed2.chain().focus().setFontFamily(f.family).run())}
+                className={cn('gap-2', current === f.family && 'bg-accent')}
+                title={f.legacy ? tt('home.legacy.tip') : undefined}
+                onClick={() => {
+                  const val = quoteFontFamily(f.family);
+                  runCommand((ed2) => ed2.chain().focus().setFontFamily(val).run());
+                  // TipTap-এর async focus storedMarks মুছে দিতে পারে — ফোকাস স্থির হওয়ার পর আবার বসাই
+                  reapplyFontMark(val);
+                }}
               >
-                {f.name}
+                <span className="truncate">{f.name}</span>
+                {f.note ? (
+                  <span className="ml-auto shrink-0 text-[10px] font-normal text-muted-foreground/70">
+                    {f.note[lang]}
+                  </span>
+                ) : null}
               </DropdownMenuItem>
             </Fragment>
           );

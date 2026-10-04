@@ -26,6 +26,20 @@ interface Ctx {
   italics?: boolean;
   /** অক্ষরের ফাঁক — twip (১/২০ pt) এককে; প্যারা-লেভেল letter-spacing/charSpacing থেকে আসে */
   charSpacingTw?: number;
+  /** রান-লেভেল ফন্ট (font-family mark) — Kruti Dev / Mangal ইত্যাদি হিন্দি ফন্ট DOCX-এ যেন ঠিক থাকে */
+  font?: string;
+}
+
+/**
+ * CSS font-family ভ্যালু থেকে প্রথম ফন্টের নাম — docx TextRun-এর font ফিল্ডে যায়।
+ * জটিল-স্ক্রিপ্ট (দেবনাগরী)-এর জন্য ascii/hAnsi/cs তিন স্লটেই সেট করা হয় —
+ * Word দেবনাগরী গ্লিফ cs স্লট থেকে নেয়, Kruti Dev-এর ASCII ম্যাপিং ascii স্লট থেকে।
+ */
+function docxFontOf(family: string | undefined): { ascii: string; hAnsi: string; cs: string } | undefined {
+  if (!family) return undefined;
+  const first = family.split(',')[0]?.trim().replace(/^['"]|['"]$/g, '');
+  if (!first) return undefined;
+  return { ascii: first, hAnsi: first, cs: first };
 }
 
 function hexNoHash(c: string | undefined): string | undefined {
@@ -129,7 +143,7 @@ function collectU(el: Element, ctx: Ctx, runs: Array<TextRun | ExternalHyperlink
   el.childNodes.forEach((child) => {
     if (child.nodeType === Node.TEXT_NODE) {
       const text = child.textContent ?? '';
-      if (text) runs.push(new TextRun({ text, bold: ctx.bold, italics: ctx.italics, color: ctx.color, underline: {}, characterSpacing: ctx.charSpacingTw }));
+      if (text) runs.push(new TextRun({ text, bold: ctx.bold, italics: ctx.italics, color: ctx.color, underline: {}, characterSpacing: ctx.charSpacingTw, font: docxFontOf(ctx.font) }));
     } else if (child.nodeType === Node.ELEMENT_NODE) {
       collectU(child as Element, ctx, runs);
     }
@@ -141,7 +155,7 @@ function collectStrike(el: Element, ctx: Ctx, runs: Array<TextRun | ExternalHype
   el.childNodes.forEach((child) => {
     if (child.nodeType === Node.TEXT_NODE) {
       const text = child.textContent ?? '';
-      if (text) runs.push(new TextRun({ text, strike: true, bold: ctx.bold, italics: ctx.italics, color: ctx.color, characterSpacing: ctx.charSpacingTw }));
+      if (text) runs.push(new TextRun({ text, strike: true, bold: ctx.bold, italics: ctx.italics, color: ctx.color, characterSpacing: ctx.charSpacingTw, font: docxFontOf(ctx.font) }));
     } else if (child.nodeType === Node.ELEMENT_NODE) {
       collectStrike(child as Element, ctx, runs);
     }
@@ -161,6 +175,7 @@ function inlineRuns(el: Element, ctx: Ctx): Array<TextRun | ExternalHyperlink> {
           italics: ctx.italics,
           color: ctx.color,
           characterSpacing: ctx.charSpacingTw,
+          font: docxFontOf(ctx.font),
           shading: ctx.bg ? { type: ShadingType.CLEAR, fill: ctx.bg } : undefined,
         }));
       }
@@ -175,6 +190,7 @@ function inlineRuns(el: Element, ctx: Ctx): Array<TextRun | ExternalHyperlink> {
       bg: hexNoHash(style['background-color'] ?? style['background']) ?? ctx.bg,
       bold: ctx.bold || c.tagName === 'B' || c.tagName === 'STRONG',
       italics: ctx.italics || c.tagName === 'I' || c.tagName === 'EM',
+      font: style['font-family'] ?? ctx.font,
       align: ctx.align,
     };
 

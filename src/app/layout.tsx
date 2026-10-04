@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import "./hindi-fonts.css";
 import "./forma-print.css";
 import PwaRegister from "@/components/pwa-register";
 import { SonnerToaster } from "@/components/sonner-toaster";
@@ -43,6 +44,26 @@ import "@fontsource/rozha-one/400.css";
 import "@fontsource/baloo-2/400.css";
 import "@fontsource/baloo-2/600.css";
 import "@fontsource/kalam/400.css";
+import "@fontsource/anek-devanagari/400.css";
+import "@fontsource/anek-devanagari/600.css";
+import "@fontsource/anek-devanagari/700.css";
+import "@fontsource/rajdhani/400.css";
+import "@fontsource/rajdhani/600.css";
+import "@fontsource/rajdhani/700.css";
+import "@fontsource/teko/400.css";
+import "@fontsource/teko/600.css";
+import "@fontsource/sahitya/400.css";
+import "@fontsource/halant/400.css";
+import "@fontsource/halant/600.css";
+import "@fontsource/karma/400.css";
+import "@fontsource/karma/700.css";
+import "@fontsource/laila/400.css";
+import "@fontsource/laila/600.css";
+import "@fontsource/khula/400.css";
+import "@fontsource/khula/700.css";
+import "@fontsource/yantramanav/400.css";
+import "@fontsource/yantramanav/700.css";
+import "@fontsource/yatra-one/400.css";
 
 const APP_NAME = "বাংলা পাবলিশিং স্টুডিও";
 const APP_DESCRIPTION =

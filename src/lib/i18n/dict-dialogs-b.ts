@@ -132,6 +132,26 @@ export const dictDialogsB: Dict = {
   'dlg2.help.s8.i3': { bn: 'ক্রিয়েটিভ আউটপুট: Export → {a}, Markdown, Plain Text।', hi: 'क्रिएटिव आउटपुट: Export → {a}, Markdown, Plain Text।', en: 'Creative output: Export → {a}, Markdown, Plain Text.' },
   'dlg2.help.s8.i3.a': { bn: 'EPUB (ই-বুক)', hi: 'EPUB (ई-बुक)', en: 'EPUB (e-book)' },
 
+  'dlg2.help.s9.title': { bn: '🇮🇳 হিন্দি ফন্ট (Kruti Dev, DevLys, Mangal…)', hi: '🇮🇳 हिन्दी फ़ॉन्ट (Kruti Dev, DevLys, Mangal…)', en: '🇮🇳 Hindi fonts (Kruti Dev, DevLys, Mangal…)' },
+  'dlg2.help.s9.i1': {
+    bn: 'হোম ট্যাবের ফন্ট তালিকায় ৩টি গ্রুপ — ইউনিকোড দেবনাগরী ({a}, Aparajita, Kokila…), হিন্দি লিগ্যাসি ({b} সিরিজ, DevLys 010, Chanakya) ও বাংলা।',
+    hi: 'होम टैब की फ़ॉन्ट सूची में 3 समूह — यूनिकोड देवनागरी ({a}, Aparajita, Kokila…), हिन्दी लीगेसी ({b} सीरीज़, DevLys 010, Chanakya) और बांग्ला।',
+    en: 'The Home tab font list has 3 groups — Unicode Devanagari ({a}, Aparajita, Kokila…), Hindi legacy ({b} series, DevLys 010, Chanakya) and Bangla.',
+  },
+  'dlg2.help.s9.i1.a': { bn: 'Mangal', hi: 'Mangal', en: 'Mangal' },
+  'dlg2.help.s9.i1.b': { bn: 'Kruti Dev', hi: 'Kruti Dev', en: 'Kruti Dev' },
+  'dlg2.help.s9.i2': {
+    bn: 'লিগ্যাসি ফন্ট নন-ইউনিকোড — {a} কীবোর্ড লেআউটে টাইপ করতে হয় (Word-এ Kruti Dev-এর মতো)। সব ফন্ট অ্যাপের ভেতরেই বান্ডেল, অফলাইনেও চলে।',
+    hi: 'लीगेसी फ़ॉन्ट नॉन-यूनिकोड हैं — {a} कीबोर्ड लेआउट से टाइप करना होता है (Word में Kruti Dev जैसा)। सभी फ़ॉन्ट ऐप में बंडल हैं, ऑफ़लाइन भी चलते हैं।',
+    en: 'Legacy fonts are non-Unicode — type using the {a} keyboard layout (same as Kruti Dev in Word). All fonts are bundled inside the app and work offline.',
+  },
+  'dlg2.help.s9.i2.a': { bn: 'Remington Gail', hi: 'Remington Gail', en: 'Remington Gail' },
+  'dlg2.help.s9.i3': {
+    bn: 'প্রিন্ট/PDF-এ ফন্ট হুবহু এমবেড হয়; DOCX এক্সপোর্টে ফন্টের নাম থাকে — যে কম্পিউটারে খুলবেন সেখানে ফন্ট ইনস্টল থাকলে একই রকম দেখাবে।',
+    hi: 'प्रिंट/PDF में फ़ॉन्ट पूरी तरह एम्बेड होता है; DOCX एक्सपोर्ट में फ़ॉन्ट का नाम रहता है — जिस कंप्यूटर पर खोलेंगे वहाँ फ़ॉन्ट इंस्टॉल होने पर वैसा ही दिखेगा।',
+    en: 'Print/PDF embeds fonts exactly; DOCX export carries the font name — it looks the same wherever the font is installed.',
+  },
+
   // কীবোর্ড শর্টকাট
   'dlg2.help.shortcuts': { bn: 'কীবোর্ড শর্টকাট', hi: 'कीबोर्ड शॉर्टकट', en: 'Keyboard Shortcuts' },
   'dlg2.help.keys.bold': { bn: 'Ctrl+B / I / U', hi: 'Ctrl+B / I / U', en: 'Ctrl+B / I / U' },

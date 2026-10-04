@@ -1,0 +1,184 @@
+/**
+ * হিন্দি ফন্ট লাইব্রেরি — বান্ডেল করা (public/fonts/hindi/)
+ * ─────────────────────────────────────────────────────────
+ * দুই ধরনের ফন্ট আছে:
+ *
+ * 1. লিগ্যাসি (নন-ইউনিকোড) — Kruti Dev সিরিজ, DevLys 010, Chanakya:
+ *    ভারতীয় DTP/ছাপাখানার ইন্ডাস্ট্রি স্ট্যান্ডার্ড। এগুলোতে ASCII কোডপয়েন্টে
+ *    দেবনাগরী গ্লিফ বসানো থাকে — MS Word-এ যেমন "Remington Gail" কীবোর্ড
+ *    লেআউটে ইংরেজি টাইপ করলে হিন্দি দেখায়, ব্রাউজারের @font-face-ও ঠিক তা-ই করে।
+ *
+ * 2. ইউনিকোড — Mangal, Aparajita, Kokila, Utsaah, Sanskrit Text, Nirmala UI,
+ *    Sahadeva: সরাসরি দেবনাগরী কোডপয়েন্ট (U+0900–U+097F), InScript কীবোর্ডে
+ *    টাইপ করা যায়, বানান/অনুসন্ধান সব জায়গায় কাজ করে।
+ */
+
+/* ─── লিগ্যাসি: Kruti Dev সিরিজ (Remington Gail) ─── */
+
+@font-face {
+  font-family: 'Kruti Dev 010';
+  src: url('/fonts/hindi/KrutiDev-010.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Kruti Dev 011';
+  src: url('/fonts/hindi/KrutiDev-011.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Kruti Dev 012';
+  src: url('/fonts/hindi/KrutiDev-012.ttf') format('truetype');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Kruti Dev 014';
+  src: url('/fonts/hindi/KrutiDev-014.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Kruti Dev 016';
+  src: url('/fonts/hindi/KrutiDev-016.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Kruti Dev 021';
+  src: url('/fonts/hindi/KrutiDev-021.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Kruti Dev 025';
+  src: url('/fonts/hindi/KrutiDev-025.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Kruti Dev 030';
+  src: url('/fonts/hindi/KrutiDev-030.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Kruti Dev 041';
+  src: url('/fonts/hindi/KrutiDev-041.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Kruti Dev 050';
+  src: url('/fonts/hindi/KrutiDev-050.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Kruti Dev 060';
+  src: url('/fonts/hindi/KrutiDev-060.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Kruti Dev 070';
+  src: url('/fonts/hindi/KrutiDev-070.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ─── লিগ্যাসি: DevLys 010 ও Chanakya ─── */
+
+@font-face {
+  font-family: 'DevLys 010';
+  src: url('/fonts/hindi/DevLys-010.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Chanakya';
+  src: url('/fonts/hindi/Chanakya.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ─── ইউনিকোড: Windows/ইন্ডাস্ট্রি স্ট্যান্ডার্ড ─── */
+
+@font-face {
+  font-family: 'Mangal';
+  src: url('/fonts/hindi/mangal.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Mangal';
+  src: url('/fonts/hindi/mangal-bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Aparajita';
+  src: url('/fonts/hindi/aparajita.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Aparajita';
+  src: url('/fonts/hindi/aparajita-bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Kokila';
+  src: url('/fonts/hindi/kokila.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Utsaah';
+  src: url('/fonts/hindi/utsaah.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Sanskrit Text';
+  src: url('/fonts/hindi/sanskrit-text.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Nirmala UI';
+  src: url('/fonts/hindi/nirmala-ui.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Sahadeva';
+  src: url('/fonts/hindi/sahadeva.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}

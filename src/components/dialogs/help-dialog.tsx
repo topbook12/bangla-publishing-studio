@@ -123,6 +123,14 @@ export function HelpDialog() {
             </ul>
           </Step>
 
+          <Step title={tt('dlg2.help.s9.title')}>
+            <ul className="list-disc space-y-1 pl-4">
+              <li>{tplNodes(tt('dlg2.help.s9.i1'), { a: <b>{tt('dlg2.help.s9.i1.a')}</b>, b: <b>{tt('dlg2.help.s9.i1.b')}</b> })}</li>
+              <li>{tplNodes(tt('dlg2.help.s9.i2'), { a: <b>{tt('dlg2.help.s9.i2.a')}</b> })}</li>
+              <li>{tt('dlg2.help.s9.i3')}</li>
+            </ul>
+          </Step>
+
           <div className="rounded-lg border bg-muted/30 p-3">
             <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold">
               <Keyboard size={15} aria-hidden="true" /> {tt('dlg2.help.shortcuts')}

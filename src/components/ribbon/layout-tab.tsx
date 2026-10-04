@@ -5,6 +5,7 @@
 
 'use client';
 
+import { Fragment } from 'react';
 import { ArrowUpToLine, Droplet, Eraser, SlidersHorizontal, SwatchBook, Wand2 } from 'lucide-react';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -23,7 +24,7 @@ import {
   effectivePageBorderStyle, effectivePageBorderWidth, FONT_OPTIONS, fontStackOf, MARGIN_PRESETS,
   PAGE_BORDER_WIDTH_PX, PAPER_PRESETS,
 } from '@/lib/paper';
-import { tFmt, useFmtNum, useT } from '@/lib/i18n';
+import { tFmt, useFmtNum, useLangStore, useT } from '@/lib/i18n';
 import type { DocumentSettings, Margins, PageBorderStyle, PageBorderWidth, PaperColor, WatermarkSettings } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
@@ -105,6 +106,7 @@ export function LayoutTab() {
   const update = useEditorStore((s) => s.updateSettings);
   const tt = useT();
   const fnum = useFmtNum();
+  const lang = useLangStore((s) => s.lang);
 
   const setMargins = (patch: Partial<Margins>) => update({ margins: { ...settings.margins, ...patch } });
 
@@ -506,12 +508,35 @@ export function LayoutTab() {
                 {settings.defaultFont} <span aria-hidden="true">▾</span>
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="max-h-80 w-52 overflow-y-auto">
-              {FONT_OPTIONS.map((f) => (
-                <DropdownMenuItem key={f.family} style={{ fontFamily: f.stack }} onClick={() => update({ defaultFont: f.family })}>
-                  {f.name}
-                </DropdownMenuItem>
-              ))}
+            <DropdownMenuContent align="start" className="max-h-[24rem] w-72 overflow-y-auto">
+              {FONT_OPTIONS.map((f, i) => {
+                const prev = FONT_OPTIONS[i - 1];
+                const showGroup = Boolean(f.group && f.group !== prev?.group);
+                return (
+                  <Fragment key={f.family}>
+                    {showGroup && f.group ? (
+                      <div
+                        className="px-2 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground first:pt-1"
+                        role="presentation"
+                        title={f.group === 'hindi-legacy' ? tt('home.legacy.tip') : undefined}
+                      >
+                        {f.group === 'devanagari' ? tt('home.fontgroup.devanagari')
+                          : f.group === 'hindi-legacy' ? tt('home.fontgroup.hindilegacy')
+                          : tt('home.fontgroup.bangla')}
+                      </div>
+                    ) : null}
+                    <DropdownMenuItem
+                      style={{ fontFamily: f.stack }}
+                      className={cn(settings.defaultFont === f.family && 'bg-accent')}
+                      title={f.legacy ? tt('home.legacy.tip') : undefined}
+                      onClick={() => update({ defaultFont: f.family })}
+                    >
+                      <span className="truncate">{f.name}</span>
+                      {f.note ? <span className="ml-auto shrink-0 text-[10px] text-muted-foreground/70">{f.note[lang]}</span> : null}
+                    </DropdownMenuItem>
+                  </Fragment>
+                );
+              })}
             </DropdownMenuContent>
           </DropdownMenu>
           <div className="flex flex-wrap gap-x-3 gap-y-1">

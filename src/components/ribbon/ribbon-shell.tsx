@@ -174,6 +174,26 @@ export function refocusActiveEditor(): void {
 }
 
 /**
+ * ফন্ট-ফ্যামিলি মার্ক পুনঃপ্রয়োগ — TipTap-এর focus() অ্যাসিঙ্কভাবে view.focus() করে
+ * (requestAnimationFrame), আর PM-এর DOM-ফোকাস সিঙ্ক ফোকাস-রিস্টোরের সময় storedMarks
+ * রিসেট করে ফেলতে পারে। ফলে মেনু থেকে ফন্ট বাছাই করে সরাসরি টাইপ করলে ফন্ট প্রয়োগ
+ * হতো না (হিন্দি Kruti Dev/DevLys ও বাংলা ফন্ট — সব ক্ষেত্রেই)। refocusActiveEditor-
+ * এর ফোকাস-টাইমারগুলো শেষ হওয়ার পর আরেকবার মার্ক বসিয়ে দেই — MS Word-এর মতোই
+ * "ফন্ট বাছাই → টাইপ" এখন কাজ করবে।
+ */
+export function reapplyFontMark(family: string): void {
+  const apply = () => {
+    const { activePageId } = useEditorStore.getState();
+    const ed = getEditor(activePageId);
+    if (ed && !ed.isDestroyed) {
+      try { ed.commands.setFontFamily(family); } catch { /* ধ্বংসপ্রাপ্ত এডিটর */ }
+    }
+  };
+  window.setTimeout(apply, 90);
+  window.setTimeout(apply, 400);
+}
+
+/**
  * Quick Access Toolbar — Undo/Redo সব রিবন ট্যাবে সবসময় দৃশ্যমান
  * (ট্যাব কলাপ্সড থাকলেও)। MS Word-এর QAT-এর মতোই ট্যাবস্ট্রিপের বাঁয়ে বসে।
  */
