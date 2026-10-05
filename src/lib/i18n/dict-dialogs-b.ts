@@ -72,6 +72,16 @@ export const dictDialogsB: Dict = {
   'dlg2.help.title': { bn: 'ব্যবহার নির্দেশিকা', hi: 'उपयोग निर्देशिका', en: 'User Guide' },
   'dlg2.help.desc': { bn: 'ছোট ছোট প্রশ্নে ক্লিক করে উত্তর দেখুন — সবকিছু বাংলায়।', hi: 'छोटे-छोटे प्रश्नों पर क्लिक करके उत्तर देखें — सब कुछ आपकी भाषा में।', en: 'Click a question to see the answer — everything in your own language.' },
 
+  // ─── অ্যাবাউট কার্ড (help-dialog-এর প্রিমিয়াম ব্র্যান্ড প্যানেল) ───
+  'dlg2.about.brand': { bn: 'বাংলা পাবলিশিং স্টুডিও', hi: 'बांग्ला पब्लिशिंग स्टूडियो', en: 'Bangla Publishing Studio' },
+  'dlg2.about.edition': { bn: 'প্রিমিয়াম সংস্করণ ২.০ — পেশাদার বই টাইপসেটিং স্টুডিও', hi: 'प्रीमियम संस्करण २.० — पेशेवर पुस्तक टाइपसेटिंग स्टूडियो', en: 'Premium Edition 2.0 — professional book typesetting studio' },
+  'dlg2.about.f1': { bn: 'তিন ভাষার ইন্টারফেস — বাংলা · हिन्दी · English', hi: 'तीन भाषाओं का इंटरफ़ेस — बांग्ला · हिन्दी · English', en: 'Trilingual interface — Bangla · हिन्दी · English' },
+  'dlg2.about.f2': { bn: 'হিন্দি ফন্ট লাইব্রেরি — Kruti Dev, DevLys, Mangal ও আরও', hi: 'हिंदी फ़ॉन्ट लाइब्रेरी — Kruti Dev, DevLys, Mangal और भी', en: 'Hindi font library — Kruti Dev, DevLys, Mangal & more' },
+  'dlg2.about.f3': { bn: 'প্রেস-রেডি ফরমা ছাপা — Demy · Crown · A4 স্বীকৃত ইমপোজিশন', hi: 'प्रेस-रेडी फ़रमा छपाई — Demy · Crown · A4 मानक इम्पोज़िशन', en: 'Press-ready Farma imposition — Demy · Crown · A4' },
+  'dlg2.about.f4': { bn: 'ট্রু পেজিনেশন, পেজ টেমপ্লেট ও প্রতি-পাতার হেডার', hi: 'ट्रू पेजिनेशन, पेज टेम्पलेट और प्रति-पृष्ठ हेडर', en: 'True pagination, page templates & per-page headers' },
+  'dlg2.about.f5': { bn: 'অফলাইন PWA — অটোসেভ, স্ন্যাপশট ও ভার্সন ব্যাকআপ', hi: 'ऑफ़लाइन PWA — ऑटोसेव, स्नैपशॉट और संस्करण बैकअप', en: 'Offline PWA — autosave, snapshots & version backup' },
+  'dlg2.about.f6': { bn: 'এক্সপোর্ট — PDF · DOCX · EPUB · HTML · Markdown', hi: 'एक्सपोर्ट — PDF · DOCX · EPUB · HTML · Markdown', en: 'Export — PDF · DOCX · EPUB · HTML · Markdown' },
+
   // ধাপ ১ — লেখা শুরু
   'dlg2.help.s1.title': { bn: '✍️ লেখা শুরু ও অক্ষর বিন্যাস', hi: '✍️ लिखना शुरू करें और अक्षर प्रारूप', en: '✍️ Getting started & text formatting' },
   'dlg2.help.s1.i1': { bn: 'সাদা কাগজে সরাসরি ক্লিক করে লিখুন — ঠিক Word-এর মতোই।', hi: 'सफ़ेद कागज़ पर सीधे क्लिक करके लिखें — बिल्कुल Word की तरह।', en: 'Click straight onto the white paper and type — just like Word.' },

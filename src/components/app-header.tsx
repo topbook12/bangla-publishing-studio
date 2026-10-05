@@ -128,7 +128,7 @@ function NavigatorToggle() {
         <Button
           variant="ghost"
           size="icon"
-          className={cn('header-action max-sm:h-11 max-sm:w-11', navigatorOpen && 'bg-accent text-accent-foreground')}
+          className={cn('header-action max-sm:hidden', navigatorOpen && 'bg-accent text-accent-foreground')}
           aria-label={tt('hdr.navigator')}
           aria-pressed={navigatorOpen}
           title={tt('hdr.navigator.tip')}
@@ -152,7 +152,7 @@ function FocusModeToggle() {
         <Button
           variant="ghost"
           size="icon"
-          className={cn('header-action max-sm:h-11 max-sm:w-11', focusMode && 'bg-accent text-accent-foreground')}
+          className={cn('header-action max-sm:hidden', focusMode && 'bg-accent text-accent-foreground')}
           aria-label={tt('app.focusMode')}
           aria-pressed={focusMode}
           title={tt('hdr.focus.tip')}
@@ -214,7 +214,10 @@ export function AppHeader() {
         </span>
         <div className="flex min-w-0 flex-col">
           <h1 className="app-title">{title}</h1>
-          <span className="app-subtitle">{tt('app.tagline')}</span>
+          <span className="hidden items-center gap-1.5 sm:flex">
+            <span className="app-subtitle">{tt('app.tagline')}</span>
+            <span className="pro-badge" title={tt('app.pro.tip')} aria-label={tt('app.pro.tip')}>PRO</span>
+          </span>
         </div>
       </div>
 

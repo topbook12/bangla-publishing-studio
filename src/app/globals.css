@@ -316,6 +316,131 @@ html.dark .header-action { box-shadow: 0 1px 2px rgb(0 0 0 / 0.3), inset 0 1px 0
   color: color-mix(in oklab, var(--primary) 85%, var(--foreground));
 }
 
+/* ─── PRO প্রিমিয়াম ব্যাজ — গোল্ড গ্রেডিয়েন্ট চিপ (হেডার/স্প্ল্যাশ/অ্যাবাউট) ─── */
+.pro-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1.5px 6px;
+  border-radius: 999px;
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  line-height: 1.5;
+  color: oklch(0.42 0.11 85);
+  background: linear-gradient(135deg, oklch(0.9 0.09 92) 0%, oklch(0.82 0.13 84) 55%, oklch(0.74 0.13 76) 100%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.65),
+    inset 0 -1px 2px rgb(120 78 0 / 0.18),
+    0 1px 3px rgb(180 120 20 / 0.35);
+  user-select: none;
+  white-space: nowrap;
+}
+html.dark .pro-badge {
+  color: oklch(0.34 0.1 82);
+  background: linear-gradient(135deg, oklch(0.86 0.1 92) 0%, oklch(0.76 0.13 82) 60%, oklch(0.68 0.12 74) 100%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.5),
+    0 1px 4px rgb(0 0 0 / 0.4);
+}
+.pro-badge-lg {
+  font-size: 9.5px;
+  padding: 2.5px 8px;
+  letter-spacing: 0.11em;
+}
+
+/* ─── অ্যাবাউট কার্ড (Help ডায়ালগের প্রিমিয়াম ব্র্যান্ড প্যানেল) ─── */
+.about-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  padding: 14px 15px;
+  border: 1px solid color-mix(in oklab, var(--primary) 22%, var(--border));
+  background:
+    radial-gradient(420px 130px at 12% -30%, color-mix(in oklab, var(--primary) 14%, transparent), transparent 70%),
+    linear-gradient(160deg, color-mix(in oklab, var(--primary) 6%, var(--card)) 0%, var(--card) 65%);
+  box-shadow:
+    0 1px 2px rgb(2 6 23 / 0.05),
+    0 8px 22px -10px color-mix(in oklab, var(--primary) 30%, transparent);
+}
+/* কার্ডের উপরে ব্র্যান্ড হেয়ারলাইন */
+.about-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, color-mix(in oklab, var(--primary) 60%, transparent), oklch(0.74 0.13 80) 45%, color-mix(in oklab, var(--primary) 40%, transparent) 80%, transparent);
+}
+.about-logo {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  flex-shrink: 0;
+  background: linear-gradient(140deg, oklch(0.785 0.115 274.7) 0%, oklch(0.585 0.233 277.1) 48%, oklch(0.541 0.281 293) 100%);
+  color: #fff;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.4),
+    0 0 0 1px color-mix(in oklab, var(--primary) 26%, transparent),
+    0 3px 10px color-mix(in oklab, var(--primary) 32%, transparent);
+}
+.about-edition {
+  margin-top: 2px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--muted-foreground);
+}
+.about-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 11px;
+}
+.about-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4.5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 500;
+  line-height: 1.5;
+  white-space: nowrap;
+  color: color-mix(in oklab, var(--foreground) 82%, var(--muted-foreground));
+  border: 1px solid color-mix(in oklab, var(--primary) 18%, var(--border));
+  background: color-mix(in oklab, var(--card) 70%, var(--primary) 3%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.4);
+}
+html.dark .about-chip { box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05); }
+.about-chip > svg { color: var(--primary); flex-shrink: 0; }
+
+/* ─── স্প্ল্যাশ শাইমার লোডিং-বার ─── */
+.splash-bar {
+  width: 190px;
+  height: 5px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: color-mix(in oklab, var(--primary) 12%, rgb(2 6 23 / 0.06));
+  box-shadow: inset 0 1px 2px rgb(2 6 23 / 0.12);
+}
+.splash-bar > span {
+  display: block;
+  width: 45%;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, oklch(0.62 0.19 277) 35%, oklch(0.56 0.24 293) 65%, transparent);
+  animation: splash-shimmer 1.25s ease-in-out infinite;
+}
+@keyframes splash-shimmer {
+  0% { transform: translateX(-110%); }
+  100% { transform: translateX(320%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .splash-bar > span { animation-duration: 3s; }
+}
+
 @media (hover: hover) {
   .header-action:hover {
     transform: translateY(-1px);

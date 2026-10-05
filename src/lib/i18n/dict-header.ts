@@ -13,6 +13,7 @@ export const dictHeader: Dict = {
   'app.preparing': { bn: 'স্টুডিও প্রস্তুত হচ্ছে…', hi: 'स्टूडियो तैयार हो रहा है…', en: 'Preparing your studio…' },
   'app.focusMode': { bn: 'ফোকাস মোড', hi: 'फ़ोकस मोड', en: 'Focus Mode' },
   'app.focusExit': { bn: 'ফোকাস মোড বন্ধ (Esc)', hi: 'फ़ोकस मोड बंद करें (Esc)', en: 'Exit focus mode (Esc)' },
+  'app.pro.tip': { bn: 'প্রিমিয়াম সংস্করণ — সংস্করণ ২.০', hi: 'प्रीमियम संस्करण — संस्करण २.०', en: 'Premium edition — version 2.0' },
 
   // ─── হেডার ───
   'hdr.save.saving': { bn: 'সেভ হচ্ছে…', hi: 'सेव हो रहा है…', en: 'Saving…' },

@@ -6,7 +6,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { BookOpenCheck, Loader2, Minimize2 } from 'lucide-react';
+import { BookOpenCheck, Minimize2 } from 'lucide-react';
 import { AppHeader } from '@/components/app-header';
 import { Ribbon } from '@/components/ribbon/ribbon-shell';
 import { Workspace } from '@/components/editor/workspace';
@@ -66,11 +66,16 @@ export default function EditorApp() {
         <div className="app-splash-mark" aria-hidden="true">
           <BookOpenCheck size={36} />
         </div>
-        <div className="space-y-1 text-center">
-          <p className="app-splash-title">{tt('app.brand')}</p>
+        <div className="space-y-2 text-center">
+          <p className="flex items-center justify-center gap-2">
+            <span className="app-splash-title">{tt('app.brand')}</span>
+            <span className="pro-badge pro-badge-lg" title={tt('app.pro.tip')}>PRO</span>
+          </p>
           <p className="text-sm text-muted-foreground">{tt('app.preparing')}</p>
+          <div className="splash-bar mx-auto" role="progressbar" aria-label={tt('app.preparing')}>
+            <span />
+          </div>
         </div>
-        <Loader2 className="h-5 w-5 animate-spin text-primary/70" aria-hidden="true" />
       </div>
     );
   }

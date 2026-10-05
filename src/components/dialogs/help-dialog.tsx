@@ -10,7 +10,7 @@
 
 'use client';
 
-import { CircleHelp, Keyboard } from 'lucide-react';
+import { BookOpenCheck, CircleHelp, CloudOff, FileDown, Globe2, Keyboard, LayoutTemplate, Printer, Type } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
@@ -26,6 +26,16 @@ const SHORTCUTS: Array<[string, string]> = [
   ['dlg2.help.keys.save', 'dlg2.help.sc.save'],
   ['dlg2.help.keys.print', 'dlg2.help.sc.print'],
   ['dlg2.help.keys.zoom', 'dlg2.help.sc.zoom'],
+];
+
+/** অ্যাবাউট ফিচার-চিপ — [আইকন, dict-কী] */
+const ABOUT_CHIPS: Array<[React.ComponentType<{ size?: number; className?: string; 'aria-hidden'?: boolean | 'true' | 'false' }>, string]> = [
+  [Globe2, 'dlg2.about.f1'],
+  [Type, 'dlg2.about.f2'],
+  [Printer, 'dlg2.about.f3'],
+  [LayoutTemplate, 'dlg2.about.f4'],
+  [CloudOff, 'dlg2.about.f5'],
+  [FileDown, 'dlg2.about.f6'],
 ];
 
 function Step({ title, children }: { title: string; children: React.ReactNode }) {
@@ -59,6 +69,30 @@ export function HelpDialog() {
         </DialogHeader>
 
         <div className="flex-1 space-y-2 overflow-y-auto px-5 py-4">
+          {/* প্রিমিয়াম অ্যাবাউট কার্ড — ব্র্যান্ড + ফিচার চিপ */}
+          <div className="about-card mb-3" role="group" aria-label={`${tt('dlg2.about.brand')} — ${tt('dlg2.about.edition')}`}>
+            <div className="flex items-center gap-3">
+              <span className="about-logo" aria-hidden="true">
+                <BookOpenCheck size={20} />
+              </span>
+              <div className="min-w-0">
+                <p className="flex items-center gap-2 text-[15px] font-bold leading-tight">
+                  {tt('dlg2.about.brand')}
+                  <span className="pro-badge pro-badge-lg">PRO</span>
+                </p>
+                <p className="about-edition">{tt('dlg2.about.edition')}</p>
+              </div>
+            </div>
+            <div className="about-chips">
+              {ABOUT_CHIPS.map(([Icon, key]) => (
+                <span className="about-chip" key={key}>
+                  <Icon size={11} aria-hidden="true" />
+                  {tt(key)}
+                </span>
+              ))}
+            </div>
+          </div>
+
           <Step title={tt('dlg2.help.s1.title')}>
             <ul className="list-disc space-y-1 pl-4">
               <li>{tt('dlg2.help.s1.i1')}</li>
