@@ -5,7 +5,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Grid3x3, Pause, Search, Sigma, SpellCheck2, Square, Type, Volume2 } from 'lucide-react';
+import { ArrowLeftRight, Grid3x3, Pause, Search, Sigma, SpellCheck2, Square, Type, Volume2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Switch } from '@/components/ui/switch';
@@ -222,6 +222,15 @@ export function ReviewTab() {
             onClick={() => openDialog('findReplace')}
           />
         </div>
+      </RibbonGroup>
+      <RibbonDivider />
+      <RibbonGroup label={tt('rev.group.kruti')} accent="kruti dev tools">
+        <RibbonButton
+          icon={ArrowLeftRight}
+          label={tt('rev.kruti')}
+          title={tt('rev.krutiTip')}
+          onClick={() => openDialog('krutiConverter')}
+        />
       </RibbonGroup>
       <RibbonDivider />
       <RibbonGroup label={tt('rev.group.conjunct')} accent="conjunct toolkit">

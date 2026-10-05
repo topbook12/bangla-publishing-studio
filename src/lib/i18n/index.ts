@@ -11,7 +11,7 @@
 
 'use client';
 
-import { useCallback } from 'react';
+import { Fragment, createElement, useCallback } from 'react';
 import { useLangStore, getLang, localizeNumber, formatDateLong } from './core';
 import type { Dict, Lang } from './core';
 import { dictHeader } from './dict-header';
@@ -24,6 +24,7 @@ import { dictExport } from './dict-export';
 import { dictDialogsA } from './dict-dialogs-a';
 import { dictDialogsB } from './dict-dialogs-b';
 import { dictWorkspace } from './dict-workspace';
+import { dictKruti } from './dict-kruti';
 
 export const ALL_DICTS: Dict = Object.assign(
   {},
@@ -37,6 +38,7 @@ export const ALL_DICTS: Dict = Object.assign(
   dictDialogsA,
   dictDialogsB,
   dictWorkspace,
+  dictKruti,
 );
 
 function lookup(key: string, lang: Lang, fallback?: string): string {
@@ -69,10 +71,13 @@ export function tFmt(key: string, vars: Record<string, string | number>, fallbac
 /**
  * অনুবাদ-স্ট্রিং-এর {name} প্লেসহোল্ডারে ReactNode বসায় (bold/রঙিন অংশের জন্য)।
  * উদাহরণ: tplNodes(tt('st.goal.ofWords'), { a: <b>…</b>, b: 500 })
+ * প্রতিটি অংশ key-যুক্ত Fragment — React-এর array-children key-ওয়ার্নিং এড়াতে।
  */
 export function tplNodes(s: string, vars: Record<string, React.ReactNode>): React.ReactNode[] {
   const parts = s.split(/\{(\w+)\}/);
-  return parts.map((p, i) => (i % 2 === 1 ? (vars[p] ?? p) : p));
+  return parts.map((p, i) =>
+    createElement(Fragment, { key: i }, i % 2 === 1 ? (vars[p] ?? p) : p),
+  );
 }
 
 /** চলতি ভাষা অনুযায়ী সংখ্যা (কম্পোনেন্টের বাইরে) */

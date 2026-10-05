@@ -13,6 +13,7 @@ import { TemplatesDialog } from './templates-dialog';
 import { FindReplaceDialog, useFindReplaceShortcuts } from './find-replace-dialog';
 import { SnapshotsDialog } from './snapshots-dialog';
 import { HelpDialog } from './help-dialog';
+import { KrutiConverterDialog } from './kruti-converter-dialog';
 
 export function Dialogs() {
   useFindReplaceShortcuts();
@@ -26,6 +27,7 @@ export function Dialogs() {
       <TemplatesDialog />
       <FindReplaceDialog />
       <SnapshotsDialog />
+      <KrutiConverterDialog />
       <HelpDialog />
     </>
   );

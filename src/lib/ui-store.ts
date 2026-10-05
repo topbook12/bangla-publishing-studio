@@ -18,6 +18,7 @@ export type DialogName =
   | 'templates'
   | 'findReplace'
   | 'snapshots'
+  | 'krutiConverter'
   | 'help';
 
 /** localStorage থেকে '1'/'0' ফ্ল্যাগ পড়া — ব্যর্থ হলে fallback */
