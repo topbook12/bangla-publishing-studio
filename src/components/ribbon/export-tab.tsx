@@ -562,8 +562,14 @@ export function ExportTab() {
                 </div>
               )}
 
-              {/* তথ্য ব্যাজ */}
+              {/* তথ্য ব্যাজ — যাচাই পাস করলে প্রথমেই গোল্ড প্রেস-রেডি সিল */}
               <div className="flex flex-wrap gap-1.5">
+                {selfCheck.ok && (
+                  <span className="pro-badge pro-badge-lg gap-1" title={tt('exp.seal.tip')}>
+                    <BadgeCheck size={11} aria-hidden="true" />
+                    {tt('exp.seal.pressready')}
+                  </span>
+                )}
                 <Badge variant="secondary">{tFmt('exp.badge.pages', { n: ff(pageCount) })}</Badge>
                 <Badge variant="secondary">{tFmt('exp.badge.sheets', { n: ff(formaInfo.imposition.sheets.length) })}</Badge>
                 {formaInfo.imposition.blankPagesAdded > 0 && (

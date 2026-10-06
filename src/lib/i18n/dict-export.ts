@@ -96,6 +96,10 @@ export const dictExport: Dict = {
   'exp.check.fail': { bn: 'ফরমা যাচাইয়ে সমস্যা — ছাপা আটকানো হয়েছে:', hi: 'फ़रमा सत्यापन में समस्या — छपाई रोक दी गई:', en: 'Farma check failed — printing blocked:' },
   'exp.check.unknown': { bn: 'অজানা', hi: 'अज्ञात', en: 'Unknown' },
 
+  // ─── প্রেস-রেডি গোল্ড সিল ───
+  'exp.seal.pressready': { bn: 'প্রেস-রেডি সার্টিফাইড', hi: 'प्रेस-रेडी प्रमाणित', en: 'Press-Ready Certified' },
+  'exp.seal.tip': { bn: 'ফরমা-গণিত স্বাধীন ভাঁজ-সিমুলেশনে যাচাইকৃত — ছাপাখানায় পাঠানোর জন্য প্রস্তুত', hi: 'फ़रमा-गणित स्वतंत्र फ़ोल्ड-सिमुलेशन में सत्यापित — छापाखाने भेजने के लिए तैयार', en: 'Imposition verified by independent fold-simulation — ready for the press' },
+
   // ─── তথ্য ব্যাজ ───
   'exp.badge.pages': { bn: 'মোট পৃষ্ঠা: {n}', hi: 'कुल पृष्ठ: {n}', en: 'Total pages: {n}' },
   'exp.badge.sheets': { bn: 'প্রেস শীট: {n}টি', hi: 'प्रेस शीट: {n}', en: 'Press sheets: {n}' },

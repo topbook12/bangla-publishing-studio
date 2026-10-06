@@ -92,4 +92,6 @@ export const dictHeader: Dict = {
   'st.zoom.out': { bn: 'জুম আউট', hi: 'ज़ूम आउट', en: 'Zoom out' },
   'st.zoom.in': { bn: 'জুম ইন', hi: 'ज़ूम इन', en: 'Zoom in' },
   'st.zoom.reset': { bn: '১০০%-এ ফেরান', hi: '१००% पर रीसेट', en: 'Reset to 100%' },
+  'st.zoom.presets': { bn: 'জুম মাত্রা', hi: 'ज़ूम स्तर', en: 'Zoom level' },
+  'st.zoom.tip': { bn: 'জুম — Ctrl + মাউস হুইলও কাজ করে', hi: 'ज़ूम — Ctrl + माउस व्हील भी काम करता है', en: 'Zoom — Ctrl + mouse wheel also works' },
 };

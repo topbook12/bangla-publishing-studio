@@ -5,7 +5,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronUp, Database, FileText, ListOrdered, Maximize2, Minus, Plus, Ruler, Target, Type } from 'lucide-react';
+import { Check, ChevronUp, Database, FileText, ListOrdered, Maximize2, Minus, Plus, Ruler, Target, Type } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
@@ -240,6 +240,46 @@ function TrimSizePill() {
   );
 }
 
+/** জুম প্রিসেট (%) — Word-এর স্ট্যান্ডার্ড মান */
+const ZOOM_PRESETS = [50, 75, 90, 100, 110, 125, 150, 175, 200];
+
+function ZoomPresets() {
+  const tt = useT();
+  const f = useFmtNum();
+  const zoom = useEditorStore((s) => s.zoom);
+  const setZoom = useEditorStore((s) => s.setZoom);
+  const pct = Math.round(zoom * 100);
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          className="status-pill cursor-pointer transition-colors hover:bg-accent/60"
+          title={tt('st.zoom.tip')}
+          aria-label={tt('st.zoom.presets')}
+        >
+          <b>{f(pct)}%</b>
+          <span className="sr-only">{tt('st.zoom.presets')}</span>
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="max-h-72 w-36 overflow-y-auto">
+        <DropdownMenuLabel className="text-xs text-muted-foreground">{tt('st.zoom.presets')}</DropdownMenuLabel>
+        {ZOOM_PRESETS.map((z) => (
+          <DropdownMenuItem
+            key={z}
+            onClick={() => setZoom(z / 100)}
+            className={cn(Math.abs(pct - z) < 1 && 'bg-primary/10')}
+            aria-pressed={Math.abs(pct - z) < 1}
+          >
+            <span className="flex-1 tabular-nums">{f(z)}%</span>
+            {Math.abs(pct - z) < 1 ? <Check size={13} className="text-emerald-600" /> : null}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 export function StatusBar() {
   const tt = useT();
   const f = useFmtNum();
@@ -307,9 +347,7 @@ export function StatusBar() {
           </TooltipTrigger>
           <TooltipContent side="top">{tt('st.zoom.out')}</TooltipContent>
         </Tooltip>
-        <span className="w-12 text-center text-[11px] font-medium tabular-nums">
-          {f(Math.round(zoom * 100))}%
-        </span>
+        <ZoomPresets />
         <Tooltip>
           <TooltipTrigger asChild>
             <Button

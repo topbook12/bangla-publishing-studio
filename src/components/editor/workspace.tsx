@@ -170,6 +170,21 @@ export function Workspace() {
     return () => window.removeEventListener('resize', fit);
   }, [settings.paperSize, settings.orientation, settings.customPaper.widthMm, settings.customPaper.heightMm]);
 
+  // Ctrl/⌘ + মাউস-হুইল জুম — MS Word-এর মতো প্রিমিয়াম অভিজ্ঞতা।
+  // সাধারণ স্ক্রল (Ctrl ছাড়া) সম্পূর্ণ অক্ষত থাকে; ক্ল্যাম্প store-এর setZoom-এই (০.৩৫–২)।
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
+      e.preventDefault();
+      const { zoom, setZoom } = useEditorStore.getState();
+      setZoom(zoom - e.deltaY * 0.0018);
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, []);
+
   return (
     <main
       ref={scrollRef}
