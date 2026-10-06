@@ -2659,3 +2659,514 @@ html.dark .ai-live-preview-body th, html.dark .ai-live-preview-body td { border-
   .ai-prov-grid { grid-template-columns: 1fr 1fr; }
   .ai-thumb-row { flex-wrap: wrap; }
 }
+
+/* ═══════════════ AI বাবল (সিলেকশন টুল) ═══════════════ */
+
+/* সিলেকশনের উপরে ভাসমান ✦ AI পিল */
+.ai-bubble-pill {
+  position: fixed;
+  z-index: 960;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px 4px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: #fff;
+  background: linear-gradient(135deg, oklch(0.58 0.17 292), oklch(0.52 0.2 322));
+  border: 1px solid oklch(0.68 0.14 300 / 0.6);
+  box-shadow: 0 4px 16px color-mix(in oklab, oklch(0.55 0.2 300) 45%, transparent),
+    0 1px 3px rgb(2 6 23 / 0.18),
+    inset 0 1px 0 rgb(255 255 255 / 0.35);
+  cursor: pointer;
+  transform: translateX(-50%);
+  animation: ai-bubble-in 0.16s ease-out;
+  transition: filter 0.14s ease, transform 0.14s ease;
+}
+.ai-bubble-pill:hover { filter: brightness(1.08); transform: translateX(-50%) scale(1.05); }
+.ai-bubble-pill:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+@keyframes ai-bubble-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(4px) scale(0.92); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+}
+
+/* প্যানেল */
+.ai-bubble-panel {
+  position: fixed;
+  z-index: 970;
+  width: min(392px, calc(100vw - 16px));
+  max-height: min(560px, calc(100vh - 24px));
+  overflow-y: auto;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--popover);
+  color: var(--popover-foreground);
+  box-shadow: 0 18px 50px rgb(2 6 23 / 0.22), 0 4px 14px rgb(2 6 23 / 0.12);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: ai-panel-in 0.14s ease-out;
+}
+@keyframes ai-panel-in {
+  from { opacity: 0; transform: translateY(4px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.ai-bubble-head { display: flex; align-items: center; gap: 8px; }
+.ai-bubble-tile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  color: #fff;
+  background: linear-gradient(135deg, oklch(0.58 0.19 288), oklch(0.5 0.22 320));
+  box-shadow: 0 2px 8px color-mix(in oklab, oklch(0.55 0.2 300) 45%, transparent),
+    inset 0 1px 0 rgb(255 255 255 / 0.35);
+}
+.ai-bubble-head-text { min-width: 0; flex: 1; }
+.ai-bubble-title { font-size: 13px; font-weight: 700; line-height: 1.2; }
+.ai-bubble-sub { font-size: 10.5px; color: var(--muted-foreground); line-height: 1.3; }
+.ai-bubble-x {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  border-radius: 7px;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition: color 0.13s ease, background-color 0.13s ease;
+}
+.ai-bubble-x:hover { color: var(--foreground); background: var(--muted); }
+.ai-bubble-x:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
+
+.ai-bubble-setup {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px dashed color-mix(in oklab, oklch(0.62 0.13 76) 45%, var(--border));
+  background: color-mix(in oklab, oklch(0.93 0.06 92) 30%, transparent);
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: color-mix(in oklab, var(--foreground) 80%, transparent);
+}
+html.dark .ai-bubble-setup {
+  border-color: color-mix(in oklab, oklch(0.75 0.12 80) 40%, var(--border));
+  background: color-mix(in oklab, oklch(0.4 0.06 80) 22%, transparent);
+}
+
+/* কুইক অ্যাকশন গ্রিড */
+.ai-bubble-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
+}
+.ai-bubble-act {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 7px 4px 6px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: color-mix(in oklab, var(--card) 90%, transparent);
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--foreground);
+  text-align: center;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: border-color 0.13s ease, box-shadow 0.13s ease, transform 0.13s ease, background-color 0.13s ease;
+}
+.ai-bubble-act svg { color: oklch(0.56 0.17 295); }
+html.dark .ai-bubble-act svg { color: oklch(0.78 0.13 295); }
+.ai-bubble-act:hover { transform: translateY(-1px); border-color: color-mix(in oklab, oklch(0.6 0.17 292) 50%, var(--border)); box-shadow: 0 3px 10px color-mix(in oklab, oklch(0.55 0.2 300) 22%, transparent); }
+.ai-bubble-act:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
+.ai-bubble-act:disabled { opacity: 0.45; cursor: default; transform: none; box-shadow: none; }
+.ai-bubble-act-on {
+  border-color: color-mix(in oklab, oklch(0.6 0.17 292) 60%, var(--border));
+  background: color-mix(in oklab, oklch(0.6 0.17 292) 12%, var(--card));
+}
+
+/* ছবি স্ট্রিপ */
+.ai-bubble-imgdrop {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1.5px dashed color-mix(in oklab, oklch(0.6 0.17 292) 45%, var(--border));
+  color: var(--muted-foreground);
+  font-size: 11.5px;
+  cursor: pointer;
+  transition: border-color 0.14s ease, background-color 0.14s ease, color 0.14s ease;
+}
+.ai-bubble-imgdrop:hover { border-color: oklch(0.6 0.17 292 / 0.75); color: var(--foreground); background: color-mix(in oklab, oklch(0.6 0.17 292) 7%, transparent); }
+.ai-bubble-imgdrop:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
+.ai-bubble-imgrow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 7px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: color-mix(in oklab, var(--muted) 45%, transparent);
+}
+.ai-bubble-imgthumb {
+  width: 34px;
+  height: 34px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.ai-bubble-imgname {
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--foreground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* নির্দেশ + রান */
+.ai-bubble-custom { display: flex; flex-direction: column; gap: 6px; }
+.ai-bubble-input { min-height: 52px; font-size: 12.5px; }
+.ai-bubble-run { align-self: flex-end; gap: 5px; }
+
+/* কাজ চলছে */
+.ai-bubble-working { display: flex; align-items: center; gap: 9px; padding: 4px 2px; }
+.ai-shimmer-bar {
+  position: relative;
+  display: inline-block;
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: color-mix(in oklab, oklch(0.6 0.17 292) 14%, var(--muted));
+}
+.ai-shimmer-bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, color-mix(in oklab, oklch(0.6 0.17 292) 65%, transparent), transparent);
+  animation: ai-shimmer 1.15s infinite;
+}
+@keyframes ai-shimmer { to { transform: translateX(100%); } }
+
+/* ত্রুটি */
+.ai-bubble-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in oklab, oklch(0.6 0.2 25) 35%, var(--border));
+  background: color-mix(in oklab, oklch(0.62 0.2 25) 8%, transparent);
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--foreground);
+}
+.ai-bubble-error > svg { flex-shrink: 0; color: oklch(0.58 0.2 25); margin-top: 1px; }
+
+/* ফলাফল */
+.ai-bubble-result { display: flex; flex-direction: column; gap: 7px; }
+.ai-bubble-preview {
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: color-mix(in oklab, var(--muted) 30%, transparent);
+  padding: 9px 11px;
+  max-height: 190px;
+  overflow-y: auto;
+  font-size: 12px;
+  line-height: 1.55;
+}
+.ai-bubble-preview h2 { font-size: 14px; font-weight: 700; margin: 0 0 5px; }
+.ai-bubble-preview h3 { font-size: 12.5px; font-weight: 650; margin: 7px 0 4px; }
+.ai-bubble-preview h4 { font-size: 12px; font-weight: 650; margin: 6px 0 3px; }
+.ai-bubble-preview p { margin: 0 0 6px; }
+.ai-bubble-preview ul, .ai-bubble-preview ol { margin: 0 0 6px; padding-left: 18px; }
+.ai-bubble-preview li { margin: 1.5px 0; }
+.ai-bubble-preview table { border-collapse: collapse; margin: 4px 0 8px; font-size: 11.5px; }
+.ai-bubble-preview th, .ai-bubble-preview td { border: 1px solid #d4d4d8; padding: 3.5px 8px; text-align: left; }
+.ai-bubble-preview th { background: #f4f4f5; font-weight: 650; }
+html.dark .ai-bubble-preview th { background: oklch(0.3 0.01 260); }
+html.dark .ai-bubble-preview th, html.dark .ai-bubble-preview td { border-color: oklch(0.4 0.01 260); }
+.ai-bubble-preview blockquote { border-left: 3px solid var(--primary); margin: 0 0 6px; padding: 2px 10px; color: var(--muted-foreground); }
+.ai-bubble-preview pre { background: #f4f4f5; border-radius: 7px; padding: 7px 9px; font-size: 11px; overflow-x: auto; margin: 0 0 6px; }
+html.dark .ai-bubble-preview pre { background: oklch(0.28 0.01 260); }
+.ai-bubble-preview code { font-family: ui-monospace, SFMono-Regular, monospace; font-size: 0.92em; }
+.ai-bubble-preview hr { border: 0; border-top: 1px solid var(--border); margin: 7px 0; }
+.ai-bubble-preview a { color: var(--primary); text-decoration: underline; }
+.ai-bubble-apply { display: flex; gap: 6px; align-items: center; }
+
+/* ═══════════════ AI চ্যাট প্যানেল ═══════════════ */
+
+.ai-chat-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 80;
+  width: min(400px, 100vw);
+  display: flex;
+  flex-direction: column;
+  background: var(--popover);
+  color: var(--popover-foreground);
+  border-left: 1px solid var(--border);
+  box-shadow: -18px 0 50px rgb(2 6 23 / 0.18);
+  animation: ai-chat-in 0.18s ease-out;
+}
+@keyframes ai-chat-in {
+  from { transform: translateX(24px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.ai-chat-drag { outline: 2px dashed oklch(0.6 0.17 292 / 0.6); outline-offset: -6px; }
+
+.ai-chat-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 11px 12px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(135deg, color-mix(in oklab, oklch(0.58 0.17 292) 9%, var(--popover)), var(--popover));
+}
+.ai-chat-tile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: 9px;
+  color: #fff;
+  background: linear-gradient(135deg, oklch(0.58 0.19 288), oklch(0.5 0.22 320));
+  box-shadow: 0 3px 10px color-mix(in oklab, oklch(0.55 0.2 300) 45%, transparent),
+    inset 0 1px 0 rgb(255 255 255 / 0.35);
+}
+.ai-chat-title { font-size: 13.5px; font-weight: 700; line-height: 1.25; }
+.ai-chat-sub { font-size: 10.5px; color: var(--muted-foreground); line-height: 1.3; }
+
+.ai-chat-body { flex: 1; min-height: 0; overflow-y: auto; padding: 12px; }
+
+/* খালি অবস্থা — মিনি-গাইড (ব্যবহার-নির্দেশ) */
+.ai-chat-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  padding: 26px 10px 14px;
+  text-align: center;
+}
+.ai-chat-empty-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  color: #fff;
+  background: linear-gradient(135deg, oklch(0.58 0.19 288), oklch(0.5 0.22 320));
+  box-shadow: 0 6px 18px color-mix(in oklab, oklch(0.55 0.2 300) 40%, transparent);
+}
+.ai-chat-empty-title { font-size: 14px; font-weight: 700; }
+.ai-chat-empty-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  text-align: left;
+  width: 100%;
+  max-width: 320px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  counter-reset: step;
+}
+.ai-chat-empty-steps li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: color-mix(in oklab, var(--foreground) 82%, transparent);
+  padding: 7px 9px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: color-mix(in oklab, var(--muted) 35%, transparent);
+}
+.ai-chat-empty-steps li svg { flex-shrink: 0; margin-top: 2px; color: oklch(0.56 0.17 295); }
+html.dark .ai-chat-empty-steps li svg { color: oklch(0.78 0.13 295); }
+.ai-chat-empty-note { font-size: 10.5px; color: var(--muted-foreground); line-height: 1.5; max-width: 320px; }
+
+/* বার্তা */
+.ai-chat-msgs { display: flex; flex-direction: column; gap: 11px; }
+.ai-chat-msg { display: flex; }
+.ai-chat-msg-user { justify-content: flex-end; }
+.ai-chat-msg-ai { justify-content: flex-start; }
+.ai-chat-bubble-user {
+  max-width: 85%;
+  padding: 8px 11px;
+  border-radius: 14px 14px 4px 14px;
+  background: linear-gradient(135deg, oklch(0.6 0.17 288), oklch(0.52 0.2 318));
+  color: #fff;
+  font-size: 12.5px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+  box-shadow: 0 3px 10px color-mix(in oklab, oklch(0.55 0.2 300) 30%, transparent);
+}
+.ai-chat-bubble-ai {
+  max-width: 92%;
+  padding: 9px 12px;
+  border-radius: 14px 14px 14px 4px;
+  border: 1px solid var(--border);
+  background: color-mix(in oklab, var(--card) 92%, transparent);
+  font-size: 12.5px;
+  line-height: 1.6;
+  word-break: break-word;
+  box-shadow: 0 2px 8px rgb(2 6 23 / 0.05);
+}
+
+/* চ্যাটের Markdown টাইপোগ্রাফি */
+.ai-chat-md h2 { font-size: 14.5px; font-weight: 700; margin: 10px 0 5px; }
+.ai-chat-md h2:first-child { margin-top: 0; }
+.ai-chat-md h3 { font-size: 13px; font-weight: 650; margin: 8px 0 4px; }
+.ai-chat-md h4 { font-size: 12.5px; font-weight: 650; margin: 7px 0 3px; }
+.ai-chat-md p { margin: 0 0 7px; }
+.ai-chat-md p:last-child { margin-bottom: 0; }
+.ai-chat-md ul, .ai-chat-md ol { margin: 0 0 7px; padding-left: 19px; }
+.ai-chat-md li { margin: 2px 0; }
+.ai-chat-md table { border-collapse: collapse; margin: 5px 0 9px; font-size: 11.5px; max-width: 100%; display: block; overflow-x: auto; }
+.ai-chat-md th, .ai-chat-md td { border: 1px solid #d4d4d8; padding: 4px 8px; text-align: left; }
+.ai-chat-md th { background: #f4f4f5; font-weight: 650; }
+html.dark .ai-chat-md th { background: oklch(0.3 0.01 260); }
+html.dark .ai-chat-md th, html.dark .ai-chat-md td { border-color: oklch(0.4 0.01 260); }
+.ai-chat-md blockquote { border-left: 3px solid var(--primary); margin: 0 0 7px; padding: 2px 10px; color: var(--muted-foreground); }
+.ai-chat-md pre { background: #f4f4f5; border-radius: 8px; padding: 8px 10px; font-size: 11.5px; overflow-x: auto; margin: 0 0 7px; }
+html.dark .ai-chat-md pre { background: oklch(0.28 0.01 260); }
+.ai-chat-md code { font-family: ui-monospace, SFMono-Regular, monospace; font-size: 0.92em; }
+.ai-chat-md hr { border: 0; border-top: 1px solid var(--border); margin: 8px 0; }
+.ai-chat-md a { color: var(--primary); text-decoration: underline; }
+.ai-chat-md strong { font-weight: 700; }
+
+.ai-chat-msg-actions {
+  display: flex;
+  gap: 4px;
+  margin-top: 7px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--border);
+}
+.ai-chat-msg-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--muted-foreground);
+  background: transparent;
+  cursor: pointer;
+  transition: color 0.13s ease, border-color 0.13s ease, background-color 0.13s ease;
+}
+.ai-chat-msg-actions button:hover { color: var(--foreground); border-color: color-mix(in oklab, oklch(0.6 0.17 292) 45%, var(--border)); background: color-mix(in oklab, oklch(0.6 0.17 292) 8%, transparent); }
+
+/* টাইপিং ইন্ডিকেটর */
+.ai-chat-typing { display: flex; align-items: center; gap: 4px; }
+.ai-chat-typing > span {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: color-mix(in oklab, oklch(0.6 0.17 292) 55%, var(--muted-foreground));
+  animation: ai-typing 1.1s infinite ease-in-out;
+}
+.ai-chat-typing > span:nth-child(2) { animation-delay: 0.15s; }
+.ai-chat-typing > span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes ai-typing {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.55; }
+  30% { transform: translateY(-3px); opacity: 1; }
+}
+
+/* কম্পোজার */
+.ai-chat-composer {
+  border-top: 1px solid var(--border);
+  padding: 9px 12px calc(9px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  background: color-mix(in oklab, var(--muted) 25%, var(--popover));
+}
+.ai-chat-inputrow { display: flex; align-items: flex-end; gap: 6px; }
+.ai-chat-attach {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  color: var(--muted-foreground);
+  background: var(--card);
+  cursor: pointer;
+  transition: color 0.13s ease, border-color 0.13s ease, background-color 0.13s ease;
+}
+.ai-chat-attach:hover { color: oklch(0.56 0.17 295); border-color: color-mix(in oklab, oklch(0.6 0.17 292) 45%, var(--border)); }
+html.dark .ai-chat-attach:hover { color: oklch(0.78 0.13 295); }
+.ai-chat-attach:disabled { opacity: 0.5; cursor: default; }
+.ai-chat-attach:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
+.ai-chat-input { flex: 1; min-height: 34px; max-height: 120px; font-size: 12.5px; resize: none; }
+.ai-chat-send {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 9px;
+  border: none;
+  color: #fff;
+  background: linear-gradient(135deg, oklch(0.6 0.17 288), oklch(0.52 0.2 318));
+  box-shadow: 0 3px 10px color-mix(in oklab, oklch(0.55 0.2 300) 40%, transparent),
+    inset 0 1px 0 rgb(255 255 255 / 0.3);
+  cursor: pointer;
+  transition: filter 0.13s ease, opacity 0.13s ease;
+}
+.ai-chat-send:hover { filter: brightness(1.07); }
+.ai-chat-send:disabled { opacity: 0.45; cursor: default; filter: none; }
+.ai-chat-send:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
+.ai-chat-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ai-chat-quote {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  background: transparent;
+  border: 1px dashed var(--border);
+  padding: 2.5px 8px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color 0.13s ease, border-color 0.13s ease;
+}
+.ai-chat-quote:hover { color: var(--foreground); border-color: color-mix(in oklab, oklch(0.6 0.17 292) 50%, var(--border)); }
+.ai-chat-secure { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; color: var(--muted-foreground); }
+
+/* মোবাইল — চ্যাট ফুল-স্ক্রিন, বাবল গ্রিড ২ কলাম */
+@media (max-width: 640px) {
+  .ai-chat-panel { width: 100vw; }
+  .ai-bubble-grid { grid-template-columns: repeat(2, 1fr); }
+  .ai-chat-md table { font-size: 11px; }
+}

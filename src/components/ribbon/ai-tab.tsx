@@ -4,7 +4,7 @@
 
 'use client';
 
-import { KeyRound, ScanEye, Sparkles, Wand2 } from 'lucide-react';
+import { KeyRound, MessageSquare, ScanEye, Sparkles, Wand2 } from 'lucide-react';
 import { RibbonButton, RibbonDivider, RibbonGroup } from './ribbon-shell';
 import { useUiStore } from '@/lib/ui-store';
 import { useAiStore } from '@/lib/ai-store';
@@ -14,6 +14,8 @@ export function AiTab() {
   const tt = useT();
   const openAi = useUiStore((s) => s.openAi);
   const openDialog = useUiStore((s) => s.open);
+  const toggleAiChat = useUiStore((s) => s.toggleAiChat);
+  const aiChatOpen = useUiStore((s) => s.aiChatOpen);
   const configured = useAiStore((s) => !!s.config.apiKey.trim());
   const providerName = useAiStore((s) => s.config.provider);
 
@@ -36,6 +38,13 @@ export function AiTab() {
           label={tt('ai.btn.write')}
           title={tt('ai.btn.write.tip')}
           onClick={() => openAi('text')}
+        />
+        <RibbonButton
+          icon={MessageSquare}
+          label={tt('ai.chat.open')}
+          title={tt('ai.chat.tip')}
+          active={aiChatOpen}
+          onClick={toggleAiChat}
         />
       </RibbonGroup>
 

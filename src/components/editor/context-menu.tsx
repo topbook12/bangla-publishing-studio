@@ -27,11 +27,11 @@ import {
   AlignCenter, AlignJustify, AlignLeft, AlignRight, AlignCenterVertical,
   AlignEndVertical, AlignStartVertical, ArrowDownToLine, ArrowLeftToLine,
   ArrowRightToLine, ArrowUpToLine, Bold, Check, ChevronsDown, ChevronsUp,
-  ClipboardPaste, Copy, Eraser, Expand, ExternalLink, Frame, Highlighter, Italic, Link2, Link2Off, List,
-  ListOrdered, Maximize2, Merge, Minimize2, Paintbrush,
-  Palette, PanelLeft, PanelTop, RotateCcw, Ruler, Scissors, Shrink, SquareDashed, Split,
-  Strikethrough, Subscript as SubIcon, Superscript as SupIcon, TextCursorInput, Trash2,
-  Underline as UnderlineIcon, UnfoldVertical, WrapText, type LucideIcon,
+  ClipboardPaste, Copy, Eraser, Expand, ExternalLink, Frame, Highlighter, Italic, Languages, Link2, Link2Off, List,
+  ListOrdered, Maximize2, Merge, Minimize2, MessageSquare, Paintbrush,
+  Palette, PanelLeft, PanelTop, RotateCcw, Ruler, ScanEye, Scissors, Shrink, Sparkles, SpellCheck, SquareDashed, Split,
+  Strikethrough, Subscript as SubIcon, Superscript as SupIcon, Table2, TextCursorInput, Trash2,
+  Underline as UnderlineIcon, UnfoldVertical, Wand2, WrapText, type LucideIcon,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -43,6 +43,8 @@ import { ImageResizeHost } from './image-resizer';
 import { ImageSizeDialog, type ImageDialogState } from './image-size-dialog';
 import { TableToolbarHost } from './table-toolbar';
 import { EMPTY_LINK_DIALOG, LinkDialog, type LinkDialogState } from './link-dialog';
+import { openAiBubble } from '@/lib/ai-bubble-store';
+import { findEnclosingTable } from './ai-bubble';
 
 // ─────────────────────────── types & constants ───────────────────────────
 
@@ -416,6 +418,13 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
   const imgFramed = menu.imageAttrs.framed === true;
   const imgLinkHref = typeof menu.imageAttrs.linkHref === 'string' ? menu.imageAttrs.linkHref : '';
   const imgLinkTarget = menu.imageAttrs.linkTarget === null ? false : true; // default _blank
+  // AI ভিশন — শুধু data:-URL ছবিই AI-কে পাঠানো যায় (রিমোট URL CORS-এ আটকায়)
+  const imgDataSrc = typeof menu.imageAttrs.src === 'string' && menu.imageAttrs.src.startsWith('data:image/')
+    ? menu.imageAttrs.src
+    : null;
+  const imgAfterPos = menu.imagePos !== null
+    ? menu.imagePos + (ed.state.doc.nodeAt(menu.imagePos)?.nodeSize ?? 1)
+    : undefined;
   const setImage = (patch: Record<string, unknown>) =>
     closeAndRun((editor) => {
       if (menu.imagePos === null) return;
@@ -442,7 +451,36 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
   const currentHighlight = (ed.getAttributes('highlight').color as string | undefined) ?? null;
   const activeLink = (ed.getAttributes('link').href as string | undefined) ?? '';
 
+  /** সিলেকশন-ভিত্তিক AI অ্যাকশন — মেনু বন্ধ করে AI বাবল প্যানেল খোলে */
+  const openAi = (mode: 'improve' | 'grammar' | 'translate-en' | 'make-table' | 'explain' | 'custom') => {
+    setMenu(null);
+    openAiBubble({ editor: ed, x: menu.x, y: menu.y, mode });
+  };
+
   const imageSections: CtxSection[] = [
+    {
+      header: tt('ws.ctx.hAi', 'AI'),
+      items: [
+        {
+          id: 'img-ai-explain',
+          label: tt('ai.ctx.imgExplain', 'AI দেখে ব্যাখ্যা লিখে দিক…'),
+          icon: ScanEye,
+          disabled: !imgDataSrc,
+          onSelect: () => {
+            setMenu(null);
+            if (!imgDataSrc) return;
+            openAiBubble({
+              editor: ed,
+              x: menu.x,
+              y: menu.y,
+              mode: 'image-explain',
+              imageDataUrl: imgDataSrc,
+              insertAfterPos: imgAfterPos,
+            });
+          },
+        },
+      ],
+    },
     {
       header: tt('ws.ctx.hSize', 'Size'),
       items: [
@@ -577,6 +615,41 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
 
   const tableSections: CtxSection[] = [
     {
+      header: tt('ws.ctx.hAi', 'AI'),
+      items: [
+        {
+          id: 'tbl-ai-edit',
+          label: tt('ai.ctx.tblEdit', 'AI দিয়ে টেবিল বদলাও…'),
+          icon: Table2,
+          onSelect: () => {
+            const table = findEnclosingTable(ed);
+            setMenu(null);
+            if (!table) {
+              toast.info(tt('ai.ctx.noTable', 'টেবিল শনাক্ত হয়নি'));
+              return;
+            }
+            openAiBubble({
+              editor: ed,
+              x: menu.x,
+              y: menu.y,
+              mode: 'table-edit',
+              tableContext: table.rows,
+              tableRange: { from: table.from, to: table.to },
+            });
+          },
+        },
+        {
+          id: 'tbl-ai-new',
+          label: tt('ai.ctx.tblNew', 'এই জায়গায় AI দিয়ে নতুন টেবিল…'),
+          icon: Table2,
+          onSelect: () => {
+            setMenu(null);
+            openAiBubble({ editor: ed, x: menu.x, y: menu.y, mode: 'make-table', instruction: '' });
+          },
+        },
+      ],
+    },
+    {
       header: tt('ws.ctx.hAdd', 'Insert'),
       items: [
         { id: 'row-above', label: tt('ws.tbl.rowAbove', 'Add row above'), icon: ArrowUpToLine, onSelect: () => closeAndRun((editor) => { editor.chain().focus().addRowBefore().run(); }) },
@@ -658,6 +731,17 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
   ];
 
   const textSections: CtxSection[] = [
+    {
+      header: tt('ws.ctx.hAi', 'AI'),
+      items: [
+        { id: 'ai-improve', label: tt('ai.ctx.improve', 'নির্বাচিত অংশ AI দিয়ে উন্নত করো'), icon: Sparkles, onSelect: () => openAi('improve') },
+        { id: 'ai-grammar', label: tt('ai.ctx.grammar', 'বানান ও ব্যাকরণ ঠিক করো'), icon: SpellCheck, onSelect: () => openAi('grammar') },
+        { id: 'ai-tr-en', label: tt('ai.ctx.trEn', 'ইংরেজিতে অনুবাদ করো'), icon: Languages, onSelect: () => openAi('translate-en') },
+        { id: 'ai-make-table', label: tt('ai.ctx.makeTable', 'তথ্যগুলো টেবিলে সাজাও'), icon: Table2, onSelect: () => openAi('make-table') },
+        { id: 'ai-explain', label: tt('ai.ctx.explain', 'এই অংশের ব্যাখ্যা যোগ করো'), icon: MessageSquare, onSelect: () => openAi('explain') },
+        { id: 'ai-custom', label: tt('ai.ctx.custom', 'AI নির্দেশ দাও…'), icon: Wand2, onSelect: () => openAi('custom') },
+      ],
+    },
     {
       header: tt('ws.ctx.hClipboard', 'Clipboard'),
       items: [

@@ -536,4 +536,486 @@ export const dictAi: Dict = {
     hi: 'AI कॉल विफल हुई',
     en: 'AI call failed',
   },
+  'ai.err.size': {
+    bn: 'অনুরোধ খুব বড় — ছবি/লেখা ছোট করুন।',
+    hi: 'अनुरोध बहुत बड़ा है — छवि/लेख छोटा करें।',
+    en: 'Request too large — shrink the image/text.',
+  },
+  'ai.err.badUrl': {
+    bn: 'এই Base URL অনুমোদিত নয় — পাবলিক https ঠিকানা ব্যবহার করুন।',
+    hi: 'यह Base URL अनुमत नहीं — सार्वजनिक https पता उपयोग करें।',
+    en: 'This Base URL is not allowed — use a public https address.',
+  },
+  'ai.err.rateLimit': {
+    bn: 'এক মিনিটে অনেক বেশি কল — একটু থেমে চেষ্টা করুন।',
+    hi: 'एक मिनट में बहुत अधिक कॉल — थोड़ा रुककर प्रयास करें।',
+    en: 'Too many calls in a minute — pause and retry.',
+  },
+  'ai.err.demoRate': {
+    bn: 'ফ্রি ডেমোর সীমা শেষ — নিজের API Key দিলে সীমাহীন AI।',
+    hi: 'फ्री डेमो सीमा समाप्त — अपनी API Key देने पर असीमित AI।',
+    en: 'Free demo limit reached — add your own API key for unlimited AI.',
+  },
+  'ai.err.demoUnavailable': {
+    bn: 'ডেমো মোড এখন অপরিবর্তনীয় — নিজের API Key যোগ করুন (সেটিংসে)।',
+    hi: 'डेमो मोड अभी अनुपलब्ध — अपनी API Key जोड़ें (सेटिंग्स में)।',
+    en: 'Demo mode is unavailable right now — add your own API key (in settings).',
+  },
+
+  // ─── প্রথমবার কি-সেটআপ গাইড (টোস্ট) ───
+  'ai.onboard.title': {
+    bn: 'AI চালু হয়েছে! এবার কিভাবে ব্যবহার করবেন —',
+    hi: 'AI चालू हो गया! अब कैसे उपयोग करें —',
+    en: 'AI is live! Here is how to use it —',
+  },
+  'ai.onboard.desc': {
+    bn: '১) বইয়ের কোনো লেখা সিলেক্ট করুন — উপরে ✦ AI বাটন ফুটে উঠবে। ২) AI ট্যাব → “ছবি থেকে কনটেন্ট”-এ ছবি/স্ক্রিনশট আপলোড করুন — AI পড়ে বইয়ে লিখে দেবে। ৩) হেডারের 💬 বাটনে AI চ্যাট।',
+    hi: '१) बुक का कोई लेख चुनें — ऊपर ✦ AI बटन उभरेगा। २) AI टैब → “छवि से कंटेंट” में छवि/स्क्रीनशॉट अपलोड करें — AI पढ़कर बुक में लिख देगा। ३) हेडर के 💬 बटन पर AI चैट।',
+    en: '1) Select any text — a ✦ AI button pops up above it. 2) AI tab → "Image → Content" to upload a screenshot — AI reads it into your book. 3) The 💬 header button opens AI chat.',
+  },
+
+  // ─── হেডার AI চ্যাট বাটন ───
+  'hdr.chat.tip': {
+    bn: 'AI চ্যাট — বই-নির্মাতার সহ-লেখক (কথোপকথন)',
+    hi: 'AI चैट — बुक-निर्माता का सह-लेखक (बातचीत)',
+    en: 'AI chat — your co-author conversation',
+  },
+
+  // ─── AI চ্যাট প্যানেল ───
+  'ai.chat.open': {
+    bn: 'AI চ্যাট',
+    hi: 'AI चैट',
+    en: 'AI chat',
+  },
+  'ai.chat.openShort': {
+    bn: 'চ্যাট',
+    hi: 'चैट',
+    en: 'Chat',
+  },
+  'ai.chat.tip': {
+    bn: 'প্রফেশনাল AI কথোপকথন — পরিকল্পনা, লেখা, টেবিল, সারাংশ; উত্তর এক ক্লিকে বইয়ে',
+    hi: 'प्रोफेशनल AI बातचीत — योजना, लेखन, टेबल, सारांश; उत्तर एक क्लिक में बुक में',
+    en: 'Professional AI conversation — plan, write, tables, summaries; insert replies into the book',
+  },
+  'ai.chat.title': {
+    bn: 'AI সহ-লেখক',
+    hi: 'AI सह-लेखक',
+    en: 'AI Co-author',
+  },
+  'ai.chat.demoSub': {
+    bn: 'ডেমো মোড — নিজের কি দিলে আরও শক্তিশালী',
+    hi: 'डेमो मोड — अपनी की देने पर और शक्तिशाली',
+    en: 'Demo mode — stronger with your own key',
+  },
+  'ai.chat.clear': {
+    bn: 'কথোপকথন মুছুন',
+    hi: 'बातचीत मिटाएँ',
+    en: 'Clear conversation',
+  },
+  'ai.chat.emptyTitle': {
+    bn: 'আপনার বইয়ের AI সহ-লেখক প্রস্তুত',
+    hi: 'आपकी बुक का AI सह-लेखक तैयार',
+    en: 'Your book\u2019s AI co-author is ready',
+  },
+  'ai.chat.step1': {
+    bn: 'বইয়ে লেখা সিলেক্ট করলেই পাশে ✦ AI বাটন — উন্নত/অনুবাদ/টেবিল এক ট্যাপে',
+    hi: 'बुक में लेख चुनते ही ✦ AI बटन — सुधार/अनुवाद/टेबल एक टैप में',
+    en: 'Select text in your book — a ✦ AI button appears for one-tap fixes',
+  },
+  'ai.chat.step2': {
+    bn: 'নিচের 🖼 বাটনে ছবি/ডায়াগ্রাম দিন — AI দেখে বুঝে বর্ণনা লিখবে',
+    hi: 'नीचे 🖼 बटन पर छवि/डायग्राम दें — AI देखकर समझकर वर्णन लिखेगा',
+    en: 'Attach an image/diagram below — AI studies it and writes it up',
+  },
+  'ai.chat.step3': {
+    bn: 'টেবিল, সারাংশ, আউটলাইন — যা চান বলুন; উত্তরের নিচে “বইয়ে যোগ করো”',
+    hi: 'टेबल, सारांश, आउटलाइन — जो चाहें कहें; उत्तर के नीचे “बुक में जोड़ो”',
+    en: 'Tables, summaries, outlines — just ask; every reply has "Insert into book"',
+  },
+  'ai.chat.quick': {
+    bn: 'দ্রুত শুরু',
+    hi: 'तेज़ शुरुआत',
+    en: 'Quick starts',
+  },
+  'ai.chat.emptyNote': {
+    bn: 'এখন সীমিত ডেমো চলছে — AI সেটিংসে নিজের ফ্রি/নিজের API Key দিলে সীমাহীন।',
+    hi: 'अभी सीमित डेमो चल रहा है — AI सेटिंग्स में अपनी API Key दें, असीमित होगा।',
+    en: 'Running on the limited demo — add your own API key in AI settings for unlimited use.',
+  },
+  'ai.chat.chip.outline': {
+    bn: 'আউটলাইন বানাও',
+    hi: 'आउटलाइन बनाओ',
+    en: 'Make an outline',
+  },
+  'ai.chat.chip.summary': {
+    bn: 'সারাংশ লেখো',
+    hi: 'सारांश लिखो',
+    en: 'Summarize',
+  },
+  'ai.chat.chip.table': {
+    bn: 'টেবিল বানাও',
+    hi: 'टेबल बनाओ',
+    en: 'Make a table',
+  },
+  'ai.chat.chip.intro': {
+    bn: 'ভূমিকা লেখো',
+    hi: 'भूमिका लिखो',
+    en: 'Write an intro',
+  },
+  'ai.chat.noSelection': {
+    bn: 'আগে বইয়ে কিছু লেখা সিলেক্ট করুন',
+    hi: 'पहले बुक में कुछ लेख चुनें',
+    en: 'Select some text in the book first',
+  },
+  'ai.chat.imageMsg': {
+    bn: '(ছবি সংযুক্ত — এটি দেখে ব্যাখ্যা করো)',
+    hi: '(छवि संलग्न — इसे देखकर व्याख्या करो)',
+    en: '(image attached — please analyze it)',
+  },
+  'ai.chat.copied': {
+    bn: 'উত্তর কপি হয়েছে',
+    hi: 'उत्तर कॉपी हो गया',
+    en: 'Reply copied',
+  },
+  'ai.chat.copyFail': {
+    bn: 'কপি করা যায়নি',
+    hi: 'कॉपी नहीं हो सका',
+    en: 'Could not copy',
+  },
+  'ai.chat.insert': {
+    bn: 'বইয়ে যোগ',
+    hi: 'बुक में जोड़ें',
+    en: 'Insert',
+  },
+  'ai.chat.copy': {
+    bn: 'কপি',
+    hi: 'कॉपी',
+    en: 'Copy',
+  },
+  'ai.chat.thinking': {
+    bn: 'AI ভাবছে…',
+    hi: 'AI सोच रहा है…',
+    en: 'AI is thinking…',
+  },
+  'ai.chat.attach': {
+    bn: 'ছবি সংযুক্ত করুন (ড্র্যাগ/Ctrl+V-ও চলে)',
+    hi: 'छवि संलग्न करें (ड्रैग/Ctrl+V भी चलता है)',
+    en: 'Attach an image (drag / Ctrl+V also work)',
+  },
+  'ai.chat.ph': {
+    bn: 'AI-কে লিখুন… (Enter=পাঠাও, Shift+Enter=নতুন লাইন)',
+    hi: 'AI को लिखें… (Enter=भेजें, Shift+Enter=नई पंक्ति)',
+    en: 'Ask the AI… (Enter to send, Shift+Enter for a new line)',
+  },
+  'ai.chat.quoteSel': {
+    bn: 'সিলেকশন উদ্ধৃত করো',
+    hi: 'चयन उद्धृत करें',
+    en: 'Quote selection',
+  },
+  'ai.chat.secure': {
+    bn: 'কি শুধু আপনার ব্রাউজারে',
+    hi: 'की केवल आपके ब्राउज़र में',
+    en: 'Your key stays in your browser',
+  },
+  'ai.chat.send': {
+    bn: 'পাঠাও',
+    hi: 'भेजें',
+    en: 'Send',
+  },
+
+  // ─── AI বাবল (সিলেকশন টুল) ───
+  'ai.bubble.open': {
+    bn: 'AI টুল খুলুন — সিলেক্ট করা অংশে কাজ করবে',
+    hi: 'AI टूल खोलें — चयनित अंश पर काम करेगा',
+    en: 'Open AI tools — works on the selected text',
+  },
+  'ai.bubble.title': {
+    bn: 'AI টুল',
+    hi: 'AI टूल',
+    en: 'AI tools',
+  },
+  'ai.bubble.subReady': {
+    bn: 'সিলেক্ট করা অংশে কাজ করবে',
+    hi: 'चयनित अंश पर काम करेगा',
+    en: 'Works on your selection',
+  },
+  'ai.bubble.subDemo': {
+    bn: 'ডেমো মোড (সীমিত)',
+    hi: 'डेमो मोड (सीमित)',
+    en: 'Demo mode (limited)',
+  },
+  'ai.bubble.close': {
+    bn: 'বন্ধ করুন',
+    hi: 'बंद करें',
+    en: 'Close',
+  },
+  'ai.bubble.setupLine': {
+    bn: 'নিজের API Key দিলে এই টুলগুলো সীমাহীন ও দ্রুত হবে —',
+    hi: 'अपनी API Key देने पर ये टूल असीमित व तेज़ होंगे —',
+    en: 'Add your own API key to make these tools unlimited and fast —',
+  },
+  'ai.bubble.quick': {
+    bn: 'দ্রুত কাজ',
+    hi: 'तेज़ काम',
+    en: 'Quick actions',
+  },
+  'ai.bubble.imageTip': {
+    bn: 'ছবি আপলোড — AI দেখে এখানে লিখে দেবে',
+    hi: 'छवि अपलोड — AI देखकर यहाँ लिख देगा',
+    en: 'Upload an image — AI reads it and writes here',
+  },
+  'ai.bubble.image': {
+    bn: 'ছবি',
+    hi: 'छवि',
+    en: 'Image',
+  },
+  'ai.bubble.imageDrop': {
+    bn: 'ছবি বাছুন / ফেলুন / Ctrl+V',
+    hi: 'छवि चुनें / गिराएँ / Ctrl+V',
+    en: 'Pick / drop an image / Ctrl+V',
+  },
+  'ai.bubble.imageOn': {
+    bn: 'ছবি সংযুক্ত — AI দেখে লিখবে',
+    hi: 'छवि संलग्न — AI देखकर लिखेगा',
+    en: 'Image attached — AI will read it',
+  },
+  'ai.bubble.needImage': {
+    bn: 'আগে একটি ছবি সংযুক্ত করুন',
+    hi: 'पहले एक छवि संलग्न करें',
+    en: 'Attach an image first',
+  },
+  'ai.bubble.customPh': {
+    bn: 'নিজের নির্দেশ লিখুন — যেমন: “এই অংশ ছাত্রদের জন্য সহজ করে লেখো”…',
+    hi: 'अपना निर्देश लिखें — जैसे: "यह अंश छात्रों के लिए सरल करके लिखो"…',
+    en: 'Your instruction — e.g. "simplify this passage for students"…',
+  },
+
+  // ─── সিলেকশন মোড লেবেল ───
+  'ai.sel.improve': {
+    bn: 'উন্নত করো',
+    hi: 'सुधारो',
+    en: 'Improve',
+  },
+  'ai.sel.improve.tip': {
+    bn: 'লেখা আরও প্রাঞ্জল ও প্রফেশনাল করে পুনর্লিখন',
+    hi: 'लेख को और प्रवाहमयी व प्रोफेशनल बनाएँ',
+    en: 'Rewrite more fluent & professional',
+  },
+  'ai.sel.grammar': {
+    bn: 'বানান/ব্যাকরণ',
+    hi: 'वर्तनी/व्याकरण',
+    en: 'Spelling/grammar',
+  },
+  'ai.sel.grammar.tip': {
+    bn: 'শুধু ভুল ঠিক — লেখকের ভঙ্গি অটুট',
+    hi: 'केवल त्रुटियाँ ठीक — शैली अक्षुण्ण',
+    en: 'Fix mistakes only — keeps your voice',
+  },
+  'ai.sel.trEn': {
+    bn: '→ ইংরেজি',
+    hi: '→ अंग्रेज़ी',
+    en: '→ English',
+  },
+  'ai.sel.trEn.tip': {
+    bn: 'প্রকাশনা-মানের ইংরেজি অনুবাদ',
+    hi: 'प्रकाशन-स्तरीय अंग्रेज़ी अनुवाद',
+    en: 'Publication-quality English translation',
+  },
+  'ai.sel.trBn': {
+    bn: '→ বাংলা',
+    hi: '→ बांग्ला',
+    en: '→ Bangla',
+  },
+  'ai.sel.trBn.tip': {
+    bn: 'সাবলীল বাংলা অনুবাদ',
+    hi: 'सरल बांग्ला अनुवाद',
+    en: ' fluent Bangla translation',
+  },
+  'ai.sel.trHi': {
+    bn: '→ হিন্দি',
+    hi: '→ हिन्दी',
+    en: '→ Hindi',
+  },
+  'ai.sel.trHi.tip': {
+    bn: 'সাবলীল হিন্দি অনুবাদ',
+    hi: 'सरल हिन्दी अनुवाद',
+    en: 'Fluent Hindi translation',
+  },
+  'ai.sel.shorten': {
+    bn: 'সংক্ষিপ্ত',
+    hi: 'संक्षिप्त',
+    en: 'Shorten',
+  },
+  'ai.sel.shorten.tip': {
+    bn: 'অর্থ ঠিক রেখে অর্ধেক দৈর্ঘ্যে',
+    hi: 'अर्थ रखते हुए आधी लंबाई',
+    en: 'Halve the length, keep the meaning',
+  },
+  'ai.sel.expand': {
+    bn: 'বিস্তারিত',
+    hi: 'विस्तार',
+    en: 'Expand',
+  },
+  'ai.sel.expand.tip': {
+    bn: 'উদাহরণ ও ব্যাখ্যা যোগ করে দ্বিগুণ',
+    hi: 'उदाहरण व व्याख्या जोड़कर दोगुना',
+    en: 'Double with examples & explanation',
+  },
+  'ai.sel.simplify': {
+    bn: 'সহজ ভাষা',
+    hi: 'सरल भाषा',
+    en: 'Simplify',
+  },
+  'ai.sel.simplify.tip': {
+    bn: 'সাধারণ পাঠকের জন্য সহজ করে',
+    hi: 'सामान्य पाठक के लिए सरल करें',
+    en: 'Make it easy for any reader',
+  },
+  'ai.sel.formal': {
+    bn: 'আনুষ্ঠানিক',
+    hi: 'औपचारिक',
+    en: 'Formal',
+  },
+  'ai.sel.formal.tip': {
+    bn: 'গ্রন্থ-মানের আনুষ্ঠানিক ভঙ্গি',
+    hi: 'ग्रंथ-स्तरीय औपचारिक शैली',
+    en: 'Formal, book-grade tone',
+  },
+  'ai.sel.bullets': {
+    bn: 'বুলেটে গুছাও',
+    hi: 'बुलेट में सजाओ',
+    en: 'Bulletize',
+  },
+  'ai.sel.bullets.tip': {
+    bn: 'মূল বিষয়গুলো বুলেট তালিকায়',
+    hi: 'मुख्य बिंदु बुलेट सूची में',
+    en: 'Key points as a bullet list',
+  },
+  'ai.sel.makeTable': {
+    bn: 'টেবিল বানাও',
+    hi: 'टेबल बनाओ',
+    en: 'Make a table',
+  },
+  'ai.sel.makeTable.tip': {
+    bn: 'তথ্যগুলো সুন্দর টেবিলে সাজানো',
+    hi: 'जानकारी को टेबल में सजाना',
+    en: 'Arrange the data into a table',
+  },
+  'ai.sel.explain': {
+    bn: 'ব্যাখ্যা যোগ',
+    hi: 'व्याख्या जोड़ें',
+    en: 'Explain',
+  },
+  'ai.sel.explain.tip': {
+    bn: 'সিলেক্ট করা অংশের সহজ ব্যাখ্যা পাশে বসবে',
+    hi: 'चयनित अंश की सरल व्याख्या पास बैठेगी',
+    en: 'A simple explanation added next to the selection',
+  },
+  'ai.sel.custom': {
+    bn: 'নিজের নির্দেশ',
+    hi: 'अपना निर्देश',
+    en: 'Custom instruction',
+  },
+  'ai.sel.custom.tip': {
+    bn: 'যা চান লিখে দিন — AI সেই অনুযায়ী কাজ করবে',
+    hi: 'जो चाहें लिख दें — AI उसी अनुसार काम करेगा',
+    en: 'Write anything — AI will follow it',
+  },
+  'ai.sel.tableEdit': {
+    bn: 'AI টেবিল বদল',
+    hi: 'AI टेबल बदल',
+    en: 'AI table edit',
+  },
+  'ai.sel.tableEdit.tip': {
+    bn: 'পুরো টেবিল নির্দেশ অনুযায়ী নতুন করে সাজানো',
+    hi: 'पूरी टेबल निर्देश अनुसार नई तरह सजाना',
+    en: 'Rebuild the whole table per your instruction',
+  },
+  'ai.sel.imageExplain': {
+    bn: 'AI ছবি ব্যাখ্যা',
+    hi: 'AI छवि व्याख्या',
+    en: 'AI image write-up',
+  },
+  'ai.sel.imageExplain.tip': {
+    bn: 'ছবি/ডায়াগ্রাম দেখে বইয়ের বর্ণনা লেখা',
+    hi: 'छवि/डायग्राम देखकर बुक-वर्णन लिखना',
+    en: 'Study the image and write book-ready text',
+  },
+  'ai.sel.run': {
+    bn: 'AI চালাও',
+    hi: 'AI चलाओ',
+    en: 'Run AI',
+  },
+  'ai.sel.working': {
+    bn: 'AI কাজ করছে…',
+    hi: 'AI काम कर रहा है…',
+    en: 'AI is working…',
+  },
+  'ai.sel.replace': {
+    bn: 'প্রতিস্থাপন',
+    hi: 'प्रतिस्थापन',
+    en: 'Replace',
+  },
+  'ai.sel.insertAfter': {
+    bn: 'পরে যোগ করো',
+    hi: 'बाद में जोड़ो',
+    en: 'Insert after',
+  },
+
+  // ─── কনটেক্সট-মেনু AI সেকশন ───
+  'ws.ctx.hAi': {
+    bn: 'AI',
+    hi: 'AI',
+    en: 'AI',
+  },
+  'ai.ctx.improve': {
+    bn: 'AI দিয়ে উন্নত করো',
+    hi: 'AI से सुधारो',
+    en: 'Improve with AI',
+  },
+  'ai.ctx.grammar': {
+    bn: 'বানান ও ব্যাকরণ ঠিক করো',
+    hi: 'वर्तनी व व्याकरण ठीक करो',
+    en: 'Fix spelling & grammar',
+  },
+  'ai.ctx.trEn': {
+    bn: 'ইংরেজিতে অনুবাদ করো',
+    hi: 'अंग्रेज़ी में अनुवाद करो',
+    en: 'Translate to English',
+  },
+  'ai.ctx.makeTable': {
+    bn: 'তথ্যগুলো টেবিলে সাজাও',
+    hi: 'जानकारी टेबल में सजाओ',
+    en: 'Turn the data into a table',
+  },
+  'ai.ctx.explain': {
+    bn: 'এই অংশের ব্যাখ্যা যোগ করো',
+    hi: 'इस अंश की व्याख्या जोड़ो',
+    en: 'Add an explanation',
+  },
+  'ai.ctx.custom': {
+    bn: 'AI নির্দেশ দাও…',
+    hi: 'AI निर्देश दो…',
+    en: 'Instruct AI…',
+  },
+  'ai.ctx.imgExplain': {
+    bn: 'AI দেখে ব্যাখ্যা লিখে দিক…',
+    hi: 'AI देखकर व्याख्या लिख दे…',
+    en: 'Let AI study & write it up…',
+  },
+  'ai.ctx.tblEdit': {
+    bn: 'AI দিয়ে টেবিল বদলাও…',
+    hi: 'AI से टेबल बदलें…',
+    en: 'Edit this table with AI…',
+  },
+  'ai.ctx.tblNew': {
+    bn: 'এই জায়গায় AI দিয়ে নতুন টেবিল…',
+    hi: 'यहाँ AI से नई टेबल…',
+    en: 'New AI table here…',
+  },
+  'ai.ctx.noTable': {
+    bn: 'টেবিল শনাক্ত হয়নি',
+    hi: 'टेबल नहीं मिली',
+    en: 'No table detected',
+  },
 };

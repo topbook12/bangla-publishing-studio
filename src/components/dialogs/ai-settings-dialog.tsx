@@ -95,8 +95,21 @@ export function AiSettingsDialog() {
   };
 
   const save = () => {
+    const hadKey = !!useAiStore.getState().config.apiKey.trim();
     setConfig({ apiKey: keyDraft });
     toast.success(tt('ai.set.saved'));
+    // প্রথমবার কি সেট → "কিভাবে ব্যবহার করবেন" গাইড (একবারই, দীর্ঘ দেখানো)
+    if (!hadKey && keyDraft.trim()) {
+      try {
+        if (!window.localStorage.getItem('bps-ai-onboarded')) {
+          window.localStorage.setItem('bps-ai-onboarded', '1');
+          toast(tt('ai.onboard.title'), {
+            description: tt('ai.onboard.desc'),
+            duration: 15000,
+          });
+        }
+      } catch { /* প্রাইভেট মোড */ }
+    }
     close();
   };
 

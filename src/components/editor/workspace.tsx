@@ -23,6 +23,7 @@ import { getPageDimensionsMm, mmToPx } from '@/lib/paper';
 import { PaperPage } from './paper-page';
 import { PageEditor } from './page-editor';
 import { ContextMenuHost } from './context-menu';
+import { AiBubbleHost } from './ai-bubble';
 
 function PageMenu({ pageId, index }: { pageId: string; index: number }) {
   const addPage = useEditorStore((s) => s.addPage);
@@ -228,6 +229,8 @@ export function Workspace() {
 
       {/* MS Word-style right-click / double-click menus (portal — fixed position) */}
       <ContextMenuHost containerRef={scrollRef} />
+      {/* সিলেকশনে ভাসমান ✦ AI পিল + অ্যাকশন প্যানেল (portal) */}
+      <AiBubbleHost />
     </main>
   );
 }

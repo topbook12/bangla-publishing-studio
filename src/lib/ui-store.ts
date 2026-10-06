@@ -59,6 +59,8 @@ interface UiState {
   navigatorOpen: boolean;
   /** ফোকাস মোড (নিরবচ্ছিন্ন লেখা) চালু আছে কি না */
   focusMode: boolean;
+  /** AI চ্যাট প্যানেল (ডান পাশ) খোলা আছে কি না */
+  aiChatOpen: boolean;
   open: (name: DialogName) => void;
   /** AI ডায়ালগ নির্দিষ্ট ট্যাবসহ খোলা */
   openAi: (tab: AiVisionTab) => void;
@@ -67,6 +69,7 @@ interface UiState {
   toggleNavigator: () => void;
   setFocusMode: (v: boolean) => void;
   toggleFocusMode: () => void;
+  toggleAiChat: () => void;
 }
 
 export const useUiStore = create<UiState>((set, get) => ({
@@ -75,6 +78,7 @@ export const useUiStore = create<UiState>((set, get) => ({
   aiVisionTab: 'vision',
   navigatorOpen: readBoolFlag('bwp-navigator-open', false),
   focusMode: readBoolFlag('bwp-focus-mode', false),
+  aiChatOpen: false,
   open: (name) => set({ openDialog: name }),
   openAi: (tab) => set({ openDialog: 'aiVision', aiVisionTab: tab }),
   openPageChrome: (pageId) => set({ openDialog: 'pageChrome', pageChromeId: pageId }),
@@ -89,4 +93,5 @@ export const useUiStore = create<UiState>((set, get) => ({
     set({ focusMode: v });
   },
   toggleFocusMode: () => get().setFocusMode(!get().focusMode),
+  toggleAiChat: () => set((s) => ({ aiChatOpen: !s.aiChatOpen })),
 }));

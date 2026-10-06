@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import {
-  BookOpenCheck, Check, CircleHelp, CloudOff, FilePlus2, Focus, FolderOpen, History, ListTree, Loader2, Moon, PenLine,
+  BookOpenCheck, Check, CircleHelp, CloudOff, FilePlus2, Focus, FolderOpen, History, ListTree, Loader2, MessageSquare, Moon, PenLine,
   Save, Sun, Trash2, Copy, Pencil, Menu, Globe, Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -144,6 +144,32 @@ function AiSettingsButton() {
   );
 }
 
+/** AI চ্যাট — প্রফেশনাল কথোপকথন প্যানেল (Copilot-ধাঁচ) */
+function AiChatButton() {
+  const tt = useT();
+  const toggleAiChat = useUiStore((s) => s.toggleAiChat);
+  const aiChatOpen = useUiStore((s) => s.aiChatOpen);
+  const configured = useAiStore((s) => !!s.config.apiKey.trim());
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn('header-action max-sm:h-11 max-sm:w-11', aiChatOpen && 'bg-accent text-accent-foreground', configured && 'ai-header-on')}
+          aria-label={tt('hdr.chat.tip')}
+          aria-pressed={aiChatOpen}
+          title={tt('hdr.chat.tip')}
+          onClick={toggleAiChat}
+        >
+          <MessageSquare size={17} />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="bottom">{tt('hdr.chat.tip')}</TooltipContent>
+    </Tooltip>
+  );
+}
+
 function NavigatorToggle() {
   const tt = useT();
   const navigatorOpen = useUiStore((s) => s.navigatorOpen);
@@ -251,6 +277,7 @@ export function AppHeader() {
         <SaveIndicator />
         <span className="hidden text-xs text-muted-foreground md:inline">{now}</span>
         <LanguageSwitcher />
+        <AiChatButton />
         <AiSettingsButton />
         <NavigatorToggle />
         <FocusModeToggle />

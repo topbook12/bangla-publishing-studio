@@ -13,6 +13,7 @@ import { Workspace } from '@/components/editor/workspace';
 import { NavigatorPanel } from '@/components/navigator/navigator-panel';
 import { StatusBar } from '@/components/status-bar';
 import { Dialogs } from '@/components/dialogs/dialogs';
+import { AiChatPanel } from '@/components/editor/ai-chat-panel';
 import { useEditorStore } from '@/lib/store';
 import { useUiStore } from '@/lib/ui-store';
 import { useAutoToc } from '@/lib/toc';
@@ -90,6 +91,8 @@ export default function EditorApp() {
       </div>
       <StatusBar />
       <Dialogs />
+      {/* AI চ্যাট — ডান পাশের প্রফেশনাল কথোপকথন প্যানেল */}
+      <AiChatPanel />
       {focusMode ? (
         <button
           type="button"
