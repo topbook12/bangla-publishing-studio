@@ -290,6 +290,31 @@ export const dictAi: Dict = {
     hi: 'मॉडल (छवि समझने योग्य)',
     en: 'Model (vision-capable)',
   },
+  'ai.set.models.load': {
+    bn: 'মডেল তালিকা',
+    hi: 'मॉडल सूची',
+    en: 'Load models',
+  },
+  'ai.set.models.hint': {
+    bn: '"মডেল তালিকা" চাপলে প্রোভাইডারের কাছ থেকে সঠিক মডেলের তালিকা এসে যাবে — তালিকা থেকে বাছলে 404 হবে না।',
+    hi: '"मॉडल सूची" दबाने पर प्रोवाइडर से सही मॉडलों की सूची आएगी — सूची से चुनने पर 404 नहीं होगा।',
+    en: '"Load models" fetches the exact model names from your provider — picking from the list avoids 404 errors.',
+  },
+  'ai.set.models.filterPh': {
+    bn: 'মডেল খুঁজুন… (যেমন flash, glm)',
+    hi: 'मॉडल खोजें… (जैसे flash, glm)',
+    en: 'Search models… (e.g. flash, glm)',
+  },
+  'ai.set.models.loaded': {
+    bn: 'টি মডেল পাওয়া গেছে — একটি বাছুন',
+    hi: 'मॉडल मिले — एक चुनें',
+    en: 'models found — pick one',
+  },
+  'ai.set.models.none': {
+    bn: 'এই খোঁজে কোনো মডেল মেলেনি।',
+    hi: 'इस खोज में कोई मॉडल नहीं मिला।',
+    en: 'No models match this search.',
+  },
   'ai.set.key': {
     bn: 'API Key',
     hi: 'API Key',
@@ -492,9 +517,9 @@ export const dictAi: Dict = {
     en: 'API key is invalid or expired — add a fresh key in settings.',
   },
   'ai.err.model': {
-    bn: 'মডেল/URL পাওয়া যায়নি — মডেলের নাম ও Base URL মিলিয়ে নিন।',
-    hi: 'मॉडल/URL नहीं मिला — मॉडल नाम और Base URL जाँचें।',
-    en: 'Model/URL not found — verify the model name and Base URL.',
+    bn: 'মডেল/URL পাওয়া যায়নি (404) — সেটিংসে “মডেল তালিকা” চেপে সঠিক মডেল বাছুন, Base URL মিলিয়ে নিন।',
+    hi: 'मॉडल/URL नहीं मिला (404) — सेटिंग्स में “मॉडल सूची” दबाकर सही मॉडल चुनें, Base URL जाँचें।',
+    en: 'Model/URL not found (404) — in settings press "Load models" and pick the exact model; also verify the Base URL.',
   },
   'ai.err.rate': {
     bn: 'রেট-লিমিট/কোটা শেষ — একটু পরে চেষ্টা করুন বা কোটা বাড়ান।',
@@ -569,9 +594,9 @@ export const dictAi: Dict = {
     en: 'AI is live! Here is how to use it —',
   },
   'ai.onboard.desc': {
-    bn: '১) বইয়ের কোনো লেখা সিলেক্ট করুন — উপরে ✦ AI বাটন ফুটে উঠবে। ২) AI ট্যাব → “ছবি থেকে কনটেন্ট”-এ ছবি/স্ক্রিনশট আপলোড করুন — AI পড়ে বইয়ে লিখে দেবে। ৩) হেডারের 💬 বাটনে AI চ্যাট।',
-    hi: '१) बुक का कोई लेख चुनें — ऊपर ✦ AI बटन उभरेगा। २) AI टैब → “छवि से कंटेंट” में छवि/स्क्रीनशॉट अपलोड करें — AI पढ़कर बुक में लिख देगा। ३) हेडर के 💬 बटन पर AI चैट।',
-    en: '1) Select any text — a ✦ AI button pops up above it. 2) AI tab → "Image → Content" to upload a screenshot — AI reads it into your book. 3) The 💬 header button opens AI chat.',
+    bn: '১) পেজের লেখা সিলেক্ট করুন বা ডাবল-ক্লিক করুন — ✦ AI টুল ফুটে উঠবে; নির্দেশ দিন, ছবি দিন, টেবিল বানান — AI সেই জায়গায়ই লিখে দেবে। ২) “পুরো পেজ” বাছলে AI সম্পূর্ণ পেজ পড়ে/লিখে ফেলে। ৩) হেডারের 💬 বাটনে AI চ্যাট।',
+    hi: '१) पेज का लेख चुनें या डबल-क्लिक करें — ✦ AI टूल उभरेगा; निर्देश दें, छवि दें, टेबल बनाएँ — AI ठीक उसी जगह लिख देगा। २) “पूरा पेज” चुनने पर AI पूरा पेज पढ़ता/लिखता है। ३) हेडर के 💬 बटन पर AI चैट।',
+    en: '1) Select text on a page or double-click — the ✦ AI tool pops up; give a prompt, attach an image, make tables — AI writes right there. 2) Pick "Whole page" to let AI read/rewrite the entire page. 3) The 💬 header button opens AI chat.',
   },
 
   // ─── হেডার AI চ্যাট বাটন ───
@@ -941,6 +966,26 @@ export const dictAi: Dict = {
     hi: 'छवि/डायग्राम देखकर बुक-वर्णन लिखना',
     en: 'Study the image and write book-ready text',
   },
+  'ai.sel.verify': {
+    bn: 'সঠিকতা যাচাই',
+    hi: 'सटीकता जाँच',
+    en: 'Verify',
+  },
+  'ai.sel.verify.tip': {
+    bn: 'বানান, ব্যাকরণ ও তথ্যের ভুল খুঁজে সংশোধন-তালিকা দেয়',
+    hi: 'वर्तनी, व्याकरण व तथ्य की गलतियाँ खोजकर सुधार-सूची देता है',
+    en: 'Finds spelling, grammar & factual errors with fixes',
+  },
+  'ai.sel.continue': {
+    bn: 'লিখে দাও',
+    hi: 'आगे लिखो',
+    en: 'Continue writing',
+  },
+  'ai.sel.continue.tip': {
+    bn: 'সিলেকশন/পেজের ধারা অব্যাহত রেখে নতুন অংশ লেখা',
+    hi: 'चयन/पेज की धारा जारी रखते हुए नया अंश लिखना',
+    en: 'Continues from the selection/page in the same voice',
+  },
   'ai.sel.run': {
     bn: 'AI চালাও',
     hi: 'AI चलाओ',
@@ -1017,5 +1062,37 @@ export const dictAi: Dict = {
     bn: 'টেবিল শনাক্ত হয়নি',
     hi: 'टेबल नहीं मिली',
     en: 'No table detected',
+  },
+
+  // ─── AI বাবল — প্রেক্ষাপট (সিলেকশন / পুরো পেজ) ───
+  'ai.scope.label': {
+    bn: 'AI কাজ করবে —',
+    hi: 'AI काम करेगा —',
+    en: 'AI works on —',
+  },
+  'ai.scope.sel': {
+    bn: 'নির্বাচিত অংশ',
+    hi: 'चयनित अंश',
+    en: 'Selected text',
+  },
+  'ai.scope.page': {
+    bn: 'পুরো পেজ',
+    hi: 'पूरा पेज',
+    en: 'Whole page',
+  },
+  'ai.scope.selTip': {
+    bn: 'AI শুধু নির্বাচিত লেখাটি পড়বে ও বদলাবে',
+    hi: 'AI केवल चयनित लेख पढ़ेगा और बदलेगा',
+    en: 'AI reads and rewrites only the selected text',
+  },
+  'ai.scope.pageTip': {
+    bn: 'AI পুরো পেজ পড়বে — “পুরো পেজ বদলে দাও” দিলে পেজ নতুন করে লেখা হবে',
+    hi: 'AI पूरा पेज पढ़ता है — “पूरा पेज बदलें” देने पर पेज नया लिखा जाएगा',
+    en: 'AI reads the entire page — "Replace whole page" rewrites it',
+  },
+  'ai.page.replace': {
+    bn: 'পুরো পেজ বদলে দাও',
+    hi: 'पूरा पेज बदलें',
+    en: 'Replace whole page',
   },
 };

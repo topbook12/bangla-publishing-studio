@@ -2300,6 +2300,58 @@ html.dark .ai-state-pill-on { color: oklch(0.8 0.14 155); }
   margin-top: -6px;
 }
 
+/* মডেল তালিকা (সেটিংস — 404-মুক্ত বাছাই) */
+.ai-field-hint {
+  font-size: 10.5px;
+  line-height: 1.45;
+  color: var(--muted-foreground);
+  margin-top: 4px;
+}
+.ai-models-btn {
+  border-color: color-mix(in oklab, oklch(0.6 0.17 292) 40%, var(--border));
+  color: oklch(0.5 0.16 292);
+}
+html.dark .ai-models-btn { color: oklch(0.78 0.13 295); }
+.ai-models-btn:hover { border-color: oklch(0.6 0.17 292 / 0.7); }
+.ai-models-panel {
+  border: 1px solid color-mix(in oklab, oklch(0.6 0.17 292) 30%, var(--border));
+  background: color-mix(in oklab, oklch(0.6 0.17 292) 4%, var(--card));
+  border-radius: 12px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.ai-models-list {
+  max-height: 180px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-right: 2px;
+}
+.ai-models-item {
+  text-align: left;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 11.5px;
+  padding: 5px 8px;
+  border-radius: 7px;
+  color: var(--foreground);
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+  border: 1px solid transparent;
+  word-break: break-all;
+}
+.ai-models-item:hover { background: var(--muted); }
+.ai-models-item:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
+.ai-models-item-on {
+  background: color-mix(in oklab, oklch(0.6 0.17 292) 14%, transparent);
+  border-color: color-mix(in oklab, oklch(0.6 0.17 292) 45%, transparent);
+  color: oklch(0.45 0.18 292);
+  font-weight: 600;
+}
+html.dark .ai-models-item-on { color: oklch(0.8 0.12 295); }
+
 /* কি-গাইড */
 .ai-help {
   border: 1px solid color-mix(in oklab, var(--primary) 16%, var(--border));
@@ -2759,6 +2811,53 @@ html.dark .ai-live-preview-body th, html.dark .ai-live-preview-body td { border-
 html.dark .ai-bubble-setup {
   border-color: color-mix(in oklab, oklch(0.75 0.12 80) 40%, var(--border));
   background: color-mix(in oklab, oklch(0.4 0.06 80) 22%, transparent);
+}
+
+/* প্রেক্ষাপট বাছাই — নির্বাচিত অংশ / পুরো পেজ */
+.ai-bubble-scope {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 7px 8px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in oklab, oklch(0.6 0.17 292) 26%, var(--border));
+  background: color-mix(in oklab, oklch(0.6 0.17 292) 5%, transparent);
+}
+.ai-bubble-scope-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted-foreground);
+}
+.ai-scope-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3.5px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--foreground);
+  cursor: pointer;
+  transition: border-color 0.13s ease, background-color 0.13s ease, box-shadow 0.13s ease;
+}
+.ai-scope-chip:hover:not(:disabled) { border-color: color-mix(in oklab, oklch(0.6 0.17 292) 55%, var(--border)); }
+.ai-scope-chip:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
+.ai-scope-chip:disabled { opacity: 0.45; cursor: default; }
+.ai-scope-chip-on {
+  border-color: oklch(0.6 0.17 292 / 0.65);
+  background: color-mix(in oklab, oklch(0.6 0.17 292) 16%, var(--card));
+  color: oklch(0.45 0.18 292);
+  box-shadow: 0 2px 8px color-mix(in oklab, oklch(0.55 0.2 300) 25%, transparent);
+}
+html.dark .ai-scope-chip-on { color: oklch(0.82 0.11 295); }
+.ai-bubble-hint {
+  font-size: 10.5px;
+  line-height: 1.45;
+  color: var(--muted-foreground);
 }
 
 /* কুইক অ্যাকশন গ্রিড */

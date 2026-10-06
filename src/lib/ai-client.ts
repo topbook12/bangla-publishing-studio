@@ -100,6 +100,8 @@ export interface AiCallResult {
   demo?: boolean;
   error?: string;
   hintKey?: string;
+  /** সার্ভারের বাড়তি ব্যাখ্যা (যেমন 404-এ চেষ্টা করা ঠিকানা) */
+  detail?: string;
 }
 
 /** সেভ করা BYOK কনফিগ (থাকলে) সহ /api/ai/chat কল */
@@ -179,4 +181,27 @@ export async function generateBookText(opts: {
 /** সংযোগ পরীক্ষা (সেটিংস ডায়ালগ) */
 export async function testAiConnection(demo = false): Promise<AiCallResult> {
   return callAi({ prompt: 'Reply with exactly: OK', system: 'You are a connection tester.', demo });
+}
+
+/** প্রোভাইডার থেকে উপলব্ধ মডেলের তালিকা (সেটিংস ডায়ালগ — 404 এড়াতে তালিকা থেকে বাছাই) */
+export async function fetchModelList(draftKey?: string): Promise<
+  { ok: true; models: string[] } | { ok: false; error?: string; hintKey?: string; detail?: string }
+> {
+  const config = useAiStore.getState().config;
+  const preset = providerPreset(config.provider);
+  const apiKey = (draftKey ?? config.apiKey).trim();
+  const baseUrl = (config.baseUrl || preset.baseUrl).trim();
+  if (!apiKey || !baseUrl) return { ok: false, hintKey: 'ai.err.config' };
+  try {
+    const res = await fetch('/api/ai/models', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ baseUrl, apiKey, provider: config.provider }),
+    });
+    const data = (await res.json()) as { ok: boolean; models?: string[]; error?: string; hintKey?: string; detail?: string };
+    if (data.ok && Array.isArray(data.models)) return { ok: true, models: data.models };
+    return { ok: false, error: data.error, hintKey: data.hintKey, detail: data.detail };
+  } catch {
+    return { ok: false, hintKey: 'ai.err.network' };
+  }
 }

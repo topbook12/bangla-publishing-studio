@@ -16,9 +16,9 @@ import {
 import { createPortal } from 'react-dom';
 import type { Editor } from '@tiptap/react';
 import {
-  BookPlus, CircleAlert, GraduationCap, Image as ImageIcon, ImagePlus, Languages,
-  Lightbulb, List, Loader2, Maximize2, MessageSquare, Minimize2, RefreshCw,
-  Replace, ScanEye, Sparkles, SpellCheck, Table2, Wand2, X, type LucideIcon,
+  BookPlus, CircleAlert, FileText, GraduationCap, Image as ImageIcon, ImagePlus, Languages,
+  Lightbulb, List, ListChecks, Loader2, Maximize2, MessageSquare, Minimize2, PenLine,
+  RefreshCw, Replace, ScanEye, Sparkles, SpellCheck, Table2, TextCursorInput, Wand2, X, type LucideIcon,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -29,7 +29,7 @@ import { useAiStore } from '@/lib/ai-store';
 import { useAiBubbleStore, openAiBubble } from '@/lib/ai-bubble-store';
 import type { AiBubbleRequest } from '@/lib/ai-bubble-store';
 import {
-  SELECTION_MODES, runSelectionAi, markdownToHtml, tableRowsToMarkdown,
+  SELECTION_MODES, runSelectionAi, markdownToHtml, pageToMarkdown, tableRowsToMarkdown,
 } from '@/lib/ai-assistant';
 import type { SelectionModeDef } from '@/lib/ai-assistant';
 import { prepareImageFile } from '@/lib/ai-client';
@@ -60,6 +60,8 @@ const MODE_ICON: Record<string, LucideIcon> = {
   bullets: List,
   'make-table': Table2,
   explain: MessageSquare,
+  verify: ListChecks,
+  continue: PenLine,
   custom: Sparkles,
   'image-explain': ScanEye,
   'table-edit': Table2,
@@ -277,6 +279,10 @@ function AiBubblePanel({ req, style, onClose, configured, ref }: PanelProps) {
     }
   });
 
+  const hasSelection = captured.from !== null && captured.to !== null;
+
+  /** AI কোন প্রেক্ষাপটে কাজ করবে — নির্বাচিত অংশ বা পুরো পেজ */
+  const [scope, setScope] = useState<'selection' | 'page'>(hasSelection ? 'selection' : 'page');
   const [mode, setMode] = useState<SelectionModeDef | null>(() => {
     if (req.mode === 'table-edit') return TABLE_EDIT_DEF;
     if (req.mode === 'image-explain') return IMAGE_EXPLAIN_DEF;
@@ -298,6 +304,7 @@ function AiBubblePanel({ req, style, onClose, configured, ref }: PanelProps) {
 
   const busy = phase === 'working';
   const tableRows = req.tableContext ?? null;
+  const pageScope = scope === 'page';
 
   const selectionText = useMemo(() => {
     const { from, to } = captured;
@@ -308,6 +315,12 @@ function AiBubblePanel({ req, style, onClose, configured, ref }: PanelProps) {
       return '';
     }
   }, [captured]);
+
+  /** কার্যকর প্রেক্ষাপট — সিলেকশন বা সম্পূর্ণ পেজ (Markdown) */
+  const contextText = useMemo(
+    () => (scope === 'page' ? pageToMarkdown(ed) : selectionText),
+    [scope, selectionText, ed],
+  );
 
   // মোডে ক্লিক → সরাসরি চালাও (এক-ট্যাপ অভিজ্ঞতা)
   const run = useCallback(async (m: SelectionModeDef) => {
@@ -325,10 +338,11 @@ function AiBubblePanel({ req, style, onClose, configured, ref }: PanelProps) {
     const isTable = m.id === 'table-edit';
     const res = await runSelectionAi({
       mode: m,
-      selection: isTable ? '' : selectionText,
+      selection: isTable ? '' : contextText,
       custom: instruction.trim() || undefined,
       imageDataUrl: m.id === 'image-explain' ? (image?.dataUrl ?? null) : null,
       tableContext: isTable ? tableRowsToMarkdown(tableRows ?? []) : undefined,
+      pageScope: scope === 'page',
     });
 
     if (res.ok && res.markdown) {
@@ -336,10 +350,10 @@ function AiBubblePanel({ req, style, onClose, configured, ref }: PanelProps) {
       setResultDemo(!!res.demo);
       setPhase('done');
     } else {
-      setError({ hintKey: res.hintKey ?? 'ai.err.title', detail: res.error });
+      setError({ hintKey: res.hintKey ?? 'ai.err.title', detail: res.detail ?? res.error });
       setPhase('error');
     }
-  }, [busy, image, instruction, selectionText, tableRows, tt]);
+  }, [busy, image, instruction, contextText, scope, tableRows, tt]);
 
   const acceptFile = async (file: File) => {
     if (!file.type.startsWith('image/')) return;
@@ -389,15 +403,26 @@ function AiBubblePanel({ req, style, onClose, configured, ref }: PanelProps) {
       return;
     }
     try {
-      if (how === 'replace' && req.tableRange) {
+      if (how === 'replace' && pageScope && !req.tableRange) {
+        // পুরো পেজ নতুন কনটেন্টে বদল — এক ট্রানজেকশনে (আন্ডু-সম্ভব)
+        editor
+          .chain()
+          .focus()
+          .insertContentAt({ from: 0, to: editor.state.doc.content.size }, html)
+          .run();
+      } else if (how === 'replace' && req.tableRange) {
         // পুরো টেবিল নতুন টেবিলে বদল
         editor.chain().focus().insertContentAt({ from: req.tableRange.from, to: req.tableRange.to }, html).run();
       } else if (how === 'replace' && rangeValid(captured)) {
         editor.chain().focus().insertContentAt({ from: captured.from!, to: captured.to! }, html).run();
       } else if (how === 'insert-after' && req.insertAfterPos !== undefined) {
         editor.chain().focus().insertContentAt(req.insertAfterPos, html).run();
-      } else if (how === 'insert-after' && rangeValid(captured)) {
-        editor.chain().focus().insertContentAt(captured.to!, html).run();
+      } else if (how === 'insert-after' && captured.from !== null) {
+        // সিলেকশন নেই (কার্সার) বা পেজ-স্কোপ — ধরা অবস্থানেই বসাও
+        editor.chain().focus().insertContentAt(Math.min(captured.from, editor.state.doc.content.size), html).run();
+      } else if (how === 'insert-after') {
+        // কোনো ধরা অবস্থান নেই — পেজের শেষে যোগ
+        editor.chain().focus().insertContentAt(editor.state.doc.content.size, html).run();
       } else {
         editor.chain().focus().insertContent(html).run();
       }
@@ -411,7 +436,7 @@ function AiBubblePanel({ req, style, onClose, configured, ref }: PanelProps) {
   const previewHtml = useMemo(() => (result ? markdownToHtml(result) : ''), [result]);
 
   const quickModes = SELECTION_MODES.filter((m) => m.id !== 'custom');
-  const hasReplaceable = rangeValid(captured) || req.tableRange !== undefined;
+  const hasReplaceable = req.tableRange !== undefined || pageScope || rangeValid(captured);
 
   return (
     <div
@@ -444,6 +469,36 @@ function AiBubblePanel({ req, style, onClose, configured, ref }: PanelProps) {
               {tt('ai.btn.addKey')}
             </Button>
           </div>
+        </div>
+      ) : null}
+
+      {/* প্রেক্ষাপট বাছাই — নির্বাচিত অংশ / পুরো পেজ */}
+      {!req.tableRange ? (
+        <div className="ai-bubble-scope" role="group" aria-label={tt('ai.scope.label')}>
+          <span className="ai-bubble-scope-label">{tt('ai.scope.label')}</span>
+          <div className="flex flex-wrap gap-1">
+            <button
+              type="button"
+              className={cn('ai-scope-chip', !pageScope && 'ai-scope-chip-on')}
+              disabled={!hasSelection || busy}
+              onClick={() => setScope('selection')}
+              title={tt('ai.scope.selTip')}
+            >
+              <TextCursorInput size={11} aria-hidden="true" />
+              {tt('ai.scope.sel')}
+            </button>
+            <button
+              type="button"
+              className={cn('ai-scope-chip', pageScope && 'ai-scope-chip-on')}
+              disabled={busy}
+              onClick={() => setScope('page')}
+              title={tt('ai.scope.pageTip')}
+            >
+              <FileText size={11} aria-hidden="true" />
+              {tt('ai.scope.page')}
+            </button>
+          </div>
+          <p className="ai-bubble-hint">{pageScope ? tt('ai.scope.pageTip') : tt('ai.scope.selTip')}</p>
         </div>
       ) : null}
 
@@ -540,7 +595,7 @@ function AiBubblePanel({ req, style, onClose, configured, ref }: PanelProps) {
         <Button
           size="sm"
           className="ai-bubble-run"
-          disabled={busy || (!instruction.trim() && !image && !selectionText && !tableRows)}
+          disabled={busy || (!instruction.trim() && !image && !contextText && !tableRows)}
           onClick={() => void run(mode ?? SELECTION_MODES[0])}
         >
           {busy ? <Loader2 size={13} className="animate-spin" aria-hidden="true" /> : <Sparkles size={13} aria-hidden="true" />}
@@ -579,7 +634,8 @@ function AiBubblePanel({ req, style, onClose, configured, ref }: PanelProps) {
           <div className="ai-bubble-apply">
             {hasReplaceable ? (
               <Button size="sm" className="flex-1 gap-1.5 ai-save-btn" onClick={() => apply('replace')}>
-                <Replace size={12} aria-hidden="true" /> {tt('ai.sel.replace')}
+                <Replace size={12} aria-hidden="true" />
+                {pageScope && !req.tableRange ? tt('ai.page.replace') : tt('ai.sel.replace')}
               </Button>
             ) : null}
             <Button size="sm" variant="outline" className="flex-1 gap-1.5" onClick={() => apply('insert-after')}>

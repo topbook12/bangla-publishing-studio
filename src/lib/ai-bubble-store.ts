@@ -25,6 +25,8 @@ export type AiBubbleMode =
   | 'make-table'
   | 'bullets'
   | 'explain'
+  | 'verify'
+  | 'continue'
   | 'custom'
   | 'image-explain'
   | 'table-edit';

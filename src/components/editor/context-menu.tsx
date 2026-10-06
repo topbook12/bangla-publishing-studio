@@ -299,18 +299,59 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
     [containerRef],
   );
 
-  // contextmenu + dblclick listeners on the pages container (capture)
+  /**
+   * ডাবল-ক্লিক → লেখার উপর সরাসরি AI টুল খোলা (ইউজারের চাহিদা:
+   * "ডাবল ক্লিক করার পরে সেখানে আমি টুল সিলেক্ট করব")।
+   * ছবি/টেবিলে ডাবল-ক্লিক আগের মতোই Word-স্টাইল মেনু দেখাবে।
+   */
+  const handleDblClick = useCallback(
+    (e: MouseEvent) => {
+      const container = containerRef.current;
+      const target = e.target as HTMLElement | null;
+      if (!container || !target) return;
+      if (!container.contains(target)) return;
+
+      // ছবি / টেবিল-সেল — আগের মতোই কনটেক্সট-মেনু
+      if (target.closest('img') || target.closest('td,th')) {
+        handleOpen(e);
+        return;
+      }
+
+      const pmEl = target.closest('.ProseMirror');
+      if (!(pmEl instanceof HTMLElement) || !container.contains(pmEl)) return;
+      const editor = getEditor(pmEl.getAttribute('data-page-id'));
+      if (!editor || editor.isDestroyed) return;
+
+      // ব্রাউজার শব্দ সিলেক্ট করেছে (ProseMirror dblclick) — তবু না হলে
+      // ক্লিক-পয়েন্টে কার্সার বসাই, যাতে AI সবসময় সঠিক জায়গায় কাজ করে
+      if (editor.state.selection.empty) {
+        const coords = editor.view.posAtCoords({ left: e.clientX, top: e.clientY });
+        if (coords) {
+          try {
+            editor.commands.setTextSelection(coords.pos);
+          } catch {
+            /* ignore invalid positions */
+          }
+        }
+      }
+
+      e.preventDefault();
+      openAiBubble({ editor, x: e.clientX, y: e.clientY });
+    },
+    [containerRef, handleOpen],
+  );
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-    const onOpen = (e: Event) => handleOpen(e as MouseEvent);
-    container.addEventListener('contextmenu', onOpen, true);
-    container.addEventListener('dblclick', onOpen, true);
+    const onContext = (e: Event) => handleOpen(e as MouseEvent);
+    const onDblClick = (e: Event) => handleDblClick(e as MouseEvent);
+    container.addEventListener('contextmenu', onContext, true);
+    container.addEventListener('dblclick', onDblClick, true);
     return () => {
-      container.removeEventListener('contextmenu', onOpen, true);
-      container.removeEventListener('dblclick', onOpen, true);
+      container.removeEventListener('contextmenu', onContext, true);
+      container.removeEventListener('dblclick', onDblClick, true);
     };
-  }, [containerRef, handleOpen]);
+  }, [containerRef, handleOpen, handleDblClick]);
 
   // close on click-outside / Escape / scroll (capture) / resize
   useEffect(() => {

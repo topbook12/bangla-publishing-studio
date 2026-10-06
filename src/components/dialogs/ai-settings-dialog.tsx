@@ -8,10 +8,10 @@
 
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   BadgeCheck, CircleAlert, Copy, Eye, EyeOff, ExternalLink, KeyRound,
-  ShieldCheck, Sparkles, Trash2, Video,
+  ListChecks, Loader2, Search, ShieldCheck, Sparkles, Trash2, Video,
 } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
@@ -21,13 +21,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AI_PROVIDERS, providerPreset, useAiStore } from '@/lib/ai-store';
 import type { AiProviderId } from '@/lib/ai-store';
-import { testAiConnection } from '@/lib/ai-client';
+import { fetchModelList, testAiConnection } from '@/lib/ai-client';
 import { useUiStore } from '@/lib/ui-store';
 import { useT } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
-type TestState = { phase: 'idle' | 'testing' | 'ok' | 'fail'; message?: string; hintKey?: string };
+type TestState = { phase: 'idle' | 'testing' | 'ok' | 'fail'; message?: string; hintKey?: string; detail?: string };
+type ModelsState = { phase: 'idle' | 'loading' | 'ok' | 'fail'; models?: string[]; message?: string; hintKey?: string; detail?: string };
 
 /** প্রোভাইডার টাইলের রং — ব্র্যান্ড-অনুপ্রাণিত (কোনো লোগো ছবি নেই, লিটার টাইল) */
 const PROVIDER_TILE: Record<AiProviderId, string> = {
@@ -52,6 +53,9 @@ export function AiSettingsDialog() {
   const [keyDraft, setKeyDraft] = useState(config.apiKey);
   const [showKey, setShowKey] = useState(false);
   const [test, setTest] = useState<TestState>({ phase: 'idle' });
+  const [models, setModels] = useState<ModelsState>({ phase: 'idle' });
+  const [modelFilter, setModelFilter] = useState('');
+  const modelsRef = useRef<HTMLDivElement | null>(null);
 
   // ডায়ালগ খোলার সময় সেভ করা কি দিয়ে ড্রাফট শুরু (টাইমারে ডিফার — cascading render এড়াতে)
   useEffect(() => {
@@ -59,6 +63,8 @@ export function AiSettingsDialog() {
     const t1 = window.setTimeout(() => {
       setKeyDraft(useAiStore.getState().config.apiKey);
       setTest({ phase: 'idle' });
+      setModels({ phase: 'idle' });
+      setModelFilter('');
     }, 0);
     return () => window.clearTimeout(t1);
   }, [open]);
@@ -71,9 +77,40 @@ export function AiSettingsDialog() {
 
   const pickProvider = (id: AiProviderId) => {
     applyPreset(id);
+    setModels({ phase: 'idle' }); // নতুন প্রোভাইডার — তালিকা আবার লোড করতে হবে
+    setModelFilter('');
     // কি রেখে দিই — অন্য প্রোভাইডারের কি ভিন্ন হবে, তাই মুছে দেই
     if (useAiStore.getState().config.provider !== id) setKeyDraft('');
   };
+
+  /** প্রোভাইডার থেকে উপলব্ধ মডেলের তালিকা — 404-মুক্ত বাছাইয়ের মূল পথ */
+  const loadModels = async () => {
+    if (models.phase === 'loading') return;
+    if (!keyDraft.trim()) {
+      setModels({ phase: 'fail', hintKey: 'ai.err.config' });
+      return;
+    }
+    setModels({ phase: 'loading' });
+    // ড্রাফট কি সাময়িকভাবে বসাই — সেভ না করেও তালিকা আনা যায়
+    const prev = useAiStore.getState().config;
+    setConfig({ apiKey: keyDraft });
+    const res = await fetchModelList(keyDraft);
+    if (res.ok) {
+      setModels({ phase: 'ok', models: res.models });
+      toast.success(`${res.models.length} ${tt('ai.set.models.loaded')}`);
+      window.setTimeout(() => modelsRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 60);
+    } else {
+      setConfig({ apiKey: prev.apiKey });
+      setModels({ phase: 'fail', message: res.error, hintKey: res.hintKey ?? 'ai.err.title', detail: res.detail });
+    }
+  };
+
+  const filteredModels = useMemo(() => {
+    const list = models.models ?? [];
+    const q = modelFilter.trim().toLowerCase();
+    if (!q) return list;
+    return list.filter((m) => m.toLowerCase().includes(q));
+  }, [models.models, modelFilter]);
 
   const runTest = async () => {
     if (!config.baseUrl.trim() || !config.model.trim() || !keyDraft.trim()) {
@@ -90,7 +127,7 @@ export function AiSettingsDialog() {
       toast.success(tt('ai.set.test.ok'));
     } else {
       setConfig({ apiKey: prev.apiKey }); // ব্যর্থ হলে পুরনো কিতে ফেরত
-      setTest({ phase: 'fail', message: res.error, hintKey: res.hintKey });
+      setTest({ phase: 'fail', message: res.error, hintKey: res.hintKey, detail: res.detail });
     }
   };
 
@@ -182,16 +219,82 @@ export function AiSettingsDialog() {
           </div>
           <div className="ai-field">
             <Label htmlFor="ai-model" className="ai-field-label">{tt('ai.set.model')}</Label>
-            <Input
-              id="ai-model"
-              value={config.model}
-              onChange={(e) => setConfig({ model: e.target.value })}
-              placeholder="glm-4.5v"
-              autoComplete="off"
-              spellCheck={false}
-            />
+            <div className="flex gap-1.5">
+              <Input
+                id="ai-model"
+                value={config.model}
+                onChange={(e) => setConfig({ model: e.target.value })}
+                placeholder="glm-4.5v"
+                autoComplete="off"
+                spellCheck={false}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="ai-models-btn shrink-0"
+                onClick={() => void loadModels()}
+                disabled={models.phase === 'loading'}
+                title={tt('ai.set.models.load')}
+              >
+                {models.phase === 'loading'
+                  ? <Loader2 size={13} className="animate-spin" aria-hidden="true" />
+                  : <ListChecks size={13} aria-hidden="true" />}
+                <span className="hidden sm:inline">{tt('ai.set.models.load')}</span>
+              </Button>
+            </div>
+            <p className="ai-field-hint">{tt('ai.set.models.hint')}</p>
           </div>
         </div>
+
+        {/* মডেল তালিকা — প্রোভাইডার থেকে সরাসরি (404-মুক্ত বাছাই) */}
+        {models.phase === 'ok' && models.models ? (
+          <div className="ai-models-panel" ref={modelsRef}>
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <Search size={13} className="ai-key-icon" aria-hidden="true" />
+                <Input
+                  value={modelFilter}
+                  onChange={(e) => setModelFilter(e.target.value)}
+                  placeholder={tt('ai.set.models.filterPh')}
+                  className="ai-key-input pl-8 h-8 text-xs"
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+              </div>
+              <span className="text-xs text-muted-foreground shrink-0">{models.models.length}</span>
+            </div>
+            <div className="ai-models-list" role="listbox" aria-label={tt('ai.set.models.load')}>
+              {filteredModels.slice(0, 120).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  role="option"
+                  aria-selected={config.model === m}
+                  className={cn('ai-models-item', config.model === m && 'ai-models-item-on')}
+                  onClick={() => {
+                    setConfig({ model: m });
+                    toast.success(`${tt('ai.set.model')}: ${m}`);
+                  }}
+                >
+                  {m}
+                </button>
+              ))}
+              {filteredModels.length === 0 ? (
+                <p className="px-2 py-3 text-xs text-muted-foreground">{tt('ai.set.models.none')}</p>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+        {models.phase === 'fail' ? (
+          <div className="ai-test-result ai-test-fail" role="alert">
+            <CircleAlert size={13} aria-hidden="true" />
+            <span className="min-w-0 flex-1">
+              {tt(models.hintKey ?? 'ai.err.title')}
+              {models.detail ? ` — ${models.detail}` : ''}
+            </span>
+          </div>
+        ) : null}
 
         <div className="ai-field">
           <Label htmlFor="ai-key" className="ai-field-label">{tt('ai.set.key')}</Label>
@@ -253,7 +356,7 @@ export function AiSettingsDialog() {
           ) : null}
         </div>
         {test.phase === 'fail' && test.message ? (
-          <p className="ai-test-detail">{test.message}</p>
+          <p className="ai-test-detail">{test.message}{test.detail ? ` — ${test.detail}` : ''}</p>
         ) : null}
 
         {/* কি কোথায় পাব — ধাপে ধাপে গাইড */}

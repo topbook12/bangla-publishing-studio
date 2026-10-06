@@ -10,6 +10,8 @@
 
 import { useAiStore, providerPreset } from './ai-store';
 import type { AiBubbleMode } from './ai-bubble-store';
+import type { Editor } from '@tiptap/react';
+import type { Node as PMNode } from 'prosemirror-model';
 
 // ─── সিস্টেম প্রম্পট ───
 
@@ -120,8 +122,8 @@ export const SELECTION_MODES: SelectionModeDef[] = [
     labelKey: 'ai.sel.makeTable',
     tipKey: 'ai.sel.makeTable.tip',
     kind: 'replace',
-    buildPrompt: (s) =>
-      `নিচের অংশের তথ্যগুলো সুন্দর একটি Markdown টেবিলে সাজাও (প্রথম সারি হেডার)। টেবিলের বাইরে কিছু লিখবে না:\n\n---\n${s}\n---`,
+    buildPrompt: (s, custom) =>
+      `নিচের অংশের তথ্যগুলো সুন্দর একটি Markdown টেবিলে সাজাও (প্রথম সারি হেডার)। টেবিলের বাইরে কিছু লিখবে না।${custom?.trim() ? `\nলেখকের নির্দেশ: ${custom.trim()}` : ''}\n\n---\n${s}\n---`,
   },
   {
     id: 'explain',
@@ -130,6 +132,22 @@ export const SELECTION_MODES: SelectionModeDef[] = [
     kind: 'insert',
     buildPrompt: (s) =>
       `নিচের বইয়ের অংশটি পাঠকের জন্য সহজ ভাষায় বিস্তারিত ব্যাখ্যা করো (মূল লেখাটি নতুন করে লিখবে না, শুধু ব্যাখ্যা দেবে):\n\n---\n${s}\n---`,
+  },
+  {
+    id: 'verify',
+    labelKey: 'ai.sel.verify',
+    tipKey: 'ai.sel.verify.tip',
+    kind: 'insert',
+    buildPrompt: (s) =>
+      `নিচের বইয়ের অংশটির সঠিকতা যাচাই করো — বানান, ব্যাকরণ, তথ্য-অসংগতি, সংখ্যা/এককের ভুল ও কাঠামোগত সমস্যা খুঁজে বের করো। প্রতিটি সমস্যা নম্বর-তালিকায় দাও: কী ভুল, কোথায় (মূল অংশের উদ্ধৃতি দিয়ে), কীভাবে ঠিক করা যায়। কোনো ভুল না পেলে স্পষ্ট লেখো যে সব ঠিক আছে:\n\n---\n${s}\n---`,
+  },
+  {
+    id: 'continue',
+    labelKey: 'ai.sel.continue',
+    tipKey: 'ai.sel.continue.tip',
+    kind: 'insert',
+    buildPrompt: (s, custom) =>
+      `${custom?.trim() ? `লেখকের নির্দেশ: ${custom.trim()}\n\n` : ''}নিচের বইয়ের অংশটির ধারা অব্যাহত রেখে পরের অংশটি লিখে দাও — একই ভাষা, একই বিষয়, একই বলিষ্ঠা; আগের লেখা পুনরাবৃত্তি করবে না (৩–৫ প্যারাগ্রাফ):\n\n---\n${s}\n---`,
   },
   {
     id: 'custom',
@@ -154,6 +172,8 @@ export interface AiTextResult {
   demo?: boolean;
   error?: string;
   hintKey?: string;
+  /** সার্ভারের বাড়তি ব্যাখ্যা (যেমন 404-এ চেষ্টা করা ঠিকানা) */
+  detail?: string;
 }
 
 async function callTextApi(opts: {
@@ -195,14 +215,19 @@ export interface SelectionAiOptions {
   custom?: string;
   imageDataUrl?: string | null;
   tableContext?: string;
+  /** প্রেক্ষাপট পুরো পেজ কি না (প্রম্পটে স্পষ্ট বলা হয়) */
+  pageScope?: boolean;
 }
 
 /** সিলেকশন-ট্রান্সফর্ম চালানো → Markdown উত্তর */
 export async function runSelectionAi(opts: SelectionAiOptions): Promise<AiTextResult> {
   const base = opts.mode.buildPrompt(opts.selection, opts.custom);
+  const scopeLine = opts.pageScope
+    ? 'নিচে বইয়ের একটি সম্পূর্ণ পেজের কনটেন্ট দেওয়া হলো (মার্কডাউন আকারে) — পুরো পেজটির প্রেক্ষাপট মাথায় রেখে কাজ করো।'
+    : 'নিচে বইয়ের নির্বাচিত অংশটি দেওয়া হলো।';
   const prompt = opts.tableContext
     ? `এটি বইয়ের একটি টেবিল (Markdown সারি):\n---\n${opts.tableContext}\n---\n\n${base}\n\nউত্তরে পুরো টেবিলটি Markdown পাইপ-টেবিল হিসেবে ফেরত দাও।`
-    : `${base}\n\nউত্তর শুধু চূড়ান্ত Markdown কনটেন্ট হবে।`;
+    : `${scopeLine}\n\n${base}\n\nউত্তর শুধু চূড়ান্ত Markdown কনটেন্ট হবে।`;
   const res = await callTextApi({
     prompt,
     system: AI_EDIT_SYSTEM,
@@ -400,4 +425,92 @@ export function markdownToHtml(mdRaw: string): string {
 /** এডিটর টেবিল → Markdown পাইপ-রো (AI প্রেক্ষাপটের জন্য) */
 export function tableRowsToMarkdown(rows: string[][]): string {
   return rows.map((r) => `| ${r.join(' | ')} |`).join('\n');
+}
+
+// ─── পুরো পেজ → Markdown (AI-কে সম্পূর্ণ পেজ-প্রেক্ষাপট দিতে) ───
+
+const PAGE_MD_CAP = 12_000;
+
+/** এডিটরের পুরো পেজ কনটেন্ট পাঠযোগ্য Markdown-এ রূপ দেওয়া (AI প্রেক্ষাপট) */
+export function pageToMarkdown(editor: Editor, cap = PAGE_MD_CAP): string {
+  const lines: string[] = [];
+
+  const tableToMd = (table: PMNode) => {
+    const rows: string[][] = [];
+    table.forEach((row) => {
+      const cells: string[] = [];
+      row.forEach((cell) => cells.push(cell.textContent.trim().replace(/\|/g, '।')));
+      rows.push(cells);
+    });
+    if (!rows.length) return;
+    const width = Math.max(...rows.map((r) => r.length));
+    const norm = rows.map((r) => {
+      const c = [...r];
+      while (c.length < width) c.push('');
+      return c;
+    });
+    const [head, ...body] = norm;
+    lines.push(`| ${head.join(' | ')} |`);
+    lines.push(`| ${head.map(() => '---').join(' | ')} |`);
+    for (const r of body) lines.push(`| ${r.join(' | ')} |`);
+    lines.push('');
+  };
+
+  const walk = (node: PMNode): void => {
+    switch (node.type.name) {
+      case 'heading': {
+        const level = Math.min(Math.max(Number(node.attrs.level ?? 2), 1), 6);
+        lines.push(`${'#'.repeat(level)} ${node.textContent.trim()}`, '');
+        break;
+      }
+      case 'paragraph':
+        if (node.textContent.trim()) lines.push(node.textContent.trim(), '');
+        break;
+      case 'bulletList':
+        node.forEach((li) => {
+          const t = li.textContent.trim();
+          if (t) lines.push(`- ${t}`);
+        });
+        lines.push('');
+        break;
+      case 'orderedList': {
+        let i = 1;
+        node.forEach((li) => {
+          const t = li.textContent.trim();
+          if (t) lines.push(`${i++}. ${t}`);
+        });
+        lines.push('');
+        break;
+      }
+      case 'blockquote':
+        node.forEach((p) => {
+          if (p.textContent.trim()) lines.push(`> ${p.textContent.trim()}`);
+        });
+        lines.push('');
+        break;
+      case 'codeBlock':
+        lines.push('```', node.textContent, '```', '');
+        break;
+      case 'table':
+        tableToMd(node);
+        break;
+      default: {
+        // ধারক নোড (doc, callout, designBox…) — সন্তানদের হাঁটা
+        node.forEach((child) => walk(child));
+      }
+    }
+  };
+
+  try {
+    walk(editor.state.doc as unknown as PMNode);
+  } catch {
+    // যেকোনো অপ্রত্যাশিত নোড-কাঠামোয় সাধ্যমতো লেখা ফেরত
+    try {
+      return editor.state.doc.textBetween(0, editor.state.doc.content.size, '\n', ' ').slice(0, cap);
+    } catch {
+      return '';
+    }
+  }
+  const md = lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  return md.length > cap ? `${md.slice(0, cap)}…` : md;
 }
