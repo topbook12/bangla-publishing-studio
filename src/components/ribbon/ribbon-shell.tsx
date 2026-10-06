@@ -22,6 +22,7 @@ import { LayoutTab } from './layout-tab';
 import { DesignTab } from './design-tab';
 import { ReviewTab } from './review-tab';
 import { ExportTab } from './export-tab';
+import { AiTab } from './ai-tab';
 
 /**
  * Decorative accent hue per ribbon group (consumed by globals.css for icon/label tints).
@@ -56,6 +57,9 @@ const GROUP_ACCENTS: Record<string, string> = {
   'export file': 'emerald',
   'creative formats': 'violet',
   backup: 'slate',
+  'ai vision': 'fuchsia',
+  'ai writer': 'amber',
+  'ai config': 'emerald',
 };
 
 const accentOf = (label: string): string => GROUP_ACCENTS[label.trim().toLowerCase()] ?? 'indigo';
@@ -74,6 +78,7 @@ export const RIBBON_TABS: Array<{ id: RibbonTab; i18nKey: string; fallback: stri
   { id: 'layout', i18nKey: 'rb.tab.layout', fallback: 'Layout' },
   { id: 'design', i18nKey: 'rb.tab.design', fallback: 'Design' },
   { id: 'review', i18nKey: 'rb.tab.review', fallback: 'Review' },
+  { id: 'ai', i18nKey: 'rb.tab.ai', fallback: 'AI' },
   { id: 'export', i18nKey: 'rb.tab.export', fallback: 'Export' },
 ];
 
@@ -310,6 +315,7 @@ export function Ribbon() {
           {activeTab === 'layout' ? <LayoutTab /> : null}
           {activeTab === 'design' ? <DesignTab /> : null}
           {activeTab === 'review' ? <ReviewTab /> : null}
+          {activeTab === 'ai' ? <AiTab /> : null}
           {activeTab === 'export' ? <ExportTab /> : null}
         </div>
       </div>

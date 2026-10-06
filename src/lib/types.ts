@@ -164,7 +164,7 @@ export interface TocEntry {
 
 // ─── UI স্টেট ───
 
-export type RibbonTab = 'home' | 'insert' | 'layout' | 'design' | 'review' | 'export';
+export type RibbonTab = 'home' | 'insert' | 'layout' | 'design' | 'review' | 'export' | 'ai';
 
 export interface SaveState {
   status: 'idle' | 'saving' | 'saved' | 'error';

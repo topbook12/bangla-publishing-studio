@@ -2132,3 +2132,530 @@ html.dark .focus-exit-pill { box-shadow: 0 4px 16px rgb(0 0 0 / 0.5), inset 0 1p
 .status-pill b, .save-indicator, .ribbon-tab-label, .ribbon-group-label {
   font-variant-numeric: tabular-nums;
 }
+
+/* ═══════════════ AI প্রিমিয়াম স্যুট (AI Vision · AI Writer · BYOK) ═══════════════ */
+
+/* হেডারের AI বাটন — কি সেট থাকলে সোনালি ঝিলিক */
+.ai-header-on {
+  color: oklch(0.62 0.13 76);
+  background: color-mix(in oklab, oklch(0.9 0.09 92) 22%, transparent);
+}
+html.dark .ai-header-on {
+  color: oklch(0.85 0.11 88);
+  background: color-mix(in oklab, oklch(0.75 0.12 80) 20%, transparent);
+}
+
+/* ডায়ালগ হেডার টাইল (গ্রেডিয়েন্ট ব্র্যান্ড-চিপ) */
+.ai-head-tile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  color: #fff;
+  background: linear-gradient(135deg, oklch(0.58 0.19 288), oklch(0.5 0.22 320));
+  box-shadow: 0 3px 10px color-mix(in oklab, oklch(0.55 0.2 300) 45%, transparent),
+    inset 0 1px 0 rgb(255 255 255 / 0.35);
+}
+.ai-set-head { padding-bottom: 2px; }
+
+/* কনফিগার্ড স্টেট পিল */
+.ai-state-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 2.5px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--muted-foreground);
+  background: color-mix(in oklab, var(--muted) 55%, transparent);
+}
+.ai-state-pill-on {
+  border-color: color-mix(in oklab, oklch(0.72 0.15 155) 45%, var(--border));
+  color: oklch(0.5 0.14 155);
+  background: color-mix(in oklab, oklch(0.85 0.15 155) 18%, transparent);
+}
+html.dark .ai-state-pill-on { color: oklch(0.8 0.14 155); }
+
+/* প্রোভাইডার কার্ড গ্রিড */
+.ai-prov-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 7px;
+}
+.ai-prov-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+  padding: 8px 9px;
+  border-radius: 11px;
+  border: 1px solid var(--border);
+  background: color-mix(in oklab, var(--card) 92%, transparent);
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+.ai-prov-card:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgb(2 6 23 / 0.08); }
+.ai-prov-card:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
+.ai-prov-card-on {
+  border-color: color-mix(in oklab, var(--primary) 55%, var(--border));
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 14%, transparent),
+    0 4px 14px color-mix(in oklab, var(--primary) 16%, transparent);
+  background: color-mix(in oklab, var(--primary) 5%, var(--card));
+}
+.ai-prov-tile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: 9px;
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.4), 0 2px 6px rgb(2 6 23 / 0.18);
+}
+.ai-prov-meta { display: flex; flex-direction: column; min-width: 0; }
+.ai-prov-name { font-size: 12.5px; font-weight: 650; color: var(--foreground); line-height: 1.2; }
+.ai-prov-desc {
+  font-size: 10.5px;
+  color: var(--muted-foreground);
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.ai-field-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: color-mix(in oklab, var(--foreground) 82%, transparent);
+}
+
+/* কি ইনপুট */
+.ai-key-icon {
+  position: absolute;
+  left: 9px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted-foreground);
+  pointer-events: none;
+}
+.ai-key-eye {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  padding: 4px;
+  border-radius: 6px;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition: color 0.14s ease, background-color 0.14s ease;
+}
+.ai-key-eye:hover { color: var(--foreground); background: var(--muted); }
+.ai-key-input { font-family: ui-monospace, SFMono-Regular, monospace; font-size: 12.5px; letter-spacing: 0.04em; }
+
+/* টেস্ট/সেভ বাটন */
+.ai-test-btn {
+  background: linear-gradient(180deg, color-mix(in oklab, var(--primary) 92%, white), var(--primary));
+  color: var(--primary-foreground);
+}
+.ai-save-btn {
+  background: linear-gradient(135deg, oklch(0.6 0.17 288), oklch(0.52 0.2 318));
+  color: #fff;
+  box-shadow: 0 3px 10px color-mix(in oklab, oklch(0.55 0.2 300) 40%, transparent),
+    inset 0 1px 0 rgb(255 255 255 / 0.3);
+}
+.ai-save-btn:hover { filter: brightness(1.06); }
+.ai-test-result {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+.ai-test-ok {
+  color: oklch(0.5 0.14 155);
+  background: color-mix(in oklab, oklch(0.85 0.15 155) 20%, transparent);
+}
+.ai-test-fail {
+  color: oklch(0.52 0.19 25);
+  background: color-mix(in oklab, oklch(0.85 0.15 25) 18%, transparent);
+}
+.ai-test-detail {
+  font-size: 11px;
+  color: var(--muted-foreground);
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  word-break: break-all;
+  margin-top: -6px;
+}
+
+/* কি-গাইড */
+.ai-help {
+  border: 1px solid color-mix(in oklab, var(--primary) 16%, var(--border));
+  background: linear-gradient(180deg, color-mix(in oklab, var(--primary) 5%, var(--card)), var(--card));
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.ai-help-title { font-size: 13px; font-weight: 700; color: var(--foreground); }
+.ai-help-steps {
+  margin: 8px 0 10px;
+  padding-left: 20px;
+  font-size: 12.5px;
+  color: color-mix(in oklab, var(--foreground) 80%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ai-video-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px dashed color-mix(in oklab, var(--primary) 35%, var(--border));
+  color: color-mix(in oklab, var(--primary) 80%, var(--foreground));
+}
+.ai-custom-note { font-size: 11.5px; color: var(--muted-foreground); }
+.ai-security-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--muted-foreground);
+  padding: 9px 11px;
+  border-radius: 10px;
+  background: color-mix(in oklab, oklch(0.72 0.15 155) 8%, transparent);
+  border: 1px solid color-mix(in oklab, oklch(0.72 0.15 155) 22%, transparent);
+}
+.ai-security-note svg { flex-shrink: 0; margin-top: 1px; color: oklch(0.55 0.14 155); }
+
+/* ─── AI সহায়ক (ভিশন) ডায়ালগ ─── */
+
+.ai-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 11px;
+  background: var(--muted);
+}
+.ai-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.ai-tab:hover { color: var(--foreground); }
+.ai-tab:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
+.ai-tab-on {
+  background: var(--background);
+  color: var(--foreground);
+  box-shadow: 0 1px 4px rgb(2 6 23 / 0.12);
+}
+
+/* ড্রপজোন — ড্যাশড গ্রেডিয়েন্ট বর্ডার, গ্লো হোভার */
+.ai-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 30px 16px;
+  border-radius: 14px;
+  border: 1.5px dashed color-mix(in oklab, var(--primary) 38%, var(--border));
+  background:
+    radial-gradient(120% 90% at 50% 0%, color-mix(in oklab, var(--primary) 7%, transparent), transparent 70%),
+    color-mix(in oklab, var(--card) 96%, transparent);
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+}
+.ai-drop:hover, .ai-drop:focus-visible {
+  border-color: color-mix(in oklab, var(--primary) 65%, var(--border));
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--primary) 10%, transparent);
+  outline: none;
+}
+.ai-drop-over {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 5px color-mix(in oklab, var(--primary) 16%, transparent);
+  transform: scale(1.01);
+}
+.ai-drop-icon { color: color-mix(in oklab, var(--primary) 70%, var(--muted-foreground)); }
+.ai-drop-title { font-size: 13.5px; font-weight: 650; color: var(--foreground); }
+.ai-drop-hint { font-size: 11.5px; color: var(--muted-foreground); }
+
+/* থাম্বনেইল রো */
+.ai-thumb-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border-radius: 13px;
+  border: 1px solid var(--border);
+  background: color-mix(in oklab, var(--card) 94%, transparent);
+}
+.ai-thumb {
+  width: 92px;
+  height: 66px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: white;
+  flex-shrink: 0;
+}
+.ai-thumb-meta { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.ai-thumb-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--foreground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 300px;
+}
+.ai-thumb-dim { font-size: 11px; color: var(--muted-foreground); font-variant-numeric: tabular-nums; }
+
+/* নির্দেশ চিপস */
+.ai-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.ai-chip {
+  font-size: 11.5px;
+  font-weight: 550;
+  padding: 4.5px 11px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, var(--primary) 22%, var(--border));
+  background: color-mix(in oklab, var(--primary) 4%, var(--card));
+  color: color-mix(in oklab, var(--foreground) 85%, transparent);
+  cursor: pointer;
+  transition: all 0.14s ease;
+}
+.ai-chip:hover {
+  border-color: color-mix(in oklab, var(--primary) 55%, var(--border));
+  background: color-mix(in oklab, var(--primary) 10%, var(--card));
+  transform: translateY(-1px);
+}
+.ai-chip:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
+.ai-chip:disabled { opacity: 0.55; cursor: default; }
+
+/* বিশ্লেষণ বাটন (গ্রেডিয়েন্ট প্রিমিয়াম) */
+.ai-analyze-btn {
+  background: linear-gradient(135deg, oklch(0.58 0.19 288), oklch(0.52 0.22 318) 55%, oklch(0.62 0.16 350));
+  color: #fff;
+  box-shadow: 0 4px 14px color-mix(in oklab, oklch(0.55 0.2 300) 42%, transparent),
+    inset 0 1px 0 rgb(255 255 255 / 0.32);
+}
+.ai-analyze-btn:hover { filter: brightness(1.07); }
+.ai-analyze-btn:disabled { opacity: 0.6; filter: saturate(0.7); }
+
+/* শিমার প্রোগ্রেস বার (splash-bar পরিবার) */
+.ai-progress {
+  display: inline-block;
+  position: relative;
+  width: 130px;
+  height: 6px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--primary) 12%, var(--muted));
+  overflow: hidden;
+}
+.ai-progress > span {
+  position: absolute;
+  inset: 0;
+  width: 45%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, transparent, color-mix(in oklab, var(--primary) 65%, transparent), transparent);
+  animation: splash-shimmer 1.15s ease-in-out infinite;
+}
+
+/* সেটআপ প্যানেল */
+.ai-setup {
+  border: 1px solid color-mix(in oklab, oklch(0.75 0.12 80) 45%, var(--border));
+  background:
+    radial-gradient(110% 100% at 0% 0%, color-mix(in oklab, oklch(0.85 0.1 90) 12%, transparent), transparent 60%),
+    var(--card);
+  border-radius: 13px;
+  padding: 13px 15px;
+  position: relative;
+}
+.ai-setup::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  border-radius: 999px 0 0 999px;
+  background: linear-gradient(180deg, oklch(0.85 0.1 92), oklch(0.72 0.13 76));
+}
+.ai-setup-title { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--foreground); }
+.ai-setup-title svg { color: oklch(0.62 0.13 76); }
+.ai-setup-desc { font-size: 12px; line-height: 1.55; color: var(--muted-foreground); margin: 5px 0 10px; }
+.ai-demo-note { font-size: 11px; color: var(--muted-foreground); margin-top: 8px; }
+.ai-demo-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 2px 7px;
+  border-radius: 999px;
+  color: oklch(0.5 0.1 76);
+  background: color-mix(in oklab, oklch(0.88 0.09 92) 55%, transparent);
+  border: 1px solid color-mix(in oklab, oklch(0.75 0.11 82) 55%, transparent);
+}
+html.dark .ai-demo-badge { color: oklch(0.85 0.1 88); }
+.ai-keyless-hint { font-size: 11.5px; color: var(--muted-foreground); }
+
+/* ত্রুটি কার্ড */
+.ai-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 11px 13px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in oklab, oklch(0.7 0.18 25) 35%, var(--border));
+  background: color-mix(in oklab, oklch(0.85 0.13 25) 10%, var(--card));
+  font-size: 12.5px;
+}
+.ai-error > svg { color: oklch(0.55 0.19 25); flex-shrink: 0; margin-top: 1px; }
+.ai-error-title { font-weight: 700; margin-bottom: 2px; }
+.ai-error-detail { font-size: 11px; color: var(--muted-foreground); font-family: ui-monospace, SFMono-Regular, monospace; word-break: break-all; margin-top: 3px; }
+.ai-error button { margin-left: auto; flex-shrink: 0; }
+
+/* রেজাল্ট প্যানেল */
+.ai-result {
+  border: 1px solid color-mix(in oklab, oklch(0.72 0.15 155) 30%, var(--border));
+  background: linear-gradient(180deg, color-mix(in oklab, oklch(0.85 0.13 155) 5%, var(--card)), var(--card));
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+.ai-result-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--foreground);
+}
+.ai-result-count {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  padding: 1.5px 7px;
+  border-radius: 999px;
+  background: var(--muted);
+}
+.ai-block-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  scrollbar-width: thin;
+}
+.ai-block-list::-webkit-scrollbar { width: 7px; }
+.ai-block-list::-webkit-scrollbar-thumb { border-radius: 999px; background: color-mix(in oklab, var(--muted-foreground) 30%, transparent); }
+.ai-block {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 7px 9px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: color-mix(in oklab, var(--card) 96%, transparent);
+  cursor: pointer;
+  transition: opacity 0.14s ease, border-color 0.14s ease;
+}
+.ai-block:hover { border-color: color-mix(in oklab, var(--primary) 35%, var(--border)); }
+.ai-block input[type='checkbox'] { margin-top: 3px; accent-color: var(--primary); }
+.ai-block-off { opacity: 0.45; }
+.ai-block-icon { flex-shrink: 0; margin-top: 3px; color: color-mix(in oklab, var(--primary) 75%, var(--muted-foreground)); }
+.ai-block-body { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.ai-block-kind { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted-foreground); }
+.ai-block-text {
+  font-size: 12.5px;
+  color: var(--foreground);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.ai-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 550;
+  color: color-mix(in oklab, var(--foreground) 85%, transparent);
+  cursor: pointer;
+  user-select: none;
+}
+.ai-check input[type='checkbox'] { accent-color: var(--primary); }
+.ai-check-img { margin-top: 9px; }
+
+/* লাইভ প্রিভিউ — বইয়ে যা বসবে */
+.ai-live-preview {
+  margin-top: 11px;
+  border-radius: 11px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.ai-live-preview-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+  padding: 5px 10px;
+  background: var(--muted);
+}
+.ai-live-preview-body {
+  padding: 12px 14px;
+  background: white;
+  color: #171717;
+  font-size: 13px;
+  line-height: 1.65;
+  max-height: 200px;
+  overflow-y: auto;
+}
+html.dark .ai-live-preview-body { background: oklch(0.24 0.01 260); color: oklch(0.93 0.005 260); }
+.ai-live-preview-body h2 { font-size: 16px; font-weight: 700; margin: 0 0 6px; }
+.ai-live-preview-body h3 { font-size: 14px; font-weight: 650; margin: 8px 0 4px; }
+.ai-live-preview-body p { margin: 0 0 7px; }
+.ai-live-preview-body ul, .ai-live-preview-body ol { margin: 0 0 7px; padding-left: 20px; }
+.ai-live-preview-body table { border-collapse: collapse; margin: 4px 0 8px; font-size: 12px; }
+.ai-live-preview-body th, .ai-live-preview-body td { border: 1px solid #d4d4d8; padding: 4px 8px; text-align: left; }
+.ai-live-preview-body th { background: #f4f4f5; font-weight: 650; }
+html.dark .ai-live-preview-body th { background: oklch(0.3 0.01 260); }
+html.dark .ai-live-preview-body th, html.dark .ai-live-preview-body td { border-color: oklch(0.4 0.01 260); }
+.ai-live-preview-body blockquote { border-left: 3px solid var(--primary); margin: 0 0 7px; padding: 2px 10px; color: color-mix(in oklab, #171717 75%, transparent); }
+.ai-live-preview-body pre { background: #f4f4f5; border-radius: 8px; padding: 8px 10px; font-size: 12px; overflow-x: auto; margin: 0 0 7px; }
+.ai-live-preview-body img { max-width: 100%; height: auto; border-radius: 6px; }
+
+/* সন্নিবেশ বাটন */
+.ai-insert-btn {
+  background: linear-gradient(135deg, oklch(0.62 0.16 155), oklch(0.52 0.15 165));
+  color: #fff;
+  box-shadow: 0 3px 12px color-mix(in oklab, oklch(0.55 0.15 160) 40%, transparent),
+    inset 0 1px 0 rgb(255 255 255 / 0.3);
+}
+.ai-insert-btn:hover { filter: brightness(1.07); }
+
+/* মোবাইলে প্রোভাইডার কার্ড এক-কলাম */
+@media (max-width: 480px) {
+  .ai-prov-grid { grid-template-columns: 1fr 1fr; }
+  .ai-thumb-row { flex-wrap: wrap; }
+}

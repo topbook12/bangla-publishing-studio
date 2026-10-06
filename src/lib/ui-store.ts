@@ -19,7 +19,12 @@ export type DialogName =
   | 'findReplace'
   | 'snapshots'
   | 'krutiConverter'
+  | 'aiVision'
+  | 'aiSettings'
   | 'help';
+
+/** AI ডায়ালগের কোন ট্যাব নিয়ে খুলবে */
+export type AiVisionTab = 'vision' | 'text';
 
 /** localStorage থেকে '1'/'0' ফ্ল্যাগ পড়া — ব্যর্থ হলে fallback */
 function readBoolFlag(key: string, fallback: boolean): boolean {
@@ -48,11 +53,15 @@ interface UiState {
   openDialog: DialogName | null;
   /** pageChrome ডায়ালগ কোন পাতার জন্য খোলা হয়েছে */
   pageChromeId: string | null;
+  /** AI ডায়ালগের প্রাথমিক ট্যাব (open-এর আগে সেট করা হয়) */
+  aiVisionTab: AiVisionTab;
   /** আউটলাইন নেভিগেটর সাইডবার খোলা আছে কি না */
   navigatorOpen: boolean;
   /** ফোকাস মোড (নিরবচ্ছিন্ন লেখা) চালু আছে কি না */
   focusMode: boolean;
   open: (name: DialogName) => void;
+  /** AI ডায়ালগ নির্দিষ্ট ট্যাবসহ খোলা */
+  openAi: (tab: AiVisionTab) => void;
   openPageChrome: (pageId: string) => void;
   close: () => void;
   toggleNavigator: () => void;
@@ -63,9 +72,11 @@ interface UiState {
 export const useUiStore = create<UiState>((set, get) => ({
   openDialog: null,
   pageChromeId: null,
+  aiVisionTab: 'vision',
   navigatorOpen: readBoolFlag('bwp-navigator-open', false),
   focusMode: readBoolFlag('bwp-focus-mode', false),
   open: (name) => set({ openDialog: name }),
+  openAi: (tab) => set({ openDialog: 'aiVision', aiVisionTab: tab }),
   openPageChrome: (pageId) => set({ openDialog: 'pageChrome', pageChromeId: pageId }),
   close: () => set({ openDialog: null, pageChromeId: null }),
   toggleNavigator: () => {

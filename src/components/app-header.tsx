@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import {
   BookOpenCheck, Check, CircleHelp, CloudOff, FilePlus2, Focus, FolderOpen, History, ListTree, Loader2, Moon, PenLine,
-  Save, Sun, Trash2, Copy, Pencil, Menu, Globe,
+  Save, Sun, Trash2, Copy, Pencil, Menu, Globe, Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -25,6 +25,7 @@ import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useEditorStore } from '@/lib/store';
 import { useUiStore } from '@/lib/ui-store';
+import { useAiStore } from '@/lib/ai-store';
 import { useT, useLangStore, useFmtDate, LANGUAGES } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
@@ -115,6 +116,31 @@ function LanguageSwitcher() {
         ))}
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+/** AI কনফিগারেশন — কি সেট থাকলে সোনালি উজ্জ্বল (BYOK স্ট্যাটাস) */
+function AiSettingsButton() {
+  const tt = useT();
+  const openDialog = useUiStore((s) => s.open);
+  const configured = useAiStore((s) => !!s.config.apiKey.trim());
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn('header-action max-sm:hidden', configured && 'ai-header-on')}
+          aria-label={tt('hdr.ai.tip')}
+          aria-pressed={configured}
+          title={tt('hdr.ai.tip')}
+          onClick={() => openDialog('aiSettings')}
+        >
+          <Sparkles size={17} />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="bottom">{tt('hdr.ai.tip')}</TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -225,6 +251,7 @@ export function AppHeader() {
         <SaveIndicator />
         <span className="hidden text-xs text-muted-foreground md:inline">{now}</span>
         <LanguageSwitcher />
+        <AiSettingsButton />
         <NavigatorToggle />
         <FocusModeToggle />
         <ThemeToggle />

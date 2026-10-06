@@ -14,6 +14,8 @@ import { FindReplaceDialog, useFindReplaceShortcuts } from './find-replace-dialo
 import { SnapshotsDialog } from './snapshots-dialog';
 import { HelpDialog } from './help-dialog';
 import { KrutiConverterDialog } from './kruti-converter-dialog';
+import { AiVisionDialog } from './ai-vision-dialog';
+import { AiSettingsDialog } from './ai-settings-dialog';
 
 export function Dialogs() {
   useFindReplaceShortcuts();
@@ -28,6 +30,8 @@ export function Dialogs() {
       <FindReplaceDialog />
       <SnapshotsDialog />
       <KrutiConverterDialog />
+      <AiVisionDialog />
+      <AiSettingsDialog />
       <HelpDialog />
     </>
   );

@@ -1,0 +1,182 @@
+/**
+ * AI ক্লায়েন্ট হেল্পার (ব্রাউজার সাইড)
+ * ────────────────────────────────────
+ *  - ছবি ফাইল/পেস্ট/ড্র্যাগ → ক্যানভাসে ডাউনস্কেল (≤1568px) → dataURL
+ *    (বড় স্ক্রিনশটেও দ্রুত আপলোড — প্রিমিয়াম গতি)
+ *  - /api/ai/chat-এ কল — BYOK কনফিগ সহ (কি localStorage থেকে শুধু
+ *    রিকোয়েস্টে যায়, কোথাও জমা হয় না)
+ *  - কঠোর JSON সিস্টেম প্রম্পট (ai-content.ts-এর স্কিমার সাথে মিলিয়ে)
+ */
+
+import { useAiStore, providerPreset } from './ai-store';
+import type { AiResult } from './ai-content';
+import { extractJson } from './ai-content';
+
+// ─── সিস্টেম প্রম্পট (কঠোর JSON) ───
+
+const JSON_SCHEMA_RULES = `Return ONLY valid JSON — no markdown fences, no commentary before or after. Shape exactly:
+{
+  "title": string,
+  "caption": string,
+  "blocks": [
+    { "type": "heading",   "text": string, "level": 2 or 3 },
+    { "type": "paragraph", "text": string },
+    { "type": "bullets",   "items": string[] },
+    { "type": "numbered",  "items": string[] },
+    { "type": "table",     "rows": string[][] },
+    { "type": "callout",   "text": string, "variant": "concept" | "warning" | "formula" | "note" },
+    { "type": "quote",     "text": string },
+    { "type": "code",      "text": string }
+  ]
+}
+Rules:
+- "title" = short heading for the content; "caption" = one-line figure caption (empty string if none).
+- Write the content in the SAME language the user's instruction uses (default: Bengali).
+- Transcribe ALL visible text faithfully; keep numbers, units, formulas exactly.
+- Convert flowcharts/diagrams into numbered steps or bullets as requested.
+- Tables -> rows arrays, first row = header row. 6–14 blocks typical. No empty blocks.`;
+
+export const AI_VISION_SYSTEM = `You are the AI publishing engine of "Bangla Publishing Studio" — an expert book-composition assistant for Bengali, Hindi and English books. The user uploads an image (book diagram, screenshot, scanned page, table, figure, handwritten notes) and gives an instruction. Study the image carefully and turn it into book-ready structured content following the instruction. ${JSON_SCHEMA_RULES}`;
+
+export const AI_TEXT_SYSTEM = `You are the AI writing assistant of "Bangla Publishing Studio" — an expert book writer for Bengali, Hindi and English books. Write book-ready, well-structured content for the user's request. ${JSON_SCHEMA_RULES}`;
+
+// ─── ছবি প্রি-প্রসেসিং ───
+
+export interface PreparedImage {
+  dataUrl: string;
+  width: number;
+  height: number;
+  name: string;
+  bytes: number;
+}
+
+const MAX_DIM = 1568; // বড় ভিশন মডেলগুলোর সুইট-স্পট
+
+/** ফাইল → প্রয়োজনে ডাউনস্কেল করা dataURL (PNG হলে PNG, নইলে JPEG) */
+export async function prepareImageFile(file: File): Promise<PreparedImage> {
+  const rawUrl = await readAsDataUrl(file);
+  const img = await loadImage(rawUrl);
+  const scale = Math.min(1, MAX_DIM / Math.max(img.naturalWidth, img.naturalHeight));
+  const w = Math.max(1, Math.round(img.naturalWidth * scale));
+  const h = Math.max(1, Math.round(img.naturalHeight * scale));
+
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return { dataUrl: rawUrl, width: img.naturalWidth, height: img.naturalHeight, name: file.name, bytes: file.size };
+  ctx.drawImage(img, 0, 0, w, h);
+
+  const isPng = /image\/png/i.test(file.type);
+  const mime = isPng ? 'image/png' : 'image/jpeg';
+  const dataUrl = canvas.toDataURL(mime, isPng ? undefined : 0.9);
+  const bytes = Math.round((dataUrl.length - dataUrl.indexOf(',') - 1) * 0.75);
+  return { dataUrl, width: w, height: h, name: file.name || 'image', bytes };
+}
+
+function readAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(String(fr.result));
+    fr.onerror = () => reject(new Error('READ_FAIL'));
+    fr.readAsDataURL(file);
+  });
+}
+
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('IMAGE_DECODE_FAIL'));
+    img.src = src;
+  });
+}
+
+// ─── API কল ───
+
+export interface AiCallResult {
+  ok: boolean;
+  text?: string;
+  demo?: boolean;
+  error?: string;
+  hintKey?: string;
+}
+
+/** সেভ করা BYOK কনফিগ (থাকলে) সহ /api/ai/chat কল */
+export async function callAi(opts: {
+  prompt: string;
+  system: string;
+  imageDataUrl?: string | null;
+  /** কি বাদ দিয়ে বিল্ট-ইন ডেমো SDK ব্যবহার */
+  demo?: boolean;
+}): Promise<AiCallResult> {
+  const config = useAiStore.getState().config;
+  const preset = providerPreset(config.provider);
+  const useOwnKey = !opts.demo && config.apiKey.trim().length > 0;
+
+  try {
+    const res = await fetch('/api/ai/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt: opts.prompt,
+        system: opts.system,
+        imageDataUrl: opts.imageDataUrl ?? null,
+        config: useOwnKey
+          ? {
+              baseUrl: config.baseUrl || preset.baseUrl,
+              apiKey: config.apiKey,
+              model: config.model || preset.visionModel || preset.model,
+              provider: config.provider,
+            }
+          : null,
+      }),
+    });
+    const data = (await res.json()) as AiCallResult;
+    return data;
+  } catch {
+    return { ok: false, error: 'NETWORK', hintKey: 'ai.err.network' };
+  }
+}
+
+/** ভিশন কল + JSON পার্স; ব্যর্থ হলে কারণসহ ফেরত */
+export async function analyzeImage(opts: {
+  imageDataUrl: string;
+  instruction: string;
+  demo?: boolean;
+}): Promise<{ ok: true; result: AiResult; demo?: boolean } | { ok: false; error: string; hintKey?: string; parseFail?: boolean }> {
+  const prompt = [
+    opts.instruction.trim()
+      ? `নির্দেশ (instruction): ${opts.instruction.trim()}`
+      : 'নির্দেশ: ছবির সব লেখা ও কাঠামো বইয়ের উপযোগী করে সুন্দরভাবে সাজিয়ে দাও।',
+    'ছবিটি মনোযোগ দিয়ে দেখে উপরের JSON ফরম্যাটে কনটেন্ট দাও।',
+  ].join('\n');
+
+  const res = await callAi({ prompt, system: AI_VISION_SYSTEM, imageDataUrl: opts.imageDataUrl, demo: opts.demo });
+  if (!res.ok) return { ok: false, error: res.error ?? 'UNKNOWN', hintKey: res.hintKey };
+  const result = extractJson(res.text ?? '');
+  if (!result || result.blocks.length === 0) {
+    return { ok: false, error: 'PARSE', hintKey: 'ai.err.parse', parseFail: true };
+  }
+  return { ok: true, result, demo: res.demo };
+}
+
+/** টেক্সট (AI লেখক) কল + JSON পার্স */
+export async function generateBookText(opts: {
+  instruction: string;
+  demo?: boolean;
+}): Promise<{ ok: true; result: AiResult; demo?: boolean } | { ok: false; error: string; hintKey?: string; parseFail?: boolean }> {
+  const prompt = `নির্দেশ (instruction): ${opts.instruction.trim()}\n\nউপরের JSON ফরম্যাটে বইয়ের উপযোগী কনটেন্ট লেখো।`;
+  const res = await callAi({ prompt, system: AI_TEXT_SYSTEM, demo: opts.demo });
+  if (!res.ok) return { ok: false, error: res.error ?? 'UNKNOWN', hintKey: res.hintKey };
+  const result = extractJson(res.text ?? '');
+  if (!result || result.blocks.length === 0) {
+    return { ok: false, error: 'PARSE', hintKey: 'ai.err.parse', parseFail: true };
+  }
+  return { ok: true, result, demo: res.demo };
+}
+
+/** সংযোগ পরীক্ষা (সেটিংস ডায়ালগ) */
+export async function testAiConnection(demo = false): Promise<AiCallResult> {
+  return callAi({ prompt: 'Reply with exactly: OK', system: 'You are a connection tester.', demo });
+}

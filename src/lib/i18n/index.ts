@@ -25,6 +25,7 @@ import { dictDialogsA } from './dict-dialogs-a';
 import { dictDialogsB } from './dict-dialogs-b';
 import { dictWorkspace } from './dict-workspace';
 import { dictKruti } from './dict-kruti';
+import { dictAi } from './dict-ai';
 
 export const ALL_DICTS: Dict = Object.assign(
   {},
@@ -39,6 +40,7 @@ export const ALL_DICTS: Dict = Object.assign(
   dictDialogsB,
   dictWorkspace,
   dictKruti,
+  dictAi,
 );
 
 function lookup(key: string, lang: Lang, fallback?: string): string {
