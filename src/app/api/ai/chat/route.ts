@@ -22,7 +22,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import {
-  allowRate, assertSafeBase, clientIp, normalizeBase, originIsLocalHost,
+  allowRate, assertSafeBase, bestModelMatch, clientIp, extractModelIds,
+  isGeminiHost, normalizeBase, originIsLocalHost, sanitizeModelId,
 } from '@/lib/ai-proxy-guard';
 
 export const runtime = 'nodejs';
@@ -43,7 +44,9 @@ interface ChatBody {
 }
 
 const TIMEOUT_MS = 180_000;
-const MAX_TOKENS = 4096;
+// 8192 — thinking মডেল (gemini-2.5-flash ইত্যাদি) চিন্তা-টোকেনও এর মধ্যে খায়;
+// 4096 রাখলে উত্তর খালি আসত (finish_reason=length) — "খালি উত্তর" বাগ
+const MAX_TOKENS = 8192;
 
 // ─── সাইজ ক্যাপ ───
 const MAX_BODY_BYTES = 8 * 1024 * 1024; // 8MB
@@ -65,6 +68,28 @@ function jsonError(error: string, hintKey?: string, status = 200, detail?: strin
 type ContentPart =
   | { type: 'text'; text: string }
   | { type: 'image_url'; image_url: { url: string } };
+
+/** প্রোভাইডারের ত্রুটি-বার্তা (raw) বের করা — রোগ-নির্ণয়ের মূল পথ */
+async function providerErrorDetail(res: Response): Promise<string> {
+  try {
+    let errJson = (await res.json()) as unknown;
+    // Google-ধাঁচের কিছু এন্ডপয়েন্ট অ্যারে-মোড়ানো ত্রুটি দেয়: [{"error":{...}}]
+    if (Array.isArray(errJson)) errJson = errJson[0];
+    const obj = (errJson ?? {}) as Record<string, unknown>;
+    const err = obj?.error as Record<string, unknown> | string | undefined;
+    if (typeof err === 'string') return err;
+    return (err?.message as string) ?? (obj?.message as string) ?? '';
+  } catch {
+    return (await res.text().catch(() => '')).slice(0, 300);
+  }
+}
+
+async function throwUpstream(res: Response): Promise<never> {
+  const detail = (await providerErrorDetail(res)).slice(0, 400);
+  const e = new Error(`${res.status}${detail ? `: ${detail}` : ''}`) as Error & { status?: number };
+  e.status = res.status;
+  throw e;
+}
 
 async function callOpenAiCompatible(config: AiProxyConfig, body: ChatBody): Promise<{ text: string }> {
   const base = normalizeBase(config.baseUrl);
@@ -105,19 +130,7 @@ async function callOpenAiCompatible(config: AiProxyConfig, body: ChatBody): Prom
     signal: AbortSignal.timeout(TIMEOUT_MS),
   });
 
-  if (!res.ok) {
-    let detail = '';
-    try {
-      const errJson = await res.json();
-      detail = errJson?.error?.message ?? errJson?.message ?? '';
-    } catch {
-      detail = await res.text().catch(() => '');
-    }
-    detail = detail.slice(0, 400);
-    const e = new Error(`${res.status}${detail ? `: ${detail}` : ''}`) as Error & { status?: number };
-    e.status = res.status;
-    throw e;
-  }
+  if (!res.ok) await throwUpstream(res);
 
   const data = (await res.json()) as {
     choices?: Array<{ message?: { content?: unknown } }>;
@@ -132,6 +145,124 @@ async function callOpenAiCompatible(config: AiProxyConfig, body: ChatBody): Prom
   }
   if (!text.trim()) throw new Error('EMPTY_RESPONSE');
   return { text };
+}
+
+// ─── Gemini native ফলব্যাক (OpenAI-সামঞ্জস্য স্তর 404 দিলে) ───
+
+interface GeminiPart {
+  text?: string;
+  inline_data?: { mime_type: string; data: string };
+}
+
+/** OpenAI-ধাঁচের বডি → Gemini native generateContent বডি */
+function geminiPayload(body: ChatBody): Record<string, unknown> {
+  const parts: GeminiPart[] = [{ text: body.prompt ?? '' }];
+  if (body.imageDataUrl) {
+    const m = body.imageDataUrl.match(/^data:(image\/[a-z0-9.+-]+);base64,(.+)$/i);
+    if (m) parts.push({ inline_data: { mime_type: m[1].toLowerCase(), data: m[2] } });
+  }
+  const payload: Record<string, unknown> = {
+    contents: [{ role: 'user', parts }],
+    generationConfig: { temperature: 0.4, maxOutputTokens: MAX_TOKENS },
+  };
+  if (body.system) payload.systemInstruction = { parts: [{ text: body.system }] };
+  return payload;
+}
+
+/** Gemini native এন্ডপয়েন্ট — সর্বাপেক্ষ নির্ভরযোগ্য পথ (compat স্তর বাদ) */
+async function callGeminiNative(apiKey: string, model: string, body: ChatBody): Promise<{ text: string }> {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+    body: JSON.stringify(geminiPayload(body)),
+    signal: AbortSignal.timeout(TIMEOUT_MS),
+  });
+  if (!res.ok) await throwUpstream(res);
+
+  const data = (await res.json()) as {
+    candidates?: Array<{ content?: { parts?: Array<{ text?: string }> }; finishReason?: string }>;
+    promptFeedback?: { blockReason?: string };
+  };
+  const cand = data.candidates?.[0];
+  const text = (cand?.content?.parts ?? []).map((p) => p?.text ?? '').join('');
+  if (!text.trim()) {
+    const why = data.promptFeedback?.blockReason ?? cand?.finishReason;
+    throw new Error(why && why !== 'STOP' ? `EMPTY_RESPONSE:${why}` : 'EMPTY_RESPONSE');
+  }
+  return { text };
+}
+
+/** প্রোভাইডার থেকে উপলব্ধ মডেল-তালিকা (Gemini-তে compat ব্যর্থ হলে native) */
+async function fetchUpstreamModelIds(base: string, apiKey: string, provider?: string): Promise<string[]> {
+  const headers: Record<string, string> = { Authorization: `Bearer ${apiKey}` };
+  if (provider === 'claude') {
+    headers['x-api-key'] = apiKey;
+    headers['anthropic-version'] = '2023-06-01';
+  }
+  const res = await fetch(`${base}models`, {
+    method: 'GET',
+    headers,
+    signal: AbortSignal.timeout(30_000),
+  });
+  if (!res.ok) {
+    if (isGeminiHost(base)) {
+      // native তালিকা — x-goog-api-key দিয়ে
+      const nres = await fetch('https://generativelanguage.googleapis.com/v1beta/models', {
+        method: 'GET',
+        headers: { 'x-goog-api-key': apiKey },
+        signal: AbortSignal.timeout(30_000),
+      });
+      if (!nres.ok) await throwUpstream(res); // আসল (compat) ত্রুটিটাই বেশি অর্থবহ
+      return extractModelIds(await nres.json());
+    }
+    await throwUpstream(res);
+  }
+  return extractModelIds(await res.json());
+}
+
+/**
+ * স্বয়ং-নিরাময়ী (self-healing) AI কল — 404 মানে মডেল/URL চেনা যায়নি,
+ * কিন্তু কারণ ও সমাধান দুটোই প্রায়ই আমাদের হাতেই আছে:
+ *  ধাপ ১ — Gemini হলে native :generateContent এন্ডপয়েন্টে চেষ্টা (compat স্তরের সমস্যা এড়ায়)
+ *  ধাপ ২ — প্রোভাইডারের মডেল-তালিকা এনে নিকটতম সঠিক মডেল দিয়ে একবার পুনরায় চেষ্টা
+ *  দুটোই ব্যর্থ হলে আসল 404 — প্রোভাইডারের raw বার্তাসহ (নিচে throw হয়)
+ */
+async function callWithSelfHeal(
+  config: AiProxyConfig,
+  body: ChatBody,
+): Promise<{ text: string; fixedModel?: string }> {
+  const gemini = isGeminiHost(config.baseUrl);
+  try {
+    return await callOpenAiCompatible(config, body);
+  } catch (err) {
+    const e = err as Error & { status?: number };
+    if (e.status !== 404) throw err;
+
+    // ধাপ ১: Gemini native ফলব্যাক
+    if (gemini) {
+      try {
+        return await callGeminiNative(config.apiKey, config.model, body);
+      } catch (err2) {
+        const e2 = err2 as Error & { status?: number };
+        // native-ও 404 → মডেলই নেই, ধাপ ২-এ যাই; অন্য ত্রুটি হলে সেটাই আসল কারণ
+        if (e2.status !== 404) throw err2;
+      }
+    }
+
+    // ধাপ ২: মডেল-তালিকা থেকে নিকটতম মিল দিয়ে একবার পুনরায়
+    try {
+      const ids = await fetchUpstreamModelIds(normalizeBase(config.baseUrl), config.apiKey, config.provider);
+      const fixed = bestModelMatch(config.model, ids);
+      if (fixed && fixed.toLowerCase() !== config.model.toLowerCase()) {
+        const retry = await callOpenAiCompatible({ ...config, model: fixed }, body);
+        return { text: retry.text, fixedModel: fixed };
+      }
+    } catch {
+      /* তালিকা/পুনরায় ব্যর্থ — নিচে আসল 404-ই ফেরত যাবে */
+    }
+    throw err;
+  }
 }
 
 /** সীমিত ডেমো মোড — প্ল্যাটফর্মের বিল্ট-ইন SDK */
@@ -220,9 +351,18 @@ export async function POST(req: NextRequest) {
     if (!safeBase) {
       return jsonError('Base URL not allowed', 'ai.err.badUrl');
     }
+    // মডেল-আইডি পরিচ্ছন্ন — অদৃশ্য অক্ষর/ফাঁকা থাকলেই প্রোভাইডার 404 দেয়
+    const cfg: AiProxyConfig = {
+      baseUrl: safeBase,
+      apiKey: c!.apiKey.trim(),
+      model: sanitizeModelId(c!.model),
+      provider: c!.provider,
+    };
+    if (!cfg.model) return jsonError('MODEL_EMPTY', 'ai.err.config');
+
     try {
-      const { text } = await callOpenAiCompatible({ ...c!, baseUrl: safeBase }, body);
-      return NextResponse.json({ ok: true, text });
+      const { text, fixedModel } = await callWithSelfHeal(cfg, body);
+      return NextResponse.json({ ok: true, text, ...(fixedModel ? { fixedModel } : {}) });
     } catch (err) {
       const e = err as Error & { status?: number; cause?: { code?: string } };
       const msg = e?.message ?? 'AI request failed';
@@ -234,15 +374,24 @@ export async function POST(req: NextRequest) {
       if (msg === 'EMPTY_RESPONSE') {
         return jsonError(msg, 'ai.err.empty');
       }
+      if (msg.startsWith('EMPTY_RESPONSE:')) {
+        // নিরাপত্তা-নীতি/অন্য কারণে আটকে খালি উত্তর — কারণটি raw-তেই দেখা যাবে
+        const why = msg.slice('EMPTY_RESPONSE:'.length);
+        return jsonError(msg, why === 'LENGTH' ? 'ai.err.empty' : 'ai.err.blocked');
+      }
       if (msg === 'TIMEOUT_ERROR' || e?.name === 'TimeoutError' || e?.name === 'AbortError') {
         return jsonError(msg, 'ai.err.timeout');
       }
-      if (status === 401 || status === 403) {
+      if (status === 401 || status === 403 || status === 402) {
         return jsonError(msg, 'ai.err.auth');
       }
+      if (status === 400) {
+        // Gemini অবৈধ কিকেও 400 দেয় ("Please pass a valid API key") — raw বার্তা দেখুন
+        return jsonError(msg, 'ai.err.badRequest');
+      }
       if (status === 404) {
-        // কোন ঠিকানায় গিয়েছিলাম — ইউজার যেন নিজেই মিলিয়ে নিতে পারে
-        const triedUrl = `${safeBase}chat/completions (মডেল: ${c!.model})`;
+        // কোন ঠিকানায় গিয়েছিলাম + প্রোভাইডার ঠিক কী বলেছিল — ইউজার নিজেই মিলিয়ে নিতে পারে
+        const triedUrl = `${safeBase}chat/completions (মডেল: ${cfg.model})`;
         return jsonError(msg, 'ai.err.model', 200, triedUrl);
       }
       if (status === 429) {

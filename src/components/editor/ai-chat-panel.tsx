@@ -23,7 +23,7 @@ import { useEditorStore } from '@/lib/store';
 import { getEditor } from '@/lib/editor-registry';
 import { useAiStore, providerPreset } from '@/lib/ai-store';
 import { useAiChatStore } from '@/lib/ai-chat-store';
-import { runChatAi, markdownToHtml } from '@/lib/ai-assistant';
+import { runChatAi, markdownToHtml, rawProviderLine } from '@/lib/ai-assistant';
 import { prepareImageFile } from '@/lib/ai-client';
 import type { PreparedImage } from '@/lib/ai-client';
 import { useT } from '@/lib/i18n';
@@ -149,8 +149,13 @@ export function AiChatPanel() {
     setSending(false);
     if (res.ok && (res.markdown ?? res.text)) {
       addAssistant((res.markdown ?? res.text ?? '').trim(), res.demo);
+      if (res.fixedModel) {
+        toast.info(`${tt('ai.err.fixedModel')} ${res.fixedModel}`);
+      }
     } else {
-      setError(tt(res.hintKey ?? 'ai.err.title'));
+      // বন্ধুত্বপূর্ণ ইঙ্গিত + প্রোভাইডারের raw বার্তা — রোগ-নির্ণয় সহজ হয়
+      const raw = rawProviderLine(res.error, tt('ai.err.raw'));
+      setError([tt(res.hintKey ?? 'ai.err.title'), raw].filter(Boolean).join('\n'));
     }
   };
 
@@ -289,7 +294,7 @@ export function AiChatPanel() {
       {error ? (
         <div className="ai-bubble-error mx-3" role="alert">
           <CircleAlert size={14} aria-hidden="true" />
-          <p className="min-w-0 flex-1">{error}</p>
+          <p className="min-w-0 flex-1 whitespace-pre-line break-words">{error}</p>
           <button type="button" className="ai-bubble-x shrink-0" onClick={() => setError(null)} aria-label={tt('ai.bubble.close')}>
             <X size={12} />
           </button>

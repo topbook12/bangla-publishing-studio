@@ -102,6 +102,8 @@ export interface AiCallResult {
   hintKey?: string;
   /** সার্ভারের বাড়তি ব্যাখ্যা (যেমন 404-এ চেষ্টা করা ঠিকানা) */
   detail?: string;
+  /** সার্ভার নিকটতম সঠিক মডেলে স্বয়ংক্রিয় সংশোধন করলে — কোনটিতে */
+  fixedModel?: string;
 }
 
 /** সেভ করা BYOK কনফিগ (থাকলে) সহ /api/ai/chat কল */
@@ -126,9 +128,9 @@ export async function callAi(opts: {
         imageDataUrl: opts.imageDataUrl ?? null,
         config: useOwnKey
           ? {
-              baseUrl: config.baseUrl || preset.baseUrl,
-              apiKey: config.apiKey,
-              model: config.model || preset.visionModel || preset.model,
+              baseUrl: (config.baseUrl || preset.baseUrl).trim(),
+              apiKey: config.apiKey.trim(),
+              model: (config.model || preset.visionModel || preset.model).trim(),
               provider: config.provider,
             }
           : null,
@@ -146,7 +148,7 @@ export async function analyzeImage(opts: {
   imageDataUrl: string;
   instruction: string;
   demo?: boolean;
-}): Promise<{ ok: true; result: AiResult; demo?: boolean } | { ok: false; error: string; hintKey?: string; parseFail?: boolean }> {
+}): Promise<{ ok: true; result: AiResult; demo?: boolean } | { ok: false; error: string; hintKey?: string; detail?: string; parseFail?: boolean }> {
   const prompt = [
     opts.instruction.trim()
       ? `নির্দেশ (instruction): ${opts.instruction.trim()}`
@@ -155,7 +157,7 @@ export async function analyzeImage(opts: {
   ].join('\n');
 
   const res = await callAi({ prompt, system: AI_VISION_SYSTEM, imageDataUrl: opts.imageDataUrl, demo: opts.demo });
-  if (!res.ok) return { ok: false, error: res.error ?? 'UNKNOWN', hintKey: res.hintKey };
+  if (!res.ok) return { ok: false, error: res.error ?? 'UNKNOWN', hintKey: res.hintKey, detail: res.detail };
   const result = extractJson(res.text ?? '');
   if (!result || result.blocks.length === 0) {
     return { ok: false, error: 'PARSE', hintKey: 'ai.err.parse', parseFail: true };
@@ -167,10 +169,10 @@ export async function analyzeImage(opts: {
 export async function generateBookText(opts: {
   instruction: string;
   demo?: boolean;
-}): Promise<{ ok: true; result: AiResult; demo?: boolean } | { ok: false; error: string; hintKey?: string; parseFail?: boolean }> {
+}): Promise<{ ok: true; result: AiResult; demo?: boolean } | { ok: false; error: string; hintKey?: string; detail?: string; parseFail?: boolean }> {
   const prompt = `নির্দেশ (instruction): ${opts.instruction.trim()}\n\nউপরের JSON ফরম্যাটে বইয়ের উপযোগী কনটেন্ট লেখো।`;
   const res = await callAi({ prompt, system: AI_TEXT_SYSTEM, demo: opts.demo });
-  if (!res.ok) return { ok: false, error: res.error ?? 'UNKNOWN', hintKey: res.hintKey };
+  if (!res.ok) return { ok: false, error: res.error ?? 'UNKNOWN', hintKey: res.hintKey, detail: res.detail };
   const result = extractJson(res.text ?? '');
   if (!result || result.blocks.length === 0) {
     return { ok: false, error: 'PARSE', hintKey: 'ai.err.parse', parseFail: true };

@@ -164,6 +164,21 @@ export const modeById = (id: string): SelectionModeDef | undefined =>
 
 // ─── API কল ───
 
+/** সার্ভারের সেন্টিনেল কোড — এগুলো raw "প্রোভাইডারের উত্তর" হিসেবে দেখানো হয় না */
+const RAW_SKIP = new Set([
+  'NETWORK', 'EMPTY_RESPONSE', 'BASE_URL_EMPTY', 'MODEL_EMPTY', 'PARSE',
+  'READ_FAIL', 'IMAGE_DECODE_FAIL', 'INVALID_REQUEST_BODY', 'PAYLOAD_TOO_LARGE',
+]);
+
+/**
+ * প্রোভাইডারের raw ত্রুটি-বার্তা দেখানোর লাইন — "404: models/…" জাতীয় আসল
+ * নির্ণয়-তথ্য; সেন্টিনেল কোড হলে খালি স্ট্রিং (দেখানোর কিছু নেই)।
+ */
+export function rawProviderLine(error: string | undefined, label: string): string {
+  if (!error || RAW_SKIP.has(error)) return '';
+  return `${label} ${error}`;
+}
+
 export interface AiTextResult {
   ok: boolean;
   markdown?: string;
@@ -174,6 +189,8 @@ export interface AiTextResult {
   hintKey?: string;
   /** সার্ভারের বাড়তি ব্যাখ্যা (যেমন 404-এ চেষ্টা করা ঠিকানা) */
   detail?: string;
+  /** সার্ভার নিকটতম সঠিক মডেলে স্বয়ংক্রিয় সংশোধন করলে — কোনটিতে */
+  fixedModel?: string;
 }
 
 async function callTextApi(opts: {
@@ -194,9 +211,9 @@ async function callTextApi(opts: {
         imageDataUrl: opts.imageDataUrl ?? null,
         config: hasKey
           ? {
-              baseUrl: config.baseUrl || preset.baseUrl,
-              apiKey: config.apiKey,
-              model: config.model || preset.model || preset.visionModel,
+              baseUrl: (config.baseUrl || preset.baseUrl).trim(),
+              apiKey: config.apiKey.trim(),
+              model: (config.model || preset.model || preset.visionModel).trim(),
               provider: config.provider,
             }
           : null,
@@ -236,7 +253,7 @@ export async function runSelectionAi(opts: SelectionAiOptions): Promise<AiTextRe
   if (!res.ok) return res;
   const md = (res.markdown ?? res.text ?? '').trim();
   if (!md) return { ok: false, error: 'EMPTY_RESPONSE', hintKey: 'ai.err.empty' };
-  return { ok: true, markdown: md, demo: res.demo };
+  return { ok: true, markdown: md, demo: res.demo, fixedModel: res.fixedModel };
 }
 
 export interface ChatMessage {

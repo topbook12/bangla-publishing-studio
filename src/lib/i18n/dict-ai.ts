@@ -586,6 +586,27 @@ export const dictAi: Dict = {
     hi: 'डेमो मोड अभी अनुपलब्ध — अपनी API Key जोड़ें (सेटिंग्स में)।',
     en: 'Demo mode is unavailable right now — add your own API key (in settings).',
   },
+  // প্রোভাইডারের raw ত্রুটি-বার্তা (রোগ-নির্ণয়) ও স্বয়ংক্রিয় মডেল-সংশোধন নোটিশ
+  'ai.err.raw': {
+    bn: 'প্রোভাইডারের উত্তর:',
+    hi: 'प्रदाता की प्रतिक्रिया:',
+    en: 'Provider said:',
+  },
+  'ai.err.fixedModel': {
+    bn: 'সঠিক মডেল স্বয়ংক্রিয়ভাবে ব্যবহৃত হয়েছে:',
+    hi: 'सही मॉडल स्वतः उपयोग हुआ:',
+    en: 'The correct model was used automatically:',
+  },
+  'ai.err.badRequest': {
+    bn: 'প্রোভাইডার অনুরোধটি গ্রহণ করেনি — নিচের বার্তা মিলিয়ে কি/মডেল/Base URL যাচাই করুন।',
+    hi: 'प्रदाता ने अनुरोध अस्वीकार किया — नीचे संदेश से की/मॉडल/Base URL जाँचें।',
+    en: 'The provider rejected the request — use the message below to check key/model/Base URL.',
+  },
+  'ai.err.blocked': {
+    bn: 'প্রোভাইডার নিরাপত্তা-নীতিতে উত্তরটি আটকে দিয়েছে — ভিন্ন ভঙ্গিতে চেষ্টা করুন।',
+    hi: 'प्रदाता ने सुरक्षा-नीति में उत्तर रोक दिया — अलग ढंग से प्रयास करें।',
+    en: 'The provider blocked the reply under its safety policy — try rephrasing.',
+  },
 
   // ─── প্রথমবার কি-সেটআপ গাইড (টোস্ট) ───
   'ai.onboard.title': {

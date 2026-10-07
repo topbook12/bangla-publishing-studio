@@ -69,6 +69,108 @@ export function autoCompleteKnownHosts(base: string): string {
   }
 }
 
+// ─── মডেল-আইডি পরিচ্ছন্নতা ও স্বয়ংক্রিয় মিলন (404 নির্মূল) ───
+
+/**
+ * কপি-পেস্টে আসা অদৃশ্য অক্ষর (zero-width, bidi, soft-hyphen, control) ও
+ * ফাঁকা সরিয়ে মডেল-আইডি পরিচ্ছন্ন করে। বাংলা টেক্সট/চ্যাট থেকে কপি করা
+ * মডেল-নামে এই জাদু-অক্ষর লুকিয়ে থাকলে প্রোভাইডার 404 "model not found"
+ * দেয় — চোখে দুটি একই দেখায়। এটাই সবচেয়ে সাধারণ 404-এর মূল কারণ।
+ */
+export function sanitizeModelId(raw: string): string {
+  return (raw ?? '')
+    // zero-width ও bidi নিয়ন্ত্রণ অক্ষর
+    .replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u2064\u2066-\u2069\uFEFF\u00AD]/g, '')
+    // ASCII control অক্ষর (newline, tab, NUL…)
+    .replace(/[\u0000-\u001F\u007F]/g, '')
+    // Gemini native তালিকা "models/xxx" আকারে দেয় — প্রিফিক্স বাদ
+    .replace(/^models\//i, '')
+    // উদ্ধৃতি-চিহ্ন ও সব ফাঁকা
+    .replace(/[\s`'"“”‘’«»]+/g, '')
+    // শেষে লেগে থাকা যতিচিহ্ন
+    .replace(/[.,;:!?|]+$/, '')
+    .trim();
+}
+
+/**
+ * চাওয়া মডেল-আইডির সাথে সবচেয়ে ভালো মেলা উপলব্ধ মডেল — 404-এ
+ * স্বয়ংক্রিয় সংশোধনের জন্য (প্রোভাইডারের তালিকা থেকে)।
+ * রিটার্ন null = নিশ্চিত মিল পাওয়া যায়নি।
+ */
+export function bestModelMatch(requested: string, available: string[]): string | null {
+  const want = sanitizeModelId(requested).toLowerCase();
+  if (!want || available.length === 0) return null;
+  const norm = Array.from(new Set(available.map((m) => sanitizeModelId(m)))).filter(Boolean);
+
+  // ১) হুবহু মিল (কেস-অসংবেদনশীল)
+  const exact = norm.find((m) => m.toLowerCase() === want);
+  if (exact) return exact;
+
+  // ২) প্রিফিক্স-মিল — ব্যবহারকারীর লেখার সাথে সবচেয়ে নিখুঁত মিল:
+  //    প্রথমে "ইউজার সম্পূর্ণ নাম + বাড়তি লিখেছে" (যেমন বন্ধ হওয়া ভ্যারিয়েন্ট
+  //    gpt-4o-mini-pro → gpt-4o-mini): দীর্ঘতম = সবচেয়ে নির্দিষ্ট
+  const extended = norm
+    .filter((m) => want.startsWith(m.toLowerCase()))
+    .sort((a, b) => b.length - a.length);
+  if (extended[0]) return extended[0];
+  //    তারপর "ইউজার নামের শুরুটাই লিখেছে" (যেমন gemini-2.5-fla → gemini-2.5-flash):
+  //    সংক্ষিপ্ততম = সবচেয়ে ক্যানোনিকাল
+  const truncated = norm
+    .filter((m) => m.toLowerCase().startsWith(want))
+    .sort((a, b) => a.length - b.length);
+  if (truncated[0]) return truncated[0];
+
+  // ৩) টোকেন-মিল — যেমন "gemini-2.5-flash-turbo" (নেই) চাইলে "gemini-2.5-flash" (আছে)
+  const tokens = want.split(/[-_./:]/).filter(Boolean);
+  let best: string | null = null;
+  let bestScore = 0;
+  for (const m of norm) {
+    const mt = m.toLowerCase().split(/[-_./:]/).filter(Boolean);
+    const shared = mt.filter((t) => tokens.includes(t)).length;
+    const score = shared / Math.max(tokens.length, mt.length);
+    if (score > bestScore || (score === bestScore && best && m.length < best.length)) {
+      bestScore = score;
+      best = m;
+    }
+  }
+  return bestScore >= 0.6 ? best : null;
+}
+
+/** OpenAI-সামঞ্জস্য /models উত্তর থেকে মডেল-আইডি বের করা (উভয় রুট শেয়ার করে) */
+export function extractModelIds(data: unknown): string[] {
+  const ids: string[] = [];
+  const push = (v: unknown) => {
+    if (typeof v === 'string' && v.trim()) ids.push(v.trim());
+  };
+  if (Array.isArray(data)) {
+    for (const item of data) {
+      if (typeof item === 'string') push(item);
+      else if (item && typeof item === 'object') {
+        const obj = item as Record<string, unknown>;
+        push(typeof obj.id === 'string' ? obj.id : (obj.name as string | undefined));
+      }
+    }
+  } else if (data && typeof data === 'object') {
+    const obj = data as Record<string, unknown>;
+    if (Array.isArray(obj.models)) return extractModelIds(obj.models); // Gemini native shape
+    if (Array.isArray(obj.data)) return extractModelIds(obj.data);
+  }
+  // "models/gemini-2.5-flash" → "gemini-2.5-flash" (compat-এ প্রিফিক্স দরকার হয় না)
+  return Array.from(new Set(ids.map((id) => sanitizeModelId(id))))
+    .filter((id) => id.length > 0 && id.length <= 120)
+    .sort((a, b) => a.localeCompare(b))
+    .slice(0, 400);
+}
+
+/** Gemini-এর নিজস্ব হোস্ট কি না (native :generateContent ফলব্যাকের শর্ত) */
+export function isGeminiHost(base: string): boolean {
+  try {
+    return /(^|\.)generativelanguage\.googleapis\.com$/i.test(new URL(base).hostname);
+  } catch {
+    return false;
+  }
+}
+
 // ─── SSRF গার্ড ───
 
 /** ব্লক করা হোস্টনেম (SSRF) */

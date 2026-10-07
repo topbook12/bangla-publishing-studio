@@ -29,7 +29,7 @@ import { useAiStore } from '@/lib/ai-store';
 import { useAiBubbleStore, openAiBubble } from '@/lib/ai-bubble-store';
 import type { AiBubbleRequest } from '@/lib/ai-bubble-store';
 import {
-  SELECTION_MODES, runSelectionAi, markdownToHtml, pageToMarkdown, tableRowsToMarkdown,
+  SELECTION_MODES, runSelectionAi, markdownToHtml, pageToMarkdown, tableRowsToMarkdown, rawProviderLine,
 } from '@/lib/ai-assistant';
 import type { SelectionModeDef } from '@/lib/ai-assistant';
 import { prepareImageFile } from '@/lib/ai-client';
@@ -299,7 +299,8 @@ function AiBubblePanel({ req, style, onClose, configured, ref }: PanelProps) {
   const [phase, setPhase] = useState<Phase>('idle');
   const [result, setResult] = useState<string | null>(null);
   const [resultDemo, setResultDemo] = useState(false);
-  const [error, setError] = useState<{ hintKey: string; detail?: string } | null>(null);
+  const [fixedModel, setFixedModel] = useState<string | null>(null);
+  const [error, setError] = useState<{ hintKey: string; detail?: string; raw?: string } | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
   const busy = phase === 'working';
@@ -334,6 +335,7 @@ function AiBubblePanel({ req, style, onClose, configured, ref }: PanelProps) {
     setPhase('working');
     setError(null);
     setResult(null);
+    setFixedModel(null);
 
     const isTable = m.id === 'table-edit';
     const res = await runSelectionAi({
@@ -348,9 +350,10 @@ function AiBubblePanel({ req, style, onClose, configured, ref }: PanelProps) {
     if (res.ok && res.markdown) {
       setResult(res.markdown);
       setResultDemo(!!res.demo);
+      setFixedModel(res.fixedModel ?? null);
       setPhase('done');
     } else {
-      setError({ hintKey: res.hintKey ?? 'ai.err.title', detail: res.detail ?? res.error });
+      setError({ hintKey: res.hintKey ?? 'ai.err.title', detail: res.detail, raw: res.error });
       setPhase('error');
     }
   }, [busy, image, instruction, contextText, scope, tableRows, tt]);
@@ -611,13 +614,14 @@ function AiBubblePanel({ req, style, onClose, configured, ref }: PanelProps) {
         </div>
       ) : null}
 
-      {/* ত্রুটি */}
+      {/* ত্রুটি — বন্ধুত্বপূর্ণ ইঙ্গিত + প্রোভাইডারের raw বার্তা (রোগ-নির্ণয়) */}
       {phase === 'error' && error ? (
         <div className="ai-bubble-error" role="alert">
           <CircleAlert size={14} aria-hidden="true" />
           <div className="min-w-0">
             <p>{tt(error.hintKey)}</p>
             {error.detail ? <p className="ai-error-detail">{error.detail}</p> : null}
+            {error.raw ? <p className="ai-error-detail">{rawProviderLine(error.raw, tt('ai.err.raw'))}</p> : null}
           </div>
           <Button size="sm" variant="outline" className="h-7 shrink-0 px-2 text-xs" onClick={() => openSettings('aiSettings')}>
             {tt('ai.setup.open')}
@@ -628,6 +632,12 @@ function AiBubblePanel({ req, style, onClose, configured, ref }: PanelProps) {
       {/* ফলাফল */}
       {phase === 'done' && result ? (
         <div className="ai-bubble-result">
+          {fixedModel ? (
+            <p className="mb-1 px-1 text-[11px] leading-snug text-muted-foreground" role="status">
+              <Wand2 size={11} className="mr-1 inline" aria-hidden="true" />
+              {tt('ai.err.fixedModel')} <code className="rounded bg-muted px-1 py-0.5">{fixedModel}</code>
+            </p>
+          ) : null}
           <div className="ai-bubble-preview" aria-label={tt('ai.result.title')}>
             <div dangerouslySetInnerHTML={{ __html: previewHtml }} />
           </div>

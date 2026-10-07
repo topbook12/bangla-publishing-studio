@@ -15,7 +15,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import {
-  allowRate, assertSafeBase, clientIp, originIsLocalHost,
+  allowRate, assertSafeBase, clientIp, extractModelIds, isGeminiHost, originIsLocalHost,
 } from '@/lib/ai-proxy-guard';
 
 export const runtime = 'nodejs';
@@ -34,31 +34,19 @@ function jsonError(error: string, hintKey?: string, detail?: string) {
   return NextResponse.json({ ok: false, error, hintKey, detail }, { status: 200 });
 }
 
-/** OpenAI-সামঞ্জস্য /models উত্তর থেকে মডেল-আইডি বের করা */
-function extractModelIds(data: unknown): string[] {
-  // OpenAI/compat: { data: [{ id }] } · Gemini-compat আইডি "models/xxx" আকারে আসতে পারে
-  const ids: string[] = [];
-  const push = (v: unknown) => {
-    if (typeof v === 'string' && v.trim()) ids.push(v.trim());
-  };
-  if (Array.isArray(data)) {
-    for (const item of data) {
-      if (typeof item === 'string') push(item);
-      else if (item && typeof item === 'object') {
-        const obj = item as Record<string, unknown>;
-        push(typeof obj.id === 'string' ? obj.id : (obj.name as string | undefined));
-      }
-    }
-  } else if (data && typeof data === 'object') {
-    const obj = data as Record<string, unknown>;
-    if (Array.isArray(obj.models)) return extractModelIds(obj.models); // Gemini native shape
-    if (Array.isArray(obj.data)) return extractModelIds(obj.data);
+/** প্রোভাইডারের ত্রুটি-বার্তা (raw) — রোগ-নির্ণয়ের জন্য */
+async function upstreamDetail(res: Response): Promise<string> {
+  try {
+    let errJson = (await res.json()) as unknown;
+    // Google-ধাঁচের অ্যারে-মোড়ানো ত্রুটি: [{"error":{...}}]
+    if (Array.isArray(errJson)) errJson = errJson[0];
+    const obj = (errJson ?? {}) as Record<string, unknown>;
+    const err = obj?.error as Record<string, unknown> | string | undefined;
+    if (typeof err === 'string') return err.slice(0, 300);
+    return ((err?.message as string) ?? (obj?.message as string) ?? '').slice(0, 300);
+  } catch {
+    return (await res.text().catch(() => '')).slice(0, 300);
   }
-  // "models/gemini-2.5-flash" → "gemini-2.5-flash" (compat-এ প্রিফিক্স দরকার হয় না)
-  return Array.from(new Set(ids.map((id) => id.replace(/^models\//i, ''))))
-    .filter((id) => id.length > 0 && id.length <= 120)
-    .sort((a, b) => a.localeCompare(b))
-    .slice(0, MAX_MODELS);
 }
 
 export async function POST(req: NextRequest) {
@@ -105,15 +93,24 @@ export async function POST(req: NextRequest) {
     });
 
     if (!res.ok) {
-      let detail = '';
-      try {
-        const errJson = (await res.json()) as Record<string, unknown>;
-        const err = errJson?.error as Record<string, unknown> | string | undefined;
-        detail = typeof err === 'string' ? err : ((err?.message as string) ?? (errJson?.message as string) ?? '');
-      } catch {
-        detail = await res.text().catch(() => '');
+      // Gemini-তে compat /models ব্যর্থ হলে native তালিকা — সেটাই সবচেয়ে নির্ভরযোগ্য
+      if (isGeminiHost(safeBase)) {
+        const nres = await fetch('https://generativelanguage.googleapis.com/v1beta/models', {
+          method: 'GET',
+          headers: { 'x-goog-api-key': apiKey },
+          signal: AbortSignal.timeout(TIMEOUT_MS),
+        });
+        if (!nres.ok) {
+          const detail = await upstreamDetail(nres);
+          const e = new Error(`${nres.status}${detail ? `: ${detail}` : ''}`) as Error & { status?: number };
+          e.status = nres.status;
+          throw e;
+        }
+        const models = extractModelIds(await nres.json());
+        if (models.length === 0) return jsonError('NO_MODELS', 'ai.err.model', `${safeBase}models`);
+        return NextResponse.json({ ok: true, models });
       }
-      detail = detail.slice(0, 300);
+      const detail = await upstreamDetail(res);
       const e = new Error(`${res.status}${detail ? `: ${detail}` : ''}`) as Error & { status?: number };
       e.status = res.status;
       throw e;

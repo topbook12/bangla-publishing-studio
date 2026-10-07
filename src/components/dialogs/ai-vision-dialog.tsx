@@ -150,7 +150,8 @@ export function AiVisionDialog() {
       setResultDemo(!!res.demo);
       setPhase('done');
     } else {
-      setError({ hintKey: res.hintKey ?? 'ai.err.title', detail: res.error });
+      // চেষ্টা-করা ঠিকানা + প্রোভাইডারের raw বার্তা — দুটোই রোগ-নির্ণয়ে কাজে লাগে
+      setError({ hintKey: res.hintKey ?? 'ai.err.title', detail: [res.detail, res.error].filter(Boolean).join('\n') });
       setPhase('error');
     }
   };
