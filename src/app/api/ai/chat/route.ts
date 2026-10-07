@@ -23,7 +23,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   allowRate, assertSafeBase, bestModelMatch, clientIp, extractModelIds,
-  isGeminiHost, normalizeBase, originIsLocalHost, sanitizeModelId,
+  extractSuggestedModel, isGeminiHost, isModelRetiredMessage, normalizeBase,
+  originIsLocalHost, sanitizeModelId,
 } from '@/lib/ai-proxy-guard';
 
 export const runtime = 'nodejs';
@@ -85,9 +86,14 @@ async function providerErrorDetail(res: Response): Promise<string> {
 }
 
 async function throwUpstream(res: Response): Promise<never> {
-  const detail = (await providerErrorDetail(res)).slice(0, 400);
-  const e = new Error(`${res.status}${detail ? `: ${detail}` : ''}`) as Error & { status?: number };
+  const detail = (await providerErrorDetail(res)).slice(0, 800);
+  const e = new Error(`${res.status}${detail ? `: ${detail}` : ''}`) as Error & {
+    status?: number;
+    /** প্রোভাইডারের raw বার্তা — self-heal এর পরামর্শ-পার্সারের উৎস */
+    providerDetail?: string;
+  };
   e.status = res.status;
+  e.providerDetail = detail;
   throw e;
 }
 
@@ -224,39 +230,62 @@ async function fetchUpstreamModelIds(base: string, apiKey: string, provider?: st
 /**
  * স্বয়ং-নিরাময়ী (self-healing) AI কল — 404 মানে মডেল/URL চেনা যায়নি,
  * কিন্তু কারণ ও সমাধান দুটোই প্রায়ই আমাদের হাতেই আছে:
- *  ধাপ ১ — Gemini হলে native :generateContent এন্ডপয়েন্টে চেষ্টা (compat স্তরের সমস্যা এড়ায়)
- *  ধাপ ২ — প্রোভাইডারের মডেল-তালিকা এনে নিকটতম সঠিক মডেল দিয়ে একবার পুনরায় চেষ্টা
- *  দুটোই ব্যর্থ হলে আসল 404 — প্রোভাইডারের raw বার্তাসহ (নিচে throw হয়)
+ *  ধাপ ১ — প্রোভাইডারের ত্রুটি-বার্তাতেই প্রতিস্থাপন-মডেলের নাম লেখা থাকলে
+ *          ("…use models/gemini-3.8-flash…") সেটাতেই সরাসরি পুনরায় — সবচেয়ে নির্ভরযোগ্য
+ *  ধাপ ২ — Gemini হলে native :generateContent এন্ডপয়েন্টে চেষ্টা (compat স্তরের সমস্যা এড়ায়)
+ *  ধাপ ৩ — প্রোভাইডারের মডেল-তালিকা এনে নিকটতম সঠিক মডেল দিয়ে একবার পুনরায় চেষ্টা
+ *          (অবসর-ঘোষিত মডেল তালিকায় থাকলেও বাদ — সেটাতে ফিরে গেলে আবারই 404)
+ *  সব ব্যর্থ হলে আসল 404 — প্রোভাইডারের raw বার্তাসহ (নিচে throw হয়)
  */
 async function callWithSelfHeal(
   config: AiProxyConfig,
   body: ChatBody,
 ): Promise<{ text: string; fixedModel?: string }> {
   const gemini = isGeminiHost(config.baseUrl);
+  const tryCompat = (model: string) => callOpenAiCompatible({ ...config, model }, body);
+  const tryNative = (model: string) => callGeminiNative(config.apiKey, model, body);
+
   try {
-    return await callOpenAiCompatible(config, body);
+    return await tryCompat(config.model);
   } catch (err) {
-    const e = err as Error & { status?: number };
+    const e = err as Error & { status?: number; providerDetail?: string };
     if (e.status !== 404) throw err;
 
-    // ধাপ ১: Gemini native ফলব্যাক
+    const detail = e.providerDetail ?? e.message ?? '';
+    const retired = isModelRetiredMessage(detail);
+    const suggested = extractSuggestedModel(detail, config.model);
+
+    // ধাপ ১: প্রোভাইডারের নিজের সুপারিশ করা মডেল
+    if (suggested) {
+      try {
+        return { ...(await tryCompat(suggested)), fixedModel: suggested };
+      } catch { /* নিচের ধাপে */ }
+      if (gemini) {
+        try {
+          return { ...(await tryNative(suggested)), fixedModel: suggested };
+        } catch { /* নিচের ধাপে */ }
+      }
+    }
+
+    // ধাপ ২: Gemini native ফলব্যাক — চাওয়া মডেলেই
     if (gemini) {
       try {
-        return await callGeminiNative(config.apiKey, config.model, body);
+        return await tryNative(config.model);
       } catch (err2) {
         const e2 = err2 as Error & { status?: number };
-        // native-ও 404 → মডেলই নেই, ধাপ ২-এ যাই; অন্য ত্রুটি হলে সেটাই আসল কারণ
+        // native-ও 404 → মডেলই নেই, ধাপ ৩-এ যাই; অন্য ত্রুটি হলে সেটাই আসল কারণ
         if (e2.status !== 404) throw err2;
       }
     }
 
-    // ধাপ ২: মডেল-তালিকা থেকে নিকটতম মিল দিয়ে একবার পুনরায়
+    // ধাপ ৩: মডেল-তালিকা থেকে নিকটতম মিল দিয়ে একবার পুনরায়
     try {
       const ids = await fetchUpstreamModelIds(normalizeBase(config.baseUrl), config.apiKey, config.provider);
-      const fixed = bestModelMatch(config.model, ids);
+      // অবসর-ঘোষিত মডেল তালিকায় "এখনও থাকে" — সেটাতেই মিললে আবার 404-ই হবে, তাই বাদ
+      const usable = retired ? ids.filter((m) => m.toLowerCase() !== config.model.toLowerCase()) : ids;
+      const fixed = bestModelMatch(config.model, usable);
       if (fixed && fixed.toLowerCase() !== config.model.toLowerCase()) {
-        const retry = await callOpenAiCompatible({ ...config, model: fixed }, body);
-        return { text: retry.text, fixedModel: fixed };
+        return { ...(await tryCompat(fixed)), fixedModel: fixed };
       }
     } catch {
       /* তালিকা/পুনরায় ব্যর্থ — নিচে আসল 404-ই ফেরত যাবে */

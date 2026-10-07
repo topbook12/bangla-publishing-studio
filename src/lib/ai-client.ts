@@ -137,6 +137,11 @@ export async function callAi(opts: {
       }),
     });
     const data = (await res.json()) as AiCallResult;
+    // স্বয়ং-নিরাময়: প্রোভাইডারের পরামর্শমতো সঠিক মডেলে চলে গেলে সেটাই সেভ করে
+    // রাখি — পরের প্রতিটি কল সরাসরি সঠিক মডেলে যায়, আর 404 দেখা যায় না
+    if (data.ok && data.fixedModel) {
+      useAiStore.getState().setConfig({ model: data.fixedModel });
+    }
     return data;
   } catch {
     return { ok: false, error: 'NETWORK', hintKey: 'ai.err.network' };

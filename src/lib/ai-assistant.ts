@@ -220,6 +220,11 @@ async function callTextApi(opts: {
       }),
     });
     const data = (await res.json()) as AiTextResult;
+    // স্বয়ং-নিরাময়: প্রোভাইডারের পরামর্শমতো সঠিক মডেলে চলে গেলে সেটাই সেভ —
+    // পরের কলগুলো সরাসরি সঠিক মডেলে যায় (404 আর দেখা যায় না)
+    if (data.ok && data.fixedModel) {
+      useAiStore.getState().setConfig({ model: data.fixedModel });
+    }
     return data;
   } catch {
     return { ok: false, error: 'NETWORK', hintKey: 'ai.err.network' };

@@ -55,8 +55,10 @@ export const AI_PROVIDERS: AiProviderPreset[] = [
     name: 'Google Gemini',
     descKey: 'ai.prov.gemini.desc',
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/',
-    model: 'gemini-2.5-flash',
-    visionModel: 'gemini-2.5-flash',
+    // gemini-2.5-flash নতুন ব্যবহারকারীদের জন্য বন্ধ — প্রোভাইডারের সুপারিশমতো
+    // বর্তমান ফ্ল্যাশ মডেল; পুরনো সেভ করা মডেল হলে কলে স্বয়ং-নিরাময় সেটাকেই বদলে দেয়
+    model: 'gemini-3.8-flash',
+    visionModel: 'gemini-3.8-flash',
     keyUrl: 'https://aistudio.google.com/apikey',
   },
   {

@@ -593,9 +593,9 @@ export const dictAi: Dict = {
     en: 'Provider said:',
   },
   'ai.err.fixedModel': {
-    bn: 'সঠিক মডেল স্বয়ংক্রিয়ভাবে ব্যবহৃত হয়েছে:',
-    hi: 'सही मॉडल स्वतः उपयोग हुआ:',
-    en: 'The correct model was used automatically:',
+    bn: 'প্রোভাইডারের পরামর্শমতো মডেল বদলে সেভ করা হয়েছে:',
+    hi: 'प्रदाता की सलाह अनुसार मॉडल बदलकर सेव किया गया:',
+    en: 'Model auto-switched & saved as the provider suggested:',
   },
   'ai.err.badRequest': {
     bn: 'প্রোভাইডার অনুরোধটি গ্রহণ করেনি — নিচের বার্তা মিলিয়ে কি/মডেল/Base URL যাচাই করুন।',

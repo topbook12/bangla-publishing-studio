@@ -136,6 +136,64 @@ export function bestModelMatch(requested: string, available: string[]): string |
   return bestScore >= 0.6 ? best : null;
 }
 
+// ─── প্রোভাইডারের ত্রুটি-বার্তা → প্রতিস্থাপন-মডেলের পরামর্শ ───
+
+/** সাধারণ ইংরেজি শব্দ — মডেল-আইডি নয় (false-positive বাদ দিতে) */
+const NON_MODEL_WORDS = new Set([
+  'the', 'this', 'that', 'your', 'you', 'code', 'model', 'models', 'api', 'key',
+  'please', 'update', 'latest', 'feature', 'features', 'and', 'for', 'with',
+  'from', 'into', 'instead', 'error', 'invalid', 'not', 'found', 'available',
+  'version', 'endpoint', 'request', 'response', 'docs', 'documentation',
+]);
+
+/** মডেল-আইডি রূপের মতো দেখায় কি না — সংখ্যা থাকা বা পরিচিত ভেন্ডর-প্রিফিক্স */
+function looksLikeModelId(id: string): boolean {
+  if (id.length < 4 || id.length > 120) return false;
+  if (NON_MODEL_WORDS.has(id.toLowerCase())) return false;
+  if (/[0-9]/.test(id)) return true; // প্রায় সব মডেল-আইডিতে সংখ্যা থাকে (gpt-4o, gemini-3.8-flash…)
+  return /^(gpt|gemini|claude|glm|llama|qwen|deepseek|mistral|grok|doubao|kimi|moonshot|ernie|phi|mixtral|command|nova|pixtral|minimax|stable|flux|o\d)/i.test(id);
+}
+
+/**
+ * প্রোভাইডারের ত্রুটি-বার্তা থেকে "প্রতিস্থাপন-মডেলের" পরামর্শ বের করা —
+ * অনেক প্রোভাইডার (যেমন Gemini) অবসর-ঘোষণার সাথেই নতুন মডেলের নাম লিখে দেয়:
+ *   "…no longer available to new users. Please update your code to use
+ *    models/gemini-3.8-flash for the latest features…"
+ * → ফেরত "gemini-3.8-flash"। ফেরত null = বার্তায় কোনো পরামর্শ নেই।
+ */
+export function extractSuggestedModel(detail: string, requested: string): string | null {
+  if (!detail) return null;
+  const req = sanitizeModelId(requested).toLowerCase();
+  // URL আগেই বাদ — লিংকের পাথেও মডেল-সদৃশ টোকেন থাকে (যেমন /gemini-api/docs)
+  const text = detail.replace(/https?:\/\/\S+/g, ' ');
+  const candidates: string[] = [];
+
+  // (ক) "models/<id>" সরাসরি উল্লেখ — Gemini-র স্ট্যান্ডার্ড রীতি, সবচেয়ে নির্ভরযোগ্য
+  for (const m of text.matchAll(/models\/([A-Za-z0-9._-]+)/g)) candidates.push(m[1]);
+  // (খ) উদ্ধৃতি/ব্যাকটিকে মোড়ানো: `gemini-3.8-flash`, 'gpt-4o' ইত্যাদি
+  for (const m of text.matchAll(/[`'"“”‘’]([A-Za-z0-9][A-Za-z0-9._-]{1,119}[A-Za-z0-9])[`'"“”‘’]/g)) candidates.push(m[1]);
+  // (গ) পরামর্শ-শব্দের পরে খালি নাম: "use gemini-3.8-flash", "try gpt-4o"
+  for (const m of text.matchAll(
+    /\b(?:use|using|try|switch(?:ing)?\s+to|instead|mean|recommend(?:ed)?)\s+(?:to\s+|the\s+|a\s+)?([A-Za-z0-9][A-Za-z0-9._-]{1,119})/gi,
+  )) candidates.push(m[1]);
+
+  for (const raw of candidates) {
+    const id = sanitizeModelId(raw);
+    if (!looksLikeModelId(id)) continue;
+    if (req && id.toLowerCase() === req) continue; // একই মডেলে পুনরায় অর্থহীন
+    return id;
+  }
+  return null;
+}
+
+/**
+ * মডেল অবসর/নতুন ব্যবহারকারীর জন্য বন্ধ জাতীয় ঘোষণা কি না — এ হলে
+ * প্রোভাইডারের তালিকায় মডেলটি "এখনও দেখা গেলেও" সেটাতেই পুনরায় চেষ্টা অর্থহীন।
+ */
+export function isModelRetiredMessage(detail: string): boolean {
+  return /no longer available|deprecat|retired|discontinu|not available to new|sunset|no longer support/i.test(detail ?? '');
+}
+
 /** OpenAI-সামঞ্জস্য /models উত্তর থেকে মডেল-আইডি বের করা (উভয় রুট শেয়ার করে) */
 export function extractModelIds(data: unknown): string[] {
   const ids: string[] = [];
