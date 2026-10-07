@@ -40,7 +40,7 @@ export const dictExport: Dict = {
   'exp.toast.docx.done': { bn: 'DOCX ডাউনলোড হয়েছে', hi: 'DOCX डाउनलोड हो गया', en: 'DOCX downloaded' },
   'exp.toast.docx.fail': { bn: 'DOCX তৈরি করা যায়নি', hi: 'DOCX बनाने में विफल', en: 'Failed to generate DOCX' },
   'exp.toast.epub.building': { bn: 'EPUB তৈরি হচ্ছে…', hi: 'EPUB तैयार हो रहा है…', en: 'Building EPUB…' },
-  'exp.toast.epub.done': { bn: 'EPUB downloaded — যেকোনো ই-বুক রিডারে খুলুন', hi: 'EPUB डाउनलोड हो गया — किसी भी ई-बुक रीडर में खोलें', en: 'EPUB downloaded — open in any e-book reader' },
+  'exp.toast.epub.done': { bn: 'EPUB ডাউনলোড হয়েছে — যেকোনো ই-বুক রিডারে খুলুন', hi: 'EPUB डाउनलोड हो गया — किसी भी ई-बुक रीडर में खोलें', en: 'EPUB downloaded — open in any e-book reader' },
   'exp.toast.epub.fail': { bn: 'EPUB তৈরি করা যায়নি', hi: 'EPUB बनाने में विफल', en: 'Failed to generate EPUB' },
   'exp.toast.md.done': { bn: 'Markdown ডাউনলোড হয়েছে', hi: 'Markdown डाउनलोड हो गया', en: 'Markdown downloaded' },
   'exp.toast.md.fail': { bn: 'Markdown তৈরি করা যায়নি', hi: 'Markdown बनाने में विफल', en: 'Failed to generate Markdown' },

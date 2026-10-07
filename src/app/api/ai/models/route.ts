@@ -15,7 +15,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import {
-  allowRate, assertSafeBase, clientIp, extractModelIds, isGeminiHost, originIsLocalHost,
+  allowRate, assertSafeBase, clientIp, extractModelIds, isGeminiHost, isInvalidKeyMessage,
+  originIsLocalHost,
 } from '@/lib/ai-proxy-guard';
 
 export const runtime = 'nodejs';
@@ -129,6 +130,10 @@ export async function POST(req: NextRequest) {
       return jsonError('TIMEOUT_ERROR', 'ai.err.timeout');
     }
     if (e?.status === 401 || e?.status === 403) {
+      return jsonError(msg, 'ai.err.auth');
+    }
+    // Gemini অবৈধ কি-কেও 400 দেয় ("API key not valid") — network নয়, auth
+    if (e?.status === 400 && isInvalidKeyMessage(msg)) {
       return jsonError(msg, 'ai.err.auth');
     }
     if (e?.status === 404) {

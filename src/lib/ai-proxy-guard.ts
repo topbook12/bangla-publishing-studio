@@ -194,6 +194,15 @@ export function isModelRetiredMessage(detail: string): boolean {
   return /no longer available|deprecat|retired|discontinu|not available to new|sunset|no longer support/i.test(detail ?? '');
 }
 
+/**
+ * প্রোভাইডার অবৈধ/ভুল কি-র বার্তা দিয়েছে কি না। Gemini বৈধ নয়-এমন কিতে
+ * 401 নয়, 400 দেয় ("API key not valid") — এটাকে network/server-এর বদলে
+ * auth (কি সমস্যা) হিসেবেই দেখাতে হয়, নয়তো ইউজার ইন্টারনেট ঠিক করতে বসে থাকে।
+ */
+export function isInvalidKeyMessage(detail: string): boolean {
+  return /api key not valid|invalid api key|please pass a valid api key|api key expired|api_key_invalid/i.test(detail ?? '');
+}
+
 // ─── অস্থায়ী (transient) ত্রুটি — অটো-রিট্রাইয়ের লক্ষ্য ───
 
 /**

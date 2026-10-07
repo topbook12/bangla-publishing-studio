@@ -27,9 +27,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   allowRate, assertSafeBase, backoffDelayMs, bestModelMatch, clientIp,
-  extractModelIds, extractSuggestedModel, isGeminiHost, isModelRetiredMessage,
-  isTransientStatus, liteAlternativeModels, normalizeBase, originIsLocalHost,
-  parseRetryAfterMs, sanitizeModelId,
+  extractModelIds, extractSuggestedModel, isGeminiHost, isInvalidKeyMessage,
+  isModelRetiredMessage, isTransientStatus, liteAlternativeModels, normalizeBase,
+  originIsLocalHost, parseRetryAfterMs, sanitizeModelId,
 } from '@/lib/ai-proxy-guard';
 
 export const runtime = 'nodejs';
@@ -479,7 +479,8 @@ export async function POST(req: NextRequest) {
         return jsonError(msg, 'ai.err.auth');
       }
       if (status === 400) {
-        // Gemini অবৈধ কিকেও 400 দেয় ("Please pass a valid API key") — raw বার্তা দেখুন
+        // Gemini অবৈধ কিকেও 400 দেয় ("Please pass a valid API key") — সেক্ষেত্রে auth-ই সঠিক পরামর্শ
+        if (isInvalidKeyMessage(msg)) return jsonError(msg, 'ai.err.auth');
         return jsonError(msg, 'ai.err.badRequest');
       }
       if (status === 404) {

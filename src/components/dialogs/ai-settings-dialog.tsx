@@ -87,7 +87,7 @@ export function AiSettingsDialog() {
   const loadModels = async () => {
     if (models.phase === 'loading') return;
     if (!keyDraft.trim()) {
-      setModels({ phase: 'fail', hintKey: 'ai.err.config' });
+      setModels({ phase: 'fail', hintKey: 'ai.err.nokey' });
       return;
     }
     setModels({ phase: 'loading' });
@@ -113,7 +113,12 @@ export function AiSettingsDialog() {
   }, [models.models, modelFilter]);
 
   const runTest = async () => {
-    if (!config.baseUrl.trim() || !config.model.trim() || !keyDraft.trim()) {
+    // প্রথমেই কি-ঘর — খালি কিতে "Base URL পূরণ করুন" বলা বিভ্রান্তিকর
+    if (!keyDraft.trim()) {
+      setTest({ phase: 'fail', hintKey: 'ai.err.nokey' });
+      return;
+    }
+    if (!config.baseUrl.trim() || !config.model.trim()) {
       setTest({ phase: 'fail', hintKey: 'ai.err.config' });
       return;
     }

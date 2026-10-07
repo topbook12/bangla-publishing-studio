@@ -569,6 +569,11 @@ export const dictAi: Dict = {
     hi: 'सेटिंग्स में Base URL और मॉडल भरें।',
     en: 'Fill in Base URL and model in settings.',
   },
+  'ai.err.nokey': {
+    bn: 'API Key ঘরে আপনার কি পেস্ট করুন — তারপর পরীক্ষা চালান।',
+    hi: 'API Key बॉक्स में अपनी की पेस्ट करें — फिर परीक्षण चलाएँ।',
+    en: 'Paste your key into the API Key box — then run the test.',
+  },
   'ai.err.timeout': {
     bn: 'সময় শেষ — ছবি ছোট করুন বা দ্রুত মডেল বাছুন।',
     hi: 'समय समाप्त — छवि छोटी करें या तेज़ मॉडल चुनें।',
