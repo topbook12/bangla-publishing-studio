@@ -10,7 +10,8 @@
 
 'use client';
 
-import { BookOpenCheck, CircleHelp, CloudOff, FileDown, Globe2, Keyboard, LayoutTemplate, Printer, Type } from 'lucide-react';
+import { CircleHelp, CloudOff, FileDown, Globe2, Keyboard, LayoutTemplate, Printer, Type } from 'lucide-react';
+import { BrandMark } from '@/components/brand-mark';
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
@@ -73,7 +74,7 @@ export function HelpDialog() {
           <div className="about-card mb-3" role="group" aria-label={`${tt('dlg2.about.brand')} — ${tt('dlg2.about.edition')}`}>
             <div className="flex items-center gap-3">
               <span className="about-logo" aria-hidden="true">
-                <BookOpenCheck size={20} />
+                <BrandMark size={20} />
               </span>
               <div className="min-w-0">
                 <p className="flex items-center gap-2 text-[15px] font-bold leading-tight">

@@ -45,72 +45,74 @@
 }
 
 :root {
+  /* ─── "Grand Ink" এডিটরিয়াল প্যালেট — বইয়ের কাপড়-বাঁধাই সবুজ + সোনালি ফয়েল + উষ্ণ কাগজ ─── */
   --radius: 0.625rem;
-  --background: oklch(0.985 0.002 247.839);
-  --foreground: oklch(0.208 0.042 265.755);
+  --background: oklch(0.984 0.004 95);
+  --foreground: oklch(0.24 0.016 150);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.208 0.042 265.755);
+  --card-foreground: oklch(0.24 0.016 150);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.208 0.042 265.755);
-  --primary: oklch(0.511 0.23 277.0); /* indigo-600 #4f46e5 */
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.968 0.007 247.896);
-  --secondary-foreground: oklch(0.208 0.042 265.755);
-  --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
-  --accent: oklch(0.958 0.014 277.0);
-  --accent-foreground: oklch(0.373 0.15 277.0);
+  --popover-foreground: oklch(0.24 0.016 150);
+  --primary: oklch(0.455 0.104 168); /* deep book-cloth emerald */
+  --primary-foreground: oklch(0.985 0.003 95);
+  --secondary: oklch(0.964 0.007 100);
+  --secondary-foreground: oklch(0.26 0.016 150);
+  --muted: oklch(0.964 0.007 100);
+  --muted-foreground: oklch(0.5 0.02 140);
+  --accent: oklch(0.951 0.018 105);
+  --accent-foreground: oklch(0.4 0.075 162);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.929 0.013 255.508);
-  --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.585 0.19 277.0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.208 0.042 265.755);
-  --sidebar-primary: oklch(0.511 0.23 277.0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.968 0.007 247.896);
-  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
-  --sidebar-border: oklch(0.929 0.013 255.508);
-  --sidebar-ring: oklch(0.585 0.19 277.0);
+  --border: oklch(0.918 0.008 100);
+  --input: oklch(0.918 0.008 100);
+  --ring: oklch(0.55 0.095 168);
+  --chart-1: oklch(0.55 0.115 165);
+  --chart-2: oklch(0.66 0.12 75);
+  --chart-3: oklch(0.6 0.115 45);
+  --chart-4: oklch(0.58 0.08 195);
+  --chart-5: oklch(0.42 0.05 155);
+  --sidebar: oklch(0.984 0.003 100);
+  --sidebar-foreground: oklch(0.24 0.016 150);
+  --sidebar-primary: oklch(0.455 0.104 168);
+  --sidebar-primary-foreground: oklch(0.985 0.003 95);
+  --sidebar-accent: oklch(0.964 0.007 100);
+  --sidebar-accent-foreground: oklch(0.26 0.016 150);
+  --sidebar-border: oklch(0.918 0.008 100);
+  --sidebar-ring: oklch(0.55 0.095 168);
 }
 
 .dark {
-  --background: oklch(0.16 0.02 265);
-  --foreground: oklch(0.967 0.003 264.542);
-  --card: oklch(0.21 0.03 265);
-  --card-foreground: oklch(0.967 0.003 264.542);
-  --popover: oklch(0.21 0.03 265);
-  --popover-foreground: oklch(0.967 0.003 264.542);
-  --primary: oklch(0.673 0.182 276.9);
-  --primary-foreground: oklch(0.16 0.02 265);
-  --secondary: oklch(0.278 0.033 256.848);
-  --secondary-foreground: oklch(0.967 0.003 264.542);
-  --muted: oklch(0.278 0.033 256.848);
-  --muted-foreground: oklch(0.704 0.04 256.788);
-  --accent: oklch(0.30 0.05 277.0);
-  --accent-foreground: oklch(0.93 0.03 277.0);
+  /* ─── "Midnight Atelier" — কালি-সবুজ গাঢ় থিম, উজ্জ্বল এমারেল্ড + অ্যাম্বার নয়েজ ─── */
+  --background: oklch(0.168 0.012 165);
+  --foreground: oklch(0.965 0.004 110);
+  --card: oklch(0.208 0.014 165);
+  --card-foreground: oklch(0.965 0.004 110);
+  --popover: oklch(0.208 0.014 165);
+  --popover-foreground: oklch(0.965 0.004 110);
+  --primary: oklch(0.755 0.125 165);
+  --primary-foreground: oklch(0.185 0.02 165);
+  --secondary: oklch(0.272 0.016 160);
+  --secondary-foreground: oklch(0.965 0.004 110);
+  --muted: oklch(0.272 0.016 160);
+  --muted-foreground: oklch(0.71 0.015 135);
+  --accent: oklch(0.3 0.02 160);
+  --accent-foreground: oklch(0.93 0.015 110);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0.15 277.0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.21 0.03 265);
-  --sidebar-foreground: oklch(0.967 0.003 264.542);
-  --sidebar-primary: oklch(0.673 0.182 276.9);
-  --sidebar-primary-foreground: oklch(0.16 0.02 265);
-  --sidebar-accent: oklch(0.278 0.033 256.848);
-  --sidebar-accent-foreground: oklch(0.967 0.003 264.542);
+  --ring: oklch(0.6 0.1 168);
+  --chart-1: oklch(0.7 0.12 165);
+  --chart-2: oklch(0.8 0.13 80);
+  --chart-3: oklch(0.72 0.12 45);
+  --chart-4: oklch(0.72 0.09 195);
+  --chart-5: oklch(0.6 0.04 155);
+  --sidebar: oklch(0.208 0.014 165);
+  --sidebar-foreground: oklch(0.965 0.004 110);
+  --sidebar-primary: oklch(0.755 0.125 165);
+  --sidebar-primary-foreground: oklch(0.185 0.02 165);
+  --sidebar-accent: oklch(0.272 0.016 160);
+  --sidebar-accent-foreground: oklch(0.965 0.004 110);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0.15 277.0);
+  --sidebar-ring: oklch(0.6 0.1 168);
 }
 
 @layer base {
@@ -149,7 +151,7 @@ html.dark .theme-icon-moon { display: none; }
   z-index: 40;
 }
 
-/* ইনডিগো টিন্টেড টপ হেয়ারলাইন — প্রিমিয়াম ব্র্যান্ড অ্যাকসেন্ট */
+/* এমারেল্ড→অ্যাম্বার টপ হেয়ারলাইন — সবুজ কাপড়ের বাঁধাইয়ে সোনালি ফয়েলের আভাস */
 .app-header::before {
   content: "";
   position: absolute;
@@ -160,7 +162,7 @@ html.dark .theme-icon-moon { display: none; }
   background: linear-gradient(
     90deg,
     color-mix(in oklab, var(--primary) 62%, transparent),
-    oklch(0.627 0.265 303.9) 42%,
+    oklch(0.8 0.14 85) 42%,
     color-mix(in oklab, var(--primary) 45%, transparent) 78%,
     transparent
   );
@@ -168,7 +170,7 @@ html.dark .theme-icon-moon { display: none; }
 }
 
 html.dark .app-header {
-  background: linear-gradient(180deg, oklch(0.21 0.03 265), oklch(0.155 0.022 265));
+  background: linear-gradient(180deg, oklch(0.21 0.014 165), oklch(0.152 0.012 165));
   border-bottom-color: rgb(255 255 255 / 0.08);
   box-shadow: 0 1px 2px rgb(0 0 0 / 0.45), 0 8px 24px rgb(0 0 0 / 0.35);
 }
@@ -180,7 +182,7 @@ html.dark .app-header::before { opacity: 0.8; }
   width: 36px;
   height: 36px;
   border-radius: 11px;
-  background: linear-gradient(140deg, oklch(0.785 0.115 274.7) 0%, oklch(0.585 0.233 277.1) 48%, oklch(0.541 0.281 293) 100%);
+  background: linear-gradient(140deg, oklch(0.52 0.09 172) 0%, oklch(0.42 0.1 168) 48%, oklch(0.33 0.075 172) 100%);
   color: #fff;
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 0.4),
@@ -198,7 +200,7 @@ html.dark .app-header::before { opacity: 0.8; }
   width: 84px;
   height: 84px;
   border-radius: 24px;
-  background: linear-gradient(140deg, oklch(0.785 0.115 274.7) 0%, oklch(0.585 0.233 277.1) 48%, oklch(0.541 0.281 293) 100%);
+  background: linear-gradient(140deg, oklch(0.52 0.09 172) 0%, oklch(0.42 0.1 168) 48%, oklch(0.33 0.075 172) 100%);
   color: #fff;
   box-shadow:
     inset 0 2px 0 rgb(255 255 255 / 0.45),
@@ -212,13 +214,13 @@ html.dark .app-header::before { opacity: 0.8; }
   font-size: 19px;
   font-weight: 800;
   letter-spacing: -0.015em;
-  background: linear-gradient(120deg, oklch(0.55 0.2 277), oklch(0.48 0.2 293));
+  background: linear-gradient(120deg, oklch(0.5 0.11 170), oklch(0.4 0.09 178));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 html.dark .app-splash-title {
-  background: linear-gradient(120deg, oklch(0.78 0.12 277), oklch(0.72 0.14 293));
+  background: linear-gradient(120deg, oklch(0.8 0.12 168), oklch(0.71 0.11 178));
   -webkit-background-clip: text;
   background-clip: text;
 }
@@ -379,7 +381,7 @@ html.dark .pro-badge {
   height: 42px;
   border-radius: 12px;
   flex-shrink: 0;
-  background: linear-gradient(140deg, oklch(0.785 0.115 274.7) 0%, oklch(0.585 0.233 277.1) 48%, oklch(0.541 0.281 293) 100%);
+  background: linear-gradient(140deg, oklch(0.52 0.09 172) 0%, oklch(0.42 0.1 168) 48%, oklch(0.33 0.075 172) 100%);
   color: #fff;
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 0.4),
@@ -430,7 +432,7 @@ html.dark .about-chip { box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05); }
   width: 45%;
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, transparent, oklch(0.62 0.19 277) 35%, oklch(0.56 0.24 293) 65%, transparent);
+  background: linear-gradient(90deg, transparent, oklch(0.55 0.11 168) 35%, oklch(0.78 0.13 82) 65%, transparent);
   animation: splash-shimmer 1.25s ease-in-out infinite;
 }
 @keyframes splash-shimmer {
@@ -639,31 +641,31 @@ html.dark .ribbon-tab-ind {
   );
 }
 
-/* ─── গ্রুপ অ্যাকসেন্ট প্যালেট — প্রতি গ্রুপে আইকন/লেবেল টিন্ট (লাইট/ডার্ক প্যারিটি) ─── */
+/* ─── গ্রুপ অ্যাকসেন্ট প্যালেট — হারমোনাইজড এডিটরিয়াল ফ্যামিলি (এমারেল্ড/টিল/অ্যাম্বার/টেরাকোটা/কালি) ─── */
 
-.ribbon-group[data-accent="indigo"] { --grp-accent: oklch(0.511 0.23 277); }
-.ribbon-group[data-accent="amber"] { --grp-accent: oklch(0.555 0.161 49); }
-.ribbon-group[data-accent="violet"] { --grp-accent: oklch(0.541 0.281 293); }
-.ribbon-group[data-accent="emerald"] { --grp-accent: oklch(0.55 0.137 164.2); }
-.ribbon-group[data-accent="rose"] { --grp-accent: oklch(0.57 0.245 17.9); }
-.ribbon-group[data-accent="cyan"] { --grp-accent: oklch(0.52 0.105 223.2); }
-.ribbon-group[data-accent="blue"] { --grp-accent: oklch(0.52 0.213 262.9); }
-.ribbon-group[data-accent="teal"] { --grp-accent: oklch(0.511 0.096 186.4); }
-.ribbon-group[data-accent="sky"] { --grp-accent: oklch(0.548 0.148 242); }
-.ribbon-group[data-accent="fuchsia"] { --grp-accent: oklch(0.55 0.265 323.5); }
-.ribbon-group[data-accent="slate"] { --grp-accent: oklch(0.48 0.055 257.5); }
+.ribbon-group[data-accent="indigo"] { --grp-accent: oklch(0.47 0.03 155); }
+.ribbon-group[data-accent="amber"] { --grp-accent: oklch(0.6 0.115 75); }
+.ribbon-group[data-accent="violet"] { --grp-accent: oklch(0.54 0.075 195); }
+.ribbon-group[data-accent="emerald"] { --grp-accent: oklch(0.52 0.1 168); }
+.ribbon-group[data-accent="rose"] { --grp-accent: oklch(0.56 0.115 45); }
+.ribbon-group[data-accent="cyan"] { --grp-accent: oklch(0.54 0.075 195); }
+.ribbon-group[data-accent="blue"] { --grp-accent: oklch(0.44 0.04 220); }
+.ribbon-group[data-accent="teal"] { --grp-accent: oklch(0.53 0.08 190); }
+.ribbon-group[data-accent="sky"] { --grp-accent: oklch(0.5 0.05 235); }
+.ribbon-group[data-accent="fuchsia"] { --grp-accent: oklch(0.58 0.1 60); }
+.ribbon-group[data-accent="slate"] { --grp-accent: oklch(0.45 0.025 150); }
 
-html.dark .ribbon-group[data-accent="indigo"] { --grp-accent: oklch(0.72 0.16 277.5); }
-html.dark .ribbon-group[data-accent="amber"] { --grp-accent: oklch(0.795 0.16 76.6); }
-html.dark .ribbon-group[data-accent="violet"] { --grp-accent: oklch(0.702 0.203 293.5); }
-html.dark .ribbon-group[data-accent="emerald"] { --grp-accent: oklch(0.723 0.192 149.6); }
-html.dark .ribbon-group[data-accent="rose"] { --grp-accent: oklch(0.712 0.194 13.4); }
-html.dark .ribbon-group[data-accent="cyan"] { --grp-accent: oklch(0.739 0.136 215.2); }
-html.dark .ribbon-group[data-accent="blue"] { --grp-accent: oklch(0.707 0.165 254.6); }
-html.dark .ribbon-group[data-accent="teal"] { --grp-accent: oklch(0.733 0.119 181.9); }
-html.dark .ribbon-group[data-accent="sky"] { --grp-accent: oklch(0.746 0.16 232.7); }
-html.dark .ribbon-group[data-accent="fuchsia"] { --grp-accent: oklch(0.702 0.262 325.3); }
-html.dark .ribbon-group[data-accent="slate"] { --grp-accent: oklch(0.72 0.033 256.8); }
+html.dark .ribbon-group[data-accent="indigo"] { --grp-accent: oklch(0.74 0.04 155); }
+html.dark .ribbon-group[data-accent="amber"] { --grp-accent: oklch(0.83 0.13 80); }
+html.dark .ribbon-group[data-accent="violet"] { --grp-accent: oklch(0.78 0.09 195); }
+html.dark .ribbon-group[data-accent="emerald"] { --grp-accent: oklch(0.76 0.12 165); }
+html.dark .ribbon-group[data-accent="rose"] { --grp-accent: oklch(0.76 0.12 45); }
+html.dark .ribbon-group[data-accent="cyan"] { --grp-accent: oklch(0.78 0.09 195); }
+html.dark .ribbon-group[data-accent="blue"] { --grp-accent: oklch(0.72 0.06 220); }
+html.dark .ribbon-group[data-accent="teal"] { --grp-accent: oklch(0.77 0.1 190); }
+html.dark .ribbon-group[data-accent="sky"] { --grp-accent: oklch(0.74 0.07 235); }
+html.dark .ribbon-group[data-accent="fuchsia"] { --grp-accent: oklch(0.8 0.11 65); }
+html.dark .ribbon-group[data-accent="slate"] { --grp-accent: oklch(0.74 0.03 155); }
 
 .ribbon-btn {
   display: inline-flex;
@@ -1169,8 +1171,8 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
   display: block;
 }
 .bwp-prosemirror img.ProseMirror-selectednode { outline: 2px solid var(--primary); }
-.bwp-prosemirror a { color: #4f46e5; text-decoration: underline; }
-.paper-dark .bwp-prosemirror a { color: #a5b4fc; }
+.bwp-prosemirror a { color: #0c7a54; text-decoration: underline; }
+.paper-dark .bwp-prosemirror a { color: #7fd8ae; }
 /* ছবির হাইপারলিংক — ক্লিকযোগ্য র‍্যাপার (প্রিন্ট-PDF/HTML এক্সপোর্টে লিংক টিকে যায়) */
 .bwp-prosemirror a.doc-image-link {
   display: inline-block;
@@ -1235,7 +1237,7 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
 .callout-concept {
   background: rgba(79, 70, 229, 0.09);
   border: 1px solid rgba(79, 70, 229, 0.3);
-  border-left: 4px solid #4f46e5;
+  border-left: 4px solid #0c7a54;
 }
 .callout-warning {
   background: rgba(220, 38, 38, 0.07);
@@ -1267,7 +1269,7 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
   font-weight: 800;
   font-size: 0.85em;
 }
-.callout-concept .callout-badge { color: #4f46e5; }
+.callout-concept .callout-badge { color: #0c7a54; }
 .callout-warning .callout-badge { color: #dc2626; }
 .callout-formula .callout-badge { color: #16a34a; }
 .callout-note .callout-badge { color: #64748b; }
@@ -1301,7 +1303,7 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
   margin: 0.55em 0;
   background: rgba(100, 116, 139, 0.035);
 }
-.mcq-selected { border-color: #4f46e5; box-shadow: 0 0 0 1px #4f46e5; }
+.mcq-selected { border-color: #0c7a54; box-shadow: 0 0 0 1px #0c7a54; }
 .mcq-head {
   display: flex;
   align-items: center;
@@ -1309,7 +1311,7 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
   margin-bottom: 5px;
 }
 .mcq-tag {
-  background: #4f46e5;
+  background: #0c7a54;
   color: #fff;
   font-size: 0.68em;
   font-weight: 800;
@@ -1352,7 +1354,7 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
 .footnote-wrap { position: relative; display: inline; }
 .footnote-ref, .footnote {
   counter-increment: bwp-footnote;
-  color: #4f46e5;
+  color: #0c7a54;
   font-weight: 800;
   cursor: pointer;
   font-size: 0.72em;
@@ -1388,7 +1390,7 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
   transition: background 0.15s;
 }
 .doc-icon-wrap:hover { background: rgba(79, 70, 229, 0.14); }
-.doc-icon-selected { outline: 2px solid #4f46e5; outline-offset: 1px; }
+.doc-icon-selected { outline: 2px solid #0c7a54; outline-offset: 1px; }
 .doc-icon-tools {
   position: absolute;
   top: calc(100% + 6px);
@@ -1528,7 +1530,7 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
   transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
 }
 .shape-card:hover {
-  border-color: #4f46e5;
+  border-color: #0c7a54;
   box-shadow: 0 4px 14px rgba(79, 70, 229, 0.18);
   transform: translateY(-1px);
 }
@@ -1580,9 +1582,9 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
 .paper-dark .icon-cell { color: #cbd5e1; }
 .icon-cell:hover { background: rgba(79, 70, 229, 0.10); color: #0f172a; }
 .icon-cell-active {
-  border-color: #4f46e5;
+  border-color: #0c7a54;
   background: rgba(79, 70, 229, 0.12);
-  color: #4f46e5;
+  color: #0c7a54;
 }
 .chip {
   flex-shrink: 0;
@@ -1597,8 +1599,8 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
 }
 .chip:hover { background: rgba(79, 70, 229, 0.08); }
 .chip-active {
-  background: #4f46e5;
-  border-color: #4f46e5;
+  background: #0c7a54;
+  border-color: #0c7a54;
   color: #fff;
 }
 .color-dot {
@@ -1612,7 +1614,7 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
 .color-dot-auto {
   background: linear-gradient(135deg, #e2e8f0 45%, #0f172a 46%, #0f172a 55%, #e2e8f0 56%);
 }
-.color-dot-active { outline: 2px solid #4f46e5; outline-offset: 1.5px; }
+.color-dot-active { outline: 2px solid #0c7a54; outline-offset: 1.5px; }
 .docbox-preview {
   display: inline-block;
   width: 26px;
@@ -1621,7 +1623,7 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
   flex-shrink: 0;
 }
 .docbox-preview[data-variant="box"] { border: 2px solid #475569; }
-.docbox-preview[data-variant="rounded"] { border: 2px solid #4f46e5; border-radius: 5px; }
+.docbox-preview[data-variant="rounded"] { border: 2px solid #0c7a54; border-radius: 5px; }
 .docbox-preview[data-variant="pill"] { border: 2px solid #0d9488; border-radius: 999px; }
 .docbox-preview[data-variant="dashed"] { border: 2px dashed #d97706; border-radius: 5px; }
 .docbox-preview[data-variant="double"] { border: 4px double #b91c1c; border-radius: 3px; }
@@ -1695,7 +1697,7 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
 
 .cover-classic { justify-content: center; gap: 12px; }
 .cover-classic-inner {
-  border: 3px double var(--cover-accent, #4f46e5);
+  border: 3px double var(--cover-accent, #0c7a54);
   border-radius: 6px;
   padding: 28px 18px;
   display: flex;
@@ -1706,7 +1708,7 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
 .cover-classic-ornament { font-size: 0.9em; letter-spacing: 2px; }
 .cover-classic-divider { width: 120px; height: 2px; }
 
-.cover-modern { background: var(--cover-accent, #4f46e5); color: #fff; }
+.cover-modern { background: var(--cover-accent, #0c7a54); color: #fff; }
 .cover-modern-band { height: 14px; background: rgba(255,255,255,0.25); }
 .cover-modern-body {
   flex: 1;
@@ -1826,14 +1828,14 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
 main.workspace {
   background:
     radial-gradient(1200px 500px at 50% -8%, color-mix(in oklab, var(--primary) 7%, transparent), transparent 62%),
-    radial-gradient(circle at 1px 1px, rgb(15 23 42 / 0.055) 1px, transparent 0) 0 0 / 22px 22px,
-    linear-gradient(180deg, oklch(0.958 0.006 265) 0%, oklch(0.935 0.008 265) 100%);
+    radial-gradient(circle at 1px 1px, rgb(46 56 48 / 0.06) 1px, transparent 0) 0 0 / 22px 22px,
+    linear-gradient(180deg, oklch(0.962 0.008 100) 0%, oklch(0.94 0.011 95) 100%);
 }
 html.dark main.workspace {
   background:
     radial-gradient(1200px 500px at 50% -8%, color-mix(in oklab, var(--primary) 9%, transparent), transparent 62%),
     radial-gradient(circle at 1px 1px, rgb(255 255 255 / 0.05) 1px, transparent 0) 0 0 / 22px 22px,
-    linear-gradient(180deg, oklch(0.18 0.02 265) 0%, oklch(0.145 0.018 265) 100%);
+    linear-gradient(180deg, oklch(0.175 0.012 165) 0%, oklch(0.148 0.011 165) 100%);
 }
 
 /* স্লিম প্রিমিয়াম স্ক্রলবার */
@@ -2154,8 +2156,8 @@ html.dark .ai-header-on {
   height: 28px;
   border-radius: 9px;
   color: #fff;
-  background: linear-gradient(135deg, oklch(0.58 0.19 288), oklch(0.5 0.22 320));
-  box-shadow: 0 3px 10px color-mix(in oklab, oklch(0.55 0.2 300) 45%, transparent),
+  background: linear-gradient(135deg, oklch(0.66 0.13 76), oklch(0.53 0.12 62));
+  box-shadow: 0 3px 10px color-mix(in oklab, oklch(0.6 0.13 70) 45%, transparent),
     inset 0 1px 0 rgb(255 255 255 / 0.35);
 }
 .ai-set-head { padding-bottom: 2px; }
@@ -2269,9 +2271,9 @@ html.dark .ai-state-pill-on { color: oklch(0.8 0.14 155); }
   color: var(--primary-foreground);
 }
 .ai-save-btn {
-  background: linear-gradient(135deg, oklch(0.6 0.17 288), oklch(0.52 0.2 318));
+  background: linear-gradient(135deg, oklch(0.66 0.13 76), oklch(0.53 0.12 62));
   color: #fff;
-  box-shadow: 0 3px 10px color-mix(in oklab, oklch(0.55 0.2 300) 40%, transparent),
+  box-shadow: 0 3px 10px color-mix(in oklab, oklch(0.6 0.13 70) 40%, transparent),
     inset 0 1px 0 rgb(255 255 255 / 0.3);
 }
 .ai-save-btn:hover { filter: brightness(1.06); }
@@ -2308,14 +2310,14 @@ html.dark .ai-state-pill-on { color: oklch(0.8 0.14 155); }
   margin-top: 4px;
 }
 .ai-models-btn {
-  border-color: color-mix(in oklab, oklch(0.6 0.17 292) 40%, var(--border));
-  color: oklch(0.5 0.16 292);
+  border-color: color-mix(in oklab, oklch(0.58 0.13 68) 40%, var(--border));
+  color: oklch(0.48 0.11 62);
 }
-html.dark .ai-models-btn { color: oklch(0.78 0.13 295); }
+html.dark .ai-models-btn { color: oklch(0.8 0.12 78); }
 .ai-models-btn:hover { border-color: oklch(0.6 0.17 292 / 0.7); }
 .ai-models-panel {
-  border: 1px solid color-mix(in oklab, oklch(0.6 0.17 292) 30%, var(--border));
-  background: color-mix(in oklab, oklch(0.6 0.17 292) 4%, var(--card));
+  border: 1px solid color-mix(in oklab, oklch(0.58 0.13 68) 30%, var(--border));
+  background: color-mix(in oklab, oklch(0.58 0.13 68) 4%, var(--card));
   border-radius: 12px;
   padding: 8px;
   display: flex;
@@ -2345,12 +2347,12 @@ html.dark .ai-models-btn { color: oklch(0.78 0.13 295); }
 .ai-models-item:hover { background: var(--muted); }
 .ai-models-item:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
 .ai-models-item-on {
-  background: color-mix(in oklab, oklch(0.6 0.17 292) 14%, transparent);
-  border-color: color-mix(in oklab, oklch(0.6 0.17 292) 45%, transparent);
-  color: oklch(0.45 0.18 292);
+  background: color-mix(in oklab, oklch(0.58 0.13 68) 14%, transparent);
+  border-color: color-mix(in oklab, oklch(0.58 0.13 68) 45%, transparent);
+  color: oklch(0.42 0.11 58);
   font-weight: 600;
 }
-html.dark .ai-models-item-on { color: oklch(0.8 0.12 295); }
+html.dark .ai-models-item-on { color: oklch(0.82 0.12 80); }
 
 /* কি-গাইড */
 .ai-help {
@@ -2511,9 +2513,9 @@ html.dark .ai-models-item-on { color: oklch(0.8 0.12 295); }
 
 /* বিশ্লেষণ বাটন (গ্রেডিয়েন্ট প্রিমিয়াম) */
 .ai-analyze-btn {
-  background: linear-gradient(135deg, oklch(0.58 0.19 288), oklch(0.52 0.22 318) 55%, oklch(0.62 0.16 350));
+  background: linear-gradient(135deg, oklch(0.66 0.13 76), oklch(0.56 0.13 66) 55%, oklch(0.6 0.12 55));
   color: #fff;
-  box-shadow: 0 4px 14px color-mix(in oklab, oklch(0.55 0.2 300) 42%, transparent),
+  box-shadow: 0 4px 14px color-mix(in oklab, oklch(0.6 0.13 70) 42%, transparent),
     inset 0 1px 0 rgb(255 255 255 / 0.32);
 }
 .ai-analyze-btn:hover { filter: brightness(1.07); }
@@ -2727,9 +2729,9 @@ html.dark .ai-live-preview-body th, html.dark .ai-live-preview-body td { border-
   font-weight: 700;
   letter-spacing: 0.03em;
   color: #fff;
-  background: linear-gradient(135deg, oklch(0.58 0.17 292), oklch(0.52 0.2 322));
-  border: 1px solid oklch(0.68 0.14 300 / 0.6);
-  box-shadow: 0 4px 16px color-mix(in oklab, oklch(0.55 0.2 300) 45%, transparent),
+  background: linear-gradient(135deg, oklch(0.66 0.13 76), oklch(0.53 0.12 62));
+  border: 1px solid oklch(0.7 0.13 78 / 0.65);
+  box-shadow: 0 4px 16px color-mix(in oklab, oklch(0.6 0.13 70) 45%, transparent),
     0 1px 3px rgb(2 6 23 / 0.18),
     inset 0 1px 0 rgb(255 255 255 / 0.35);
   cursor: pointer;
@@ -2777,8 +2779,8 @@ html.dark .ai-live-preview-body th, html.dark .ai-live-preview-body td { border-
   flex-shrink: 0;
   border-radius: 8px;
   color: #fff;
-  background: linear-gradient(135deg, oklch(0.58 0.19 288), oklch(0.5 0.22 320));
-  box-shadow: 0 2px 8px color-mix(in oklab, oklch(0.55 0.2 300) 45%, transparent),
+  background: linear-gradient(135deg, oklch(0.66 0.13 76), oklch(0.53 0.12 62));
+  box-shadow: 0 2px 8px color-mix(in oklab, oklch(0.6 0.13 70) 45%, transparent),
     inset 0 1px 0 rgb(255 255 255 / 0.35);
 }
 .ai-bubble-head-text { min-width: 0; flex: 1; }
@@ -2820,8 +2822,8 @@ html.dark .ai-bubble-setup {
   gap: 5px;
   padding: 7px 8px;
   border-radius: 10px;
-  border: 1px solid color-mix(in oklab, oklch(0.6 0.17 292) 26%, var(--border));
-  background: color-mix(in oklab, oklch(0.6 0.17 292) 5%, transparent);
+  border: 1px solid color-mix(in oklab, oklch(0.58 0.13 68) 26%, var(--border));
+  background: color-mix(in oklab, oklch(0.58 0.13 68) 5%, transparent);
 }
 .ai-bubble-scope-label {
   font-size: 10px;
@@ -2844,16 +2846,16 @@ html.dark .ai-bubble-setup {
   cursor: pointer;
   transition: border-color 0.13s ease, background-color 0.13s ease, box-shadow 0.13s ease;
 }
-.ai-scope-chip:hover:not(:disabled) { border-color: color-mix(in oklab, oklch(0.6 0.17 292) 55%, var(--border)); }
+.ai-scope-chip:hover:not(:disabled) { border-color: color-mix(in oklab, oklch(0.58 0.13 68) 55%, var(--border)); }
 .ai-scope-chip:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
 .ai-scope-chip:disabled { opacity: 0.45; cursor: default; }
 .ai-scope-chip-on {
   border-color: oklch(0.6 0.17 292 / 0.65);
-  background: color-mix(in oklab, oklch(0.6 0.17 292) 16%, var(--card));
-  color: oklch(0.45 0.18 292);
-  box-shadow: 0 2px 8px color-mix(in oklab, oklch(0.55 0.2 300) 25%, transparent);
+  background: color-mix(in oklab, oklch(0.58 0.13 68) 16%, var(--card));
+  color: oklch(0.42 0.11 58);
+  box-shadow: 0 2px 8px color-mix(in oklab, oklch(0.6 0.13 70) 25%, transparent);
 }
-html.dark .ai-scope-chip-on { color: oklch(0.82 0.11 295); }
+html.dark .ai-scope-chip-on { color: oklch(0.84 0.11 80); }
 .ai-bubble-hint {
   font-size: 10.5px;
   line-height: 1.45;
@@ -2883,14 +2885,14 @@ html.dark .ai-scope-chip-on { color: oklch(0.82 0.11 295); }
   cursor: pointer;
   transition: border-color 0.13s ease, box-shadow 0.13s ease, transform 0.13s ease, background-color 0.13s ease;
 }
-.ai-bubble-act svg { color: oklch(0.56 0.17 295); }
-html.dark .ai-bubble-act svg { color: oklch(0.78 0.13 295); }
-.ai-bubble-act:hover { transform: translateY(-1px); border-color: color-mix(in oklab, oklch(0.6 0.17 292) 50%, var(--border)); box-shadow: 0 3px 10px color-mix(in oklab, oklch(0.55 0.2 300) 22%, transparent); }
+.ai-bubble-act svg { color: oklch(0.54 0.12 65); }
+html.dark .ai-bubble-act svg { color: oklch(0.8 0.12 78); }
+.ai-bubble-act:hover { transform: translateY(-1px); border-color: color-mix(in oklab, oklch(0.58 0.13 68) 50%, var(--border)); box-shadow: 0 3px 10px color-mix(in oklab, oklch(0.6 0.13 70) 22%, transparent); }
 .ai-bubble-act:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
 .ai-bubble-act:disabled { opacity: 0.45; cursor: default; transform: none; box-shadow: none; }
 .ai-bubble-act-on {
-  border-color: color-mix(in oklab, oklch(0.6 0.17 292) 60%, var(--border));
-  background: color-mix(in oklab, oklch(0.6 0.17 292) 12%, var(--card));
+  border-color: color-mix(in oklab, oklch(0.58 0.13 68) 60%, var(--border));
+  background: color-mix(in oklab, oklch(0.58 0.13 68) 12%, var(--card));
 }
 
 /* ছবি স্ট্রিপ */
@@ -2901,13 +2903,13 @@ html.dark .ai-bubble-act svg { color: oklch(0.78 0.13 295); }
   gap: 7px;
   padding: 10px;
   border-radius: 10px;
-  border: 1.5px dashed color-mix(in oklab, oklch(0.6 0.17 292) 45%, var(--border));
+  border: 1.5px dashed color-mix(in oklab, oklch(0.58 0.13 68) 45%, var(--border));
   color: var(--muted-foreground);
   font-size: 11.5px;
   cursor: pointer;
   transition: border-color 0.14s ease, background-color 0.14s ease, color 0.14s ease;
 }
-.ai-bubble-imgdrop:hover { border-color: oklch(0.6 0.17 292 / 0.75); color: var(--foreground); background: color-mix(in oklab, oklch(0.6 0.17 292) 7%, transparent); }
+.ai-bubble-imgdrop:hover { border-color: oklch(0.6 0.17 292 / 0.75); color: var(--foreground); background: color-mix(in oklab, oklch(0.58 0.13 68) 7%, transparent); }
 .ai-bubble-imgdrop:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
 .ai-bubble-imgrow {
   display: flex;
@@ -2951,14 +2953,14 @@ html.dark .ai-bubble-act svg { color: oklch(0.78 0.13 295); }
   height: 6px;
   border-radius: 999px;
   overflow: hidden;
-  background: color-mix(in oklab, oklch(0.6 0.17 292) 14%, var(--muted));
+  background: color-mix(in oklab, oklch(0.58 0.13 68) 14%, var(--muted));
 }
 .ai-shimmer-bar::after {
   content: '';
   position: absolute;
   inset: 0;
   transform: translateX(-100%);
-  background: linear-gradient(90deg, transparent, color-mix(in oklab, oklch(0.6 0.17 292) 65%, transparent), transparent);
+  background: linear-gradient(90deg, transparent, color-mix(in oklab, oklch(0.58 0.13 68) 65%, transparent), transparent);
   animation: ai-shimmer 1.15s infinite;
 }
 @keyframes ai-shimmer { to { transform: translateX(100%); } }
@@ -3038,7 +3040,7 @@ html.dark .ai-bubble-preview pre { background: oklch(0.28 0.01 260); }
   gap: 9px;
   padding: 11px 12px;
   border-bottom: 1px solid var(--border);
-  background: linear-gradient(135deg, color-mix(in oklab, oklch(0.58 0.17 292) 9%, var(--popover)), var(--popover));
+  background: linear-gradient(135deg, color-mix(in oklab, oklch(0.58 0.13 68) 9%, var(--popover)), var(--popover));
 }
 .ai-chat-tile {
   display: inline-flex;
@@ -3049,8 +3051,8 @@ html.dark .ai-bubble-preview pre { background: oklch(0.28 0.01 260); }
   flex-shrink: 0;
   border-radius: 9px;
   color: #fff;
-  background: linear-gradient(135deg, oklch(0.58 0.19 288), oklch(0.5 0.22 320));
-  box-shadow: 0 3px 10px color-mix(in oklab, oklch(0.55 0.2 300) 45%, transparent),
+  background: linear-gradient(135deg, oklch(0.66 0.13 76), oklch(0.53 0.12 62));
+  box-shadow: 0 3px 10px color-mix(in oklab, oklch(0.6 0.13 70) 45%, transparent),
     inset 0 1px 0 rgb(255 255 255 / 0.35);
 }
 .ai-chat-title { font-size: 13.5px; font-weight: 700; line-height: 1.25; }
@@ -3075,8 +3077,8 @@ html.dark .ai-bubble-preview pre { background: oklch(0.28 0.01 260); }
   height: 46px;
   border-radius: 14px;
   color: #fff;
-  background: linear-gradient(135deg, oklch(0.58 0.19 288), oklch(0.5 0.22 320));
-  box-shadow: 0 6px 18px color-mix(in oklab, oklch(0.55 0.2 300) 40%, transparent);
+  background: linear-gradient(135deg, oklch(0.66 0.13 76), oklch(0.53 0.12 62));
+  box-shadow: 0 6px 18px color-mix(in oklab, oklch(0.6 0.13 70) 40%, transparent);
 }
 .ai-chat-empty-title { font-size: 14px; font-weight: 700; }
 .ai-chat-empty-steps {
@@ -3103,8 +3105,8 @@ html.dark .ai-bubble-preview pre { background: oklch(0.28 0.01 260); }
   border: 1px solid var(--border);
   background: color-mix(in oklab, var(--muted) 35%, transparent);
 }
-.ai-chat-empty-steps li svg { flex-shrink: 0; margin-top: 2px; color: oklch(0.56 0.17 295); }
-html.dark .ai-chat-empty-steps li svg { color: oklch(0.78 0.13 295); }
+.ai-chat-empty-steps li svg { flex-shrink: 0; margin-top: 2px; color: oklch(0.54 0.12 65); }
+html.dark .ai-chat-empty-steps li svg { color: oklch(0.8 0.12 78); }
 .ai-chat-empty-note { font-size: 10.5px; color: var(--muted-foreground); line-height: 1.5; max-width: 320px; }
 
 /* বার্তা */
@@ -3116,13 +3118,13 @@ html.dark .ai-chat-empty-steps li svg { color: oklch(0.78 0.13 295); }
   max-width: 85%;
   padding: 8px 11px;
   border-radius: 14px 14px 4px 14px;
-  background: linear-gradient(135deg, oklch(0.6 0.17 288), oklch(0.52 0.2 318));
+  background: linear-gradient(135deg, oklch(0.66 0.13 76), oklch(0.53 0.12 62));
   color: #fff;
   font-size: 12.5px;
   line-height: 1.55;
   white-space: pre-wrap;
   word-break: break-word;
-  box-shadow: 0 3px 10px color-mix(in oklab, oklch(0.55 0.2 300) 30%, transparent);
+  box-shadow: 0 3px 10px color-mix(in oklab, oklch(0.6 0.13 70) 30%, transparent);
 }
 .ai-chat-bubble-ai {
   max-width: 92%;
@@ -3179,7 +3181,7 @@ html.dark .ai-chat-md pre { background: oklch(0.28 0.01 260); }
   cursor: pointer;
   transition: color 0.13s ease, border-color 0.13s ease, background-color 0.13s ease;
 }
-.ai-chat-msg-actions button:hover { color: var(--foreground); border-color: color-mix(in oklab, oklch(0.6 0.17 292) 45%, var(--border)); background: color-mix(in oklab, oklch(0.6 0.17 292) 8%, transparent); }
+.ai-chat-msg-actions button:hover { color: var(--foreground); border-color: color-mix(in oklab, oklch(0.58 0.13 68) 45%, var(--border)); background: color-mix(in oklab, oklch(0.58 0.13 68) 8%, transparent); }
 
 /* টাইপিং ইন্ডিকেটর */
 .ai-chat-typing { display: flex; align-items: center; gap: 4px; }
@@ -3187,7 +3189,7 @@ html.dark .ai-chat-md pre { background: oklch(0.28 0.01 260); }
   width: 6px;
   height: 6px;
   border-radius: 999px;
-  background: color-mix(in oklab, oklch(0.6 0.17 292) 55%, var(--muted-foreground));
+  background: color-mix(in oklab, oklch(0.58 0.13 68) 55%, var(--muted-foreground));
   animation: ai-typing 1.1s infinite ease-in-out;
 }
 .ai-chat-typing > span:nth-child(2) { animation-delay: 0.15s; }
@@ -3221,8 +3223,8 @@ html.dark .ai-chat-md pre { background: oklch(0.28 0.01 260); }
   cursor: pointer;
   transition: color 0.13s ease, border-color 0.13s ease, background-color 0.13s ease;
 }
-.ai-chat-attach:hover { color: oklch(0.56 0.17 295); border-color: color-mix(in oklab, oklch(0.6 0.17 292) 45%, var(--border)); }
-html.dark .ai-chat-attach:hover { color: oklch(0.78 0.13 295); }
+.ai-chat-attach:hover { color: oklch(0.54 0.12 65); border-color: color-mix(in oklab, oklch(0.58 0.13 68) 45%, var(--border)); }
+html.dark .ai-chat-attach:hover { color: oklch(0.8 0.12 78); }
 .ai-chat-attach:disabled { opacity: 0.5; cursor: default; }
 .ai-chat-attach:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
 .ai-chat-input { flex: 1; min-height: 34px; max-height: 120px; font-size: 12.5px; resize: none; }
@@ -3236,8 +3238,8 @@ html.dark .ai-chat-attach:hover { color: oklch(0.78 0.13 295); }
   border-radius: 9px;
   border: none;
   color: #fff;
-  background: linear-gradient(135deg, oklch(0.6 0.17 288), oklch(0.52 0.2 318));
-  box-shadow: 0 3px 10px color-mix(in oklab, oklch(0.55 0.2 300) 40%, transparent),
+  background: linear-gradient(135deg, oklch(0.66 0.13 76), oklch(0.53 0.12 62));
+  box-shadow: 0 3px 10px color-mix(in oklab, oklch(0.6 0.13 70) 40%, transparent),
     inset 0 1px 0 rgb(255 255 255 / 0.3);
   cursor: pointer;
   transition: filter 0.13s ease, opacity 0.13s ease;
@@ -3260,7 +3262,7 @@ html.dark .ai-chat-attach:hover { color: oklch(0.78 0.13 295); }
   cursor: pointer;
   transition: color 0.13s ease, border-color 0.13s ease;
 }
-.ai-chat-quote:hover { color: var(--foreground); border-color: color-mix(in oklab, oklch(0.6 0.17 292) 50%, var(--border)); }
+.ai-chat-quote:hover { color: var(--foreground); border-color: color-mix(in oklab, oklch(0.58 0.13 68) 50%, var(--border)); }
 .ai-chat-secure { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; color: var(--muted-foreground); }
 
 /* মোবাইল — চ্যাট ফুল-স্ক্রিন, বাবল গ্রিড ২ কলাম */

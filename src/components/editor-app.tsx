@@ -6,7 +6,8 @@
 'use client';
 
 import { useEffect } from 'react';
-import { BookOpenCheck, Minimize2 } from 'lucide-react';
+import { Minimize2 } from 'lucide-react';
+import { BrandMark } from '@/components/brand-mark';
 import { AppHeader } from '@/components/app-header';
 import { Ribbon } from '@/components/ribbon/ribbon-shell';
 import { Workspace } from '@/components/editor/workspace';
@@ -63,9 +64,9 @@ export default function EditorApp() {
 
   if (!loaded) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-slate-100 dark:bg-slate-950">
+      <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-stone-100 dark:bg-stone-950">
         <div className="app-splash-mark" aria-hidden="true">
-          <BookOpenCheck size={36} />
+          <BrandMark size={36} />
         </div>
         <div className="space-y-2 text-center">
           <p className="flex items-center justify-center gap-2">

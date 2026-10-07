@@ -6,9 +6,10 @@
 
 import { useState } from 'react';
 import {
-  BookOpenCheck, Check, CircleHelp, CloudOff, FilePlus2, Focus, FolderOpen, History, ListTree, Loader2, MessageSquare, Moon, PenLine,
+  Check, CircleHelp, CloudOff, FilePlus2, Focus, FolderOpen, History, ListTree, Loader2, MessageSquare, Moon, PenLine,
   Save, Sun, Trash2, Copy, Pencil, Menu, Globe, Sparkles,
 } from 'lucide-react';
+import { BrandMark } from '@/components/brand-mark';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
@@ -262,7 +263,7 @@ export function AppHeader() {
     <header className="app-header no-print">
       <div className="flex min-w-0 items-center gap-2.5">
         <span className="app-logo" aria-hidden="true">
-          <BookOpenCheck size={19} />
+          <BrandMark size={20} />
         </span>
         <div className="flex min-w-0 flex-col">
           <h1 className="app-title">{title}</h1>

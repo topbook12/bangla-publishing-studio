@@ -94,7 +94,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#4f46e5",
+  themeColor: "#1c6b4c",
   width: "device-width",
   initialScale: 1,
   // maximumScale: 1 সরানো হলো — এটা অ্যান্ড্রয়েডে পিঞ্চ-জুম বন্ধ করে দিত
