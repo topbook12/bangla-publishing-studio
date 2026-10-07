@@ -268,6 +268,24 @@ function inlineRuns(el: Element, ctx: Ctx): Array<TextRun | ExternalHyperlink> {
           runs.push(new TextRun({ text: '◆', size: Math.max(8, Math.round(sizePx * 1.2)), color: colorHex }));
           break;
         }
+        // ডকুমেন্ট স্টিকার — নিজের আপলোড (dataURL) আসল ছবি হয়ে যায়;
+        // ক্যাটালগ SVG স্টিকারে Word-এ রঙিন ◆ প্লেসহোল্ডার (HTML/PDF এক্সপোর্টে পূর্ণ স্টিকার)
+        if (c.classList.contains('doc-sticker')) {
+          const sizePx = Number(c.getAttribute('data-size') ?? 48) || 48;
+          const src = c.getAttribute('data-src') ?? '';
+          const bytes = src.startsWith('data:image/') ? dataUrlToBytes(src) : null;
+          if (bytes) {
+            runs.push(new ImageRun({
+              data: bytes.data,
+              type: bytes.type,
+              transformation: { width: Math.round(sizePx), height: Math.round(sizePx) },
+            }));
+            break;
+          }
+          const colorHex = hexNoHash(c.getAttribute('data-color') ?? undefined) ?? childCtx.color;
+          runs.push(new TextRun({ text: '◆', size: Math.max(10, Math.round(sizePx * 1.2)), color: colorHex }));
+          break;
+        }
         runs.push(...inlineRuns(c, childCtx));
       }
     }
@@ -285,6 +303,24 @@ function footnoteIndexOf(sup: Element): number {
   if (existing !== -1) return existing + 1;
   currentFootnotes.push(note);
   return currentFootnotes.length;
+}
+
+/** dataURL → বাইট (স্টিকার আপলোড Word-এ আসল ছবি হয়ে যায়); ব্যর্থ হলে null */
+function dataUrlToBytes(src: string): { data: Uint8Array; type: 'png' | 'jpg' | 'gif' | 'bmp' } | null {
+  try {
+    const mime = (src.slice(5, src.indexOf(';')) || 'image/png').toLowerCase();
+    let type: 'png' | 'jpg' | 'gif' | 'bmp' = 'png';
+    if (mime.includes('jpeg') || mime.includes('jpg')) type = 'jpg';
+    else if (mime.includes('gif')) type = 'gif';
+    else if (mime.includes('bmp')) type = 'bmp';
+    const base64 = src.split(',')[1] ?? '';
+    const bin = atob(base64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return { data: bytes, type };
+  } catch {
+    return null;
+  }
 }
 
 function imageRunOf(img: Element): ImageRun | null {

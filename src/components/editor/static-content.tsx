@@ -132,6 +132,29 @@ function inlineNodes(node: Node, keyPrefix: string): ReactNode[] {
           );
           break;
         }
+        // ডকুমেন্ট স্টিকার — data attrs থেকে সাইজ/রং, ভিতরের SVG/img সরাসরি
+        if (el.classList.contains('doc-sticker')) {
+          const size = Number(el.getAttribute('data-size') ?? 48) || 48;
+          const color = el.getAttribute('data-color') ?? '';
+          out.push(
+            <span
+              key={key}
+              className="doc-sticker"
+              data-sid={el.getAttribute('data-sid') ?? undefined}
+              data-src={el.getAttribute('data-src') || undefined}
+              style={{
+                display: 'inline-flex',
+                lineHeight: 0,
+                width: size,
+                height: size,
+                color: color || 'inherit',
+                verticalAlign: '-0.18em',
+              }}
+              dangerouslySetInnerHTML={{ __html: el.innerHTML }}
+            />,
+          );
+          break;
+        }
         const style = el.getAttribute('style') ?? '';
         const colorMatch = /color:\s*([^;]+)/.exec(style);
         const bgMatch = /background(?:-color)?:\s*([^;]+)/.exec(style);

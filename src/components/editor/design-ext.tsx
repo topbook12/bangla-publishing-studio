@@ -35,6 +35,10 @@ import {
   shapeStyleText,
   type ShapeFrameAttrs,
 } from '@/lib/shape-catalog';
+import {
+  getSticker,
+  stickerSpanStyle,
+} from '@/lib/sticker-catalog';
 
 // ─────────────────────────── আইকন ───────────────────────────
 
@@ -635,6 +639,182 @@ declare module '@tiptap/core' {
   }
 }
 
+// ─────────────────────────── স্টিকার ───────────────────────────
+
+/**
+ * ডকুমেন্ট স্টিকার — রঙিন SVG অলংকরণ (ক্যাটালগ) বা নিজের আপলোড (dataURL img)।
+ * স্টোরেজ কনট্রাক্ট:
+ *  <span class="doc-sticker" data-sid data-src data-size data-color style> [svg|img] </span>
+ * ক্যাটালগ স্টিকারের রঙ currentColor — data-color থেকে আসে।
+ */
+function DocStickerNodeView({ node, updateAttributes, deleteNode, selected }: NodeViewProps) {
+  const sid = (node.attrs.sid as string) ?? '';
+  const src = (node.attrs.src as string) ?? '';
+  const size = Number(node.attrs.size ?? 48) || 48;
+  const color = (node.attrs.color as string) ?? '';
+  const def = sid ? getSticker(sid) : undefined;
+
+  const clampSize = (n: number) => Math.max(12, Math.min(240, n));
+
+  return (
+    <NodeViewWrapper
+      as="span"
+      className={cn('doc-sticker-wrap', selected && 'doc-icon-selected')}
+      data-sid={sid || undefined}
+    >
+      {def ? (
+        <span
+          className="doc-sticker"
+          style={{ width: size, height: size, color: color || 'inherit', display: 'inline-flex', lineHeight: 0 }}
+          dangerouslySetInnerHTML={{ __html: def.svg }}
+          aria-label={def.label}
+          role="img"
+        />
+      ) : src ? (
+        <img
+          src={src}
+          alt=""
+          draggable={false}
+          style={{ width: size, height: size, objectFit: 'contain', display: 'inline-flex' }}
+        />
+      ) : (
+        <span className="doc-sticker" style={{ width: size, height: size, display: 'inline-flex' }} aria-hidden="true">✦</span>
+      )}
+      {selected ? (
+        <span className="doc-icon-tools no-print" contentEditable={false}>
+          <button
+            type="button"
+            className="doc-tool-btn"
+            onClick={() => updateAttributes({ size: clampSize(size - 8) })}
+            aria-label="স্টিকার ছোট করুন"
+            title="ছোট করুন"
+          >
+            <Minus size={12} />
+          </button>
+          <button
+            type="button"
+            className="doc-tool-btn"
+            onClick={() => updateAttributes({ size: clampSize(size + 8) })}
+            aria-label="স্টিকার বড় করুন"
+            title="বড় করুন"
+          >
+            <Plus size={12} />
+          </button>
+          <button
+            type="button"
+            className="doc-tool-btn doc-tool-danger"
+            onClick={deleteNode}
+            aria-label="স্টিকার মুছুন"
+            title="মুছুন"
+          >
+            <Trash2 size={12} />
+          </button>
+        </span>
+      ) : null}
+    </NodeViewWrapper>
+  );
+}
+
+export const DocSticker = Node.create({
+  name: 'docSticker',
+  group: 'inline',
+  inline: true,
+  atom: true,
+  draggable: true,
+
+  addAttributes() {
+    return {
+      sid: {
+        default: '',
+        parseHTML: (el) => el.getAttribute('data-sid') ?? '',
+        renderHTML: (attrs) => (attrs.sid ? { 'data-sid': attrs.sid } : {}),
+      },
+      src: {
+        default: '',
+        parseHTML: (el) => el.getAttribute('data-src') ?? '',
+        renderHTML: (attrs) => (attrs.src ? { 'data-src': attrs.src } : {}),
+      },
+      size: {
+        default: 48,
+        parseHTML: (el) => Number(el.getAttribute('data-size') ?? 48) || 48,
+        renderHTML: (attrs) => ({ 'data-size': String(attrs.size ?? 48) }),
+      },
+      color: {
+        default: '',
+        parseHTML: (el) => el.getAttribute('data-color') ?? '',
+        renderHTML: (attrs) => ({ 'data-color': attrs.color ?? '' }),
+      },
+    };
+  },
+
+  parseHTML() {
+    return [{ tag: 'span.doc-sticker' }];
+  },
+
+  renderHTML({ node }) {
+    const sid = (node.attrs.sid as string) ?? '';
+    const src = (node.attrs.src as string) ?? '';
+    const size = Number(node.attrs.size ?? 48) || 48;
+    const color = (node.attrs.color as string) ?? '';
+    const def = sid ? getSticker(sid) : undefined;
+
+    const kids: DOMOutputSpec[] = [];
+    if (def) {
+      try {
+        const parsed = new DOMParser().parseFromString(def.svg, 'image/svg+xml');
+        const el = parsed.documentElement;
+        const spec = svgToSpec(el);
+        if (spec) kids.push(spec);
+      } catch {
+        /* DOMParser অনুপলব্ধ — NodeView তবু SVG দেখাবে */
+      }
+    } else if (src) {
+      kids.push(['img', { src, alt: '', draggable: 'false' }]);
+    }
+    return [
+      'span',
+      mergeAttributes({
+        class: 'doc-sticker',
+        'data-sid': sid || null,
+        'data-src': src || null,
+        'data-size': String(size),
+        'data-color': color,
+        style: stickerSpanStyle(size, color),
+      }),
+      ...kids,
+    ] as DOMOutputSpec;
+  },
+
+  addNodeView() {
+    return ReactNodeViewRenderer(DocStickerNodeView);
+  },
+
+  addCommands() {
+    return {
+      insertDocSticker:
+        (attrs: { sid?: string; src?: string; size?: number; color?: string }) =>
+        ({ commands }: CommandProps) =>
+          commands.insertContent({
+            type: this.name,
+            attrs: {
+              sid: attrs.sid ?? '',
+              src: attrs.src ?? '',
+              size: attrs.size ?? 48,
+              color: attrs.color ?? '',
+            },
+          }),
+    };
+  },
+});
+
+declare module '@tiptap/core' {
+  interface Commands<ReturnType> {
+    docSticker: {
+      insertDocSticker: (attrs: { sid?: string; src?: string; size?: number; color?: string }) => ReturnType;
+    };
+  }
+}
+
 // ─────────────────────────── সব একসাথে ───────────────────────────
 
-export const designExtensions = [DocIcon, DesignBox, ShapeFrame];
+export const designExtensions = [DocIcon, DesignBox, ShapeFrame, DocSticker];

@@ -7,7 +7,7 @@
 import { useMemo, useRef, useState, type CSSProperties } from 'react';
 import {
   AlertTriangle, BookOpen, CalendarDays, ChevronDown, Frame, Hash, Image as ImageIcon,
-  Lightbulb, Link2, ListTree, Minus, Pin, Shapes, Square, Table as TableIcon, FilePlus2, HelpCircle,
+  Lightbulb, Link2, ListTree, Minus, Pin, Shapes, Square, Store, Table as TableIcon, FilePlus2, HelpCircle,
 } from 'lucide-react';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -30,6 +30,7 @@ import {
 } from '@/lib/shape-catalog';
 import { banglaDateToday, banglaTimeNow } from '@/lib/bangla';
 import { useEditorStore } from '@/lib/store';
+import { useUiStore } from '@/lib/ui-store';
 import { getEditor } from '@/lib/editor-registry';
 import { cn } from '@/lib/utils';
 import { t, tFmt, tplNodes, useT } from '@/lib/i18n';
@@ -656,6 +657,7 @@ export function InsertTab() {
   const ed = useActiveEditor();
   void ed;
   const tt = useT();
+  const openDialog = useUiStore((s) => s.open);
   const [iconOpen, setIconOpen] = useState(false);
   const [shapeOpen, setShapeOpen] = useState(false);
   const [linkDialog, setLinkDialog] = useState<LinkDialogState>(EMPTY_LINK_DIALOG);
@@ -711,6 +713,12 @@ export function InsertTab() {
       <RibbonGroup label={tt('ins.group.iconsDesign')} accent="icons & design">
         <div className="flex flex-col gap-1">
           <div className="flex gap-1">
+            <RibbonButton
+              icon={Store}
+              label={tt('ins.store.btn')}
+              title={tt('ins.store.btnTip')}
+              onClick={() => openDialog('assetStore')}
+            />
             <RibbonButton
               icon={Shapes}
               label={tt('ins.iconlib')}

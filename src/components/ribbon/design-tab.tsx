@@ -4,7 +4,7 @@
 
 'use client';
 
-import { Crown, LayoutTemplate, Palette, RefreshCw, Settings2 } from 'lucide-react';
+import { Crown, LayoutTemplate, Palette, RefreshCw, Settings2, Store } from 'lucide-react';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -193,6 +193,7 @@ export function DesignTab() {
         <div className="flex gap-1">
           <RibbonButton icon={Crown} label={tt('dsn.btn.cover')} onClick={() => openDialog('cover')} />
           <RibbonButton icon={LayoutTemplate} label={tt('dsn.btn.templates')} title={tt('dsn.btn.templatesTip')} onClick={() => openDialog('templates')} />
+          <RibbonButton icon={Store} label={tt('ins.store.btn')} title={tt('ins.store.btnTip')} onClick={() => openDialog('assetStore')} />
           <RibbonButton icon={RefreshCw} label={tt('dsn.btn.updateToc')} onClick={refreshToc} />
           <RibbonButton icon={Palette} label={tt('dsn.btn.borderColor')} onClick={() => {
             const c = window.prompt(tt('dsn.prompt.borderColor'), settings.pageBorderColor);

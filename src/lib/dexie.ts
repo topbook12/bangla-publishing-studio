@@ -28,9 +28,22 @@ export interface SnapshotRecord {
   settings: DocumentSettings;
 }
 
+/**
+ * ডিজাইন স্টোরের নিজের আপলোড (ব্যবহারকারীর স্টিকার/ছবি) — dataURL হিসেবে থাকে
+ * (ছোট অলংকার-ছবির জন্য ঠিক; ক্যাপ ~1.5 MB/আইটেম আপলোডের সময়ই ধোয়া হয়)।
+ */
+export interface CustomAssetRecord {
+  id: string;
+  name: string;
+  /** image/* dataURL */
+  dataUrl: string;
+  createdAt: number;
+}
+
 const db = new Dexie('bwp-studio') as Dexie & {
   projects: EntityTable<ProjectRecord, 'id'>;
   snapshots: EntityTable<SnapshotRecord, 'id'>;
+  assets: EntityTable<CustomAssetRecord, 'id'>;
 };
 
 db.version(1).stores({
@@ -41,6 +54,11 @@ db.version(1).stores({
 // উল্লেখ-না-করা টেবিল আগের স্কিমায় অক্ষত থাকে — পুরনো ডেটা/আপগ্রেড নিরাপদ)
 db.version(2).stores({
   snapshots: 'id, projectId, createdAt',
+});
+
+// সংস্করণ ৩ — ডিজাইন স্টোরের নিজের আপলোড (অ্যাডিটিভ)
+db.version(3).stores({
+  assets: 'id, name, createdAt',
 });
 
 export { db };

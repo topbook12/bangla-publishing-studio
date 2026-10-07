@@ -134,6 +134,9 @@ a, a * { color: #4f46e5; text-decoration: underline; }
 a { cursor: pointer; }
 .doc-icon { display: inline-flex; line-height: 0; vertical-align: -0.16em; }
 .doc-icon svg, span.doc-icon svg { width: 100%; height: 100%; }
+.doc-sticker { display: inline-flex; line-height: 0; vertical-align: -0.18em; }
+.doc-sticker svg, span.doc-sticker svg { width: 100%; height: 100%; }
+.doc-sticker img { width: 100%; height: 100%; object-fit: contain; }
 .doc-textbox { position: relative; }
 .doc-textbox p { margin: 0.1em 0; }
 .mcq-block { border: 1.5px solid rgba(100,116,139,.4); border-radius: 12px; padding: 12px 16px; margin: 12px 0; }

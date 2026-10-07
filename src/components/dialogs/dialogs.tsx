@@ -16,6 +16,7 @@ import { HelpDialog } from './help-dialog';
 import { KrutiConverterDialog } from './kruti-converter-dialog';
 import { AiVisionDialog } from './ai-vision-dialog';
 import { AiSettingsDialog } from './ai-settings-dialog';
+import { AssetStoreDialog } from './asset-store-dialog';
 
 export function Dialogs() {
   useFindReplaceShortcuts();
@@ -32,6 +33,7 @@ export function Dialogs() {
       <KrutiConverterDialog />
       <AiVisionDialog />
       <AiSettingsDialog />
+      <AssetStoreDialog />
       <HelpDialog />
     </>
   );

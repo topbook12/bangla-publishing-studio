@@ -115,3 +115,37 @@ export const dictInsert: Dict = {
   'ins.toast.linkFirst': { bn: 'আগে কোনো পাতায় ক্লিক করুন, তারপর লিংক যোগ করুন', hi: 'पहले किसी पृष्ठ पर क्लिक करें, फिर लिंक जोड़ें', en: 'Click on a page first, then add the link' },
   'ins.toast.unlinkFirst': { bn: 'আগে কোনো পাতায় ক্লিক করুন, তারপর লিংক সরান', hi: 'पहले किसी पृष्ठ पर क्लिक करें, फिर लिंक हटाएँ', en: 'Click on a page first, then remove the link' },
 };
+
+// ═══ ডিজাইন স্টোর (asset-store-dialog) ═══
+dictInsert['ins.store.btn'] = { bn: 'স্টোর', hi: 'स्टोर', en: 'Store' };
+dictInsert['ins.store.btnTip'] = { bn: 'ডিজাইন স্টোর — ইমোজি, স্টিকার, অলংকার, আইকন সব এক জায়গায়', hi: 'डिज़ाइन स्टोर — इमोजी, स्टिकर, अलंकरण, आइकन सब एक जगह', en: 'Design Store — emojis, stickers, ornaments & icons in one place' };
+dictInsert['ins.store.title'] = { bn: 'ডিজাইন স্টোর', hi: 'डिज़ाइन स्टोर', en: 'Design Store' };
+dictInsert['ins.store.desc'] = { bn: 'ইমোজি, স্টিকার, অলংকার, আইকন ও নিজের আপলোড — সব এক জায়গায়। ক্লিক করলেই কার্সরে বসে যাবে; ❤ দিয়ে প্রিয়ে রাখুন।', hi: 'इमोजी, स्टिकर, अलंकरण, आइकन और अपने अपलोड — सब एक जगह। क्लिक करते ही कर्सर पर बैठ जाएगा; ❤ से पसंदीदा में रखें।', en: 'Emojis, stickers, ornaments, icons & your uploads — all in one place. Click to insert at the cursor; ❤ to favorite.' };
+dictInsert['ins.store.searchPh'] = { bn: 'সব খুঁজুন… (যেমন: পাখি, আলপনা, boat, হৃদয়)', hi: 'सब खोजें… (जैसे: पक्षी, boat, हृदय)', en: 'Search everything… (e.g. bird, alpana, boat, heart)' };
+dictInsert['ins.store.searchAria'] = { bn: 'স্টোর সার্চ', hi: 'स्टोर खोज', en: 'Store search' };
+dictInsert['ins.store.sizeAria'] = { bn: 'সাজসজ্জার সাইজ', hi: 'सजावट का आकार', en: 'Decoration size' };
+dictInsert['ins.store.colorTitle'] = { bn: 'রং বাছুন', hi: 'रंग चुनें', en: 'Pick a color' };
+dictInsert['ins.store.autoColor'] = { bn: 'স্বয়ং রং', hi: 'स्वतः रंग', en: 'Auto' };
+dictInsert['ins.store.autoColorTitle'] = { bn: 'লেখার রংই অনুসরণ করবে', hi: 'लेख का रंग अपनाएगा', en: 'Follow the text color' };
+dictInsert['ins.store.upload'] = { bn: 'আপলোড', hi: 'अपलोड', en: 'Upload' };
+dictInsert['ins.store.tab.all'] = { bn: 'সব', hi: 'सभी', en: 'All' };
+dictInsert['ins.store.tab.fav'] = { bn: 'প্রিয়', hi: 'पसंदीदा', en: 'Favorites' };
+dictInsert['ins.store.tab.recent'] = { bn: 'সম্প্রতি', hi: 'हाल के', en: 'Recent' };
+dictInsert['ins.store.tab.sticker'] = { bn: 'স্টিকার', hi: 'स्टिकर', en: 'Stickers' };
+dictInsert['ins.store.tab.emoji'] = { bn: 'ইমোজি', hi: 'इमोजी', en: 'Emojis' };
+dictInsert['ins.store.tab.orn'] = { bn: 'অলংকার', hi: 'अलंकरण', en: 'Ornaments' };
+dictInsert['ins.store.tab.icon'] = { bn: 'আইকন', hi: 'आइकन', en: 'Icons' };
+dictInsert['ins.store.tab.custom'] = { bn: 'আমার আপলোড', hi: 'मेरे अपलोड', en: 'My uploads' };
+dictInsert['ins.store.noresult'] = { bn: '“{q}” এর জন্য কিছু পাওয়া যায়নি — অন্য শব্দ চেষ্টা করুন।', hi: '“{q}” के लिए कुछ नहीं मिला — दूसरा शब्द आज़माएँ।', en: 'No results for “{q}” — try another word.' };
+dictInsert['ins.store.insertTip'] = { bn: 'ক্লিক করলে বসে যাবে', hi: 'क्लिक करने पर बैठ जाएगा', en: 'Click to insert' };
+dictInsert['ins.store.favAria'] = { bn: 'প্রিয়ে রাখুন', hi: 'पसंदीदा में रखें', en: 'Add to favorites' };
+dictInsert['ins.store.favEmpty'] = { bn: 'এখনো কোনো প্রিয় নেই — যেকোনো সাজসজ্জার ❤ চেপে এখানে জমা করুন।', hi: 'अभी कोई पसंदीदा नहीं — किसी सजावट के ❤ दबाकर यहाँ जमा करें।', en: 'No favorites yet — tap ❤ on any decoration to save it here.' };
+dictInsert['ins.store.recentEmpty'] = { bn: 'সম্প্রতি ব্যবহৃত সাজসজ্জা এখানে জমা হবে।', hi: 'हाल में उपयोग की गई सजावट यहाँ जमा होगी।', en: 'Recently used decorations will appear here.' };
+dictInsert['ins.store.uploadHint'] = { bn: 'নিজের স্টিকার/ছবি আপলোড করুন — এখানেই সেভ থাকবে (PNG, JPG, SVG, WebP)', hi: 'अपना स्टिकर/चित्र अपलोड करें — यहीं सेव रहेगा (PNG, JPG, SVG, WebP)', en: 'Upload your own stickers/images — saved right here (PNG, JPG, SVG, WebP)' };
+dictInsert['ins.store.deleteUpload'] = { bn: 'আপলোড মুছুন', hi: 'अपलोड मिटाएँ', en: 'Delete upload' };
+dictInsert['ins.store.footer'] = { bn: 'ক্লিক = তাৎক্ষণিক ঢোকান · ❤ = প্রিয়ে রাখুন · সাইজ-রং উপরের নিয়ন্ত্রণ থেকে · প্রিয়/আপলোড ব্রাউজারেই সেভ থাকে', hi: 'क्लिक = तुरंत जोड़ें · ❤ = पसंदीदा · आकार-रंग ऊपर से · पसंदीदा/अपलोड ब्राउज़र में सेव', en: 'Click = insert instantly · ❤ = favorite · size & color from the controls above · favorites & uploads are saved in your browser' };
+dictInsert['ins.store.toast.favAdd'] = { bn: 'প্রিয়ে যোগ হয়েছে', hi: 'पसंदीदा में जोड़ा गया', en: 'Added to favorites' };
+dictInsert['ins.store.toast.favRemove'] = { bn: 'প্রিয় থেকে সরানো হয়েছে', hi: 'पसंदीदा से हटाया गया', en: 'Removed from favorites' };
+dictInsert['ins.store.toast.deleted'] = { bn: 'আপলোড মুছে ফেলা হয়েছে', hi: 'अपलोड मिटा दिया गया', en: 'Upload deleted' };
+dictInsert['ins.store.toast.uploaded'] = { bn: '{n}টি ছবি স্টোরে জোড় হয়েছে', hi: '{n} चित्र स्टोर में जुड़े', en: '{n} image(s) added to the store' };
+dictInsert['ins.store.toast.uploadFail'] = { bn: '{name} — ছবি নয় বা পড়া গেল না', hi: '{name} — चित्र नहीं है या पढ़ा नहीं जा सका', en: '{name} — not an image or unreadable' };

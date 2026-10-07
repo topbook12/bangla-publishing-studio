@@ -21,6 +21,7 @@ export type DialogName =
   | 'krutiConverter'
   | 'aiVision'
   | 'aiSettings'
+  | 'assetStore'
   | 'help';
 
 /** AI ডায়ালগের কোন ট্যাব নিয়ে খুলবে */
