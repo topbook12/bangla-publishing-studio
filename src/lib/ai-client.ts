@@ -11,6 +11,7 @@
 import { useAiStore, providerPreset } from './ai-store';
 import type { AiResult } from './ai-content';
 import { extractJson } from './ai-content';
+import { withTransientRetry } from './ai-retry';
 import { t } from './i18n';
 import { toast } from 'sonner';
 
@@ -113,9 +114,11 @@ export interface AiCallResult {
   detail?: string;
   /** সার্ভার নিকটতম সঠিক মডেলে স্বয়ংক্রিয় সংশোধন করলে — কোনটিতে */
   fixedModel?: string;
+  /** মডেল ব্যস্ত থাকায় একই পরিবারের হালকা বিকল্পে উত্তর এসেছে — কোনটিতে */
+  busyFallback?: string;
 }
 
-/** সেভ করা BYOK কনফিগ (থাকলে) সহ /api/ai/chat কল */
+/** সেভ করা BYOK কনফিগ (থাকলে) সহ /api/ai/chat কল — অস্থায়ী ত্রুটিতে স্বয়ং-পুনরায় সহ */
 export async function callAi(opts: {
   prompt: string;
   system: string;
@@ -123,19 +126,19 @@ export async function callAi(opts: {
   /** কি বাদ দিয়ে বিল্ট-ইন ডেমো SDK ব্যবহার */
   demo?: boolean;
 }): Promise<AiCallResult> {
-  const config = useAiStore.getState().config;
-  const preset = providerPreset(config.provider);
-  // সম্পূর্ণ ব্যবহারযোগ্য কনফিগই BYOK — কি থাকলেও baseUrl/মডেল ফাঁকা হলে
-  // কি অব্যবহৃত থেকে নিঃশব্দ ডেমোতে চলে যেত; সেটাই আসল বিভ্রান্তি
-  const baseUrl = (config.baseUrl || preset.baseUrl).trim();
-  const model = (config.model || preset.visionModel || preset.model).trim();
-  const useOwnKey = !opts.demo && !!(config.apiKey.trim() && baseUrl && model);
+  const attempt = async (): Promise<AiCallResult> => {
+    const config = useAiStore.getState().config;
+    const preset = providerPreset(config.provider);
+    // সম্পূর্ণ ব্যবহারযোগ্য কনফিগই BYOK — কি থাকলেও baseUrl/মডেল ফাঁকা হলে
+    // কি অব্যবহৃত থেকে নিঃশব্দ ডেমোতে চলে যেত; সেটাই আসল বিভ্রান্তি
+    const baseUrl = (config.baseUrl || preset.baseUrl).trim();
+    const model = (config.model || preset.visionModel || preset.model).trim();
+    const useOwnKey = !opts.demo && !!(config.apiKey.trim() && baseUrl && model);
 
-  try {
     const res = await fetch('/api/ai/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      signal: AbortSignal.timeout(200_000), // সার্ভার hard-cap ১৮০সে + self-heal — ক্লায়েন্টে ঢিলেঢালা সীমা
+      signal: AbortSignal.timeout(200_000), // সার্ভার hard-cap ১৮০সে + self-heal + busy-retry — ক্লায়েন্টে ঢিলেঢালা সীমা
       body: JSON.stringify({
         prompt: opts.prompt,
         system: opts.system,
@@ -156,7 +159,16 @@ export async function callAi(opts: {
     if (data.ok && data.fixedModel) {
       useAiStore.getState().setConfig({ model: data.fixedModel });
     }
+    // মডেল ব্যস্ত ছিল — হালকা বিকল্প থেকে উত্তর এসেছে; ইউজারের পছন্দ বদলাই নি, শুধু জানাই
+    if (data.ok && data.busyFallback) {
+      toast.info(`${t('ai.err.busyFallback')} ${data.busyFallback}`);
+    }
     return data;
+  };
+
+  try {
+    // ব্যস্ত/সার্ভার-সমস্যায় ক্লায়েন্টেও ২ পর্যন্ত চুপচাপ পুনরায় (৫ সে ও ১২ সে পরে)
+    return await withTransientRetry(attempt);
   } catch (err) {
     const name = (err as Error)?.name;
     if (name === 'TimeoutError' || name === 'AbortError') {

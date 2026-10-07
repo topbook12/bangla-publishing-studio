@@ -552,6 +552,18 @@ export const dictAi: Dict = {
     hi: 'प्रोवाइडर सर्वर में समस्या — बाद में प्रयास करें।',
     en: 'Provider server trouble — try again shortly.',
   },
+  // মডেল ব্যস্ত (503/529 high demand) — স্বয়ং-পুনরায় শেষ হলেও ব্যর্থ হলে
+  'ai.err.busy': {
+    bn: 'মডেলটি এই মুহূর্তে অতিরিক্ত ব্যস্ত (high demand) — স্বয়ংক্রিয়ভাবে কয়েকবার চেষ্টা করা হয়েছে। কয়েক সেকেন্ড পর আবার চাপুন, বা Settings-এ হালকা মডেল (যেমন Flash-Lite) বাছুন।',
+    hi: 'मॉडल इस समय अत्यधिक व्यस्त है (high demand) — स्वतः कई बार प्रयास किया गया। कुछ सेकंड बाद फिर दबाएँ, या Settings में हल्का मॉडल (जैसे Flash-Lite) चुनें।',
+    en: 'The model is very busy right now (high demand) — auto-retried several times. Try again in a few seconds, or pick a lighter model (e.g. Flash-Lite) in Settings.',
+  },
+  // ব্যস্ত মডেলের বদলে হালকা বিকল্প মডেল থেকে উত্তর এসেছে (নোটিশ-টোস্ট)
+  'ai.err.busyFallback': {
+    bn: 'মডেল ব্যস্ত থাকায় উত্তর এসেছে হালকা বিকল্প মডেল থেকে:',
+    hi: 'मॉडल व्यस्त होने से उत्तर हल्के वैकल्पिक मॉडल से आया:',
+    en: 'The model was busy — answered via a lighter fallback model:',
+  },
   'ai.err.config': {
     bn: 'সেটিংসে Base URL ও মডেল পূরণ করুন।',
     hi: 'सेटिंग्स में Base URL और मॉडल भरें।',

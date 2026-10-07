@@ -17,14 +17,19 @@
  *  - কি কখনো লগ/স্টোর হয় না; ত্রুটি-বার্তায়ও কি ফাঁস হয় না
  *
  * বডি: { prompt, system?, imageDataUrl?, config?: { baseUrl, apiKey, model, provider? } }
- * উত্তর: { ok: true, text } | { ok: false, error, hintKey? }
+ * উত্তর: { ok: true, text, fixedModel?, busyFallback? } | { ok: false, error, hintKey?, detail? }
+ *
+ * ব্যস্ত-প্রতিরোধ (busy-resilience): 503 "high demand" জাতীয় অস্থায়ী ত্রুটিতে
+ * Retry-After সম্মান করে ব্যাকঅফে ৩ বার পুনরায়; তবু থাকলে একই পরিবারের হালকা
+ * মডেলে (flash → flash-lite) শেষ চেষ্টা — busyFallback জানিয়ে উত্তর ফেরত।
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import {
-  allowRate, assertSafeBase, bestModelMatch, clientIp, extractModelIds,
-  extractSuggestedModel, isGeminiHost, isModelRetiredMessage, normalizeBase,
-  originIsLocalHost, sanitizeModelId,
+  allowRate, assertSafeBase, backoffDelayMs, bestModelMatch, clientIp,
+  extractModelIds, extractSuggestedModel, isGeminiHost, isModelRetiredMessage,
+  isTransientStatus, liteAlternativeModels, normalizeBase, originIsLocalHost,
+  parseRetryAfterMs, sanitizeModelId,
 } from '@/lib/ai-proxy-guard';
 
 export const runtime = 'nodejs';
@@ -91,9 +96,12 @@ async function throwUpstream(res: Response): Promise<never> {
     status?: number;
     /** প্রোভাইডারের raw বার্তা — self-heal এর পরামর্শ-পার্সারের উৎস */
     providerDetail?: string;
+    /** Retry-After হেডার (থাকলে) — ব্যস্ত-রিট্রাইয়ের বিলম্ব-নির্ধারণ */
+    retryAfterMs?: number;
   };
   e.status = res.status;
   e.providerDetail = detail;
+  e.retryAfterMs = parseRetryAfterMs(res.headers.get('retry-after'));
   throw e;
 }
 
@@ -299,6 +307,49 @@ async function callWithSelfHeal(
   }
 }
 
+/**
+ * ব্যস্ত-প্রতিরোধী (busy-resilient) কল — 503 "high demand" / 429 / 5xx জাতীয়
+ * অস্থায়ী ত্রুটিতে ব্যাকঅফ দিয়ে ৩ বার পুনরায় (Retry-After সম্মান করে);
+ * তবু 503/529 থাকলে একই পরিবারের হালকা বিকল্প মডেলে শেষ চেষ্টা —
+ * সফল হলে busyFallback হিসেবে জানানো হয় (ইউজারের পছন্দ ওভাররাইট হয় না)।
+ */
+async function callWithBusyRetry(
+  config: AiProxyConfig,
+  body: ChatBody,
+): Promise<{ text: string; fixedModel?: string; busyFallback?: string }> {
+  let lastErr: (Error & { status?: number; retryAfterMs?: number }) | null = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      return await callWithSelfHeal(config, body);
+    } catch (err) {
+      lastErr = err as Error & { status?: number; retryAfterMs?: number };
+      if (!isTransientStatus(lastErr?.status)) throw err;
+      if (attempt < 2) {
+        await new Promise((r) => setTimeout(r, backoffDelayMs(attempt, lastErr?.retryAfterMs)));
+      }
+    }
+  }
+
+  // সব পুনরায় ব্যর্থ — overload (503/529) হলে হালকা বিকল্পে শেষ চেষ্টা
+  const status = lastErr?.status;
+  if (status === 503 || status === 529) {
+    for (const model of liteAlternativeModels(config.model)) {
+      try {
+        const r = await callOpenAiCompatible({ ...config, model }, body);
+        return { ...r, busyFallback: model };
+      } catch {
+        if (isGeminiHost(config.baseUrl)) {
+          try {
+            const r = await callGeminiNative(config.apiKey, model, body);
+            return { ...r, busyFallback: model };
+          } catch { /* পরের প্রার্থী */ }
+        }
+      }
+    }
+  }
+  throw lastErr ?? new Error('AI request failed');
+}
+
 /** সীমিত ডেমো মোড — প্ল্যাটফর্মের বিল্ট-ইন SDK */
 async function callDemo(body: ChatBody): Promise<{ text: string }> {
   const { default: ZAI } = await import('z-ai-web-dev-sdk');
@@ -402,8 +453,8 @@ export async function POST(req: NextRequest) {
     if (!cfg.model) return jsonError('MODEL_EMPTY', 'ai.err.config');
 
     try {
-      const { text, fixedModel } = await callWithSelfHeal(cfg, body);
-      return NextResponse.json({ ok: true, text, ...(fixedModel ? { fixedModel } : {}) });
+      const { text, fixedModel, busyFallback } = await callWithBusyRetry(cfg, body);
+      return NextResponse.json({ ok: true, text, ...(fixedModel ? { fixedModel } : {}), ...(busyFallback ? { busyFallback } : {}) });
     } catch (err) {
       const e = err as Error & { status?: number; cause?: { code?: string } };
       const msg = e?.message ?? 'AI request failed';
@@ -438,6 +489,10 @@ export async function POST(req: NextRequest) {
       }
       if (status === 429) {
         return jsonError(msg, 'ai.err.rate');
+      }
+      if (status === 503 || status === 529) {
+        // overload/high-demand — স্বয়ং-পুনরায় ও হালকা-মডেল ফলব্যাক শেষ হলে এখানে আসে
+        return jsonError(msg, 'ai.err.busy');
       }
       if (status && status >= 500) {
         return jsonError(msg, 'ai.err.server');

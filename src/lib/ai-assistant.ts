@@ -9,9 +9,12 @@
  */
 
 import { useAiStore, providerPreset } from './ai-store';
+import { withTransientRetry } from './ai-retry';
 import type { AiBubbleMode } from './ai-bubble-store';
 import type { Editor } from '@tiptap/react';
 import type { Node as PMNode } from 'prosemirror-model';
+import { t } from './i18n';
+import { toast } from 'sonner';
 
 // ─── সিস্টেম প্রম্পট ───
 
@@ -192,6 +195,8 @@ export interface AiTextResult {
   detail?: string;
   /** সার্ভার নিকটতম সঠিক মডেলে স্বয়ংক্রিয় সংশোধন করলে — কোনটিতে */
   fixedModel?: string;
+  /** মডেল ব্যস্ত থাকায় একই পরিবারের হালকা বিকল্পে উত্তর এসেছে — কোনটিতে */
+  busyFallback?: string;
 }
 
 async function callTextApi(opts: {
@@ -199,17 +204,17 @@ async function callTextApi(opts: {
   system: string;
   imageDataUrl?: string | null;
 }): Promise<AiTextResult> {
-  const config = useAiStore.getState().config;
-  const preset = providerPreset(config.provider);
-  // সম্পূর্ণ ব্যবহারযোগ্য কনফিগই BYOK — অসম্পূর্ণ হলে কি অব্যবহৃত থেকে ডেমোতে চলে যেত
-  const baseUrl = (config.baseUrl || preset.baseUrl).trim();
-  const model = (config.model || preset.model || preset.visionModel).trim();
-  const hasKey = !!(config.apiKey.trim() && baseUrl && model);
-  try {
+  const attempt = async (): Promise<AiTextResult> => {
+    const config = useAiStore.getState().config;
+    const preset = providerPreset(config.provider);
+    // সম্পূর্ণ ব্যবহারযোগ্য কনফিগই BYOK — অসম্পূর্ণ হলে কি অব্যবহৃত থেকে ডেমোতে চলে যেত
+    const baseUrl = (config.baseUrl || preset.baseUrl).trim();
+    const model = (config.model || preset.model || preset.visionModel).trim();
+    const hasKey = !!(config.apiKey.trim() && baseUrl && model);
     const res = await fetch('/api/ai/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      signal: AbortSignal.timeout(200_000), // সার্ভার hard-cap ১৮০সে — ক্লায়েন্টে ঢিলেঢালা সীমা
+      signal: AbortSignal.timeout(200_000), // সার্ভার hard-cap ১৮০সে + busy-retry — ক্লায়েন্টে ঢিলেঢালা সীমা
       body: JSON.stringify({
         prompt: opts.prompt,
         system: opts.system,
@@ -230,7 +235,16 @@ async function callTextApi(opts: {
     if (data.ok && data.fixedModel) {
       useAiStore.getState().setConfig({ model: data.fixedModel });
     }
+    // মডেল ব্যস্ত ছিল — হালকা বিকল্প থেকে উত্তর এসেছে; ইউজারের পছন্দ বদলাই নি, শুধু জানাই
+    if (data.ok && data.busyFallback) {
+      toast.info(`${t('ai.err.busyFallback')} ${data.busyFallback}`);
+    }
     return data;
+  };
+
+  try {
+    // ব্যস্ত/সার্ভার-সমস্যায় ক্লায়েন্টেও ২ পর্যন্ত চুপচাপ পুনরায় (৫ সে ও ১২ সে পরে)
+    return await withTransientRetry(attempt);
   } catch (err) {
     const name = (err as Error)?.name;
     if (name === 'TimeoutError' || name === 'AbortError') {

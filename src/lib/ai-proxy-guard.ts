@@ -194,6 +194,52 @@ export function isModelRetiredMessage(detail: string): boolean {
   return /no longer available|deprecat|retired|discontinu|not available to new|sunset|no longer support/i.test(detail ?? '');
 }
 
+// ─── অস্থায়ী (transient) ত্রুটি — অটো-রিট্রাইয়ের লক্ষ্য ───
+
+/**
+ * অস্থায়ী আপস্ট্রিম ত্রুটি — অল্প অপেক্ষায় সেরে উঠতে পারে:
+ * 429 রেট-লিমিট, 500/502/504 সার্ভার-বিভ্রাট, 503/529 overload (high demand)।
+ * 4xx-এর বাকিরা (401/403/404/400) অস্থায়ী নয় — পুনরায় চেষ্টা অর্থহীন।
+ */
+export function isTransientStatus(status?: number): boolean {
+  return status === 429 || status === 500 || status === 502 || status === 503 || status === 504 || status === 529;
+}
+
+/** Retry-After হেডার (সেকেন্ড বা HTTP-তারিখ) → মিলিসেকেন্ড — ধরার বাইরে ১২ সে-তে ক্যাপ */
+export function parseRetryAfterMs(header: string | null): number | undefined {
+  if (!header) return undefined;
+  const raw = header.trim();
+  const s = Number(raw);
+  if (Number.isFinite(s) && s >= 0) return Math.min(s * 1000, 12_000);
+  const d = Date.parse(raw);
+  if (Number.isFinite(d)) return Math.min(Math.max(d - Date.now(), 0), 12_000);
+  return undefined;
+}
+
+/**
+ * কোন চেষ্টার পর কত অপেক্ষা — ক্রমবর্ধমান ব্যাকঅফ; প্রোভাইডার Retry-After বললে
+ * তার সাথে বড়টি সম্মান। মোট অপেক্ষা সার্ভার-সাইডে ~৭.৫ সে — অনুরোধ দীর্ঘ হয় না।
+ */
+export function backoffDelayMs(attempt: number, retryAfterMs?: number): number {
+  const base = [800, 2200, 4500][Math.max(0, Math.min(attempt, 2))];
+  return Math.min(Math.max(base, retryAfterMs ?? 0), 12_000);
+}
+
+/**
+ * মডেল ব্যস্ত (503/529) থাকলে একই পরিবারের হালকা বিকল্প — শেষ ভরসা:
+ *   gemini-3.8-flash → gemini-3.8-flash-lite; gemini-2.5-pro → gemini-2.5-flash;
+ *   gpt-4o → gpt-4o-mini। একই পরিবার মানে কাজের মান প্রায় অটুট।
+ */
+export function liteAlternativeModels(model: string): string[] {
+  const m = sanitizeModelId(model).toLowerCase();
+  if (!m) return [];
+  const out: string[] = [];
+  if (m.includes('-flash') && !m.includes('lite')) out.push(m.replace(/-flash/, '-flash-lite'));
+  if (m.includes('-pro')) out.push(m.replace(/-pro/, '-flash'));
+  if (/(^|\/)gpt-/.test(m) && !m.includes('mini')) out.push(`${m}-mini`);
+  return Array.from(new Set(out)).filter((x) => x && x !== m);
+}
+
 /** OpenAI-সামঞ্জস্য /models উত্তর থেকে মডেল-আইডি বের করা (উভয় রুট শেয়ার করে) */
 export function extractModelIds(data: unknown): string[] {
   const ids: string[] = [];
