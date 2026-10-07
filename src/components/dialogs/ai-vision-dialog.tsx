@@ -28,6 +28,8 @@ import { useEditorStore } from '@/lib/store';
 import { getEditor } from '@/lib/editor-registry';
 import { useAiStore, aiConfiguredSelector } from '@/lib/ai-store';
 import { analyzeImage, generateBookText, prepareImageFile, AI_VISION_SYSTEM } from '@/lib/ai-client';
+import { gatherDocContext, formatDocContext } from '@/lib/ai-context';
+import { pageToMarkdown, PAGE_MD_CAP } from '@/lib/ai-assistant';
 import type { PreparedImage } from '@/lib/ai-client';
 import { blocksToHtml } from '@/lib/ai-content';
 import type { AiBlock, AiResult } from '@/lib/ai-content';
@@ -145,9 +147,24 @@ export function AiVisionDialog() {
     setResultDemo(false);
     setExcluded(new Set());
 
+    // বইয়ের প্রেক্ষাপট — লেখক/ভিশন দুই ট্যাবেই: বইয়ের নাম, অধ্যায় ও চলতি পাতার লেখা
+    let docContext = '';
+    try {
+      const { activePageId } = useEditorStore.getState();
+      const activeEd = activePageId ? getEditor(activePageId) : null;
+      const parts = gatherDocContext(activeEd, { pageExcerpt: true, excerptCap: 3_000 });
+      if (activeEd) {
+        const md = pageToMarkdown(activeEd, Math.min(3_000, PAGE_MD_CAP));
+        if (md.trim()) parts.pageExcerpt = md;
+      }
+      docContext = formatDocContext(parts);
+    } catch {
+      docContext = '';
+    }
+
     const res = tab === 'vision' && image
-      ? await analyzeImage({ imageDataUrl: image.dataUrl, instruction, demo })
-      : await generateBookText({ instruction, demo });
+      ? await analyzeImage({ imageDataUrl: image.dataUrl, instruction, demo, docContext })
+      : await generateBookText({ instruction, demo, docContext });
 
     if (res.ok) {
       setResult(res.result);

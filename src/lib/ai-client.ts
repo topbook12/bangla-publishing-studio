@@ -34,14 +34,27 @@ const JSON_SCHEMA_RULES = `Return ONLY valid JSON — no markdown fences, no com
 }
 Rules:
 - "title" = short heading for the content; "caption" = one-line figure caption (empty string if none).
-- Write the content in the SAME language the user's instruction uses (default: Bengali).
-- Transcribe ALL visible text faithfully; keep numbers, units, formulas exactly.
-- Convert flowcharts/diagrams into numbered steps or bullets as requested.
-- Tables -> rows arrays, first row = header row. 6–14 blocks typical. No empty blocks.`;
+- LANGUAGE MIRROR: write the content in the SAME language as the user's instruction and the BOOK CONTEXT (default: Bengali). Bengali output uses proper Bengali punctuation (।) and Bengali numerals (১২৩) when the surrounding book does.
+- A BOOK CONTEXT block may be provided — match its topic, terminology and level; NEVER copy the context itself into blocks.
+- FIDELITY: transcribe ALL visible text faithfully; keep numbers, units, formulas exactly. NEVER invent facts, statistics or citations.
+- STRUCTURE: start with one heading (level 2) when the content has a clear topic; use bullets/numbered for enumerable things, table rows for tabular data (first row = header), callout for key warnings/formulas.
+- QUALITY: each paragraph 2–6 sentences, publication-grade prose. 4–14 blocks typical. No empty blocks, no duplicate blocks.`;
 
-export const AI_VISION_SYSTEM = `You are the AI publishing engine of "Bangla Publishing Studio" — an expert book-composition assistant for Bengali, Hindi and English books. The user uploads an image (book diagram, screenshot, scanned page, table, figure, handwritten notes) and gives an instruction. Study the image carefully and turn it into book-ready structured content following the instruction. ${JSON_SCHEMA_RULES}`;
+export const AI_VISION_SYSTEM = `You are the AI publishing engine of "Bangla Publishing Studio" — an expert book-composition assistant for Bengali, Hindi and English books, specialized in converting images into book-ready content.
 
-export const AI_TEXT_SYSTEM = `You are the AI writing assistant of "Bangla Publishing Studio" — an expert book writer for Bengali, Hindi and English books. Write book-ready, well-structured content for the user's request. ${JSON_SCHEMA_RULES}`;
+You will receive an image (book diagram, screenshot, scanned page, table, figure, handwritten notes) plus an instruction and optional BOOK CONTEXT about the user's open book. Study the image CAREFULLY before answering:
+- Read every label, caption and number — zoom mentally into small text; do not guess what you cannot see.
+- Match the task: transcription → full faithful transcription; table → exact rows; diagram → ordered steps/bullets; explanation → accurate reading plus clear explanation.
+- Preserve the source language of the image text; explain in the instruction's language.
+${JSON_SCHEMA_RULES}`;
+
+export const AI_TEXT_SYSTEM = `You are the senior book writer of "Bangla Publishing Studio" — an expert author-assistant for Bengali, Hindi and English books, used by real publishers.
+
+You receive an instruction and optional BOOK CONTEXT (title, chapter, page text) about the user's open book. Write book-ready, publication-grade structured content:
+- Follow the instruction's scope, length and depth exactly.
+- Match the BOOK CONTEXT's subject, terminology and reading level; continue the book as if the same author wrote it.
+- Concrete and specific — real explanations, derivations, worked examples where appropriate; NEVER invented statistics or citations.
+${JSON_SCHEMA_RULES}`;
 
 // ─── ছবি প্রি-প্রসেসিং ───
 
@@ -183,13 +196,17 @@ export async function analyzeImage(opts: {
   imageDataUrl: string;
   instruction: string;
   demo?: boolean;
+  /** বইয়ের প্রেক্ষাপট-ব্লক (formatDocContext) — বই বুঝে কাজ করতে */
+  docContext?: string;
 }): Promise<{ ok: true; result: AiResult; demo?: boolean } | { ok: false; error: string; hintKey?: string; detail?: string; parseFail?: boolean }> {
-  const prompt = [
+  const core = [
     opts.instruction.trim()
       ? `নির্দেশ (instruction): ${opts.instruction.trim()}`
       : 'নির্দেশ: ছবির সব লেখা ও কাঠামো বইয়ের উপযোগী করে সুন্দরভাবে সাজিয়ে দাও।',
     'ছবিটি মনোযোগ দিয়ে দেখে উপরের JSON ফরম্যাটে কনটেন্ট দাও।',
   ].join('\n');
+  const ctx = opts.docContext?.trim();
+  const prompt = ctx ? `${ctx}\n\n${core}` : core;
 
   const res = await callAi({ prompt, system: AI_VISION_SYSTEM, imageDataUrl: opts.imageDataUrl, demo: opts.demo });
   if (!res.ok) return { ok: false, error: res.error ?? 'UNKNOWN', hintKey: res.hintKey, detail: res.detail };
@@ -206,8 +223,12 @@ export async function analyzeImage(opts: {
 export async function generateBookText(opts: {
   instruction: string;
   demo?: boolean;
+  /** বইয়ের প্রেক্ষাপট-ব্লক (formatDocContext) — বইয়ের ধারায় লিখতে */
+  docContext?: string;
 }): Promise<{ ok: true; result: AiResult; demo?: boolean } | { ok: false; error: string; hintKey?: string; detail?: string; parseFail?: boolean }> {
-  const prompt = `নির্দেশ (instruction): ${opts.instruction.trim()}\n\nউপরের JSON ফরম্যাটে বইয়ের উপযোগী কনটেন্ট লেখো।`;
+  const core = `নির্দেশ (instruction): ${opts.instruction.trim()}\n\nউপরের JSON ফরম্যাটে বইয়ের উপযোগী কনটেন্ট লেখো।`;
+  const ctx = opts.docContext?.trim();
+  const prompt = ctx ? `${ctx}\n\n${core}` : core;
   const res = await callAi({ prompt, system: AI_TEXT_SYSTEM, demo: opts.demo });
   if (!res.ok) return { ok: false, error: res.error ?? 'UNKNOWN', hintKey: res.hintKey, detail: res.detail };
   if (res.fixedModel) toast.info(`${t('ai.err.fixedModel')} ${res.fixedModel}`);

@@ -26,6 +26,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { getEditor } from '@/lib/editor-registry';
 import { useUiStore } from '@/lib/ui-store';
 import { useAiStore, aiConfiguredSelector } from '@/lib/ai-store';
+import { gatherDocContext, formatDocContext } from '@/lib/ai-context';
 import { useAiBubbleStore, openAiBubble } from '@/lib/ai-bubble-store';
 import type { AiBubbleRequest } from '@/lib/ai-bubble-store';
 import {
@@ -348,6 +349,15 @@ function AiBubblePanel({ req, style, onClose, configured, ref }: PanelProps) {
     setFixedModel(null);
 
     const isTable = m.id === 'table-edit';
+    // বইয়ের প্রেক্ষাপট — সিলেকশন-স্কোপে আশে-পাশের লেখাসহ, পেজ-স্কোপে পুরো পেজই প্রেক্ষাপট
+    const docContext = m.id === 'image-explain'
+      ? ''
+      : formatDocContext(gatherDocContext(captured.editor, {
+          range: scope === 'selection' && captured.from !== null && captured.to !== null
+            ? { from: captured.from, to: captured.to }
+            : null,
+          surroundings: scope === 'selection',
+        }));
     const res = await runSelectionAi({
       mode: m,
       selection: isTable ? '' : contextText,
@@ -355,6 +365,7 @@ function AiBubblePanel({ req, style, onClose, configured, ref }: PanelProps) {
       imageDataUrl: m.id === 'image-explain' ? (image?.dataUrl ?? null) : null,
       tableContext: isTable ? tableRowsToMarkdown(tableRows ?? []) : undefined,
       pageScope: scope === 'page',
+      docContext,
     });
 
     if (res.ok && res.markdown) {
@@ -366,7 +377,7 @@ function AiBubblePanel({ req, style, onClose, configured, ref }: PanelProps) {
       setError({ hintKey: res.hintKey ?? 'ai.err.title', detail: res.detail, raw: res.error });
       setPhase('error');
     }
-  }, [busy, image, instruction, contextText, scope, tableRows, tt]);
+  }, [busy, image, instruction, contextText, scope, tableRows, tt, captured]);
 
   const acceptFile = async (file: File) => {
     if (!file.type.startsWith('image/')) return;

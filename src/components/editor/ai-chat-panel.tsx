@@ -24,6 +24,8 @@ import { getEditor } from '@/lib/editor-registry';
 import { useAiStore, aiConfiguredSelector, providerPreset } from '@/lib/ai-store';
 import { useAiChatStore } from '@/lib/ai-chat-store';
 import { runChatAi, markdownToHtml, rawProviderLine } from '@/lib/ai-assistant';
+import { gatherDocContext, formatDocContext } from '@/lib/ai-context';
+import { pageToMarkdown, PAGE_MD_CAP } from '@/lib/ai-assistant';
 import { prepareImageFile } from '@/lib/ai-client';
 import type { PreparedImage } from '@/lib/ai-client';
 import { useT } from '@/lib/i18n';
@@ -149,7 +151,22 @@ export function AiChatPanel() {
     setSending(true);
 
     const history = useAiChatStore.getState().messages.map((m) => ({ role: m.role, content: m.content }));
-    const res = await runChatAi({ messages: history, imageDataUrl: img?.dataUrl ?? null });
+    // বইয়ের প্রেক্ষাপট — AI-কে চলতি বই/অধ্যায়/পাতা বুঝিয়ে দেওয়া (চ্যাটকে সচেতন সহ-লেখক বানাতে)
+    const { activePageId } = useEditorStore.getState();
+    const activeEd = activePageId ? getEditor(activePageId) : null;
+    let docContext = '';
+    try {
+      const parts = gatherDocContext(activeEd, { pageExcerpt: true, excerptCap: 3_500 });
+      // মার্কডাউন-পথ বেশি তথ্য দেয় (হেডিং/টেবিল কাঠামোসহ) — পেজ-সারাংশের বদলে সেটাই পছন্দ
+      if (activeEd) {
+        const md = pageToMarkdown(activeEd, Math.min(3_500, PAGE_MD_CAP));
+        if (md.trim()) parts.pageExcerpt = md;
+      }
+      docContext = formatDocContext(parts);
+    } catch {
+      docContext = '';
+    }
+    const res = await runChatAi({ messages: history, imageDataUrl: img?.dataUrl ?? null, docContext });
 
     setSending(false);
     if (res.ok && (res.markdown ?? res.text)) {

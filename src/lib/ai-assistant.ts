@@ -18,18 +18,38 @@ import { toast } from 'sonner';
 
 // ─── সিস্টেম প্রম্পট ───
 
-export const AI_EDIT_SYSTEM = `You are the AI editing engine of "Bangla Publishing Studio" — a precise book-composition assistant for Bengali, Hindi and English books.
-The user selects a piece of their book and asks for a transformation. Rewrite/transform EXACTLY as asked.
-Return ONLY the finished content as clean Markdown — no preamble, no explanations, no code fences.
-Preserve the original language unless a translation is requested. Keep proper nouns, numbers, units and citations intact.
-Use Markdown structure when it improves the content: ## headings, lists, | tables |, **bold**, > quotes.`;
+export const AI_EDIT_SYSTEM = `You are the senior editing engine of "Bangla Publishing Studio" — a professional book-composition assistant for Bengali, Hindi and English books, used by real publishers.
 
-export const AI_CHAT_SYSTEM = `You are the professional AI co-author of "Bangla Publishing Studio" — an MS-Word-like book typesetting platform for Bengali, Hindi and English publishers.
-You help authors plan, write, translate, summarize, structure and fix book content.
-Style: warm, professional, concise; reply in the user's language (default Bengali).
-Use clean Markdown in every reply — ## headings, bullet/numbered lists, | tables |, **bold** — because the user can insert your replies straight into their book.
-When the user pastes or describes part of their book, treat it as the working context and edit/extend it exactly as instructed.
-If a request is unclear, ask ONE short clarifying question, then still offer a best-effort draft.`;
+WHAT THE USER GIVES YOU
+A BOOK CONTEXT block (book title, chapter, outline, surrounding text) may appear above the task — read it first to understand the topic, terminology and tone, but NEVER copy it into your output. Then comes the actual text to transform.
+
+TRANSFORMATION RULES (strict)
+1. Do EXACTLY the requested transformation — nothing more, nothing less.
+2. LANGUAGE MIRROR: reply in the SAME language as the text you are given. Bengali stays Bengali, Hindi stays Hindi. Only switch language when the task itself is a translation.
+3. FIDELITY: keep every fact, number, unit, name, term and citation exactly as in the original. NEVER invent facts, examples, statistics or citations that are not there (exception: "expand" tasks may add clearly derivable explanation, still no invented facts).
+4. COHERENCE: the result must read naturally after the text before it and before the text after it (given in BOOK CONTEXT). Match the author's terminology exactly — do not rename things that already have a name in the book.
+5. TYPOGRAPHY: use correct punctuation of the language (Bengali: । “” —; Hindi: ।; English: normal). No stray spaces before punctuation. Keep paragraph breaks sensible.
+6. LENGTH: obey the task ("shorten to half", "double", "same length"). When unspecified, stay close to the original length.
+
+OUTPUT CONTRACT (strict)
+- Return ONLY the finished content as clean Markdown — no preamble (no "অবশ্যই", "sure", "here is"), no explanations, no closing remarks, no code fences.
+- Use Markdown structure when it improves the content: ## headings, bullet/numbered lists, | tables |, **bold**, > quotes.
+- If the input is a single sentence, reply with a single sentence. Never wrap a short answer in headings or lists unnecessarily.`;
+
+export const AI_CHAT_SYSTEM = `You are the professional AI co-author inside "Bangla Publishing Studio" — an MS-Word-like book typesetting platform for Bengali, Hindi and English publishers.
+
+You can see a BOOK CONTEXT block about the user's open book (title, chapter, page text) when it is available — treat it as the ground truth about their project and refer to it naturally ("আপনার বইয়ের এই অধ্যায়ে…"). Never ask the user to paste what you can already see.
+
+HOW TO HELP
+- Plan, outline, write, translate, summarize, restructure and fix book content.
+- When the user quotes part of the book, treat it as the working text and edit/extend it exactly as asked.
+- Give concrete, book-ready text — not generic advice. If the user asks for content, WRITE it.
+- If a request is genuinely ambiguous, ask ONE short clarifying question and still provide a best-effort draft.
+
+STYLE
+- Reply in the user's language (default Bengali). Warm, professional, to the point.
+- Use clean Markdown in every reply — ## headings, bullet/numbered lists, | tables |, **bold** — because the user can insert your replies straight into their book.
+- Bengali text: correct punctuation (।), natural phrasing, no unnecessary English loanwords.`;
 
 // ─── মোড সংজ্ঞা ───
 
@@ -49,7 +69,8 @@ export const SELECTION_MODES: SelectionModeDef[] = [
     tipKey: 'ai.sel.improve.tip',
     kind: 'replace',
     buildPrompt: (s) =>
-      `নিচের বইয়ের অংশটি আরও প্রাঞ্জল, স্পষ্ট ও প্রফেশনাল করে পুনর্লিখন করো। অর্থ, তথ্য ও ভাষা অপরিবর্তিত রাখো; দৈর্ঘ্য আনুমানিক একই রাখো:\n\n---\n${s}\n---`,
+      `নিচের বইয়ের অংশটি আরও প্রাঞ্জল, স্পষ্ট ও প্রফেশনাল করে পুনর্লিখন করো।
+শর্ত: অর্থ, তথ্য, উদাহরণ ও পরিভাষা অপরিবর্তিত; দৈর্ঘ্য আনুমানিক একই; লেখকের মূল বক্তব্যের ধারা বদলাবে না — শুধু ভাষা পরিমার্জন হবে; বাংলা হলে যথাযথ যতিচিহ্ন (।,) ও বানান-শুদ্ধতা নিশ্চিত করো।\n\n---\n${s}\n---`,
   },
   {
     id: 'grammar',
@@ -64,14 +85,16 @@ export const SELECTION_MODES: SelectionModeDef[] = [
     labelKey: 'ai.sel.trEn',
     tipKey: 'ai.sel.trEn.tip',
     kind: 'replace',
-    buildPrompt: (s) => `Translate the following book excerpt into natural, publication-quality English. Keep formatting:\n\n---\n${s}\n---`,
+    buildPrompt: (s) =>
+      `Translate the following book excerpt into natural, publication-quality English — idiomatic, not word-for-word. Preserve all facts, numbers and names; keep the Markdown structure (headings, lists, tables):\n\n---\n${s}\n---`,
   },
   {
     id: 'translate-bn',
     labelKey: 'ai.sel.trBn',
     tipKey: 'ai.sel.trBn.tip',
     kind: 'replace',
-    buildPrompt: (s) => `নিচের অংশটি সাবলীল, প্রকাশনা-মানের বাংলায় অনুবাদ করো। ফরম্যাট রাখো:\n\n---\n${s}\n---`,
+    buildPrompt: (s) =>
+      `নিচের অংশটি সাবলীল, প্রকাশনা-মানের বাংলায় অনুবাদ করো — শব্দে শব্দে নয়, ভাবানুবাদে। তথ্য, সংখ্যা ও নাম অটুট; মার্কডাউন কাঠামো রাখো; বাংলা যতিচিহ্ন (।) ব্যবহার করো:\n\n---\n${s}\n---`,
   },
   {
     id: 'translate-hi',
@@ -158,7 +181,7 @@ export const SELECTION_MODES: SelectionModeDef[] = [
     tipKey: 'ai.sel.custom.tip',
     kind: 'replace',
     buildPrompt: (s, custom) =>
-      `${custom ?? ''}\n\nবইয়ের অংশ:\n---\n${s}\n---`,
+      `লেখকের নির্দেশ: ${custom?.trim() || 'নিচের অংশটি বইয়ের উপযোগী করে পরিমার্জন করো'}\n\nনির্দেশটি হুবহু পালন করো; নির্দেশে যা বলা হয়নি তা বদলাবে না।\n\nবইয়ের অংশ:\n---\n${s}\n---`,
   },
 ];
 
@@ -262,24 +285,28 @@ export interface SelectionAiOptions {
   tableContext?: string;
   /** প্রেক্ষাপট পুরো পেজ কি না (প্রম্পটে স্পষ্ট বলা হয়) */
   pageScope?: boolean;
+  /** বইয়ের প্রেক্ষাপট-ব্লক (formatDocContext) — AI-কে পুরো বই বোঝাতে */
+  docContext?: string;
 }
 
 /** সিলেকশন-ট্রান্সফর্ম চালানো → Markdown উত্তর */
 export async function runSelectionAi(opts: SelectionAiOptions): Promise<AiTextResult> {
-  // সার্ভার ২৪k ক্যাপ — সিস্টেম/মোড়ানো-প্রম্পটের জায়গা রেখে সিলেকশন ২০k-তে সীমিত
-  // (সার্ভারের "Prompt too long" এড়িয়ে যা আছে সেটাই কাজ করে)
-  const sel = opts.selection.length > 20_000 ? `${opts.selection.slice(0, 20_000)}…` : opts.selection;
+  // সার্ভার ২৪k ক্যাপ — প্রেক্ষাপট-ব্লকের জায়গা রেখে সিলেকশন ১৭k-তে সীমিত
+  const sel = opts.selection.length > 17_000 ? `${opts.selection.slice(0, 17_000)}…` : opts.selection;
   const base = opts.mode.buildPrompt(sel, opts.custom);
   const scopeLine = opts.pageScope
     ? 'নিচে বইয়ের একটি সম্পূর্ণ পেজের কনটেন্ট দেওয়া হলো (মার্কডাউন আকারে) — পুরো পেজটির প্রেক্ষাপট মাথায় রেখে কাজ করো।'
     : 'নিচে বইয়ের নির্বাচিত অংশটি দেওয়া হলো।';
   // image-explain মোড সিলেকশন/পেজ-প্রেক্ষাপট ব্যবহারই করে না — ভুয়া scopeLine মিথ্যা বলত
   const usesContext = opts.mode.id !== 'image-explain';
-  const prompt = opts.tableContext
+  const ctx = opts.docContext?.trim();
+  const core = opts.tableContext
     ? `এটি বইয়ের একটি টেবিল (Markdown সারি):\n---\n${opts.tableContext}\n---\n\n${base}\n\nউত্তরে পুরো টেবিলটি Markdown পাইপ-টেবিল হিসেবে ফেরত দাও।`
     : usesContext
       ? `${scopeLine}\n\n${base}\n\nউত্তর শুধু চূড়ান্ত Markdown কনটেন্ট হবে।`
       : `${base}\n\nউত্তর শুধু চূড়ান্ত Markdown কনটেন্ট হবে।`;
+  // প্রেক্ষাপট-ব্লক সবার আগে — AI আগে বই বোঝে, তারপর কাজ পড়ে
+  const prompt = ctx ? `${ctx}\n\n${core}` : core;
   const res = await callTextApi({
     prompt,
     system: AI_EDIT_SYSTEM,
@@ -296,16 +323,24 @@ export interface ChatMessage {
   content: string;
 }
 
-/** চ্যাট বার্তা পাঠানো (সম্পূর্ণ কথোপকথন প্রেক্ষাপটসহ) */
+/** চ্যাট বার্তা পাঠানো (সম্পূর্ণ কথোপকথন + বইয়ের প্রেক্ষাপটসহ) */
 export async function runChatAi(opts: {
   messages: ChatMessage[];
   imageDataUrl?: string | null;
+  /** বইয়ের প্রেক্ষাপট-ব্লক (formatDocContext) — থাকলে AI বই বুঝে উত্তর দেয় */
+  docContext?: string;
 }): Promise<AiTextResult> {
-  const transcript = opts.messages
-    .slice(-12) // শেষ ১২ বার্তা — টোকেন সাশ্রয় ও দ্রুত উত্তর
-    .map((m) => `${m.role === 'user' ? 'লেখক' : 'আপনি (AI)'}: ${m.content}`)
+  // শেষ ১২ বার্তা — টোকেন সাশ্রয়; মোট ট্রান্সক্রিপ্ট ~১৪k-এ ক্যাপ (প্রেক্ষাপট-ব্লকসহ ২৪k-ক্যাপ নিরাপদ)
+  const MAX_TRANSCRIPT = 14_000;
+  let transcript = opts.messages
+    .slice(-12)
+    .map((m) => `${m.role === 'user' ? 'লেখক' : 'আপনি (AI)'}: ${m.content.length > 6_000 ? `${m.content.slice(0, 6_000)}…` : m.content}`)
     .join('\n\n---\n\n');
-  const prompt = `কথোপকথন এখন পর্যন্ত:\n\n${transcript}\n\n---\n\nশেষ "লেখক"-বার্তার উত্তর দাও (চলতি কথোপকথনের ধারাবাহিকতায়)।`;
+  if (transcript.length > MAX_TRANSCRIPT) transcript = `…(আগের অংশ বাদ)\n\n${transcript.slice(-MAX_TRANSCRIPT)}`;
+  const ctx = opts.docContext?.trim();
+  const prompt = ctx
+    ? `${ctx}\n\nকথোপকথন এখন পর্যন্ত:\n\n${transcript}\n\n---\n\nশেষ "লেখক"-বার্তার উত্তর দাও (চলতি কথোপকথন ও উপরের বইয়ের প্রেক্ষাপটের ধারাবাহিকতায়)।`
+    : `কথোপকথন এখন পর্যন্ত:\n\n${transcript}\n\n---\n\nশেষ "লেখক"-বার্তার উত্তর দাও (চলতি কথোপকথনের ধারাবাহিকতায়)।`;
   return callTextApi({
     prompt,
     system: AI_CHAT_SYSTEM,
