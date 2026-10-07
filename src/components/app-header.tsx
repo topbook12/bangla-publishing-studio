@@ -25,7 +25,7 @@ import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useEditorStore } from '@/lib/store';
 import { useUiStore } from '@/lib/ui-store';
-import { useAiStore } from '@/lib/ai-store';
+import { useAiStore, aiConfiguredSelector } from '@/lib/ai-store';
 import { useT, useLangStore, useFmtDate, LANGUAGES } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
@@ -123,7 +123,7 @@ function LanguageSwitcher() {
 function AiSettingsButton() {
   const tt = useT();
   const openDialog = useUiStore((s) => s.open);
-  const configured = useAiStore((s) => !!s.config.apiKey.trim());
+  const configured = useAiStore(aiConfiguredSelector);
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -149,7 +149,7 @@ function AiChatButton() {
   const tt = useT();
   const toggleAiChat = useUiStore((s) => s.toggleAiChat);
   const aiChatOpen = useUiStore((s) => s.aiChatOpen);
-  const configured = useAiStore((s) => !!s.config.apiKey.trim());
+  const configured = useAiStore(aiConfiguredSelector);
   return (
     <Tooltip>
       <TooltipTrigger asChild>

@@ -166,8 +166,9 @@ export const modeById = (id: string): SelectionModeDef | undefined =>
 
 /** সার্ভারের সেন্টিনেল কোড — এগুলো raw "প্রোভাইডারের উত্তর" হিসেবে দেখানো হয় না */
 const RAW_SKIP = new Set([
-  'NETWORK', 'EMPTY_RESPONSE', 'BASE_URL_EMPTY', 'MODEL_EMPTY', 'PARSE',
-  'READ_FAIL', 'IMAGE_DECODE_FAIL', 'INVALID_REQUEST_BODY', 'PAYLOAD_TOO_LARGE',
+  'NETWORK', 'TIMEOUT_ERROR', 'EMPTY_RESPONSE', 'BASE_URL_EMPTY', 'MODEL_EMPTY', 'PARSE',
+  'READ_FAIL', 'IMAGE_DECODE_FAIL', 'IMAGE_TOO_LARGE', 'INVALID_REQUEST_BODY', 'PAYLOAD_TOO_LARGE',
+  'INCOMPLETE_CONFIG',
 ]);
 
 /**
@@ -200,20 +201,24 @@ async function callTextApi(opts: {
 }): Promise<AiTextResult> {
   const config = useAiStore.getState().config;
   const preset = providerPreset(config.provider);
-  const hasKey = config.apiKey.trim().length > 0;
+  // সম্পূর্ণ ব্যবহারযোগ্য কনফিগই BYOK — অসম্পূর্ণ হলে কি অব্যবহৃত থেকে ডেমোতে চলে যেত
+  const baseUrl = (config.baseUrl || preset.baseUrl).trim();
+  const model = (config.model || preset.model || preset.visionModel).trim();
+  const hasKey = !!(config.apiKey.trim() && baseUrl && model);
   try {
     const res = await fetch('/api/ai/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      signal: AbortSignal.timeout(200_000), // সার্ভার hard-cap ১৮০সে — ক্লায়েন্টে ঢিলেঢালা সীমা
       body: JSON.stringify({
         prompt: opts.prompt,
         system: opts.system,
         imageDataUrl: opts.imageDataUrl ?? null,
         config: hasKey
           ? {
-              baseUrl: (config.baseUrl || preset.baseUrl).trim(),
+              baseUrl,
               apiKey: config.apiKey.trim(),
-              model: (config.model || preset.model || preset.visionModel).trim(),
+              model,
               provider: config.provider,
             }
           : null,
@@ -226,7 +231,11 @@ async function callTextApi(opts: {
       useAiStore.getState().setConfig({ model: data.fixedModel });
     }
     return data;
-  } catch {
+  } catch (err) {
+    const name = (err as Error)?.name;
+    if (name === 'TimeoutError' || name === 'AbortError') {
+      return { ok: false, error: 'TIMEOUT_ERROR', hintKey: 'ai.err.timeout' };
+    }
     return { ok: false, error: 'NETWORK', hintKey: 'ai.err.network' };
   }
 }
@@ -243,13 +252,20 @@ export interface SelectionAiOptions {
 
 /** সিলেকশন-ট্রান্সফর্ম চালানো → Markdown উত্তর */
 export async function runSelectionAi(opts: SelectionAiOptions): Promise<AiTextResult> {
-  const base = opts.mode.buildPrompt(opts.selection, opts.custom);
+  // সার্ভার ২৪k ক্যাপ — সিস্টেম/মোড়ানো-প্রম্পটের জায়গা রেখে সিলেকশন ২০k-তে সীমিত
+  // (সার্ভারের "Prompt too long" এড়িয়ে যা আছে সেটাই কাজ করে)
+  const sel = opts.selection.length > 20_000 ? `${opts.selection.slice(0, 20_000)}…` : opts.selection;
+  const base = opts.mode.buildPrompt(sel, opts.custom);
   const scopeLine = opts.pageScope
     ? 'নিচে বইয়ের একটি সম্পূর্ণ পেজের কনটেন্ট দেওয়া হলো (মার্কডাউন আকারে) — পুরো পেজটির প্রেক্ষাপট মাথায় রেখে কাজ করো।'
     : 'নিচে বইয়ের নির্বাচিত অংশটি দেওয়া হলো।';
+  // image-explain মোড সিলেকশন/পেজ-প্রেক্ষাপট ব্যবহারই করে না — ভুয়া scopeLine মিথ্যা বলত
+  const usesContext = opts.mode.id !== 'image-explain';
   const prompt = opts.tableContext
     ? `এটি বইয়ের একটি টেবিল (Markdown সারি):\n---\n${opts.tableContext}\n---\n\n${base}\n\nউত্তরে পুরো টেবিলটি Markdown পাইপ-টেবিল হিসেবে ফেরত দাও।`
-    : `${scopeLine}\n\n${base}\n\nউত্তর শুধু চূড়ান্ত Markdown কনটেন্ট হবে।`;
+    : usesContext
+      ? `${scopeLine}\n\n${base}\n\nউত্তর শুধু চূড়ান্ত Markdown কনটেন্ট হবে।`
+      : `${base}\n\nউত্তর শুধু চূড়ান্ত Markdown কনটেন্ট হবে।`;
   const res = await callTextApi({
     prompt,
     system: AI_EDIT_SYSTEM,
@@ -451,7 +467,7 @@ export function tableRowsToMarkdown(rows: string[][]): string {
 
 // ─── পুরো পেজ → Markdown (AI-কে সম্পূর্ণ পেজ-প্রেক্ষাপট দিতে) ───
 
-const PAGE_MD_CAP = 12_000;
+export const PAGE_MD_CAP = 12_000;
 
 /** এডিটরের পুরো পেজ কনটেন্ট পাঠযোগ্য Markdown-এ রূপ দেওয়া (AI প্রেক্ষাপট) */
 export function pageToMarkdown(editor: Editor, cap = PAGE_MD_CAP): string {

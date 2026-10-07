@@ -11,6 +11,8 @@
 import { useAiStore, providerPreset } from './ai-store';
 import type { AiResult } from './ai-content';
 import { extractJson } from './ai-content';
+import { t } from './i18n';
+import { toast } from 'sonner';
 
 // ─── সিস্টেম প্রম্পট (কঠোর JSON) ───
 
@@ -51,11 +53,18 @@ export interface PreparedImage {
 }
 
 const MAX_DIM = 1568; // বড় ভিশন মডেলগুলোর সুইট-স্পট
+const MAX_FILE_BYTES = 4_500_000; // সার্ভারের ~5MB ক্যাপের আগেই ধরি (বেস৬৪ বাড়তি ৩৪%)
 
 /** ফাইল → প্রয়োজনে ডাউনস্কেল করা dataURL (PNG হলে PNG, নইলে JPEG) */
 export async function prepareImageFile(file: File): Promise<PreparedImage> {
+  if (file.size > MAX_FILE_BYTES) throw new Error('IMAGE_TOO_LARGE');
   const rawUrl = await readAsDataUrl(file);
   const img = await loadImage(rawUrl);
+  // GIF ক্যানভাসে গেলে অ্যানিমেশন ও স্বচ্ছতা ভাঙে — সরাসরি মূল dataURL-ই সেরা
+  if (/image\/gif/i.test(file.type)) {
+    const bytes = Math.round((rawUrl.length - rawUrl.indexOf(',') - 1) * 0.75);
+    return { dataUrl: rawUrl, width: img.naturalWidth, height: img.naturalHeight, name: file.name || 'image', bytes };
+  }
   const scale = Math.min(1, MAX_DIM / Math.max(img.naturalWidth, img.naturalHeight));
   const w = Math.max(1, Math.round(img.naturalWidth * scale));
   const h = Math.max(1, Math.round(img.naturalHeight * scale));
@@ -116,21 +125,26 @@ export async function callAi(opts: {
 }): Promise<AiCallResult> {
   const config = useAiStore.getState().config;
   const preset = providerPreset(config.provider);
-  const useOwnKey = !opts.demo && config.apiKey.trim().length > 0;
+  // সম্পূর্ণ ব্যবহারযোগ্য কনফিগই BYOK — কি থাকলেও baseUrl/মডেল ফাঁকা হলে
+  // কি অব্যবহৃত থেকে নিঃশব্দ ডেমোতে চলে যেত; সেটাই আসল বিভ্রান্তি
+  const baseUrl = (config.baseUrl || preset.baseUrl).trim();
+  const model = (config.model || preset.visionModel || preset.model).trim();
+  const useOwnKey = !opts.demo && !!(config.apiKey.trim() && baseUrl && model);
 
   try {
     const res = await fetch('/api/ai/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      signal: AbortSignal.timeout(200_000), // সার্ভার hard-cap ১৮০সে + self-heal — ক্লায়েন্টে ঢিলেঢালা সীমা
       body: JSON.stringify({
         prompt: opts.prompt,
         system: opts.system,
         imageDataUrl: opts.imageDataUrl ?? null,
         config: useOwnKey
           ? {
-              baseUrl: (config.baseUrl || preset.baseUrl).trim(),
+              baseUrl,
               apiKey: config.apiKey.trim(),
-              model: (config.model || preset.visionModel || preset.model).trim(),
+              model,
               provider: config.provider,
             }
           : null,
@@ -143,7 +157,11 @@ export async function callAi(opts: {
       useAiStore.getState().setConfig({ model: data.fixedModel });
     }
     return data;
-  } catch {
+  } catch (err) {
+    const name = (err as Error)?.name;
+    if (name === 'TimeoutError' || name === 'AbortError') {
+      return { ok: false, error: 'TIMEOUT_ERROR', hintKey: 'ai.err.timeout' };
+    }
     return { ok: false, error: 'NETWORK', hintKey: 'ai.err.network' };
   }
 }
@@ -163,6 +181,8 @@ export async function analyzeImage(opts: {
 
   const res = await callAi({ prompt, system: AI_VISION_SYSTEM, imageDataUrl: opts.imageDataUrl, demo: opts.demo });
   if (!res.ok) return { ok: false, error: res.error ?? 'UNKNOWN', hintKey: res.hintKey, detail: res.detail };
+  // ভিশন পথেও স্বয়ং-সংশোধন জানাই — বাবল/চ্যাটের মতোই (ডুপ্লিকেট নেই, এই পথ একা)
+  if (res.fixedModel) toast.info(`${t('ai.err.fixedModel')} ${res.fixedModel}`);
   const result = extractJson(res.text ?? '');
   if (!result || result.blocks.length === 0) {
     return { ok: false, error: 'PARSE', hintKey: 'ai.err.parse', parseFail: true };
@@ -178,6 +198,7 @@ export async function generateBookText(opts: {
   const prompt = `নির্দেশ (instruction): ${opts.instruction.trim()}\n\nউপরের JSON ফরম্যাটে বইয়ের উপযোগী কনটেন্ট লেখো।`;
   const res = await callAi({ prompt, system: AI_TEXT_SYSTEM, demo: opts.demo });
   if (!res.ok) return { ok: false, error: res.error ?? 'UNKNOWN', hintKey: res.hintKey, detail: res.detail };
+  if (res.fixedModel) toast.info(`${t('ai.err.fixedModel')} ${res.fixedModel}`);
   const result = extractJson(res.text ?? '');
   if (!result || result.blocks.length === 0) {
     return { ok: false, error: 'PARSE', hintKey: 'ai.err.parse', parseFail: true };

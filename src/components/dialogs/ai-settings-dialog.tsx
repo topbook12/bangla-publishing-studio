@@ -76,11 +76,11 @@ export function AiSettingsDialog() {
   );
 
   const pickProvider = (id: AiProviderId) => {
-    applyPreset(id);
+    const changed = useAiStore.getState().config.provider !== id;
+    applyPreset(id); // প্রোভাইডার বদলালে ai-store এখন পুরনো কি বহন করে না
     setModels({ phase: 'idle' }); // নতুন প্রোভাইডার — তালিকা আবার লোড করতে হবে
     setModelFilter('');
-    // কি রেখে দিই — অন্য প্রোভাইডারের কি ভিন্ন হবে, তাই মুছে দেই
-    if (useAiStore.getState().config.provider !== id) setKeyDraft('');
+    if (changed) setKeyDraft(''); // নতুন প্রোভাইডারে পুরনো কি/ড্রাফট অর্থহীন
   };
 
   /** প্রোভাইডার থেকে উপলব্ধ মডেলের তালিকা — 404-মুক্ত বাছাইয়ের মূল পথ */

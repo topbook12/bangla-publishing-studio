@@ -26,17 +26,18 @@ import { useUiStore } from '@/lib/ui-store';
 import type { AiVisionTab } from '@/lib/ui-store';
 import { useEditorStore } from '@/lib/store';
 import { getEditor } from '@/lib/editor-registry';
-import { useAiStore } from '@/lib/ai-store';
+import { useAiStore, aiConfiguredSelector } from '@/lib/ai-store';
 import { analyzeImage, generateBookText, prepareImageFile, AI_VISION_SYSTEM } from '@/lib/ai-client';
 import type { PreparedImage } from '@/lib/ai-client';
 import { blocksToHtml } from '@/lib/ai-content';
 import type { AiBlock, AiResult } from '@/lib/ai-content';
+import { rawProviderLine } from '@/lib/ai-assistant';
 import { useT } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
 type Phase = 'idle' | 'working' | 'done' | 'error';
-type ErrorState = { hintKey: string; detail?: string };
+type ErrorState = { hintKey: string; detail?: string; raw?: string };
 
 /** ব্লক প্রিভিউ আইকন */
 const BLOCK_ICON: Record<AiBlock['type'], typeof Type> = {
@@ -62,14 +63,14 @@ const BLOCK_LABEL: Record<AiBlock['type'], string> = {
   code: 'ai.block.code',
 };
 
-/** এক-ট্যাপ নির্দেশ চিপস */
-const INSTRUCTION_CHIPS: Array<{ key: string; text: string }> = [
-  { key: 'ai.chip.transcribe', text: 'ছবির সব লেখা হুবহু তুলে বইয়ের উপযোগী করে সাজিয়ে দাও।' },
-  { key: 'ai.chip.table', text: 'ছবির টেবিল/ডেটাগুলো সুন্দর টেবিল আকারে দাও।' },
-  { key: 'ai.chip.bullets', text: 'মূল বিষয়গুলো বুলেট পয়েন্টে গুছিয়ে লেখো।' },
-  { key: 'ai.chip.steps', text: 'ডায়াগ্রাম/ফ্লোচার্টটি ধাপে ধাপে নম্বর দিয়ে লেখো।' },
-  { key: 'ai.chip.explain', text: 'ছবিটি সহজ ভাষায় বিস্তারিত ব্যাখ্যা করে বইয়ের প্যারাগ্রাফ লেখো।' },
-  { key: 'ai.chip.qa', text: 'ছবির বিষয়বস্তু থেকে ৫টি প্রশ্ন-উত্তর তৈরি করো।' },
+/** এক-ট্যাপ নির্দেশ চিপস — নির্দেশ-প্রম্পট তিন ভাষাতেই (label = বাটন, prompt = ইনপুটে বসে) */
+const INSTRUCTION_CHIPS: Array<{ key: string; promptKey: string }> = [
+  { key: 'ai.chip.transcribe', promptKey: 'ai.chip.transcribe.prompt' },
+  { key: 'ai.chip.table', promptKey: 'ai.chip.table.prompt' },
+  { key: 'ai.chip.bullets', promptKey: 'ai.chip.bullets.prompt' },
+  { key: 'ai.chip.steps', promptKey: 'ai.chip.steps.prompt' },
+  { key: 'ai.chip.explain', promptKey: 'ai.chip.explain.prompt' },
+  { key: 'ai.chip.qa', promptKey: 'ai.chip.qa.prompt' },
 ];
 
 export function AiVisionDialog() {
@@ -80,7 +81,7 @@ export function AiVisionDialog() {
   const openSettings = useUiStore((s) => s.open);
   const tt = useT();
 
-  const configured = useAiStore((s) => !!s.config.apiKey.trim());
+  const configured = useAiStore(aiConfiguredSelector);
 
   const [image, setImage] = useState<PreparedImage | null>(null);
   const [instruction, setInstruction] = useState('');
@@ -103,6 +104,7 @@ export function AiVisionDialog() {
     setPhase('idle');
     setError(null);
     setResult(null);
+    setResultDemo(false);
     setExcluded(new Set());
   }, []);
 
@@ -112,8 +114,8 @@ export function AiVisionDialog() {
       const prepared = await prepareImageFile(file);
       resetAll();
       setImage(prepared);
-    } catch {
-      toast.error(tt('ai.err.read'));
+    } catch (err) {
+      toast.error(tt((err as Error)?.message === 'IMAGE_TOO_LARGE' ? 'ai.err.size' : 'ai.err.read'));
     }
   }, [resetAll, tt]);
 
@@ -134,11 +136,13 @@ export function AiVisionDialog() {
     if (busy) return;
     if (tab === 'vision' && !image) return;
     if (!instruction.trim() && tab === 'text') {
-      // লেখা ট্যাবে নির্দেশ আবশ্যক
+      // লেখা ট্যাবে নির্দেশ আবশ্যক — নীরব ফেরত নয়, বোঝাই
+      toast.info(tt('ai.err.instruction'));
       return;
     }
     setPhase('working');
     setError(null);
+    setResultDemo(false);
     setExcluded(new Set());
 
     const res = tab === 'vision' && image
@@ -150,8 +154,12 @@ export function AiVisionDialog() {
       setResultDemo(!!res.demo);
       setPhase('done');
     } else {
-      // চেষ্টা-করা ঠিকানা + প্রোভাইডারের raw বার্তা — দুটোই রোগ-নির্ণয়ে কাজে লাগে
-      setError({ hintKey: res.hintKey ?? 'ai.err.title', detail: [res.detail, res.error].filter(Boolean).join('\n') });
+      // সেন্টিনেল কোড raw হিসেবে নয়; প্রোভাইডারের আসল বার্তা আলাদা লাইনে
+      setError({
+        hintKey: res.hintKey ?? 'ai.err.title',
+        detail: res.detail,
+        raw: rawProviderLine(res.error, tt('ai.err.raw')) || undefined,
+      });
       setPhase('error');
     }
   };
@@ -174,7 +182,10 @@ export function AiVisionDialog() {
         includeTitle,
       },
     );
-    if (!html.trim()) return;
+    if (!html.trim()) {
+      toast.info(tt('ai.err.nothing'));
+      return;
+    }
     ed.chain().focus().insertContent(html).run();
     toast.success(tt('ai.inserted'));
     close();
@@ -210,7 +221,7 @@ export function AiVisionDialog() {
           key={chip.key}
           type="button"
           className="ai-chip"
-          onClick={() => setInstruction(chip.text)}
+          onClick={() => setInstruction(tt(chip.promptKey))}
           disabled={busy}
         >
           {tt(chip.key)}
@@ -366,6 +377,7 @@ export function AiVisionDialog() {
               <p className="ai-error-title">{tt('ai.err.title')}</p>
               <p>{tt(error.hintKey)}</p>
               {error.detail ? <p className="ai-error-detail">{error.detail}</p> : null}
+              {error.raw ? <p className="ai-error-detail">{error.raw}</p> : null}
             </div>
             <Button size="sm" variant="outline" onClick={() => openSettings('aiSettings')}>{tt('ai.setup.open')}</Button>
           </div>

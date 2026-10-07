@@ -7,7 +7,7 @@
 import { KeyRound, MessageSquare, ScanEye, Sparkles, Wand2 } from 'lucide-react';
 import { RibbonButton, RibbonDivider, RibbonGroup } from './ribbon-shell';
 import { useUiStore } from '@/lib/ui-store';
-import { useAiStore } from '@/lib/ai-store';
+import { useAiStore, aiConfiguredSelector } from '@/lib/ai-store';
 import { useT } from '@/lib/i18n';
 
 export function AiTab() {
@@ -16,7 +16,7 @@ export function AiTab() {
   const openDialog = useUiStore((s) => s.open);
   const toggleAiChat = useUiStore((s) => s.toggleAiChat);
   const aiChatOpen = useUiStore((s) => s.aiChatOpen);
-  const configured = useAiStore((s) => !!s.config.apiKey.trim());
+  const configured = useAiStore(aiConfiguredSelector);
   const providerName = useAiStore((s) => s.config.provider);
 
   return (

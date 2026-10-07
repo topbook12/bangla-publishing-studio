@@ -22,7 +22,6 @@ export const runtime = 'nodejs';
 export const maxDuration = 60;
 
 const TIMEOUT_MS = 30_000;
-const MAX_MODELS = 400;
 
 interface ModelsBody {
   baseUrl?: string;
@@ -90,6 +89,7 @@ export async function POST(req: NextRequest) {
       method: 'GET',
       headers,
       signal: AbortSignal.timeout(TIMEOUT_MS),
+      redirect: 'error', // SSRF — রিডাইরেক্টে গার্ড-বাইপাস বন্ধ
     });
 
     if (!res.ok) {
@@ -126,7 +126,7 @@ export async function POST(req: NextRequest) {
     const e = err as Error & { status?: number };
     const msg = e?.message ?? 'Model list fetch failed';
     if (e?.name === 'TimeoutError' || e?.name === 'AbortError') {
-      return jsonError(msg, 'ai.err.timeout');
+      return jsonError('TIMEOUT_ERROR', 'ai.err.timeout');
     }
     if (e?.status === 401 || e?.status === 403) {
       return jsonError(msg, 'ai.err.auth');

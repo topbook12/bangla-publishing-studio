@@ -21,7 +21,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useUiStore } from '@/lib/ui-store';
 import { useEditorStore } from '@/lib/store';
 import { getEditor } from '@/lib/editor-registry';
-import { useAiStore, providerPreset } from '@/lib/ai-store';
+import { useAiStore, aiConfiguredSelector, providerPreset } from '@/lib/ai-store';
 import { useAiChatStore } from '@/lib/ai-chat-store';
 import { runChatAi, markdownToHtml, rawProviderLine } from '@/lib/ai-assistant';
 import { prepareImageFile } from '@/lib/ai-client';
@@ -29,19 +29,19 @@ import type { PreparedImage } from '@/lib/ai-client';
 import { useT } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
-/** দ্রুত শুরুর চিপস */
-const CHAT_CHIPS: Array<{ key: string; text: string }> = [
-  { key: 'ai.chat.chip.outline', text: 'আমার বইয়ের জন্য একটি অধ্যায়ের আউটলাইন তৈরি করো।' },
-  { key: 'ai.chat.chip.summary', text: 'নিচের লেখাটির সারাংশ লেখো: ' },
-  { key: 'ai.chat.chip.table', text: 'নিচের তথ্যগুলো দিয়ে একটি টেবিল বানাও: ' },
-  { key: 'ai.chat.chip.intro', text: 'একটি বইয়ের ভূমিকা অধ্যায়ের জন্য আকর্ষণীয় প্যারাগ্রাফ লেখো।' },
+/** দ্রুত শুরুর চিপস — নির্দেশ-প্রম্পট তিন ভাষাতেই (label = বাটন, prompt = ইনপুটে বসে) */
+const CHAT_CHIPS: Array<{ key: string; promptKey: string }> = [
+  { key: 'ai.chat.chip.outline', promptKey: 'ai.chat.chip.outline.prompt' },
+  { key: 'ai.chat.chip.summary', promptKey: 'ai.chat.chip.summary.prompt' },
+  { key: 'ai.chat.chip.table', promptKey: 'ai.chat.chip.table.prompt' },
+  { key: 'ai.chat.chip.intro', promptKey: 'ai.chat.chip.intro.prompt' },
 ];
 
 export function AiChatPanel() {
   const tt = useT();
   const open = useUiStore((s) => s.aiChatOpen);
   const toggle = useUiStore((s) => s.toggleAiChat);
-  const configured = useAiStore((s) => !!s.config.apiKey.trim());
+  const configured = useAiStore(aiConfiguredSelector);
   const providerName = useAiStore((s) => providerPreset(s.config.provider).name);
 
   const messages = useAiChatStore((s) => s.messages);
@@ -95,8 +95,8 @@ export function AiChatPanel() {
     try {
       const prepared = await prepareImageFile(file);
       setImage(prepared);
-    } catch {
-      toast.error(tt('ai.err.read'));
+    } catch (err) {
+      toast.error(tt((err as Error)?.message === 'IMAGE_TOO_LARGE' ? 'ai.err.size' : 'ai.err.read'));
     }
   }, [tt]);
 
@@ -136,6 +136,11 @@ export function AiChatPanel() {
   const send = async () => {
     const text = draft.trim();
     if ((!text && !image) || busy) return;
+    // সার্ভার ২৪k ক্যাপ — বিশাল পেস্টে স্পষ্ট বার্তা, নীরব ব্যর্থতা নয়
+    if (text.length > 18_000) {
+      toast.error(tt('ai.err.size'));
+      return;
+    }
     setError(null);
     setDraft('');
     const img = image;
@@ -185,8 +190,14 @@ export function AiChatPanel() {
   };
 
   const chips = useMemo(
-    () => CHAT_CHIPS.map((c) => ({ ...c, label: tt(c.key) })),
+    () => CHAT_CHIPS.map((c) => ({ ...c, label: tt(c.key), prompt: tt(c.promptKey) })),
     [tt],
+  );
+
+  // Markdown → HTML প্রতি রেন্ডারে না চালিয়ে বার্তা-তালিকা বদলালেই একবার
+  const renderedMsgs = useMemo(
+    () => messages.map((m) => ({ ...m, html: m.role === 'assistant' ? markdownToHtml(m.content) : '' })),
+    [messages],
   );
 
   if (!open) return null;
@@ -246,7 +257,7 @@ export function AiChatPanel() {
                   key={c.key}
                   type="button"
                   className="ai-chip"
-                  onClick={() => { setDraft(c.text); inputRef.current?.focus(); }}
+                  onClick={() => { setDraft(c.prompt); inputRef.current?.focus(); }}
                 >
                   {c.label}
                 </button>
@@ -256,7 +267,7 @@ export function AiChatPanel() {
           </div>
         ) : (
           <div className="ai-chat-msgs">
-            {messages.map((m) =>
+            {renderedMsgs.map((m) =>
               m.role === 'user' ? (
                 <div key={m.id} className="ai-chat-msg ai-chat-msg-user">
                   <div className="ai-chat-bubble-user">{m.content}</div>
@@ -264,7 +275,7 @@ export function AiChatPanel() {
               ) : (
                 <div key={m.id} className="ai-chat-msg ai-chat-msg-ai">
                   <div className="ai-chat-bubble-ai">
-                    <div className="ai-chat-md" dangerouslySetInnerHTML={{ __html: markdownToHtml(m.content) }} />
+                    <div className="ai-chat-md" dangerouslySetInnerHTML={{ __html: m.html }} />
                     {m.demo ? <span className="ai-demo-badge">{tt('ai.demo.badge')}</span> : null}
                     <div className="ai-chat-msg-actions">
                       <button type="button" onClick={() => insertIntoBook(m.content)} title={tt('ai.insert')}>

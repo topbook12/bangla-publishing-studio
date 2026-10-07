@@ -134,6 +134,9 @@ async function callOpenAiCompatible(config: AiProxyConfig, body: ChatBody): Prom
     headers,
     body: JSON.stringify({ model: config.model.trim(), messages, temperature: 0.4, max_tokens: MAX_TOKENS, stream: false }),
     signal: AbortSignal.timeout(TIMEOUT_MS),
+    // SSRF গার্ড শুধু প্রাথমিক ঠিকানা যাচাই করে — রিডাইরেক্ট ফলো করলে প্রাইভেট/
+    // মেটাডেটা-ঠিকানায় চুপিচুপি যাওয়া যেত; তাই রিডাইরেক্ট কঠোরভাবে নিষিদ্ধ
+    redirect: 'error',
   });
 
   if (!res.ok) await throwUpstream(res);
@@ -183,6 +186,7 @@ async function callGeminiNative(apiKey: string, model: string, body: ChatBody): 
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
     body: JSON.stringify(geminiPayload(body)),
     signal: AbortSignal.timeout(TIMEOUT_MS),
+    redirect: 'error', // SSRF — রিডাইরেক্টে গার্ড-বাইপাস বন্ধ
   });
   if (!res.ok) await throwUpstream(res);
 
@@ -210,10 +214,11 @@ async function fetchUpstreamModelIds(base: string, apiKey: string, provider?: st
     method: 'GET',
     headers,
     signal: AbortSignal.timeout(30_000),
+    redirect: 'error', // SSRF — রিডাইরেক্টে গার্ড-বাইপাস বন্ধ
   });
   if (!res.ok) {
     if (isGeminiHost(base)) {
-      // native তালিকা — x-goog-api-key দিয়ে
+      // native তালিকা — x-goog-api-key দিয়ে (হার্ডকোডেড https Google, রিডাইরেক্ট নেই)
       const nres = await fetch('https://generativelanguage.googleapis.com/v1beta/models', {
         method: 'GET',
         headers: { 'x-goog-api-key': apiKey },
@@ -366,7 +371,14 @@ export async function POST(req: NextRequest) {
   }
 
   const c = body.config;
+  const hasAnyKey = !!c?.apiKey?.trim();
   const hasKey = !!(c?.apiKey?.trim() && c?.baseUrl?.trim() && c?.model?.trim());
+
+  // কি আছে কিন্তু Base URL/মডেল অসম্পূর্ণ — নিঃশব্দে ডেমোতে পাঠানো বিভ্রান্তিকর
+  // (ইউজারের কি অব্যবহৃত থাকে, UI "প্রস্তুত" দেখায়); স্পষ্ট ত্রুটিই সঠিক পথ
+  if (hasAnyKey && !hasKey) {
+    return jsonError('INCOMPLETE_CONFIG', 'ai.err.config');
+  }
 
   // রেট-লিমিট — ডেমো (আমাদের ক্রেডেনশিয়াল) কড়া, BYOK (ইউজারের নিজের) শিথিল
   const ip = clientIp(req);
@@ -409,7 +421,8 @@ export async function POST(req: NextRequest) {
         return jsonError(msg, why === 'LENGTH' ? 'ai.err.empty' : 'ai.err.blocked');
       }
       if (msg === 'TIMEOUT_ERROR' || e?.name === 'TimeoutError' || e?.name === 'AbortError') {
-        return jsonError(msg, 'ai.err.timeout');
+        // সেন্টিনেল ফেরত — প্রোভাইডারের raw হিসেবে ভুল দেখানো এড়ায় (RAW_SKIP ফিল্টার করে)
+        return jsonError('TIMEOUT_ERROR', 'ai.err.timeout');
       }
       if (status === 401 || status === 403 || status === 402) {
         return jsonError(msg, 'ai.err.auth');

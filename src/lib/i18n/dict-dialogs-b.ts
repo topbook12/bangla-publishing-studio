@@ -100,7 +100,7 @@ export const dictDialogsB: Dict = {
   // ধাপ ৩ — আকৃতি/আইকন
   'dlg2.help.s3.title': { bn: '🧩 আকৃতি, ব্যানার, ফ্রেম ও আইকন (ভিতরে লেখা যায়)', hi: '🧩 आकृति, बैनर, फ़्रेम और आइकन (अंदर लिखा जा सकता है)', en: '🧩 Shapes, banners, frames & icons (you can write inside)' },
   'dlg2.help.s3.i1': { bn: 'Insert → {a} — ১২টি অলংকৃত ব্যানার/ফ্রেম/ব্যাজ; ক্লিক করলেই কাগজে বসে যায় এবং কার্সর ভিতরেই থাকে — সরাসরি লিখুন।', hi: 'Insert → {a} — १२ अलंकृत बैनर/फ़्रेम/बैज; क्लिक करते ही कागज़ पर टिक जाता है और कर्सर अंदर ही रहता है — सीधे लिखें।', en: 'Insert → {a} — 12 ornate banners/frames/badges; one click places it on the paper with the cursor inside — just type.' },
-  'dlg2.help.s3.i1.a': { bn: 'Design Shapes', hi: 'डिज़ाइन आकृतियाँ', en: 'Design Shapes' },
+  'dlg2.help.s3.i1.a': { bn: 'ডিজাইন আকৃতি', hi: 'डिज़ाइन आकृतियाँ', en: 'Design Shapes' },
   'dlg2.help.s3.i2': { bn: 'শেপের উপর মাউস রাখলে টুল বার ওঠে — আকৃতি বদল, মূল রং, অলংকারের রং, লেখার রং, মুছে ফেলা।', hi: 'आकृति पर माउस रखने पर टूल बार खुलता है — आकृति बदलना, मुख्य रंग, अलंकरण का रंग, लेख का रंग, मिटाना।', en: 'Hover a shape to open its toolbar — change shape, main color, ornament color, text color, delete.' },
   'dlg2.help.s3.i3': { bn: 'Insert → {a} — সাধারণ বর্ডার-বক্স; {b} — হাজারো আইকন।', hi: 'Insert → {a} — साधारण बॉर्डर-बॉक्स; {b} — हज़ारों आइकन।', en: 'Insert → {a} — a simple bordered box; {b} — thousands of icons.' },
   'dlg2.help.s3.i3.a': { bn: 'Text Box', hi: 'टेक्स्ट बॉक्स', en: 'Text Box' },

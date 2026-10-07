@@ -167,10 +167,13 @@ export const useAiStore = create<AiState>((set, get) => ({
 
   applyPreset: (id) => {
     const p = providerPreset(id);
+    const prev = get().config;
+    // প্রোভাইডার বদলালে পুরনো কি বহন করা হয় না — ভিন্ন প্রোভাইডারের কি ভিন্ন;
+    // পুরনো কি নতুন প্রোভাইডারে চলে গেলে অন্য ভেন্ডরের কাছে অনর্থক কি-প্রকাশ হয়
     const next: AiConfig = {
       provider: id,
       baseUrl: p.baseUrl,
-      apiKey: get().config.apiKey,
+      apiKey: prev.provider === id ? prev.apiKey : '',
       model: p.visionModel || p.model,
     };
     persist(next);
@@ -184,8 +187,14 @@ export const useAiStore = create<AiState>((set, get) => ({
   },
 }));
 
+/** সম্পূর্ণ ব্যবহারযোগ্য কনফিগ — কি + কার্যকর baseUrl + কার্যকর মডেল (কম্পোনেন্ট সিলেক্টর) */
+export const aiConfiguredSelector = (s: { config: AiConfig }): boolean => {
+  const c = s.config;
+  const preset = providerPreset(c.provider);
+  return !!(c.apiKey.trim() && (c.baseUrl.trim() || preset.baseUrl) && (c.model.trim() || preset.model || preset.visionModel));
+};
+
 /** কি সেট করা আছে কি না (কম্পোনেন্টের বাইরেও ব্যবহারযোগ্য) */
 export function isAiConfigured(): boolean {
-  const c = useAiStore.getState().config;
-  return c.apiKey.trim().length > 0 && c.baseUrl.trim().length > 0 && c.model.trim().length > 0;
+  return aiConfiguredSelector(useAiStore.getState());
 }

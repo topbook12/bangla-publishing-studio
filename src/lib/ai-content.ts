@@ -44,33 +44,37 @@ export function extractJson(raw: string): AiResult | null {
   // প্রথম balanced { … } খোঁজা
   const start = s.indexOf('{');
   if (start === -1) return null;
-  let depth = 0;
-  let inStr = false;
-  let esc = false;
-  for (let i = start; i < s.length; i++) {
-    const ch = s[i];
-    if (inStr) {
-      if (esc) esc = false;
-      else if (ch === '\\') esc = true;
-      else if (ch === '"') inStr = false;
-      continue;
-    }
-    if (ch === '"') inStr = true;
-    else if (ch === '{') depth++;
-    else if (ch === '}') {
-      depth--;
-      if (depth === 0) {
-        const candidate = s.slice(start, i + 1);
-        try {
-          const obj = JSON.parse(candidate) as Partial<AiResult>;
-          if (obj && Array.isArray(obj.blocks)) return normalizeResult(obj);
-        } catch {
-          // পরের বন্ধনীতে আবার চেষ্টা হবে
+  // একাধিক প্রার্থী ব্লক থাকতে পারে ({ভাঙা} {ভালো}) — parse ব্যর্থ হলে পরের '{' থেকে আবার
+  let from = start;
+  while (from !== -1) {
+    let depth = 0;
+    let inStr = false;
+    let esc = false;
+    for (let i = from; i < s.length; i++) {
+      const ch = s[i];
+      if (inStr) {
+        if (esc) esc = false;
+        else if (ch === '\\') esc = true;
+        else if (ch === '"') inStr = false;
+        continue;
+      }
+      if (ch === '"') inStr = true;
+      else if (ch === '{') depth++;
+      else if (ch === '}') {
+        depth--;
+        if (depth === 0) {
+          const candidate = s.slice(from, i + 1);
+          try {
+            const obj = JSON.parse(candidate) as Partial<AiResult>;
+            if (obj && Array.isArray(obj.blocks)) return normalizeResult(obj);
+          } catch {
+            // এই প্রার্থী ভাঙা — পরের '{' থেকে আবার চেষ্টা
+          }
+          break;
         }
-        // balanced কিন্তু parse ব্যর্থ → নতুন করে গভীরতা শুরু করা যায় না; থামি
-        return null;
       }
     }
+    from = s.indexOf('{', from + 1);
   }
   return null;
 }
@@ -163,8 +167,6 @@ export function blocksToHtml(result: AiResult, opts: BlocksToHtmlOptions = {}): 
     );
     const cap = (caption || result.caption || '').trim();
     if (cap) parts.push(`<p style="text-align:center"><em>${escapeHtml(cap)}</em></p>`);
-  } else if (includeImage && caption) {
-    // ছবি ছাড়াও ক্যাপশন চাইলে রাখি
   }
 
   if (includeTitle && result.title?.trim()) {

@@ -25,12 +25,13 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { getEditor } from '@/lib/editor-registry';
 import { useUiStore } from '@/lib/ui-store';
-import { useAiStore } from '@/lib/ai-store';
+import { useAiStore, aiConfiguredSelector } from '@/lib/ai-store';
 import { useAiBubbleStore, openAiBubble } from '@/lib/ai-bubble-store';
 import type { AiBubbleRequest } from '@/lib/ai-bubble-store';
 import {
   SELECTION_MODES, runSelectionAi, markdownToHtml, pageToMarkdown, tableRowsToMarkdown, rawProviderLine,
 } from '@/lib/ai-assistant';
+import { PAGE_MD_CAP } from '@/lib/ai-assistant';
 import type { SelectionModeDef } from '@/lib/ai-assistant';
 import { prepareImageFile } from '@/lib/ai-client';
 import type { PreparedImage } from '@/lib/ai-client';
@@ -89,7 +90,8 @@ const IMAGE_EXPLAIN_DEF: SelectionModeDef = {
 
 export function AiBubbleHost() {
   const tt = useT();
-  const configured = useAiStore((s) => !!s.config.apiKey.trim());
+  // সম্পূর্ণ ব্যবহারযোগ্য কনফিগই "প্রস্তুত" — শুধু কি থাকলে যথেষ্ট নয়
+  const configured = useAiStore(aiConfiguredSelector);
 
   // ভাসমান পিল (অটো-সিলেকশন)
   const [pill, setPill] = useState<{ x: number; y: number; editor: Editor } | null>(null);
@@ -182,15 +184,23 @@ export function AiBubbleHost() {
       if (el && e.target instanceof Node && el.contains(e.target)) return;
       closePanel();
     };
+    // উচ্চতা-মাত্র রিসাইজ (মোবাইল কীবোর্ড) প্যানেল বন্ধ করে না — শুধু প্রস্থ বদলালে
+    let lastW = window.innerWidth;
+    const onResize = () => {
+      if (window.innerWidth !== lastW) {
+        lastW = window.innerWidth;
+        closePanel();
+      }
+    };
     window.addEventListener('keydown', onKey, true);
     window.addEventListener('pointerdown', onDown, true);
     window.addEventListener('scroll', onScroll, true);
-    window.addEventListener('resize', closePanel);
+    window.addEventListener('resize', onResize);
     return () => {
       window.removeEventListener('keydown', onKey, true);
       window.removeEventListener('pointerdown', onDown, true);
       window.removeEventListener('scroll', onScroll, true);
-      window.removeEventListener('resize', closePanel);
+      window.removeEventListener('resize', onResize);
     };
   }, [panel, closePanel]);
 
@@ -365,8 +375,8 @@ function AiBubblePanel({ req, style, onClose, configured, ref }: PanelProps) {
       setImage(prepared);
       setImgPicker(false);
       setMode(IMAGE_EXPLAIN_DEF);
-    } catch {
-      toast.error(tt('ai.err.read'));
+    } catch (err) {
+      toast.error(tt((err as Error)?.message === 'IMAGE_TOO_LARGE' ? 'ai.err.size' : 'ai.err.read'));
     }
   };
 
@@ -380,7 +390,7 @@ function AiBubblePanel({ req, style, onClose, configured, ref }: PanelProps) {
     };
     window.addEventListener('paste', onPaste);
     return () => window.removeEventListener('paste', onPaste);
-  }, []);
+  }, [acceptFile]);
 
   /** রেঞ্জ বৈধ কি না (ডকুমেন্ট বদলে গেলে fallback) */
   const rangeValid = (r: Captured): boolean => {
@@ -440,6 +450,9 @@ function AiBubblePanel({ req, style, onClose, configured, ref }: PanelProps) {
 
   const quickModes = SELECTION_MODES.filter((m) => m.id !== 'custom');
   const hasReplaceable = req.tableRange !== undefined || pageScope || rangeValid(captured);
+  // পুরো পেজের প্রেক্ষাপট ১২k-তে কাটা পড়ে থাকলে AI পেজের শেষাংশ দেখেনি —
+  // তবু পুরো পেজ প্রতিস্থাপন করলে শেষাংশটা নীরবে মুছে যেত; তাই রোধ
+  const pageTruncated = pageScope && !req.tableRange && contextText.length >= PAGE_MD_CAP;
 
   return (
     <div
@@ -590,6 +603,8 @@ function AiBubblePanel({ req, style, onClose, configured, ref }: PanelProps) {
           disabled={busy}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+              // রান-বাটনের গার্ডের সমান — খালি প্রেক্ষাপটে কীবোর্ড-পথেও অর্থহীন কল নয়
+              if (!instruction.trim() && !image && !contextText && !tableRows) return;
               e.preventDefault();
               void run(mode ?? SELECTION_MODES[0]);
             }
@@ -642,7 +657,7 @@ function AiBubblePanel({ req, style, onClose, configured, ref }: PanelProps) {
             <div dangerouslySetInnerHTML={{ __html: previewHtml }} />
           </div>
           <div className="ai-bubble-apply">
-            {hasReplaceable ? (
+            {hasReplaceable && !pageTruncated ? (
               <Button size="sm" className="flex-1 gap-1.5 ai-save-btn" onClick={() => apply('replace')}>
                 <Replace size={12} aria-hidden="true" />
                 {pageScope && !req.tableRange ? tt('ai.page.replace') : tt('ai.sel.replace')}

@@ -70,11 +70,6 @@ export const dictAi: Dict = {
     hi: 'अपनी API Key — आपका खर्च, आपका नियंत्रण; हमारा कोई खर्च नहीं',
     en: 'Your own API key — your cost, your control; zero cost for us',
   },
-  'ai.status.on': {
-    bn: 'চালু',
-    hi: 'चालू',
-    en: 'Active',
-  },
   'ai.status.off': {
     bn: 'কি নেই',
     hi: 'की नहीं',
@@ -112,11 +107,6 @@ export const dictAi: Dict = {
     bn: 'PNG · JPG · WebP — স্ক্রিনশট হলে সরাসরি Ctrl+V চাপুন',
     hi: 'PNG · JPG · WebP — स्क्रीनशॉट हो तो सीधे Ctrl+V दबाएँ',
     en: 'PNG · JPG · WebP — for screenshots just press Ctrl+V',
-  },
-  'ai.drop.browse': {
-    bn: 'ফাইল বাছুন',
-    hi: 'फ़ाइल चुनें',
-    en: 'Browse file',
   },
   'ai.drop.remove': {
     bn: 'ছবি সরান',
@@ -168,6 +158,37 @@ export const dictAi: Dict = {
     bn: 'প্রশ্ন-উত্তর বানাও',
     hi: 'प्रश्न-उत्तर बनाओ',
     en: 'Make Q&A',
+  },
+  // চিপ প্রম্পট — ক্লিকে ইনপুট বক্সে যা বসে (লেবেল-কি-এর ".prompt" সংস্করণ)
+  'ai.chip.transcribe.prompt': {
+    bn: 'ছবির সব লেখা হুবহু তুলে বইয়ের উপযোগী করে সাজিয়ে দাও।',
+    hi: 'छवि का सारा लेख यथावत उतारकर पुस्तक-उपयोगी रूप में सजा दो।',
+    en: 'Transcribe all visible text exactly and format it book-ready.',
+  },
+  'ai.chip.table.prompt': {
+    bn: 'ছবির টেবিল/ডেটাগুলো সুন্দর টেবিল আকারে দাও।',
+    hi: 'छवि की तालिका/डेटा को सुंदर तालिका रूप में दो।',
+    en: 'Turn the tables/data in the image into a clean table.',
+  },
+  'ai.chip.bullets.prompt': {
+    bn: 'মূল বিষয়গুলো বুলেট পয়েন্টে গুছিয়ে লেখো।',
+    hi: 'मुख्य बिंदुओं को बुलेट पॉइंट में व्यवस्थित करो।',
+    en: 'Organize the key points as bullet points.',
+  },
+  'ai.chip.steps.prompt': {
+    bn: 'ডায়াগ্রাম/ফ্লোচার্টটি ধাপে ধাপে নম্বর দিয়ে লেখো।',
+    hi: 'डायग्राम/फ़्लोचार्ट को चरण-दर-चरण क्रमांक सहित लिखो।',
+    en: 'Rewrite the diagram/flowchart as numbered steps.',
+  },
+  'ai.chip.explain.prompt': {
+    bn: 'ছবিটি সহজ ভাষায় বিস্তারিত ব্যাখ্যা করে বইয়ের প্যারাগ্রাফ লেখো।',
+    hi: 'छवि को सरल भाषा में विस्तार से समझाकर पुस्तक के पैराग्राफ लिखो।',
+    en: 'Explain the image in simple detail as book paragraphs.',
+  },
+  'ai.chip.qa.prompt': {
+    bn: 'ছবির বিষয়বস্তু থেকে ৫টি প্রশ্ন-উত্তর তৈরি করো।',
+    hi: 'छवि की सामग्री से ५ प्रश्न-उत्तर बनाओ।',
+    en: 'Create 5 Q&A pairs from the image content.',
   },
 
   'ai.analyze': {
@@ -597,6 +618,21 @@ export const dictAi: Dict = {
     hi: 'प्रदाता की सलाह अनुसार मॉडल बदलकर सेव किया गया:',
     en: 'Model auto-switched & saved as the provider suggested:',
   },
+  'ai.err.instruction': {
+    bn: 'আগে নির্দেশ লিখুন — AI কী করবে বুঝতে নির্দেশ দরকার।',
+    hi: 'पहले निर्देश लिखें — AI क्या करे, यह बताना ज़रूरी है।',
+    en: 'Write an instruction first — tell the AI what to do.',
+  },
+  'ai.err.nothing': {
+    bn: 'যোগ করার মতো কিছু নেই — অন্তত একটি ব্লক বাছুন।',
+    hi: 'जोड़ने जैसा कुछ नहीं — कम से कम एक ब्लॉक चुनें।',
+    en: 'Nothing to insert — select at least one block.',
+  },
+  'ai.page.truncatedTip': {
+    bn: 'পেজটি অনেক বড় — AI প্রথম অংশটুকুই দেখেছে; পুরো পেজ বদলানো বন্ধ (শেষাংশ মুছে যেত)। ফলাফল পরের অংশে বসাতে "পরে যোগ করো" ব্যবহার করুন।',
+    hi: 'पेज बहुत बड़ा है — AI ने केवल पहला भाग देखा; पूरा पेज बदलना बंद है (शेष मिट जाता)। आगे जोड़ने के लिए "बाद में जोड़ें" इस्तेमाल करें।',
+    en: 'This page is large — the AI only saw the first part; full-page replace is disabled (it would drop the tail). Use "Insert after" instead.',
+  },
   'ai.err.badRequest': {
     bn: 'প্রোভাইডার অনুরোধটি গ্রহণ করেনি — নিচের বার্তা মিলিয়ে কি/মডেল/Base URL যাচাই করুন।',
     hi: 'प्रदाता ने अनुरोध अस्वीकार किया — नीचे संदेश से की/मॉडल/Base URL जाँचें।',
@@ -707,6 +743,27 @@ export const dictAi: Dict = {
     bn: 'ভূমিকা লেখো',
     hi: 'भूमिका लिखो',
     en: 'Write an intro',
+  },
+  // চ্যাট-চিপ প্রম্পট — ক্লিকে ইনপুটে বসে (তিন ভাষাতেই)
+  'ai.chat.chip.outline.prompt': {
+    bn: 'আমার বইয়ের জন্য একটি অধ্যায়ের আউটলাইন তৈরি করো।',
+    hi: 'मेरी पुस्तक के लिए एक अध्याय की रूपरेखा बनाओ।',
+    en: 'Create an outline for a chapter of my book.',
+  },
+  'ai.chat.chip.summary.prompt': {
+    bn: 'নিচের লেখাটির সারাংশ লেখো: ',
+    hi: 'नीचे दिए लेख का सारांश लिखो: ',
+    en: 'Summarize the following text: ',
+  },
+  'ai.chat.chip.table.prompt': {
+    bn: 'নিচের তথ্যগুলো দিয়ে একটি টেবিল বানাও: ',
+    hi: 'नीचे दिए आँकड़ों से एक तालिका बनाओ: ',
+    en: 'Make a table from the following data: ',
+  },
+  'ai.chat.chip.intro.prompt': {
+    bn: 'একটি বইয়ের ভূমিকা অধ্যায়ের জন্য আকর্ষণীয় প্যারাগ্রাফ লেখো।',
+    hi: 'एक पुस्तक के भूमिका अध्याय के लिए आकर्षक पैराग्राफ लिखो।',
+    en: 'Write an engaging paragraph for a book introduction chapter.',
   },
   'ai.chat.noSelection': {
     bn: 'আগে বইয়ে কিছু লেখা সিলেক্ট করুন',

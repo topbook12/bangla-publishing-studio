@@ -296,6 +296,8 @@ export function allowRate(key: string, limit: number): boolean {
     // পুরনো এন্ট্রি মাঝেমধ্যে ঝাড়া — মেমোরি ফাঁদ এড়াতে
     if (rateBuckets.size > 10_000) {
       for (const [k, v] of rateBuckets) if (v.reset < now) rateBuckets.delete(k);
+      // ঝাড়ার পরেও অস্বাভাবিক বড় হলে (স্পুফড-কি-ফ্লাড) সব ফেলে দিই — সীমা অটুট
+      if (rateBuckets.size > 20_000) rateBuckets.clear();
     }
     rateBuckets.set(key, { count: 1, reset: now + RATE_WINDOW_MS });
     return true;
@@ -312,6 +314,9 @@ export function clientIp(req: Request): string {
 
 /** সার্ভার নিজে লোকাল মেশিনে চলছে কি না (http-লোকাল অনুমতির শর্ত) */
 export function originIsLocalHost(hostHeader: string | null): boolean {
-  const originHost = (hostHeader ?? '').toLowerCase().split(':')[0];
+  const raw = (hostHeader ?? '').toLowerCase().trim();
+  // IPv6 লিটারাল [::1]:3000 → bracket-এর ভিতরের অংশ
+  const m = raw.match(/^\[(.+)\]/);
+  const originHost = m ? m[1] : raw.split(':')[0];
   return originHost === 'localhost' || originHost === '127.0.0.1' || originHost === '0.0.0.0' || originHost === '::1';
 }

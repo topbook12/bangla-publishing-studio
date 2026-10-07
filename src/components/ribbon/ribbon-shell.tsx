@@ -216,13 +216,13 @@ function QuickAccess() {
   };
 
   return (
-    <div className="ribbon-qat" role="toolbar" aria-label="Quick access toolbar">
+    <div className="ribbon-qat" role="toolbar" aria-label={tt('rb.qat')}>
       <Tooltip>
         <TooltipTrigger asChild>
           <button
             type="button"
             className="ribbon-qat-btn"
-            aria-label="Undo"
+            aria-label={tt('rb.undo')}
             disabled={!canUndo}
             onClick={() => run((e) => e.chain().focus().undo().run())}
           >
@@ -236,7 +236,7 @@ function QuickAccess() {
           <button
             type="button"
             className="ribbon-qat-btn"
-            aria-label="Redo"
+            aria-label={tt('rb.redo')}
             disabled={!canRedo}
             onClick={() => run((e) => e.chain().focus().redo().run())}
           >
@@ -262,10 +262,10 @@ export function Ribbon() {
   };
 
   return (
-    <div className="ribbon no-print" role="toolbar" aria-label="Ribbon toolbar">
+    <div className="ribbon no-print" role="toolbar" aria-label={tt('rb.toolbar')}>
       <div className="ribbon-tabstrip">
         <QuickAccess />
-        <nav className="ribbon-tabs" role="tablist" aria-label="Ribbon tabs">
+        <nav className="ribbon-tabs" role="tablist" aria-label={tt('rb.tabs')}>
           <MotionConfig reducedMotion="user">
             {RIBBON_TABS.map((tab) => (
               <button
