@@ -17,6 +17,7 @@ import { KrutiConverterDialog } from './kruti-converter-dialog';
 import { AiVisionDialog } from './ai-vision-dialog';
 import { AiSettingsDialog } from './ai-settings-dialog';
 import { AssetStoreDialog } from './asset-store-dialog';
+import { VectorLibraryDialog } from './vector-library-dialog';
 
 export function Dialogs() {
   useFindReplaceShortcuts();
@@ -34,6 +35,7 @@ export function Dialogs() {
       <AiVisionDialog />
       <AiSettingsDialog />
       <AssetStoreDialog />
+      <VectorLibraryDialog />
       <HelpDialog />
     </>
   );

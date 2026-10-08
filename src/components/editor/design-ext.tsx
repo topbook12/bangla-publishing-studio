@@ -39,6 +39,7 @@ import {
   getSticker,
   stickerSpanStyle,
 } from '@/lib/sticker-catalog';
+import { getVector } from '@/lib/vector-catalog';
 
 // ─────────────────────────── আইকন ───────────────────────────
 
@@ -815,6 +816,173 @@ declare module '@tiptap/core' {
   }
 }
 
+// ─────────────────────────── ভেক্টর ফিগার ───────────────────────────
+
+/**
+ * ডকুমেন্ট ফিগার — ভেক্টর লাইব্রেরির শিক্ষামূলক SVG চিত্র (ব্লক-লেভেল, কেন্দ্রীয়, ক্যাপশনযোগ্য)।
+ * স্টোরেজ কনট্র্যাক্ট:
+ *  <figure class="doc-figure" data-vid data-src data-w data-cap><img><figcaption?></figure>
+ * src = SVG data URI — জুম/ছাপায় ভেক্টর-শার্প।
+ */
+function DocFigureNodeView({ node, updateAttributes, deleteNode, selected }: NodeViewProps) {
+  const vid = (node.attrs.vid as string) ?? '';
+  const src = (node.attrs.src as string) ?? '';
+  const w = Math.max(90, Math.min(640, Number(node.attrs.w ?? 300) || 300));
+  const cap = (node.attrs.cap as string) ?? '';
+  const def = vid ? getVector(vid) : undefined;
+  const label = def?.label ?? 'চিত্র';
+
+  const clampW = (n: number) => Math.max(90, Math.min(640, n));
+
+  return (
+    <NodeViewWrapper
+      className={cn('doc-figure-wrap', selected && 'doc-icon-selected')}
+      data-vid={vid || undefined}
+    >
+      <figure className="doc-figure">
+        <img
+          src={src}
+          alt={label}
+          draggable={false}
+          style={{ width: w }}
+          role="img"
+          aria-label={label}
+        />
+        {cap && !selected ? <figcaption className="doc-figure-cap">{cap}</figcaption> : null}
+        {selected ? (
+          <span className="doc-icon-tools no-print" contentEditable={false}>
+            <button
+              type="button"
+              className="doc-tool-btn"
+              onClick={() => updateAttributes({ w: clampW(w - 40) })}
+              aria-label="চিত্র ছোট করুন"
+              title="ছোট করুন"
+            >
+              <Minus size={12} />
+            </button>
+            <span className="doc-tool-size">{Math.round(w)}px</span>
+            <button
+              type="button"
+              className="doc-tool-btn"
+              onClick={() => updateAttributes({ w: clampW(w + 40) })}
+              aria-label="চিত্র বড় করুন"
+              title="বড় করুন"
+            >
+              <Plus size={12} />
+            </button>
+            <input
+              type="text"
+              className="doc-figure-cap-input no-print"
+              value={cap}
+              placeholder="ক্যাপশন লিখুন…"
+              onChange={(e) => updateAttributes({ cap: e.target.value.slice(0, 160) })}
+              aria-label="চিত্রের ক্যাপশন"
+            />
+            <button
+              type="button"
+              className="doc-tool-btn doc-tool-danger"
+              onClick={deleteNode}
+              aria-label="চিত্র মুছুন"
+              title="মুছুন"
+            >
+              <Trash2 size={12} />
+            </button>
+          </span>
+        ) : null}
+      </figure>
+    </NodeViewWrapper>
+  );
+}
+
+export const DocFigure = Node.create({
+  name: 'docFigure',
+  group: 'block',
+  atom: true,
+  draggable: true,
+
+  addAttributes() {
+    return {
+      vid: {
+        default: '',
+        parseHTML: (el) => el.getAttribute('data-vid') ?? '',
+        renderHTML: (attrs) => (attrs.vid ? { 'data-vid': attrs.vid } : {}),
+      },
+      src: {
+        default: '',
+        parseHTML: (el) => el.getAttribute('data-src') ?? '',
+        renderHTML: (attrs) => (attrs.src ? { 'data-src': attrs.src } : {}),
+      },
+      w: {
+        default: 300,
+        parseHTML: (el) => Math.max(90, Math.min(640, Number(el.getAttribute('data-w') ?? 300) || 300)),
+        renderHTML: (attrs) => ({ 'data-w': String(attrs.w ?? 300) }),
+      },
+      cap: {
+        default: '',
+        parseHTML: (el) => el.getAttribute('data-cap') ?? '',
+        renderHTML: (attrs) => ({ 'data-cap': attrs.cap ?? '' }),
+      },
+    };
+  },
+
+  parseHTML() {
+    return [{ tag: 'figure.doc-figure' }];
+  },
+
+  renderHTML({ node }) {
+    const vid = (node.attrs.vid as string) ?? '';
+    const src = (node.attrs.src as string) ?? '';
+    const w = Number(node.attrs.w ?? 300) || 300;
+    const cap = (node.attrs.cap as string) ?? '';
+
+    const kids: DOMOutputSpec[] = [
+      ['img', { src, alt: cap || '', draggable: 'false' }],
+    ];
+    if (cap) kids.push(['figcaption', { class: 'doc-figure-cap' }, cap]);
+
+    return [
+      'figure',
+      mergeAttributes({
+        class: 'doc-figure',
+        'data-vid': vid || null,
+        'data-src': src || null,
+        'data-w': String(w),
+        'data-cap': cap,
+      }),
+      ...kids,
+    ] as DOMOutputSpec;
+  },
+
+  addNodeView() {
+    return ReactNodeViewRenderer(DocFigureNodeView);
+  },
+
+  addCommands() {
+    return {
+      insertDocFigure:
+        (attrs: { vid?: string; src?: string; w?: number; cap?: string }) =>
+        ({ commands }: CommandProps) =>
+          commands.insertContent({
+            type: this.name,
+            attrs: {
+              vid: attrs.vid ?? '',
+              src: attrs.src ?? '',
+              w: attrs.w ?? 300,
+              cap: attrs.cap ?? '',
+            },
+          }),
+    };
+  },
+});
+
+declare module '@tiptap/core' {
+  interface Commands<ReturnType> {
+    docFigure: {
+      insertDocFigure: (attrs: { vid?: string; src?: string; w?: number; cap?: string }) => ReturnType;
+    };
+  }
+}
+
 // ─────────────────────────── সব একসাথে ───────────────────────────
 
-export const designExtensions = [DocIcon, DesignBox, ShapeFrame, DocSticker];
+export const designExtensions = [DocIcon, DesignBox, ShapeFrame, DocSticker, DocFigure];

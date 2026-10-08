@@ -22,6 +22,7 @@ export type DialogName =
   | 'aiVision'
   | 'aiSettings'
   | 'assetStore'
+  | 'vectorLib'
   | 'help';
 
 /** AI ডায়ালগের কোন ট্যাব নিয়ে খুলবে */

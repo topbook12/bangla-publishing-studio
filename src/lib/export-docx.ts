@@ -632,6 +632,41 @@ function blockToDocx(el: Element, ctx: Ctx, settings: DocumentSettings): DocxBlo
     case 'HR':
       out.push(new Paragraph({ text: '─────────', alignment: AlignmentType.CENTER, spacing: { after: 100 } }));
       return out;
+    case 'FIGURE': {
+      // ভেক্টর লাইব্রেরির চিত্র — rasterizeDocFigures আগেই img-কে PNG করে রেখেছে
+      if (el.classList.contains('doc-figure')) {
+        const wPx = Math.min(620, Number(el.getAttribute('data-w') ?? 300) || 300);
+        const cap = el.getAttribute('data-cap') ?? '';
+        const imgEl = el.querySelector('img');
+        const src = imgEl?.getAttribute('src') ?? el.getAttribute('data-src') ?? '';
+        const bytes = src.startsWith('data:image/') ? dataUrlToBytes(src) : null;
+        if (bytes) {
+          const natW = Number(imgEl?.getAttribute('data-natw') ?? 0) || 0;
+          const natH = Number(imgEl?.getAttribute('data-nath') ?? 0) || 0;
+          const hPx = natW > 0 ? Math.round(wPx * natH / natW) : wPx;
+          out.push(new Paragraph({
+            children: [new ImageRun({
+              data: bytes.data,
+              type: bytes.type,
+              transformation: { width: wPx, height: hPx },
+            })],
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 100, after: cap ? 40 : 140 },
+          }));
+        }
+        if (cap) {
+          out.push(new Paragraph({
+            children: [new TextRun({ text: cap, italics: true, size: 20, color: '52616F' })],
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 140 },
+          }));
+        }
+        if (!bytes && !cap) out.push(new Paragraph(''));
+        return out;
+      }
+      out.push(...blockToDocxChildren(el, ctx, settings));
+      return out;
+    }
     default:
       out.push(...blockToDocxChildren(el, ctx, settings));
       return out;
@@ -865,6 +900,57 @@ function downloadBlob(blob: Blob, filename: string) {
   setTimeout(() => URL.revokeObjectURL(url), 4000);
 }
 
+// ── ভেক্টর ফিগার র‍্যাস্টারাইজার — Word-এ SVG যায় না, তাই ক্যানভাসে PNG হয়ে যায় ──
+// একই SVG বারবার এলে ক্যাশ; ছাপার কোয়ালিটির জন্য প্রদর্শন-প্রস্থের ৩× পিক্সেল।
+const svgPngCache = new Map<string, { dataUrl: string; natW: number; natH: number }>();
+
+function rasterizeSvg(src: string, displayW: number): Promise<{ dataUrl: string; natW: number; natH: number } | null> {
+  const cached = svgPngCache.get(src);
+  if (cached) return Promise.resolve(cached);
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const targetW = Math.min(1400, Math.max(600, Math.round(displayW * 3)));
+        const ratio = img.naturalHeight / Math.max(1, img.naturalWidth);
+        const w = targetW;
+        const h = Math.max(1, Math.round(targetW * ratio));
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { resolve(null); return; }
+        ctx.drawImage(img, 0, 0, w, h);
+        const rec = { dataUrl: canvas.toDataURL('image/png'), natW: w, natH: h };
+        svgPngCache.set(src, rec);
+        resolve(rec);
+      } catch { resolve(null); }
+    };
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+}
+
+/** পাতার HTML-এর সব doc-figure-এর SVG img → PNG dataURL (data-natw/nath যোগ করে) */
+async function rasterizeDocFigures(html: string): Promise<string> {
+  if (!html.includes('doc-figure')) return html;
+  const dom = new DOMParser().parseFromString(html, 'text/html');
+  const figures = Array.from(dom.body.querySelectorAll('figure.doc-figure'));
+  for (const fig of figures) {
+    const imgEl = fig.querySelector('img');
+    const src = fig.getAttribute('data-src') || imgEl?.getAttribute('src') || '';
+    if (!src.startsWith('data:image/svg')) continue;
+    const wPx = Number(fig.getAttribute('data-w') ?? 300) || 300;
+    const rec = await rasterizeSvg(src, wPx);
+    if (rec && imgEl) {
+      imgEl.setAttribute('src', rec.dataUrl);
+      imgEl.setAttribute('data-natw', String(rec.natW));
+      imgEl.setAttribute('data-nath', String(rec.natH));
+    }
+  }
+  return dom.body.innerHTML;
+}
+
 export async function exportProjectToDocx(input: DocxExportInput): Promise<void> {
   const { settings, pages, title } = input;
   const accent = hexNoHash(settings.header.accentColor) ?? '4F46E5';
@@ -951,7 +1037,7 @@ export async function exportProjectToDocx(input: DocxExportInput): Promise<void>
       push(c.author, { size: 26 });
       push(c.year, { size: 22, color: '64748B' });
     } else {
-      const html = await inlineRemoteImages(page.html || '<p></p>', imgCache);
+      const html = await rasterizeDocFigures(await inlineRemoteImages(page.html || '<p></p>', imgCache));
       const parser = new DOMParser();
       const dom = parser.parseFromString(html, 'text/html');
       Array.from(dom.body.children).forEach((el) => {

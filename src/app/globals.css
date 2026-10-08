@@ -1400,6 +1400,40 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
 }
 .doc-sticker-wrap:hover { background: rgba(79, 70, 229, 0.14); }
 .doc-sticker img { width: 100%; height: 100%; object-fit: contain; }
+
+/* ─── ডকুমেন্ট ফিগার (ভেক্টর লাইব্রেরি) ─── */
+.doc-figure-wrap { position: relative; margin: 10px 0; }
+.doc-figure {
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 100%;
+  break-inside: avoid;
+  page-break-inside: avoid;
+  border-radius: 4px;
+}
+.doc-figure-wrap:hover .doc-figure { outline: 1.5px dashed rgba(79, 70, 229, 0.45); outline-offset: 4px; }
+.doc-figure img { max-width: 100%; height: auto; display: block; }
+.doc-figure-cap {
+  margin-top: 7px;
+  font-size: 0.86em;
+  color: #52616f;
+  text-align: center;
+  line-height: 1.45;
+  max-width: 90%;
+}
+.doc-figure-cap-input {
+  height: 22px;
+  width: 150px;
+  font-size: 11px;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 5px;
+  padding: 0 6px;
+  background: transparent;
+  color: inherit;
+}
+.doc-figure-cap-input:focus { outline: 1.5px solid #0c7a54; }
 .doc-icon-wrap:hover { background: rgba(79, 70, 229, 0.14); }
 .doc-icon-selected { outline: 2px solid #0c7a54; outline-offset: 1px; }
 .doc-icon-tools {

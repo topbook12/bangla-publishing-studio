@@ -149,3 +149,26 @@ dictInsert['ins.store.toast.favRemove'] = { bn: 'প্রিয় থেকে
 dictInsert['ins.store.toast.deleted'] = { bn: 'আপলোড মুছে ফেলা হয়েছে', hi: 'अपलोड मिटा दिया गया', en: 'Upload deleted' };
 dictInsert['ins.store.toast.uploaded'] = { bn: '{n}টি ছবি স্টোরে জোড় হয়েছে', hi: '{n} चित्र स्टोर में जुड़े', en: '{n} image(s) added to the store' };
 dictInsert['ins.store.toast.uploadFail'] = { bn: '{name} — ছবি নয় বা পড়া গেল না', hi: '{name} — चित्र नहीं है या पढ़ा नहीं जा सका', en: '{name} — not an image or unreadable' };
+
+// ═══ ভেক্টর লাইব্রেরি (vector-library-dialog) ═══
+dictInsert['ins.vector.btn'] = { bn: 'ভেক্টর ছবি', hi: 'वेक्टर चित्र', en: 'Vector images' };
+dictInsert['ins.vector.btnTip'] = { bn: 'বিল্ট-ইন ভেক্টর ও ইলাস্ট্রেশন লাইব্রেরি — পদার্থবিজ্ঞান, গণিত, রসায়ন, জীববিজ্ঞান, ভূগোলের ১২১টি SVG চিত্র', hi: 'बिल्ट-इन वेक्टर व इलस्ट्रेशन लाइब्रेरी — 121 SVG चित्र', en: 'Built-in vector & illustration library — 121 SVG figures' };
+dictInsert['ins.vector.title'] = { bn: 'ভেক্টর লাইব্রেরি', hi: 'वेक्टर लाइब्रेरी', en: 'Vector Library' };
+dictInsert['ins.vector.desc'] = { bn: 'বইয়ের জন্য বিল্ট-ইন শিক্ষামূলক ভেক্টর চিত্র — ক্যাটাগরি অনুযায়ী সাজানো, কপিরাইট-মুক্ত। ক্লিক করলে কার্সরে বসবে, টেনে বইয়ের যেকোনো জায়গায় ছাড়া যাবে। সব SVG: জুম/ছাপায় ফাটে না।', hi: 'किताबों के लिए बिल्ट-इन शैक्षिक वेक्टर चित्र — श्रेणीबद्ध, कॉपीराइट-मुक्त। क्लिक करें या ड्रैग करें। सब SVG: ज़ूम/प्रिंट में शार्प।', en: 'Built-in educational vector figures for books — categorized, copyright-free. Click to insert at the cursor, or drag anywhere in the book. All SVG: stays sharp when zoomed or printed.' };
+dictInsert['ins.vector.searchPh'] = { bn: 'খুঁজুন — যেমন: লেন্স, নৌকা, গ্রাফ, তীর, circuit…', hi: 'खोजें — जैसे: लेंस, नाव, ग्राफ, तीर, circuit…', en: 'Search — e.g. lens, boat, graph, arrow, circuit…' };
+dictInsert['ins.vector.searchAria'] = { bn: 'ভেক্টর চিত্র খুঁজুন', hi: 'वेक्टर चित्र खोजें', en: 'Search vector figures' };
+dictInsert['ins.vector.tab.all'] = { bn: 'সব', hi: 'सभी', en: 'All' };
+dictInsert['ins.vector.cat.physics'] = { bn: 'পদার্থবিজ্ঞান', hi: 'भौतिकी', en: 'Physics' };
+dictInsert['ins.vector.cat.math'] = { bn: 'গণিত ও জ্যামিতি', hi: 'गणित व ज्यामिति', en: 'Math & Geometry' };
+dictInsert['ins.vector.cat.chem'] = { bn: 'রসায়ন ও ল্যাব', hi: 'रसायन व लैब', en: 'Chemistry & Lab' };
+dictInsert['ins.vector.cat.bio'] = { bn: 'জীববিজ্ঞান', hi: 'जीवविज्ञान', en: 'Biology' };
+dictInsert['ins.vector.cat.geo'] = { bn: 'ভূগোল ও বাংলাদেশ', hi: 'भूगोल व बांग्लादेश', en: 'Geography & Bangladesh' };
+dictInsert['ins.vector.cat.chart'] = { bn: 'চার্ট ও লেখচিত্র', hi: 'चार्ट व ग्राफ', en: 'Charts & Graphs' };
+dictInsert['ins.vector.cat.common'] = { bn: 'কমন এলিমেন্ট', hi: 'कॉमन एलिमेंट', en: 'Common Elements' };
+dictInsert['ins.vector.insertTip'] = { bn: 'ক্লিক করলে কার্সরে বসবে', hi: 'क्लिक करने पर कर्सर पर बैठ जाएगा', en: 'Click to insert at cursor' };
+dictInsert['ins.vector.dragTip'] = { bn: 'ক্লিক = কার্সরে বসবে · টেনে বইয়ের যেকোনো জায়গায় ছাড়া যাবে · SVG ভেক্টর — যত বড় করবেন, তত শার্প · প্রিয়/সম্প্রতি ব্রাউজারেই সেভ', hi: 'क्लिक = कर्सर पर बैठेगा · ड्रैग करके कहीं भी छोड़ें · SVG वेक्टर — जितना बड़ा, उतना शार्प · पसंदीदा/हाल के ब्राउज़र में सेव', en: 'Click = insert at cursor · drag & drop anywhere in the book · SVG vectors — the bigger, the sharper · favorites & recents saved in your browser' };
+dictInsert['ins.vector.favEmpty'] = { bn: 'প্রিয় ভেক্টর এখনো নেই — যেকোনো চিত্রের ❤ চেপে এখানে জমা করুন।', hi: 'अभी कोई पसंदीदा वेक्टर नहीं — किसी चित्र के ❤ दबाकर यहाँ जमा करें।', en: 'No favorite vectors yet — tap ❤ on any figure to save it here.' };
+dictInsert['ins.vector.recentEmpty'] = { bn: 'সম্প্রতি ব্যবহৃত ভেক্টর এখানে জমা হবে।', hi: 'हाल में उपयोग किए वेक्टर यहाँ जमा होंगे।', en: 'Recently used vectors will appear here.' };
+dictInsert['ins.vector.noresult'] = { bn: '"{q}" — কিছু পাওয়া যায়নি, অন্য শব্দে খুঁজুন।', hi: '"{q}" — कुछ नहीं मिला, दूसरा शब्द खोजें।', en: '"{q}" — nothing found, try another word.' };
+dictInsert['ins.vector.count'] = { bn: '{n}টি ভেক্টর চিত্র', hi: '{n} वेक्टर चित्र', en: '{n} vector figures' };
+dictInsert['ins.store.vectorLink'] = { bn: 'ভেক্টর ছবি', hi: 'वेक्टर चित्र', en: 'Vector images' };

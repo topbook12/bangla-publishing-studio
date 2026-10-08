@@ -17,7 +17,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Heart, ImagePlus, Loader2, Search, Store, Trash2,
+  DraftingCompass, Heart, ImagePlus, Loader2, Search, Store, Trash2,
 } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
@@ -66,6 +66,7 @@ export function AssetStoreDialog() {
   const tt = useT();
   const open = useUiStore((s) => s.openDialog === 'assetStore');
   const close = useUiStore((s) => s.close);
+  const openDialog = useUiStore((s) => s.open);
   const [tab, setTab] = useState<StoreTab>('all');
   const [query, setQuery] = useState('');
   const [size, setSize] = useState(36);
@@ -242,6 +243,15 @@ export function AssetStoreDialog() {
             >
               {uploading ? <Loader2 size={13} className="animate-spin" aria-hidden="true" /> : <ImagePlus size={13} aria-hidden="true" />}
               {tt('ins.store.upload')}
+            </button>
+            <button
+              type="button"
+              className="chip"
+              onClick={() => { close(); openDialog('vectorLib'); }}
+              title={tt('ins.vector.btnTip')}
+            >
+              <DraftingCompass size={13} aria-hidden="true" />
+              {tt('ins.store.vectorLink')}
             </button>
             <input
               ref={fileRef}

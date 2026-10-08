@@ -6,7 +6,7 @@
 
 import { useMemo, useRef, useState, type CSSProperties } from 'react';
 import {
-  AlertTriangle, BookOpen, CalendarDays, ChevronDown, Frame, Hash, Image as ImageIcon,
+  AlertTriangle, BookOpen, CalendarDays, ChevronDown, DraftingCompass, Frame, Hash, Image as ImageIcon,
   Lightbulb, Link2, ListTree, Minus, Pin, Shapes, Square, Store, Table as TableIcon, FilePlus2, HelpCircle,
 } from 'lucide-react';
 import {
@@ -718,6 +718,12 @@ export function InsertTab() {
               label={tt('ins.store.btn')}
               title={tt('ins.store.btnTip')}
               onClick={() => openDialog('assetStore')}
+            />
+            <RibbonButton
+              icon={DraftingCompass}
+              label={tt('ins.vector.btn')}
+              title={tt('ins.vector.btnTip')}
+              onClick={() => openDialog('vectorLib')}
             />
             <RibbonButton
               icon={Shapes}

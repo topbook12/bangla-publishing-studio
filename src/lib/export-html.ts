@@ -137,6 +137,9 @@ a { cursor: pointer; }
 .doc-sticker { display: inline-flex; line-height: 0; vertical-align: -0.18em; }
 .doc-sticker svg, span.doc-sticker svg { width: 100%; height: 100%; }
 .doc-sticker img { width: 100%; height: 100%; object-fit: contain; }
+.doc-figure { margin: 0 auto; display: flex; flex-direction: column; align-items: center; max-width: 100%; break-inside: avoid; page-break-inside: avoid; }
+.doc-figure img { max-width: 100%; height: auto; }
+.doc-figure-cap { margin-top: 7px; font-size: 0.86em; color: #52616f; text-align: center; line-height: 1.45; }
 .doc-textbox { position: relative; }
 .doc-textbox p { margin: 0.1em 0; }
 .mcq-block { border: 1.5px solid rgba(100,116,139,.4); border-radius: 12px; padding: 12px 16px; margin: 12px 0; }

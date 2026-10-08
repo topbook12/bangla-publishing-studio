@@ -6,12 +6,12 @@
  * - নিজের আপলোড: Dexie/IndexedDB (ছবি dataURL বড় হতে পারে)
  *
  * অ্যাসেট-কী ফরম্যাট:
- *   emoji:<char>   স্টিকার:<id>   অলংকার:<char>   আইকন:<name>   custom:<recordId>
+ *   emoji:<char>   স্টিকার:<id>   অলংকার:<char>   আইকন:<name>   custom:<recordId>   vector:<id>
  */
 
 import { db, newId, type CustomAssetRecord } from './dexie';
 
-export type AssetKind = 'emoji' | 'sticker' | 'orn' | 'icon' | 'custom';
+export type AssetKind = 'emoji' | 'sticker' | 'orn' | 'icon' | 'custom' | 'vector';
 
 export interface AssetKey {
   kind: AssetKind;
@@ -26,7 +26,7 @@ export function parseAssetKey(key: string): AssetKey | null {
   const i = key.indexOf(':');
   if (i <= 0) return null;
   const kind = key.slice(0, i);
-  if (kind !== 'emoji' && kind !== 'sticker' && kind !== 'orn' && kind !== 'icon' && kind !== 'custom') return null;
+  if (kind !== 'emoji' && kind !== 'sticker' && kind !== 'orn' && kind !== 'icon' && kind !== 'custom' && kind !== 'vector') return null;
   return { kind, id: key.slice(i + 1) };
 }
 
