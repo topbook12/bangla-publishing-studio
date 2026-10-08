@@ -74,7 +74,7 @@ const ATTR = (tag: string, s: string, a: string, dflt: number) => {
 };
 const HAS = (s: string, a: string) => new RegExp(`${a}\\s*=`).test(s);
 
-function analyzeSvg(svg: string) {
+function analyzeSvg(svg: string): { vb: number[]; bbox: BBox | null; hasText: boolean; maxStroke: number } {
   const vbM = svg.match(/viewBox\s*=\s*"([^"]*)"/);
   const vb = (vbM?.[1] ?? '').split(/[\s,]+/).map(Number);
   let bbox: BBox | null = null;

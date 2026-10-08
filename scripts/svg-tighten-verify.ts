@@ -12,7 +12,7 @@ const ATTR = (tag: string, s: string, a: string, dflt: number) => {
   return m ? parseFloat(m[1]) : dflt;
 };
 
-function analyzeSvg(svg: string) {
+function analyzeSvg(svg: string): { vb: number[]; bbox: { x0: number; y0: number; x1: number; y1: number } | null; hasText: boolean; maxStroke: number } {
   const vbM = svg.match(/viewBox\s*=\s*"([^"]*)"/);
   const vb = (vbM?.[1] ?? '').split(/[\s,]+/).map(Number);
   let bbox: { x0: number; y0: number; x1: number; y1: number } | null = null;
