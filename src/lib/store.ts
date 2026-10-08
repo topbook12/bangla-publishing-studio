@@ -69,6 +69,12 @@ interface EditorActions {
   bumpSelection: () => void;
   setSaveState: (s: SaveState) => void;
 
+  /**
+   * টেমপ্লেট-স্টোর (বই-ব্লুপ্রিন্ট) ও এক-রঙ ইঞ্জিনের জন্য — সম্পূর্ণ পাতা-তালিকা
+   * ও (ঐচ্ছিক) সেটিংস-প্যাচ একসাথে বসানো। ডাকার আগে স্ন্যাপশট নেওয়ার নিয়ম।
+   */
+  replaceBook: (pages: PageData[], settingsPatch?: Partial<DocumentSettings>) => void;
+
   // ── স্ন্যাপশট (ভার্সন ব্যাকআপ) ──
   /** বর্তমান অবস্থার স্ন্যাপশট নেয় + পুরনোগুলো প্রুন (প্রতি প্রজেক্টে সর্বোচ্চ ১৫টি) */
   takeSnapshot: (kind: 'auto' | 'manual') => Promise<void>;
@@ -594,6 +600,16 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
   },
 
   // ── UI ──
+
+  replaceBook: (pages, settingsPatch) => {
+    const settings = settingsPatch ? mergeSettings(get().settings, settingsPatch) : get().settings;
+    set({
+      pages,
+      settings,
+      activePageId: pages[0]?.id ?? null,
+    });
+    touch(get);
+  },
 
   setActivePage: (pageId) => set({ activePageId: pageId }),
   setRibbonTab: (tab) => set({ activeRibbonTab: tab }),

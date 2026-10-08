@@ -3317,3 +3317,70 @@ html.dark .ai-chat-attach:hover { color: oklch(0.8 0.12 78); }
   .ai-bubble-grid { grid-template-columns: repeat(2, 1fr); }
   .ai-chat-md table { font-size: 11px; }
 }
+
+/* ═════════════════════ এক-রঙের বই মোড (Single-Ink Book) ═════════════════════
+   workspace-inner-এ data-one-color="<ink>" থাকলে ক্লাস-ভিত্তিক রঙগুলো (কলআউট, MCQ,
+   TOC, টেবিল হেড, ব্লককোট) সব কালির ছায়ায় নেমে আসে। ইনলাইন রঙগুলো HTML-রিরাইটে
+   (one-color.ts) আগেই রূপান্তরিত — প্রিন্ট ও এক্সপোর্টেও একই চেহারা। */
+
+[data-one-color] .callout-concept {
+  background: color-mix(in srgb, var(--book-ink) 7%, transparent);
+  border: 1px solid color-mix(in srgb, var(--book-ink) 30%, transparent);
+  border-left: 4px solid var(--book-ink);
+}
+[data-one-color] .callout-warning {
+  background: color-mix(in srgb, var(--book-ink) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--book-ink) 28%, transparent);
+  border-left: 4px solid color-mix(in srgb, var(--book-ink) 85%, white);
+}
+[data-one-color] .callout-formula {
+  background: color-mix(in srgb, var(--book-ink) 7%, transparent);
+  border: 1px solid color-mix(in srgb, var(--book-ink) 30%, transparent);
+  border-left: 4px solid color-mix(in srgb, var(--book-ink) 78%, white);
+}
+[data-one-color] .callout-note {
+  background: color-mix(in srgb, var(--book-ink) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--book-ink) 26%, transparent);
+  border-left: 4px solid color-mix(in srgb, var(--book-ink) 55%, white);
+}
+[data-one-color] .callout-concept .callout-badge,
+[data-one-color] .callout-warning .callout-badge,
+[data-one-color] .callout-formula .callout-badge,
+[data-one-color] .callout-note .callout-badge { color: color-mix(in srgb, var(--book-ink) 82%, black); }
+
+[data-one-color] .mcq-block { border-color: color-mix(in srgb, var(--book-ink) 45%, white); }
+[data-one-color] .mcq-tag { background: var(--book-ink); }
+[data-one-color] .mcq-answer { background: color-mix(in srgb, var(--book-ink) 12%, white); }
+[data-one-color] .toc-dots { border-bottom-color: color-mix(in srgb, var(--book-ink) 55%, white); }
+[data-one-color] .toc-title { color: var(--book-ink); }
+[data-one-color] th { background: color-mix(in srgb, var(--book-ink) 10%, white); }
+[data-one-color] th, [data-one-color] td { border-color: color-mix(in srgb, var(--book-ink) 45%, white); }
+[data-one-color] blockquote { border-left-color: color-mix(in srgb, var(--book-ink) 55%, white); }
+[data-one-color] .fancy-divider { color: color-mix(in srgb, var(--book-ink) 65%, white); }
+[data-one-color] .paper-cream .fancy-divider { color: color-mix(in srgb, var(--book-ink) 65%, white); }
+
+/* এক-রঙ মোডের নির্বাচক তালিকা (টেমপ্লেট স্টোরের ডায়ালগে) */
+.ink-swatch {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  outline: 1px solid rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transition: transform 0.12s ease, border-color 0.12s ease;
+  position: relative;
+}
+.ink-swatch:hover { transform: scale(1.08); }
+.ink-swatch-active { border-color: var(--foreground); transform: scale(1.06); }
+
+/* টেমপ্লেট স্টোর — ব্লুপ্রিন্ট কার্ডের স্তূপ-প্রিভিউ */
+.bp-preview-stack { position: relative; }
+.bp-preview-page {
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: #fff;
+}
+
+/* ink-swatch rebuild marker */

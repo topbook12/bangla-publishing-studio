@@ -11,6 +11,7 @@ export const dictDesign: Dict = {
   'dsn.group.hf': { bn: 'হেডার ও ফুটার', hi: 'हेडर और फुटर', en: 'Header & Footer' },
   'dsn.group.pagenum': { bn: 'পৃষ্ঠা নম্বর', hi: 'पृष्ठ संख्या', en: 'Page Numbers' },
   'dsn.group.covtoc': { bn: 'কভার ও সূচিপত্র', hi: 'कवर और विषय-सूची', en: 'Cover & TOC' },
+  'dsn.group.ink': { bn: 'এক রঙের বই', hi: 'एक रंग की किताब', en: 'Single-Ink Book' },
 
   // ─── হেডার ও ফুটার ───
   'dsn.hf.master': { bn: 'হেডার-ফুটার মাস্টার', hi: 'हेडर-फुटर मास्टर', en: 'Header & Footer Master' },
@@ -57,12 +58,37 @@ export const dictDesign: Dict = {
 
   // ─── কভার ও সূচিপত্র ───
   'dsn.btn.cover': { bn: 'কভার পাতা', hi: 'कवर पृष्ठ', en: 'Cover Page' },
-  'dsn.btn.templates': { bn: 'পাতার টেমপ্লেট', hi: 'पृष्ठ टेम्पलेट', en: 'Page Templates' },
-  'dsn.btn.templatesTip': { bn: 'সূচিপত্র, শিরোনাম পাতা, লেখকের পরিচিতি ইত্যাদি ডিজাইন-রেডি পাতা', hi: 'सूचीपत्र, शीर्षक पृष्ठ, लेखक परिचय आदि डिज़ाइन-तैयार पृष्ठ', en: 'TOC, title page, author bio and other design-ready pages' },
+  'dsn.btn.templates': { bn: 'টেমপ্লেট স্টোর', hi: 'टेम्पलेट स्टोर', en: 'Template Store' },
+  'dsn.btn.templatesTip': { bn: 'সম্পূর্ণ বই-ডিজাইন (উপন্যাস, পাঠ্যবই, কবিতা…) ও প্রো পাতার টেমপ্লেট — সব এডিটেবল', hi: 'पूर्ण पुस्तक-डिज़ाइन (उपन्यास, पाठ्यपुस्तक, कविता…) और प्रो पृष्ठ टेम्पलेट — सब संपादनीय', en: 'Complete book designs (novel, textbook, poetry…) and pro page templates — all editable' },
   'dsn.btn.updateToc': { bn: 'সূচিপত্র হালনাগাদ করুন', hi: 'विषय-सूची अद्यतन करें', en: 'Update Table of Contents' },
   'dsn.btn.borderColor': { bn: 'বর্ডারের রং', hi: 'बॉर्डर रंग', en: 'Border Color' },
   'dsn.prompt.borderColor': { bn: 'পাতার বর্ডারের রং (hex, যেমন #7f1d1d):', hi: 'पृष्ठ बॉर्डर रंग (hex, जैसे #7f1d1d):', en: 'Page border color (hex, e.g. #7f1d1d):' },
   'dsn.toc.title': { bn: 'সূচিপত্র', hi: 'विषय-सूची', en: 'Table of Contents' },
+
+  // ─── এক-রঙের বই (Single-Ink) ───
+  'dsn.ink.title': { bn: 'এক রঙের বই', hi: 'एक रंग की किताब', en: 'Single-Ink Book' },
+  'dsn.ink.desc': { bn: 'একটি কালি বেছে নিন — পুরো বইয়ের শিরোনাম, বর্ডার, বক্স ও অলংকরণ ওই কালির ছায়ায় নামবে (এক রঙে ছাপার মতো)।', hi: 'एक स्याही चुनें — पूरी किताब के शीर्षक, बॉर्डर, बॉक्स और अलंकरण उसी स्याही की छाया में आ जाएँगे (एक रंग में छपाई जैसा)।', en: 'Pick one ink — every heading, border, box and ornament in the book shifts to shades of it (like single-colour printing).' },
+  'dsn.ink.pickHint': { bn: 'কালি বাছুন — প্রয়োগের আগে নিশ্চিত করতে বলা হবে', hi: 'स्याही चुनें — लागू करने से पहले पुष्टि माँगी जाएगी', en: 'Pick an ink — you will be asked to confirm first' },
+  'dsn.ink.active': { bn: 'চালু', hi: 'सक्रिय', en: 'Active' },
+  'dsn.ink.restore': { bn: 'আসল রঙে ফেরুন — স্ন্যাপশট পুনরুদ্ধার', hi: 'मूल रंग में लौटें — स्नैपशॉट पुनर्स्थापन', en: 'Back to original colours — restore a snapshot' },
+  'dsn.ink.confirmTitle': { bn: 'পুরো বই কি এক রঙে রূপান্তর করবেন?', hi: 'पूरी किताब एक रंग में बदलें?', en: 'Convert the whole book to one colour?' },
+  'dsn.ink.confirmDesc': { bn: 'সব পাতার রং নির্বাচিত কালির ছায়ায় নামবে। প্রয়োগের আগে স্বয়ংক্রিয় স্ন্যাপশট নেওয়া হবে — স্ন্যাপশট তালিকা থেকে যেকোনো সময় আসল রঙে ফেরা যাবে।', hi: 'सभी पृष्ठों के रंग चुनी गई स्याही की छाया में आ जाएँगे। लागू करने से पहले स्वतः स्नैपशॉट लिया जाएगा — स्नैपशॉट सूची से कभी भी मूल रंग लौटाया जा सकता है।', en: 'Colours on every page shift to shades of the chosen ink. An automatic snapshot is taken first — you can restore the original colours any time from the snapshot list.' },
+  'dsn.ink.confirmYes': { bn: 'হ্যাঁ, এক রঙে করুন', hi: 'हाँ, एक रंग में करें', en: 'Yes, make it single-ink' },
+  'dsn.ink.toastDone': { bn: 'বইটি এক রঙে রূপান্তরিত — {n}টি পাতা হালনাগাদ হয়েছে', hi: 'किताब एक रंग में बदल गई — {n} पृष्ठ अपडेट हुए', en: 'Book converted to single ink — {n} pages updated' },
+  'dsn.ink.toastSnapshot': { bn: 'আসল রঙের স্ন্যাপশট সংরক্ষিত — স্ন্যাপশট ডায়ালগ থেকে ফেরানো যাবে', hi: 'मूल रंगों का स्नैपशॉट सहेजा गया — स्नैपशॉट डायलॉग से लौटाएँ', en: 'A snapshot of the original colours was saved — restore it any time from the snapshots dialog' },
+  'dsn.ink.toastFail': { bn: 'রূপান্তর করা যায়নি — আবার চেষ্টা করুন', hi: 'रूपांतरण नहीं हो सका — फिर कोशिश करें', en: 'Conversion failed — please try again' },
+
+  // কালির প্যালেট
+  'dsn.ink.black': { bn: 'কালো কালি', hi: 'काली स्याही', en: 'Black ink' },
+  'dsn.ink.sepia': { bn: 'সেপিয়া বাদামি', hi: 'सेपिया भूरा', en: 'Sepia brown' },
+  'dsn.ink.maroon': { bn: 'মেরুন', hi: 'मैरून', en: 'Maroon' },
+  'dsn.ink.teal': { bn: 'টিল', hi: 'टील', en: 'Teal' },
+  'dsn.ink.forest': { bn: 'গাঢ় সবুজ', hi: 'गहरा हरा', en: 'Forest green' },
+  'dsn.ink.plum': { bn: 'প্লাম', hi: 'प्लम', en: 'Plum' },
+  'dsn.ink.rust': { bn: 'মাটি-লাল', hi: 'मिट्टी-लाल', en: 'Rust' },
+  'dsn.ink.navy': { bn: 'নেভি', hi: 'नेवी', en: 'Navy' },
+  'dsn.ink.olive': { bn: 'জলপাই', hi: 'जैतून', en: 'Olive' },
+  'dsn.ink.slate': { bn: 'ছাই-ধূসর', hi: 'स्लेट-धूसर', en: 'Slate grey' },
 
   // ─── টোস্ট ───
   'dsn.toast.noeditor': { bn: 'কোনো পাতার এডিটর খোলা নেই', hi: 'कोई पृष्ठ एडिटर खुला नहीं है', en: 'No page editor is open' },

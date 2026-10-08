@@ -513,6 +513,30 @@ export function fitTemplatePage(pageId: string, maxRemove = 80): number {
     removed += 1;
   }
 
+  // শেষ ভরসা: স্পেসার শেষ হয়ে গেলেও উপচে পড়লে প্লেসহোল্ডার-নির্দেশ (tpl-hint)
+  // প্যারাগ্রাফটি সরানো হয় — নকশার মূল অংশ পাতায় অক্ষত থাকে (প্রিন্টে কাটা পড়ে না)।
+  // টেমপ্লেট-লেখকরা নির্দেশ-লাইনে 'প্লেসহোল্ডার' শব্দটি রাখেন — সেটাই শনাক্তকারী।
+  while (removed < maxRemove + 20 && pmEl.scrollHeight > available + 4) {
+    let hint: { pos: number; size: number } | null = null;
+    editor.state.doc.descendants((node, pos) => {
+      if (hint) return false;
+      if (node.type.name !== 'paragraph') return true;
+      const text = node.textContent;
+      if (text.includes('প্লেসহোল্ডার') || text.includes('सम्मिलित') || /placeholder/i.test(text)) {
+        hint = { pos, size: node.nodeSize };
+        return false;
+      }
+      return true;
+    });
+    if (!hint) break;
+    const victim2 = hint as { pos: number; size: number };
+    const tr2 = editor.state.tr.delete(victim2.pos, victim2.pos + victim2.size);
+    tr2.setMeta('preventUpdate', true);
+    tr2.setMeta('addToHistory', false);
+    editor.view.dispatch(tr2);
+    removed += 1;
+  }
+
   if (removed > 0) {
     // preventUpdate-এ স্টোর-সিঙ্ক বন্ধ ছিল — চূড়ান্ত HTML স্টোরে বসাই
     useEditorStore.getState().replacePageHtml(pageId, editor.getHTML());

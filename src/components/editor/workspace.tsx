@@ -192,7 +192,11 @@ export function Workspace() {
       className="workspace flex-1 overflow-auto bg-slate-200/70 dark:bg-slate-900 print:!bg-white print:!overflow-visible"
       aria-label={tt('ws.pages.aria', 'Book pages')}
     >
-      <div className="workspace-inner" style={{ zoom }}>
+      <div
+        className="workspace-inner"
+        style={{ zoom, ...(settings.singleColor ? { ['--book-ink' as string]: settings.singleColor } : {}) }}
+        {...(settings.singleColor ? { 'data-one-color': settings.singleColor } : {})}
+      >
         {pages.map((page, index) => (
           <section key={page.id} className="page-slot relative" aria-label={tt('ws.page.n', 'Page {n}').split('{n}').join(fn(index + 1))}>
             <div className="page-toolbar no-print" aria-hidden="true">

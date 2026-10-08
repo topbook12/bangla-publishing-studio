@@ -19,6 +19,7 @@ import { getPaperPreset, pageBorderVisual } from './paper';
 import { parseMcqData, docBoxStyleText, type DocBoxAttrs, type DocBoxVariant } from './nodes-html';
 import { healFigureSrcs } from './vector-catalog';
 import { formatPageNumber } from './bangla';
+import { oneColorExportCss } from './one-color';
 
 const OPTION_LABELS = ['ক', 'খ', 'গ', 'ঘ'];
 
@@ -537,6 +538,7 @@ export function buildStandaloneHtml(title: string, settings: DocumentSettings, p
 <link href="https://fonts.maateen.me/siyam-rupali/font.css" rel="stylesheet">
 <style>${bundledHindiFontFaceCss()}</style>
 <style>${EXPORT_CSS}</style>
+${settings.singleColor ? `<style>${oneColorExportCss(settings.singleColor)}</style>` : ''}
 <style>
   :root { --p-gap: ${settings.paragraphSpacing}px; }
   @page { size: ${w}mm ${h}mm; margin: 0; }

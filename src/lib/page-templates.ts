@@ -37,7 +37,7 @@ export interface PageTemplate {
 }
 
 const TIP_NOTE =
-  '<p style="text-align:center"><span style="font-size:9pt; color:#94a3b8">প্লেসহোল্ডার লেখাগুলো মুছে নিজের তথ্য লিখুন</span></p>';
+  '<p class="tpl-hint" style="text-align:center"><span style="font-size:9pt; color:#94a3b8">প্লেসহোল্ডার লেখাগুলো মুছে নিজের তথ্য লিখুন</span></p>';
 
 /** উল্লম্ব স্পেসার — পাতার মাঝবরাবর নামানোর জন্য */
 const sp = (n: number) => Array.from({ length: n }, () => '<p style="text-align:center"></p>').join('\n');
@@ -118,16 +118,15 @@ ${buildDesignBoxHtml(
   { variant: 'double', border: '#9f1239', fill: 'transparent', bstyle: 'double', bwidth: 4 },
   `${sp(1)}
 <p style="text-align:center"><span style="font-size:12pt; color:#9f1239; letter-spacing:2px">❖ ❖ ❖</span></p>
-<h1 style="text-align:center; color:#7f1d1d; line-height:1.35"><span style="font-size:28pt">বইয়ের নাম</span></h1>
+<h1 style="text-align:center; color:#7f1d1d; line-height:1.35"><span style="font-size:26pt">বইয়ের নাম</span></h1>
 <p style="text-align:center"><span style="font-size:13pt; color:#475569">উপশিরোনাম</span></p>
 <p style="text-align:center"></p>
 <p style="text-align:center"><span style="font-size:12pt; color:#334155">লেখকের নাম</span></p>
 <p style="text-align:center"></p>
-<p style="text-align:center"><span style="font-size:10pt; color:#9f1239">─ ✦ ─</span></p>
 <p style="text-align:center"><span style="font-size:11pt; color:#64748b">প্রকাশনীর নাম</span></p>
 ${sp(1)}`,
 )}
-${sp(1)}
+${TIP_NOTE}
 `.trim(),
   },
 
@@ -243,8 +242,7 @@ ${buildDesignBoxHtml(
   { variant: 'double', border: '#9f1239', fill: 'transparent', bstyle: 'double', bwidth: 4 },
   `${sp(1)}
 <p style="text-align:center"><span style="font-size:13pt; color:#b45309; letter-spacing:2px">❦ ────────── ❖ ────────── ❦</span></p>
-<h1 style="text-align:center; color:#7f1d1d"><span style="font-size:28pt">সনদপত্র</span></h1>
-<p style="text-align:center"><span style="font-size:10pt; color:#9f1239; letter-spacing:3px">CERTIFICATE OF ACHIEVEMENT</span></p>
+<h1 style="text-align:center; color:#7f1d1d"><span style="font-size:26pt">সনদপত্র</span></h1>
 <p style="text-align:center"></p>
 <p style="text-align:center; padding:0 1.5em"><span style="font-size:12pt; color:#334155">এই মর্মে প্রত্যয়ন করা হচ্ছে যে,</span></p>
 <h2 style="text-align:center; color:#1e293b"><span style="font-size:18pt">শিক্ষার্থীর নাম</span></h2>
@@ -255,7 +253,6 @@ ${sp(2)}
 <p style="text-align:center"><span style="font-size:10pt; color:#64748b">(প্রদানকারী কর্তৃপক্ষের পদবি ও প্রতিষ্ঠানের নাম)</span></p>
 ${sp(1)}`,
 )}
-${sp(1)}
 ${TIP_NOTE}
 `.trim(),
   },

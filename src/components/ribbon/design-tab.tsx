@@ -4,7 +4,7 @@
 
 'use client';
 
-import { Crown, LayoutTemplate, Palette, RefreshCw, Settings2, Store } from 'lucide-react';
+import { Crown, LayoutTemplate, PaintBucket, Palette, RefreshCw, Settings2, Store } from 'lucide-react';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -19,6 +19,7 @@ import { formatPageNumber } from '@/lib/bangla';
 import { tFmt, useT } from '@/lib/i18n';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { OneColorDropdown } from '@/components/dialogs/one-color-picker';
 import type { PageNumberFormat } from '@/lib/types';
 
 /** পজিশন id → অভিধান-কী — ট্রিগার ও মেনু আইটেমে একই কী ব্যবহৃত হয় */
@@ -200,6 +201,21 @@ export function DesignTab() {
             if (c) update({ pageBorderColor: c });
           }} />
         </div>
+      </RibbonGroup>
+      <RibbonDivider />
+      <RibbonGroup label={tt('dsn.group.ink')} accent="single ink">
+        {/* RibbonButton ref ফরওয়ার্ড করে না — Radix asChild-এর জন্য একই চেহারার সাধারণ বোতাম */}
+        <OneColorDropdown align="start">
+          <button
+            type="button"
+            className="ribbon-btn"
+            aria-label={tt('dsn.ink.title')}
+            title={tt('dsn.ink.desc')}
+          >
+            <PaintBucket size={16} aria-hidden="true" />
+            <span className="ribbon-btn-label">{tt('dsn.ink.title')}</span>
+          </button>
+        </OneColorDropdown>
       </RibbonGroup>
     </div>
   );
