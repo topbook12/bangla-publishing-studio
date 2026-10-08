@@ -7,7 +7,7 @@
  *  - mcqBlock:    <div class="mcq-block" data-question data-options data-answer data-explanation></div>
  *  - footnote:    <sup class="footnote" data-note></sup>
  *  - fancyDivider:<hr class="fancy-divider" data-style />
- *  - tocBlock:    <div class="toc-block" data-title data-entries></div>
+ *  - tocBlock:    <div class="toc-block" data-title data-entries data-manual></div>
  */
 
 'use client';
@@ -15,7 +15,7 @@
 import { Node, Extension, mergeAttributes, type CommandProps } from '@tiptap/core';
 import { ReactNodeViewRenderer, NodeViewWrapper, NodeViewContent, type NodeViewProps } from '@tiptap/react';
 import { useState } from 'react';
-import { AlertTriangle, BookOpen, Lightbulb, Pin, Trash2 } from 'lucide-react';
+import { AlertTriangle, BookOpen, ChevronDown, ChevronUp, Lightbulb, Pencil, Pin, Plus, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -400,24 +400,152 @@ interface TocEntryAttr {
   pageNumber: string;
 }
 
-function TocNodeView({ node, deleteNode }: NodeViewProps) {
+function TocNodeView({ node, updateAttributes, deleteNode }: NodeViewProps) {
   const tt = useT();
+  const [editing, setEditing] = useState(false);
+  const [autoSync, setAutoSync] = useState(true);
+  const [draftTitle, setDraftTitle] = useState('');
+  const [draftEntries, setDraftEntries] = useState<TocEntryAttr[]>([]);
+
   let entries: TocEntryAttr[] = [];
   try {
     const raw = node.attrs.entries;
     if (Array.isArray(raw)) entries = raw as TocEntryAttr[];
   } catch { /* উপেক্ষা */ }
+  const manual = node.attrs.manual === true;
   const title = (node.attrs.title as string) || tt('dsn.toc.title');
+
+  /** এডিটর খোলা — চলতি মান থেকে খসড়া তৈরি */
+  const openEditor = () => {
+    setDraftTitle(title);
+    setDraftEntries(entries.map((e) => ({ ...e })));
+    setAutoSync(!manual);
+    setEditing(true);
+  };
+
+  /** খসড়া সংরক্ষণ — নোড attrs-এ লেখা */
+  const commit = () => {
+    const clean = draftEntries
+      .map((e) => ({
+        text: (e.text ?? '').trim(),
+        level: Math.min(3, Math.max(1, Math.round(Number(e.level) || 1))),
+        pageNumber: (e.pageNumber ?? '').trim(),
+      }))
+      .filter((e) => e.text.length > 0);
+    updateAttributes({
+      title: draftTitle.trim() || tt('dsn.toc.title'),
+      entries: clean,
+      manual: !autoSync,
+    });
+    setEditing(false);
+  };
+
+  const patchEntry = (i: number, patch: Partial<TocEntryAttr>) =>
+    setDraftEntries((rows) => rows.map((r, ri) => (ri === i ? { ...r, ...patch } : r)));
+  const moveEntry = (i: number, dir: -1 | 1) =>
+    setDraftEntries((rows) => {
+      const j = i + dir;
+      if (j < 0 || j >= rows.length) return rows;
+      const next = [...rows];
+      [next[i], next[j]] = [next[j], next[i]];
+      return next;
+    });
+  const removeEntry = (i: number) => setDraftEntries((rows) => rows.filter((_, ri) => ri !== i));
+  const addEntry = () =>
+    setDraftEntries((rows) => [...rows, { text: '', level: 1, pageNumber: '' }]);
 
   return (
     <NodeViewWrapper as="div" className="toc-block">
       <div className="toc-head" contentEditable={false}>
         <span className="toc-title">{title}</span>
-        <button type="button" className="callout-delete" onClick={deleteNode} title={tt('ws.toc.delete')} aria-label={tt('ws.toc.delete')}>
-          <Trash2 size={13} aria-hidden="true" />
-        </button>
+        {manual && <span className="toc-manual-chip">{tt('ws.toc.manualChip')}</span>}
+        <span className="toc-tools no-print">
+          <button type="button" className="callout-delete" onClick={openEditor} title={tt('ws.toc.edit')} aria-label={tt('ws.toc.edit')}>
+            <Pencil size={13} aria-hidden="true" />
+          </button>
+          <button type="button" className="callout-delete" onClick={deleteNode} title={tt('ws.toc.delete')} aria-label={tt('ws.toc.delete')}>
+            <Trash2 size={13} aria-hidden="true" />
+          </button>
+        </span>
       </div>
-      {entries.length === 0 ? (
+      {editing ? (
+        <div
+          className="toc-edit-panel no-print"
+          contentEditable={false}
+          onKeyDown={(e) => {
+            // ইনপুট-কিস্ট্রোক এডিটর-শর্টকাটে না যায়; Escape = বাতিল
+            e.stopPropagation();
+            if (e.key === 'Escape') setEditing(false);
+          }}
+        >
+          <div className="toc-edit-head">
+            <span>{tt('ws.toc.panelTitle')}</span>
+            <button type="button" className="toc-edit-icon-btn" onClick={() => setEditing(false)} aria-label={tt('hdr.cancel')} title={tt('hdr.cancel')}>
+              <X size={13} aria-hidden="true" />
+            </button>
+          </div>
+          <label className="toc-edit-auto">
+            <input type="checkbox" checked={autoSync} onChange={(e) => setAutoSync(e.target.checked)} />
+            <span>{tt('ws.toc.auto')}</span>
+          </label>
+          <p className="toc-edit-desc">{autoSync ? tt('ws.toc.autoDesc') : tt('ws.toc.manualDesc')}</p>
+          <input
+            className="toc-edit-title-input"
+            value={draftTitle}
+            onChange={(e) => setDraftTitle(e.target.value)}
+            placeholder={tt('dsn.toc.title')}
+            aria-label={tt('ws.toc.entryTitle')}
+          />
+          {!autoSync && (
+            <>
+              {draftEntries.map((e, i) => (
+                <div className="toc-edit-row" key={i}>
+                  <select
+                    value={String(e.level ?? 1)}
+                    onChange={(ev) => patchEntry(i, { level: Number(ev.target.value) })}
+                    aria-label={tt('ws.toc.level')}
+                  >
+                    <option value="1">{tt('ws.toc.level1')}</option>
+                    <option value="2">{tt('ws.toc.level2')}</option>
+                    <option value="3">{tt('ws.toc.level3')}</option>
+                  </select>
+                  <input
+                    className="toc-edit-text"
+                    value={e.text}
+                    onChange={(ev) => patchEntry(i, { text: ev.target.value })}
+                    placeholder={tt('ws.toc.entryText')}
+                    aria-label={tt('ws.toc.entryText')}
+                  />
+                  <input
+                    className="toc-edit-page"
+                    value={e.pageNumber}
+                    onChange={(ev) => patchEntry(i, { pageNumber: ev.target.value })}
+                    placeholder={tt('ws.toc.entryPage')}
+                    aria-label={tt('ws.toc.entryPage')}
+                  />
+                  <button type="button" className="toc-edit-icon-btn" onClick={() => moveEntry(i, -1)} disabled={i === 0} title={tt('ws.toc.moveUp')} aria-label={tt('ws.toc.moveUp')}>
+                    <ChevronUp size={12} aria-hidden="true" />
+                  </button>
+                  <button type="button" className="toc-edit-icon-btn" onClick={() => moveEntry(i, 1)} disabled={i === draftEntries.length - 1} title={tt('ws.toc.moveDown')} aria-label={tt('ws.toc.moveDown')}>
+                    <ChevronDown size={12} aria-hidden="true" />
+                  </button>
+                  <button type="button" className="toc-edit-icon-btn toc-edit-del" onClick={() => removeEntry(i)} title={tt('ws.toc.entryRemove')} aria-label={tt('ws.toc.entryRemove')}>
+                    <Trash2 size={12} aria-hidden="true" />
+                  </button>
+                </div>
+              ))}
+              <button type="button" className="toc-edit-add" onClick={addEntry}>
+                <Plus size={12} aria-hidden="true" />
+                {tt('ws.toc.addEntry')}
+              </button>
+            </>
+          )}
+          <div className="toc-edit-actions">
+            <button type="button" className="toc-edit-cancel" onClick={() => setEditing(false)}>{tt('hdr.cancel')}</button>
+            <button type="button" className="toc-edit-save" onClick={commit}>{tt('ws.toc.save')}</button>
+          </div>
+        </div>
+      ) : entries.length === 0 ? (
         <p className="toc-empty">{tt('ws.toc.empty').split('{btn}').join(tt('dsn.btn.updateToc'))}</p>
       ) : (
         <ol className="toc-list">
@@ -452,6 +580,12 @@ export const TocBlock = Node.create({
           return [];
         },
         renderHTML: (a) => ({ 'data-entries': JSON.stringify(a.entries ?? []) }),
+      },
+      // ম্যানুয়াল মোড — সত্য হলে স্বয়ংক্রিয় স্ক্যান-ইঞ্জিন এই সূচিতে হাত দেবে না
+      manual: {
+        default: false,
+        parseHTML: (el) => el.getAttribute('data-manual') === 'true',
+        renderHTML: (a) => ({ 'data-manual': a.manual ? 'true' : 'false' }),
       },
     };
   },

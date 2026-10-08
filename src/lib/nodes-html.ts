@@ -152,8 +152,12 @@ export function buildFootnoteHtml(note: string): string {
   return `<sup class="footnote" data-note="${escapeAttr(note)}"></sup>`;
 }
 
-export function buildTocHtml(entriesJson: string, title = 'সূচিপত্র'): string {
-  return `<div class="toc-block" data-title="${escapeAttr(title)}" data-entries="${escapeAttr(entriesJson)}"></div>`;
+/**
+ * TOC ব্লক HTML — manual=true হলে data-manual="true" যুক্ত হয়:
+ * ম্যানুয়াল সূচি স্বয়ংক্রিয় স্ক্যান-ইঞ্জিন (useAutoToc) আর কখনো ওভাররাইট করবে না।
+ */
+export function buildTocHtml(entriesJson: string, title = 'সূচিপত্র', manual = false): string {
+  return `<div class="toc-block" data-title="${escapeAttr(title)}" data-entries="${escapeAttr(entriesJson)}"${manual ? ' data-manual="true"' : ''}></div>`;
 }
 
 /** MCQ ডেটা পার্স (attribute থেকে) */

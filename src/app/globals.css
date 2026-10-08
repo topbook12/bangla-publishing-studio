@@ -1719,6 +1719,123 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
 .toc-page { font-weight: 700; }
 .toc-empty { font-size: 0.85em; color: #64748b; text-align: center; margin: 8px 0 !important; }
 
+/* সূচিপত্র সম্পাদনা (এডিটর NodeView — প্রিন্ট/এক্সপোর্টে আসে না) */
+.toc-head { position: relative; }
+.toc-tools {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  gap: 4px;
+}
+.toc-manual-chip {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #b45309;
+  background: rgba(180, 83, 9, 0.10);
+  border: 1px solid rgba(180, 83, 9, 0.35);
+  border-radius: 999px;
+  padding: 1px 8px;
+  margin-left: 6px;
+  align-self: center;
+  white-space: nowrap;
+}
+.toc-edit-panel {
+  z-index: 30;
+  margin: 8px 0 4px;
+  border: 1.5px solid #d6d3d1;
+  border-radius: 10px;
+  background: #fafaf9;
+  padding: 10px 12px;
+  box-shadow: 0 8px 22px rgba(41, 37, 36, 0.14);
+  text-align: left;
+  font-size: 12px;
+}
+.toc-edit-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 800;
+  font-size: 12px;
+  color: #292524;
+  margin-bottom: 8px;
+}
+.toc-edit-auto {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #44403c;
+  cursor: pointer;
+}
+.toc-edit-desc { font-size: 10.5px; color: #78716c; margin: 4px 0 8px !important; }
+.toc-edit-title-input,
+.toc-edit-text,
+.toc-edit-page {
+  border: 1px solid #d6d3d1;
+  border-radius: 6px;
+  background: #fff;
+  padding: 4px 7px;
+  font-size: 11.5px;
+  color: #1c1917;
+  min-width: 0;
+}
+.toc-edit-title-input { width: 100%; margin-bottom: 8px; }
+.toc-edit-row { display: flex; align-items: center; gap: 4px; margin: 5px 0; }
+.toc-edit-row select {
+  border: 1px solid #d6d3d1;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 10.5px;
+  padding: 3px 2px;
+  width: 62px;
+  flex: none;
+  color: #1c1917;
+}
+.toc-edit-text { flex: 1; }
+.toc-edit-page { width: 54px; flex: none; }
+.toc-edit-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid #e7e5e4;
+  border-radius: 5px;
+  background: #fff;
+  color: #57534e;
+  cursor: pointer;
+  flex: none;
+  padding: 0 !important;
+}
+.toc-edit-icon-btn:hover:not(:disabled) { border-color: #a8a29e; color: #292524; }
+.toc-edit-icon-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.toc-edit-icon-btn.toc-edit-del:hover { border-color: #fca5a5; color: #b91c1c; }
+.toc-edit-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px dashed #a8a29e;
+  border-radius: 6px;
+  background: transparent;
+  color: #57534e;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  cursor: pointer;
+  margin-top: 2px;
+}
+.toc-edit-add:hover { border-color: #78716c; color: #292524; }
+.toc-edit-actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 10px; }
+.toc-edit-actions button { border-radius: 6px; font-size: 11px; font-weight: 700; padding: 4px 12px; cursor: pointer; }
+.toc-edit-cancel { border: 1px solid #d6d3d1; background: #fff; color: #57534e; }
+.toc-edit-cancel:hover { border-color: #a8a29e; color: #292524; }
+.toc-edit-save { border: 1px solid #292524; background: #292524; color: #fff; }
+.toc-edit-save:hover { background: #44403c; }
+
 /* ─── কভার পেজ ─── */
 
 .cover {

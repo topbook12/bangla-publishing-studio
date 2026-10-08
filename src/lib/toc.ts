@@ -18,6 +18,8 @@ export function scanTocEntries(pages: PageData[], settings: DocumentSettings): T
   const parser = new DOMParser();
   pages.forEach((page, index) => {
     if (page.kind === 'cover' || !page.html) return;
+    // সূচিপত্র-পাতা নিজে তালিকায় আসবে না (নইলে "সূচিপত্র" শিরোনামটাই সূচিতে ঢুকে যেত)
+    if (page.html.includes('toc-block')) return;
     const doc = parser.parseFromString(`<div>${page.html}</div>`, 'text/html');
     const headings = doc.querySelectorAll('h1, h2, h3');
     headings.forEach((h) => {
@@ -46,8 +48,11 @@ export function updateTocNodes(editors: Editor[], entries: TocEntry[], title: st
     let found = false;
     state.doc.descendants((node, pos) => {
       if (node.type.name === 'tocBlock') {
-        tr.setNodeMarkup(pos, undefined, { entries, title });
-        found = true;
+        // ম্যানুয়াল সূচি — ব্যবহারকারীর লেখা এন্ট্রি স্বয়ংক্রিয় ইঞ্জিন কখনো বদলাবে না
+        if (node.attrs.manual !== true) {
+          tr.setNodeMarkup(pos, undefined, { entries, title });
+          found = true;
+        }
       }
       return true;
     });
@@ -76,6 +81,8 @@ export function updateTocInHtml(html: string, entries: TocEntry[]): string {
   const doc = new DOMParser().parseFromString(html, 'text/html');
   const block = doc.querySelector('.toc-block');
   if (!block) return html;
+  // ম্যানুয়াল সূচি — HTML-স্তরেও অক্ষত থাকে
+  if (block.getAttribute('data-manual') === 'true') return html;
   block.setAttribute('data-entries', JSON.stringify(entries));
   return doc.body.innerHTML;
 }
