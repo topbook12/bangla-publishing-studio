@@ -25,6 +25,7 @@ import {
   PAGE_TEMPLATES, TEMPLATE_CATEGORY_LABELS, TEMPLATE_CATEGORY_ORDER,
   templatePreviewRows, type PageTemplate, type TemplateCategory,
 } from '@/lib/page-templates';
+import { ensurePageEditorMounted, fitTemplatePage } from '@/components/editor/page-ops';
 import { StaticContent } from '@/components/editor/static-content';
 import { fontStackOf } from '@/lib/paper';
 import { useT, useFmtNum } from '@/lib/i18n';
@@ -146,6 +147,26 @@ function TemplateCard({ tpl, onPick, onReplace, canReplace }: {
   );
 }
 
+/** নতুন টেমপ্লেট-পাতা মাউন্ট করিয়ে কাগজে আঁটানো ও ভিউপোর্টে এনে দেখানো */
+async function mountFitAndReveal(pageId: string): Promise<void> {
+  // ডায়ালগ-বন্ধের ফোকাস-রিস্টোর/রি-রেন্ডার থিতু হোক
+  await new Promise((r) => window.setTimeout(r, 220));
+  // দূরের পাতাও ভিউপোর্টে এনে তবেই এডিটর মাউন্ট হয় — তাই আগে স্ক্রল,
+  // পরে মাউন্ট-অপেক্ষা; মাউন্ট না হলে আবার স্ক্রল করে চেষ্টা (রিট্রাই)
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const idx = useEditorStore.getState().pages.findIndex((p) => p.id === pageId);
+    if (idx < 0) return;
+    document.querySelector(`[data-page-index="${idx}"]`)?.scrollIntoView({ block: 'start' });
+    if (await ensurePageEditorMounted(pageId)) break;
+  }
+  // ছোট কাগজেও নকশা যেন ভাঙা না লাগে — ফাঁকা স্পেসারগুলো মুছে আঁটানো
+  fitTemplatePage(pageId);
+  const idx = useEditorStore.getState().pages.findIndex((p) => p.id === pageId);
+  if (idx >= 0) {
+    document.querySelector(`[data-page-index="${idx}"]`)?.scrollIntoView({ block: 'start' });
+  }
+}
+
 export function TemplatesDialog() {
   const tt = useT();
   const nf = useFmtNum();
@@ -159,11 +180,15 @@ export function TemplatesDialog() {
     const s = useEditorStore.getState();
     const afterId = s.activePageId ?? s.pages[s.pages.length - 1]?.id ?? null;
     const newId = s.addPage(afterId, tpl.html);
+    // টেমপ্লেট = পূর্ণ-পাতার নকশা — অটো-ফ্লো ভাঙবে না; ব্যবহারকারী লিখতে শুরু
+    // করলেই লক নিজে থেকেই খুলে যায় (page-editor onUpdate)
+    s.updatePage(newId, { flowLock: true });
     s.setActivePage(newId);
     toast.success(tt('dlg1.tpl.toastAdded').split('{name}').join(tpl.name), {
       description: tt('dlg1.tpl.toastAddedDesc'),
     });
     close();
+    void mountFitAndReveal(newId);
   };
 
   const activePage = useEditorStore((s) => s.pages.find((p) => p.id === s.activePageId) ?? null);
@@ -175,10 +200,12 @@ export function TemplatesDialog() {
     const pageId = s.activePageId;
     if (!pageId) return;
     s.replacePageHtml(pageId, replaceTarget.html);
+    s.updatePage(pageId, { flowLock: true });
     s.setActivePage(pageId);
     toast.success(tt('dlg1.tpl.toastReplaced').split('{name}').join(replaceTarget.name));
     setReplaceTarget(null);
     close();
+    void mountFitAndReveal(pageId);
   };
 
   const filtered = cat === 'all' ? PAGE_TEMPLATES : PAGE_TEMPLATES.filter((t) => t.category === cat);

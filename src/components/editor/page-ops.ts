@@ -141,6 +141,9 @@ function flowIfOverflowInner(editor: Editor, pageId: string, availableHeight: nu
   const s = useEditorStore.getState();
   if (!s.settings.autoFlow) return false;
   if (editor.view.composing) return false;
+  // টেমপ্লেট-ডিজাইন লক পাতা ভাঙা যাবে না — নকশাটা অক্ষত থাকবে (উপচে পড়লে
+  // লাল সতর্কতা দেখায়; ব্যবহারকারী সম্পাদনা করলেই লক খুলে স্বাভাবিক ফ্লো ফেরে)
+  if (s.pages.find((p) => p.id === pageId)?.flowLock) return false;
 
   const pmEl = editor.view.dom as HTMLElement;
   if (!pmEl) return false;
@@ -310,6 +313,8 @@ async function fillFromNextPageInner(editor: Editor, pageId: string, availableHe
 
   const next = s.pages[idx + 1];
   if (next.kind !== 'normal') return { status: 'blocked', blocks: 0 };
+  // টেমপ্লেট-লক পাতা থেকে কনটেন্ট টানা যাবে না — নকশা অক্ষত থাকবে
+  if (next.flowLock) return { status: 'blocked', blocks: 0 };
   if (htmlIsEmpty(next.html)) return { status: 'none', blocks: 0 };
   if (editor.view.composing) return { status: 'blocked', blocks: 0 };
 
@@ -409,10 +414,11 @@ export async function smartFlowWholeBook(): Promise<SmartFlowStats> {
   for (let guard = 0; guard < 1000; guard++) {
     const s = useEditorStore.getState();
     // এমন প্রথম normal পাতা যেটাতে এখনো টানা হয়নি এবং পরের পাতায় লেখা আছে
+    // (টেমপ্লেট-লক পাতা লক্ষ্য বা উৎস — কোনোভাবেই নয়)
     const targetIdx = s.pages.findIndex((p, i) => {
-      if (p.kind !== 'normal' || visited.has(p.id)) return false;
+      if (p.kind !== 'normal' || p.flowLock || visited.has(p.id)) return false;
       const nx = s.pages[i + 1];
-      return Boolean(nx && nx.kind === 'normal' && !htmlIsEmpty(nx.html));
+      return Boolean(nx && nx.kind === 'normal' && !nx.flowLock && !htmlIsEmpty(nx.html));
     });
     if (targetIdx < 0) break;
 
@@ -438,7 +444,7 @@ export async function smartFlowWholeBook(): Promise<SmartFlowStats> {
       const i2 = s2.pages.findIndex((p) => p.id === target.id);
       if (i2 < 0) break;
       const nx2 = s2.pages[i2 + 1];
-      if (!nx2 || nx2.kind !== 'normal' || htmlIsEmpty(nx2.html)) break;
+      if (!nx2 || nx2.kind !== 'normal' || nx2.flowLock || htmlIsEmpty(nx2.html)) break;
       const ed = getEditor(target.id);
       if (!ed || ed.isDestroyed) break;
 
@@ -462,6 +468,56 @@ export async function smartFlowWholeBook(): Promise<SmartFlowStats> {
       ?.scrollIntoView({ block: 'start' });
   }
   return stats;
+}
+
+// ───────────────── টেমপ্লেট ফিট-ইঞ্জিন (ঢোকানোর সময় নকশা কাগজে আঁটানো) ─────────────────
+
+/**
+ * ★ টেমপ্লেট পাতাকে বর্তমান কাগজে আঁটানো — উপচে পড়লে ডিজাইনার-বানানো ফাঁকা
+ * স্পেসার প্যারাগ্রাফগুলো (উল্লম্ব সেন্টারিং-এর জন্য) নিচ থেকে এক-এক করে মুছে ফেলা
+ * হয়, যতক্ষণ না নকশাটা পাতায় ধরে। এতে ছোট কাগজেও (ডেমি/ক্রাউন/A5) টেমপ্লেট
+ * ভাঙে না — অটো-ফ্লো নকশা ছিঁড়ে পরের পাতায় ঢালার প্রয়োজনই পড়ে না।
+ *
+ * মুছে ফেলা সবসময় খালি প্যারাগ্রাফ (কোনো লেখা/ছবি/আইকন নেই) — বক্স/কলআউটের
+ * শেষ একমাত্র প্যারাগ্রাফ কখনো মুছবে না (স্কিমা ভাঙবে)। আন্ডু-হিস্টরিতে যায় না।
+ *
+ * রিটার্ন: কতগুলো স্পেসার বাদ পড়ল।
+ */
+export function fitTemplatePage(pageId: string, maxRemove = 80): number {
+  const editor = getEditor(pageId);
+  if (!editor || editor.isDestroyed) return 0;
+  const available = availableHeightOfEditor(pageId);
+  if (available <= 0) return 0;
+  const pmEl = editor.view.dom as HTMLElement | null;
+  if (!pmEl) return 0;
+
+  let removed = 0;
+  while (removed < maxRemove && pmEl.scrollHeight > available + 4) {
+    // ডকের একদম নিচের খালি প্যারাগ্রাফটি খোঁজা (বক্সের ভেতরেরটিও)
+    let hit: { pos: number; size: number } | null = null;
+    editor.state.doc.descendants((node, pos) => {
+      if (node.type.name !== 'paragraph' || node.childCount > 0) return true;
+      const parent = editor.state.doc.resolve(pos).parent;
+      // বক্স/কলআউটের একমাত্র প্যারাগ্রাফ মুছলে স্কিমা ভাঙে — বাদ
+      if (parent.type.name !== 'doc' && parent.childCount <= 1) return true;
+      hit = { pos, size: node.nodeSize };
+      return true;
+    });
+    if (!hit) break;
+
+    const victim = hit as { pos: number; size: number };
+    const tr = editor.state.tr.delete(victim.pos, victim.pos + victim.size);
+    tr.setMeta('preventUpdate', true); // onUpdate নীরব — লক ব্যবহারকারীর জন্য অক্ষত
+    tr.setMeta('addToHistory', false); // লেআউট-অপ — আন্ডুতে ফেরত আসবে না
+    editor.view.dispatch(tr);
+    removed += 1;
+  }
+
+  if (removed > 0) {
+    // preventUpdate-এ স্টোর-সিঙ্ক বন্ধ ছিল — চূড়ান্ত HTML স্টোরে বসাই
+    useEditorStore.getState().replacePageHtml(pageId, editor.getHTML());
+  }
+  return removed;
 }
 
 // ───────────────── ফাঁকা পাতা পরিষ্কার ─────────────────

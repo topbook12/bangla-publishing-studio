@@ -187,6 +187,13 @@ export function PageEditor({ page, index, isFirstPage }: PageEditorProps) {
     onUpdate: ({ editor: ed }) => {
       syncHtml(ed.getHTML());
       scheduleFlow();
+      // টেমপ্লেট-লক: ব্যবহারকারীর প্রথম নিজস্ব সম্পাদনাতেই লক খুলে যায় —
+      // তখন থেকে পাতাটি স্বাভাবিক অটো-ফ্লোর নিয়মে চলে (ফিট-ইঞ্জিনের প্রোগ্রাম-
+      // অপ নীরব preventUpdate দিয়ে হয় বলে এখানে ট্রিগার হয় না)
+      const st = useEditorStore.getState();
+      if (st.pages.find((p) => p.id === page.id)?.flowLock) {
+        st.updatePage(page.id, { flowLock: false });
+      }
     },
     // সিলেকশন-বাম্প শুধু onTransaction-এ — এটি সিলেকশন-আপডেটসহ প্রতিটি
     // ট্রানজ্যাকশনের সুপারসেট; onSelectionUpdate আর onTransaction দুটোতেই

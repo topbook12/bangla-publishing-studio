@@ -21,7 +21,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { runCommand, refocusActiveEditor } from '@/components/ribbon/ribbon-shell';
 import {
-  figureHtmlOf, searchVectors, vectorDataUri,
+  figureHtmlOf, searchVectors, tightenVectorSvg, vectorDataUri,
   VECTOR_CAT_LABELS, VECTOR_CAT_ORDER, VECTOR_DEFS,
   type VectorCat, type VectorDef,
 } from '@/lib/vector-catalog';
@@ -35,9 +35,9 @@ import { cn } from '@/lib/utils';
 
 type LibTab = 'all' | 'fav' | 'recent' | VectorCat;
 
-/** প্রিভিউ বক্সে SVG-কে পাত্রে ফিট করানো */
+/** প্রিভিউ বক্সে SVG-কে পাত্রে ফিট করানো (ভিউবক্স টাইট করে — কার্ডেও আসল চিত্র বড় দেখায়) */
 function svgPreview(svg: string): string {
-  return svg.replace('<svg ', '<svg width="100%" height="100%" preserveAspectRatio="xMidYMid meet" ');
+  return tightenVectorSvg(svg).replace('<svg ', '<svg width="100%" height="100%" preserveAspectRatio="xMidYMid meet" ');
 }
 
 export function VectorLibraryDialog() {

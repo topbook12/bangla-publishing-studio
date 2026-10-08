@@ -17,6 +17,7 @@
 import type { DocumentSettings, HeaderFooterSettings, PageData, PageNumberSettings } from './types';
 import { getPaperPreset, pageBorderVisual } from './paper';
 import { parseMcqData, docBoxStyleText, type DocBoxAttrs, type DocBoxVariant } from './nodes-html';
+import { healFigureSrcs } from './vector-catalog';
 import { formatPageNumber } from './bangla';
 
 const OPTION_LABELS = ['ক', 'খ', 'গ', 'ঘ'];
@@ -512,7 +513,7 @@ export function buildStandaloneHtml(title: string, settings: DocumentSettings, p
 
     const contentInner = page.kind === 'cover' && page.coverData
       ? coverHtml(page.coverData, settings)
-      : `<div class="page-content-text" style="font-family:'${settings.defaultFont}',sans-serif;font-size:${settings.defaultFontSize}pt;line-height:${settings.lineHeight};--p-gap:${settings.paragraphSpacing}px">${expandHtml(page.html)}</div>`;
+      : `<div class="page-content-text" style="font-family:'${settings.defaultFont}',sans-serif;font-size:${settings.defaultFontSize}pt;line-height:${settings.lineHeight};--p-gap:${settings.paragraphSpacing}px">${expandHtml(healFigureSrcs(page.html))}</div>`;
 
     return `<div class="page paper-${settings.paperColor}" style="width:${w}mm;height:${h}mm">
       <div class="paper-inner" style="padding:${padding}">

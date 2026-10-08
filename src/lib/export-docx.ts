@@ -12,6 +12,7 @@ import {
 import type { DocumentSettings, HeaderFooterSettings, PageData } from './types';
 import { effectivePageBorderStyle, effectivePageBorderWidth, getPaperPreset, PAGE_BORDER_WIDTH_PX } from './paper';
 import { parseMcqData, docBoxInlineStyle, type DocBoxAttrs, type DocBoxVariant } from './nodes-html';
+import { healFigureSrcs } from './vector-catalog';
 import { SHAPE_BY_ID, SHAPE_DEFS, readShapeAttrs } from './shape-catalog';
 import { displayPageNumber } from './pagenum';
 
@@ -934,7 +935,9 @@ function rasterizeSvg(src: string, displayW: number): Promise<{ dataUrl: string;
 /** পাতার HTML-এর সব doc-figure-এর SVG img → PNG dataURL (data-natw/nath যোগ করে) */
 async function rasterizeDocFigures(html: string): Promise<string> {
   if (!html.includes('doc-figure')) return html;
-  const dom = new DOMParser().parseFromString(html, 'text/html');
+  // পুরনো ডকুমেন্টের প্যাডেড ভেক্টরও ক্যাটালগ থেকে টাইট করে নেওয়া
+  const healed = healFigureSrcs(html);
+  const dom = new DOMParser().parseFromString(healed, 'text/html');
   const figures = Array.from(dom.body.querySelectorAll('figure.doc-figure'));
   for (const fig of figures) {
     const imgEl = fig.querySelector('img');

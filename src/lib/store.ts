@@ -491,10 +491,13 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
     pages[idx] = { ...pages[idx], html: keptHtml || '<p></p>' };
     // কভার পাতায় (kind !== 'normal') কনটেন্ট ঢালা যাবে না — কভারের html
     // কখনোই রেন্ডার হয় না, ওখানে লিখলে লেখা চিরতরে হারিয়ে যেত।
-    // সঙ্গে সঙ্গের পাতা normal না হলে বর্তমান পাতার পরেই নতুন normal পাতা ঢোকানো হয়।
+    // টেমপ্লেট-লক পাতায়ও (flowLock) ঢালা যাবে না — নইলে উপচে পড়া অংশ
+    // পরের টেমপ্লেট-ডিজাইনের উপর চাপা পড়ে নকশা ভেঙে যায়।
+    // এই দুই ক্ষেত্রেই বর্তমান পাতার পরেই নতুন normal পাতা ঢোকানো হয়।
     const nextIdx = idx + 1;
-    if (nextIdx < pages.length && pages[nextIdx].kind === 'normal') {
-      pages[nextIdx] = { ...pages[nextIdx], html: overflowHtml + pages[nextIdx].html };
+    const next = nextIdx < pages.length ? pages[nextIdx] : null;
+    if (next && next.kind === 'normal' && !next.flowLock) {
+      pages[nextIdx] = { ...next, html: overflowHtml + next.html };
     } else {
       // নতুন ধারাবাহিক পাতা — সোর্সের chrome সেটিং উত্তরাধিকারসূত্রে পায়
       const src = pages[idx];

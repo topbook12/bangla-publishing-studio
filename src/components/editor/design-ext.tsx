@@ -39,7 +39,7 @@ import {
   getSticker,
   stickerSpanStyle,
 } from '@/lib/sticker-catalog';
-import { getVector } from '@/lib/vector-catalog';
+import { getVector, vectorDataUri } from '@/lib/vector-catalog';
 
 // ─────────────────────────── আইকন ───────────────────────────
 
@@ -826,10 +826,11 @@ declare module '@tiptap/core' {
  */
 function DocFigureNodeView({ node, updateAttributes, deleteNode, selected }: NodeViewProps) {
   const vid = (node.attrs.vid as string) ?? '';
-  const src = (node.attrs.src as string) ?? '';
   const w = Math.max(90, Math.min(640, Number(node.attrs.w ?? 300) || 300));
   const cap = (node.attrs.cap as string) ?? '';
   const def = vid ? getVector(vid) : undefined;
+  // ক্যাটালগে মিললে টাইট ভিউবক্সের সদ্য-URI — পুরনো ডকুমেন্টের প্যাডেড সংস্করণও সেরে যায়
+  const src = def ? vectorDataUri(def) : ((node.attrs.src as string) ?? '');
   const label = def?.label ?? 'চিত্র';
 
   const clampW = (n: number) => Math.max(90, Math.min(640, n));

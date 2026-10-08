@@ -142,6 +142,11 @@ export interface PageData {
   headerOverride?: HeaderFooterSettings | null;
   /** এই পাতার জন্য কাস্টম ফুটার — null/অনুপস্থিত হলে গ্লোবাল settings.footer */
   footerOverride?: HeaderFooterSettings | null;
+  /**
+   * টেমপ্লেট-ডিজাইন লক — অটো-ফ্লো এই পাতাকে ভাঙবে/উপরে টানবে না (কভারের মতোই
+   * পূর্ণ-পাতার নকশা)। ব্যবহারকারী প্রথম নিজে কিছু সম্পাদনা করলেই লক খুলে যায়।
+   */
+  flowLock?: boolean;
 }
 
 export interface BookProject {
