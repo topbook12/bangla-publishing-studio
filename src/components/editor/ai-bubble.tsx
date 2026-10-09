@@ -16,7 +16,7 @@ import {
 import { createPortal } from 'react-dom';
 import type { Editor } from '@tiptap/react';
 import {
-  BookPlus, CircleAlert, FileText, GraduationCap, Image as ImageIcon, ImagePlus, Languages,
+  BookPlus, CircleAlert, Copy, FileText, GraduationCap, Image as ImageIcon, ImagePlus, Languages,
   Lightbulb, List, ListChecks, Loader2, Maximize2, MessageSquare, Minimize2, PenLine,
   RefreshCw, Replace, ScanEye, Sparkles, SpellCheck, Table2, TextCursorInput, Wand2, X, type LucideIcon,
 } from 'lucide-react';
@@ -312,9 +312,17 @@ function AiBubblePanel({ req, style, onClose, configured, ref }: PanelProps) {
   const [resultDemo, setResultDemo] = useState(false);
   const [fixedModel, setFixedModel] = useState<string | null>(null);
   const [error, setError] = useState<{ hintKey: string; detail?: string; raw?: string } | null>(null);
+  const [elapsed, setElapsed] = useState(0);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
   const busy = phase === 'working';
+
+  // প্রিমিয়াম অপেক্ষা — সেকেন্ড-গণনা: AI কাজ করছে বোঝা যায়, আটকে নেই
+  useEffect(() => {
+    if (phase !== 'working') return;
+    const t = window.setInterval(() => setElapsed((s) => s + 1), 1000);
+    return () => window.clearInterval(t);
+  }, [phase]);
   const tableRows = req.tableContext ?? null;
   const pageScope = scope === 'page';
 
@@ -344,6 +352,7 @@ function AiBubblePanel({ req, style, onClose, configured, ref }: PanelProps) {
     }
     setMode(m);
     setPhase('working');
+    setElapsed(0);
     setError(null);
     setResult(null);
     setFixedModel(null);
@@ -468,7 +477,7 @@ function AiBubblePanel({ req, style, onClose, configured, ref }: PanelProps) {
   return (
     <div
       ref={ref}
-      className="ai-bubble-panel no-print"
+      className="ai-bubble-panel no-print backdrop-blur-xl backdrop-saturate-150"
       role="dialog"
       aria-label={tt('ai.bubble.title')}
       style={style}
@@ -525,7 +534,13 @@ function AiBubblePanel({ req, style, onClose, configured, ref }: PanelProps) {
               {tt('ai.scope.page')}
             </button>
           </div>
-          <p className="ai-bubble-hint">{pageScope ? tt('ai.scope.pageTip') : tt('ai.scope.selTip')}</p>
+          <p className="ai-bubble-hint">
+            {pageScope
+              ? tt('ai.scope.pageTip')
+              : hasSelection && selectionText
+                ? `${selectionText.length} ${tt('ai.bubble.chars')}`
+                : tt('ai.scope.selTip')}
+          </p>
         </div>
       ) : null}
 
@@ -632,11 +647,15 @@ function AiBubblePanel({ req, style, onClose, configured, ref }: PanelProps) {
         </Button>
       </div>
 
-      {/* কাজ চলছে */}
+      {/* কাজ চলছে — শিমার + সেকেন্ড-গণনা (প্রিমিয়াম অপেক্ষা) */}
       {busy ? (
         <div className="ai-bubble-working" role="status">
           <span className="ai-shimmer-bar" />
           <span className="text-xs text-muted-foreground">{tt('ai.sel.working')}</span>
+          <span className="ai-working-sec" aria-hidden="true">
+            {elapsed}
+            {tt('ai.bubble.sec')}
+          </span>
         </div>
       ) : null}
 
@@ -676,6 +695,21 @@ function AiBubblePanel({ req, style, onClose, configured, ref }: PanelProps) {
             ) : null}
             <Button size="sm" variant="outline" className="flex-1 gap-1.5" onClick={() => apply('insert-after')}>
               <BookPlus size={12} aria-hidden="true" /> {tt('ai.sel.insertAfter')}
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-8 px-2"
+              onClick={() => {
+                void navigator.clipboard.writeText(result).then(
+                  () => toast.success(tt('ai.bubble.copied')),
+                  () => toast.error(tt('ai.chat.copyFail')),
+                );
+              }}
+              aria-label={tt('ai.bubble.copy')}
+              title={tt('ai.bubble.copy')}
+            >
+              <Copy size={12} aria-hidden="true" />
             </Button>
             <Button
               size="sm"

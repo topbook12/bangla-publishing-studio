@@ -904,6 +904,31 @@ export const dictAi: Dict = {
     hi: 'पहले एक छवि संलग्न करें',
     en: 'Attach an image first',
   },
+  'ai.bubble.copy': {
+    bn: 'কপি',
+    hi: 'कॉपी',
+    en: 'Copy',
+  },
+  'ai.bubble.copied': {
+    bn: 'কপি হয়েছে — যেকোনো জায়গায় পেস্ট করুন',
+    hi: 'कॉपी हो गया — कहीं भी पेस्ट करें',
+    en: 'Copied — paste it anywhere',
+  },
+  'ai.bubble.chars': {
+    bn: 'অক্ষর নির্বাচিত',
+    hi: 'अक्षर चयनित',
+    en: 'chars selected',
+  },
+  'ai.bubble.sec': {
+    bn: 'সে',
+    hi: 'से',
+    en: 's',
+  },
+  'ai.chat.count': {
+    bn: 'অক্ষর · সর্বোচ্চ ১৮,০০০',
+    hi: 'अक्षर · अधिकतम १८,०००',
+    en: 'chars · max 18,000',
+  },
   'ai.bubble.customPh': {
     bn: 'নিজের নির্দেশ লিখুন — যেমন: “এই অংশ ছাত্রদের জন্য সহজ করে লেখো”…',
     hi: 'अपना निर्देश लिखें — जैसे: "यह अंश छात्रों के लिए सरल करके लिखो"…',

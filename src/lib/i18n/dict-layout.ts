@@ -61,7 +61,7 @@ export const dictLayout: Dict = {
   'lay.lcolor.slate': { bn: 'স্লেট', hi: 'स्लेट', en: 'Slate' },
   'lay.lcolor.maroon': { bn: 'মেরুন', hi: 'मैरून', en: 'Maroon' },
   'lay.lcolor.indigo': { bn: 'ইন্ডিগো', hi: 'इंडिगो', en: 'Indigo' },
-  'lay.lcolor.emerald': { bn: 'এমারেল্ড', hi: 'एमराल্ড', en: 'Emerald' },
+  'lay.lcolor.emerald': { bn: 'এমারেল্ড', hi: 'एमराल्ड', en: 'Emerald' },
   'lay.lcolor.amber': { bn: 'অ্যাম্বার', hi: 'एम्बर', en: 'Amber' },
   'lay.lcolor.rose': { bn: 'রোজ', hi: 'रोज़', en: 'Rose' },
   'lay.lcolor.gold': { bn: 'সোনালি', hi: 'सुनहरा', en: 'Gold' },

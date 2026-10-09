@@ -392,7 +392,13 @@ export function AiChatPanel() {
           <button type="button" className="ai-chat-quote" onClick={quoteSelection} disabled={busy}>
             <MessageSquare size={11} aria-hidden="true" /> {tt('ai.chat.quoteSel')}
           </button>
-          <span className="ai-chat-secure"><ShieldCheck size={11} aria-hidden="true" /> {tt('ai.chat.secure')}</span>
+          {draft.length > 0 ? (
+            <span className={cn('ai-chat-count', draft.length > 18000 && 'ai-chat-count-over')} aria-live="off">
+              {draft.length.toLocaleString()} {tt('ai.chat.count')}
+            </span>
+          ) : (
+            <span className="ai-chat-secure"><ShieldCheck size={11} aria-hidden="true" /> {tt('ai.chat.secure')}</span>
+          )}
         </div>
       </footer>
     </aside>
