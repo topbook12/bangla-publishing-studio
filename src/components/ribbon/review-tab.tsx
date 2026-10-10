@@ -5,7 +5,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { ArrowLeftRight, Grid3x3, Pause, Search, Sigma, SpellCheck2, Square, Type, Volume2 } from 'lucide-react';
+import { ArrowLeftRight, Grid3x3, Pause, Search, Sigma, SpellCheck2, Square, Type, Volume2, ScanEye } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Switch } from '@/components/ui/switch';
@@ -13,6 +13,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { RibbonButton, RibbonDivider, RibbonGroup, refocusActiveEditor, runCommand, useActiveEditor } from './ribbon-shell';
 import { useEditorStore } from '@/lib/store';
 import { useUiStore } from '@/lib/ui-store';
+import { getEditor } from '@/lib/editor-registry';
+import { openAiBubble } from '@/lib/ai-bubble-store';
 import { useDocStats } from '@/lib/doc-stats';
 import { CONJUNCTS, findConjunctWords, toBanglaNumber } from '@/lib/bangla';
 import { useReadAloud } from '@/lib/read-aloud';
@@ -194,6 +196,23 @@ export function ReviewTab() {
   const update = useEditorStore((s) => s.updateSettings);
   const openDialog = useUiStore((s) => s.open);
 
+  /** AI যাচাই — পুরো পেজ প্রেক্ষাপটে যাচাই-মোডসহ AI বাবল খোলা */
+  const openAiPageCheck = () => {
+    const { activePageId } = useEditorStore.getState();
+    const ed = activePageId ? getEditor(activePageId) : null;
+    if (!ed || ed.isDestroyed) {
+      toast.error(t('ai.noEditor', 'No active editor'));
+      return;
+    }
+    openAiBubble({
+      editor: ed,
+      x: Math.max(16, Math.round((window.innerWidth - 392) / 2)),
+      y: 132,
+      mode: 'verify',
+      scope: 'page',
+    });
+  };
+
   return (
     <div className="ribbon-scroll flex items-stretch gap-1">
       <RibbonGroup label={tt('rev.group.stats')} accent="statistics">
@@ -220,6 +239,12 @@ export function ReviewTab() {
             title={tt('rev.findReplaceTip')}
             shortcut="Ctrl+F"
             onClick={() => openDialog('findReplace')}
+          />
+          <RibbonButton
+            icon={ScanEye}
+            label={tt('rev.aiCheck')}
+            title={tt('rev.aiCheckTip')}
+            onClick={openAiPageCheck}
           />
         </div>
       </RibbonGroup>

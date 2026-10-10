@@ -22,6 +22,8 @@ export const dictReview: Dict = {
   'rev.spelling': { bn: 'বানান', hi: 'वर्तनी', en: 'Spelling' },
   'rev.findReplace': { bn: 'খোঁজ ও প্রতিস্থাপন', hi: 'खोजें और बदलें', en: 'Find & Replace' },
   'rev.findReplaceTip': { bn: 'সম্পূর্ণ বই জুড়ে খোঁজ ও প্রতিস্থাপন (Ctrl+F)', hi: 'पूरी पुस्तक में खोजें और बदलें (Ctrl+F)', en: 'Find & replace across the whole book (Ctrl+F)' },
+  'rev.aiCheck': { bn: 'AI যাচাই', hi: 'AI जाँच', en: 'AI Check' },
+  'rev.aiCheckTip': { bn: 'AI দিয়ে পুরো পাতার বানান, ব্যাকরণ ও তথ্য-অসংগতি যাচাই — লাইভ ফলাফল', hi: 'AI से पूरे पृष्ठ की वर्तनी, व्याकरण और तथ्य-जाँच — लाइव परिणाम', en: 'AI-check the whole page for spelling, grammar and inconsistencies — live results' },
 
   // ─── যুক্তাক্ষর প্যালেট ───
   'rev.conjuncts': { bn: 'যুক্তাক্ষর', hi: 'संयुक्ताक्षर', en: 'Conjuncts' },

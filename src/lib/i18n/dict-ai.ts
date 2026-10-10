@@ -1106,6 +1106,56 @@ export const dictAi: Dict = {
     hi: 'चयन/पेज की धारा जारी रखते हुए नया अंश लिखना',
     en: 'Continues from the selection/page in the same voice',
   },
+  'ai.sel.questions': {
+    bn: 'প্রশ্ন',
+    hi: 'प्रश्न',
+    en: 'Questions',
+  },
+  'ai.sel.questions.tip': {
+    bn: 'অংশ থেকে পাঠ্যবই-মানের ৫টি প্রশ্ন তৈরি করে (অধ্যায়ের শেষে দেওয়ার উপযোগী)',
+    hi: 'अंश से पाठ्यपुस्तक-स्तरीय ५ प्रश्न बनाता है (अध्याय के अंत के लिए)',
+    en: 'Creates 5 textbook-grade questions from the text (end-of-chapter ready)',
+  },
+  'ai.sel.examples': {
+    bn: 'উদাহরণ',
+    hi: 'उदाहरण',
+    en: 'Example',
+  },
+  'ai.sel.examples.tip': {
+    bn: 'বিষয়ের জন্য বাস্তব ও স্পষ্ট উদাহরণ/প্রয়োগ লিখে দেয়',
+    hi: 'विषय के लिए वास्तविक और स्पष्ट उदाहरण/अनुप्रयोग लिखता है',
+    en: 'Writes a concrete real-world example or application for the topic',
+  },
+  'ai.sel.titles': {
+    bn: 'শিরোনাম',
+    hi: 'शीर्षक',
+    en: 'Titles',
+  },
+  'ai.sel.titles.tip': {
+    bn: '৫টি আকর্ষণীয় প্রকাশনা-মানের শিরোনাম/অধ্যায়-নাম প্রস্তাব করে',
+    hi: '५ आकर्षक प्रकाशन-स्तरीय शीर्षक/अध्याय-नाम सुझाता है',
+    en: 'Suggests 5 catchy publication-grade titles or chapter names',
+  },
+  'ai.sel.outline': {
+    bn: 'রূপরেখা',
+    hi: 'रूपरेखा',
+    en: 'Outline',
+  },
+  'ai.sel.outline.tip': {
+    bn: 'লেখাটি পড়ে গোছানো শিরোনাম-বুলেট রূপরেখা বানায়',
+    hi: 'लेख पढ़कर सुव्यवस्थित शीर्षक-बुलेट रूपरेखा बनाता है',
+    en: 'Reads the text and builds a tidy heading-and-bullet outline',
+  },
+  'ai.sel.summary': {
+    bn: 'সারসংক্ষেপ',
+    hi: 'सारांश',
+    en: 'Summary',
+  },
+  'ai.sel.summary.tip': {
+    bn: 'মূল সারমর্ম + গুরুত্বপূর্ণ পয়েন্টের তালিকা — নতুন তথ্য ছাড়া',
+    hi: 'मुख्य सार + महत्वपूर्ण बिंदुओं की सूची — बिना नए तथ्य',
+    en: 'Core gist + key points list — no invented facts',
+  },
   'ai.sel.run': {
     bn: 'AI চালাও',
     hi: 'AI चलाओ',

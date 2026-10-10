@@ -23,7 +23,7 @@ import { useEditorStore } from '@/lib/store';
 import { getEditor } from '@/lib/editor-registry';
 import { useAiStore, aiConfiguredSelector, providerPreset } from '@/lib/ai-store';
 import { useAiChatStore } from '@/lib/ai-chat-store';
-import { runChatAi, markdownToHtml, rawProviderLine } from '@/lib/ai-assistant';
+import { runChatAiStream, markdownToHtml, rawProviderLine } from '@/lib/ai-assistant';
 import { gatherDocContext, formatDocContext } from '@/lib/ai-context';
 import { pageToMarkdown, PAGE_MD_CAP } from '@/lib/ai-assistant';
 import { prepareImageFile } from '@/lib/ai-client';
@@ -58,6 +58,8 @@ export function AiChatPanel() {
   const [image, setImage] = useState<PreparedImage | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
+  /** স্ট্রিমিং চলাকালীন আসন্ন উত্তর — null = স্ট্রিম নেই, '' = প্রথম টোকেনের অপেক্ষা */
+  const [streamText, setStreamText] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
@@ -79,6 +81,15 @@ export function AiChatPanel() {
     const el = scrollRef.current;
     if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
   }, [messages.length, sending]);
+
+  // স্ট্রিমিং টোকেন → ইউজার নিচে থাকলেই অটো-স্ক্রল (পড়া চলাকালীন কাউকে বিরক্ত নয়)
+  useEffect(() => {
+    if (streamText === null) return;
+    const el = scrollRef.current;
+    if (!el) return;
+    const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 140;
+    if (nearBottom) el.scrollTo({ top: el.scrollHeight });
+  }, [streamText]);
 
   // Escape → বন্ধ
   useEffect(() => {
@@ -166,9 +177,17 @@ export function AiChatPanel() {
     } catch {
       docContext = '';
     }
-    const res = await runChatAi({ messages: history, imageDataUrl: img?.dataUrl ?? null, docContext });
+    // স্ট্রিমিং — প্রথম টোকেন এলেই উত্তর স্ক্রিনে ফোঁটাতে শুরু হয় (কপিলট-গতি)
+    setStreamText('');
+    const res = await runChatAiStream({
+      messages: history,
+      imageDataUrl: img?.dataUrl ?? null,
+      docContext,
+      onDelta: (full) => setStreamText(full),
+    });
 
     setSending(false);
+    setStreamText(null);
     if (res.ok && (res.markdown ?? res.text)) {
       addAssistant((res.markdown ?? res.text ?? '').trim(), res.demo);
       if (res.fixedModel) {
@@ -216,6 +235,9 @@ export function AiChatPanel() {
     () => messages.map((m) => ({ ...m, html: m.role === 'assistant' ? markdownToHtml(m.content) : '' })),
     [messages],
   );
+
+  // স্ট্রিমিং উত্তরের লাইভ রেন্ডার — শুধু এই টেক্সট বদলালেই রি-পার্স, পুরো তালিকা নয়
+  const streamHtml = useMemo(() => (streamText ? markdownToHtml(streamText) : ''), [streamText]);
 
   if (!open) return null;
 
@@ -306,7 +328,15 @@ export function AiChatPanel() {
                 </div>
               ),
             )}
-            {sending ? (
+            {sending && streamText ? (
+              <div className="ai-chat-msg ai-chat-msg-ai" aria-live="polite">
+                <div className="ai-chat-bubble-ai">
+                  <div className="ai-chat-md" dangerouslySetInnerHTML={{ __html: streamHtml }} />
+                  <span className="ai-stream-caret" aria-hidden="true" />
+                </div>
+              </div>
+            ) : null}
+            {sending && !streamText ? (
               <div className="ai-chat-msg ai-chat-msg-ai" aria-live="polite">
                 <div className="ai-chat-bubble-ai ai-chat-typing" role="status">
                   <span /><span /><span />

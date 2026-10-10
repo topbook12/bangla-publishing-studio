@@ -16,9 +16,10 @@ import {
 import { createPortal } from 'react-dom';
 import type { Editor } from '@tiptap/react';
 import {
-  BookPlus, CircleAlert, Copy, FileText, GraduationCap, Image as ImageIcon, ImagePlus, Languages,
-  Lightbulb, List, ListChecks, Loader2, Maximize2, MessageSquare, Minimize2, PenLine,
-  RefreshCw, Replace, ScanEye, Sparkles, SpellCheck, Table2, TextCursorInput, Wand2, X, type LucideIcon,
+  AlignLeft, BookPlus, CircleAlert, Copy, FileText, FlaskConical, GraduationCap, Heading1, HelpCircle,
+  Image as ImageIcon, ImagePlus, Languages, Lightbulb, List, ListChecks, ListTree, Loader2,
+  Maximize2, MessageSquare, Minimize2, PenLine, RefreshCw, Replace, ScanEye, Sparkles, SpellCheck,
+  Table2, TextCursorInput, Wand2, X, type LucideIcon,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -64,6 +65,11 @@ const MODE_ICON: Record<string, LucideIcon> = {
   explain: MessageSquare,
   verify: ListChecks,
   continue: PenLine,
+  outline: ListTree,
+  summary: AlignLeft,
+  titles: Heading1,
+  examples: FlaskConical,
+  questions: HelpCircle,
   custom: Sparkles,
   'image-explain': ScanEye,
   'table-edit': Table2,
@@ -292,8 +298,10 @@ function AiBubblePanel({ req, style, onClose, configured, ref }: PanelProps) {
 
   const hasSelection = captured.from !== null && captured.to !== null;
 
-  /** AI কোন প্রেক্ষাপটে কাজ করবে — নির্বাচিত অংশ বা পুরো পেজ */
-  const [scope, setScope] = useState<'selection' | 'page'>(hasSelection ? 'selection' : 'page');
+  /** AI কোন প্রেক্ষাপটে কাজ করবে — নির্বাচিত অংশ বা পুরো পেজ (রিভিউ-ট্যাব প্রি-সেট সহ) */
+  const [scope, setScope] = useState<'selection' | 'page'>(
+    req.scope ?? (hasSelection ? 'selection' : 'page'),
+  );
   const [mode, setMode] = useState<SelectionModeDef | null>(() => {
     if (req.mode === 'table-edit') return TABLE_EDIT_DEF;
     if (req.mode === 'image-explain') return IMAGE_EXPLAIN_DEF;
@@ -367,6 +375,8 @@ function AiBubblePanel({ req, style, onClose, configured, ref }: PanelProps) {
             : null,
           surroundings: scope === 'selection',
         }));
+    // স্ট্রিমিং — প্রতি টোকেনে লাইভ প্রিভিউ; রিসেট-পথে (রিট্রাই) আবার খালি থেকে জমে
+    let lastPaint = 0;
     const res = await runSelectionAi({
       mode: m,
       selection: isTable ? '' : contextText,
@@ -375,6 +385,13 @@ function AiBubblePanel({ req, style, onClose, configured, ref }: PanelProps) {
       tableContext: isTable ? tableRowsToMarkdown(tableRows ?? []) : undefined,
       pageScope: scope === 'page',
       docContext,
+      onDelta: (full) => {
+        // রেন্ডার-থ্রটল (~60ms) — টোকেন-ধারায়ও মসৃণ, বাড়তি রি-রেন্ডার নয়
+        const now = Date.now();
+        if (now - lastPaint < 60) return;
+        lastPaint = now;
+        setResult(full);
+      },
     });
 
     if (res.ok && res.markdown) {
@@ -383,6 +400,7 @@ function AiBubblePanel({ req, style, onClose, configured, ref }: PanelProps) {
       setFixedModel(res.fixedModel ?? null);
       setPhase('done');
     } else {
+      setResult(null);
       setError({ hintKey: res.hintKey ?? 'ai.err.title', detail: res.detail, raw: res.error });
       setPhase('error');
     }
@@ -674,8 +692,8 @@ function AiBubblePanel({ req, style, onClose, configured, ref }: PanelProps) {
         </div>
       ) : null}
 
-      {/* ফলাফল */}
-      {phase === 'done' && result ? (
+      {/* ফলাফল — স্ট্রিমিং চলাকালীনও লাইভ প্রিভিউ (কপিলট-অভিজ্ঞতা); প্রয়োগ-বাটন কাজ শেষে সক্রিয় */}
+      {result && (phase === 'done' || phase === 'working') ? (
         <div className="ai-bubble-result">
           {fixedModel ? (
             <p className="mb-1 px-1 text-[11px] leading-snug text-muted-foreground" role="status">
@@ -688,18 +706,19 @@ function AiBubblePanel({ req, style, onClose, configured, ref }: PanelProps) {
           </div>
           <div className="ai-bubble-apply">
             {hasReplaceable && !pageTruncated ? (
-              <Button size="sm" className="flex-1 gap-1.5 ai-save-btn" onClick={() => apply('replace')}>
+              <Button size="sm" className="flex-1 gap-1.5 ai-save-btn" disabled={busy} onClick={() => apply('replace')}>
                 <Replace size={12} aria-hidden="true" />
                 {pageScope && !req.tableRange ? tt('ai.page.replace') : tt('ai.sel.replace')}
               </Button>
             ) : null}
-            <Button size="sm" variant="outline" className="flex-1 gap-1.5" onClick={() => apply('insert-after')}>
+            <Button size="sm" variant="outline" className="flex-1 gap-1.5" disabled={busy} onClick={() => apply('insert-after')}>
               <BookPlus size={12} aria-hidden="true" /> {tt('ai.sel.insertAfter')}
             </Button>
             <Button
               size="sm"
               variant="ghost"
               className="h-8 px-2"
+              disabled={busy}
               onClick={() => {
                 void navigator.clipboard.writeText(result).then(
                   () => toast.success(tt('ai.bubble.copied')),
@@ -715,6 +734,7 @@ function AiBubblePanel({ req, style, onClose, configured, ref }: PanelProps) {
               size="sm"
               variant="ghost"
               className="h-8 px-2"
+              disabled={busy}
               onClick={() => void run(mode ?? SELECTION_MODES[0])}
               aria-label={tt('ai.reanalyze')}
               title={tt('ai.reanalyze')}

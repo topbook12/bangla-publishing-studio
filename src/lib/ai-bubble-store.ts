@@ -27,6 +27,11 @@ export type AiBubbleMode =
   | 'explain'
   | 'verify'
   | 'continue'
+  | 'outline'
+  | 'summary'
+  | 'titles'
+  | 'examples'
+  | 'questions'
   | 'custom'
   | 'image-explain'
   | 'table-edit';
@@ -38,6 +43,8 @@ export interface AiBubbleRequest {
   y: number;
   /** প্রি-সেট মোড (দিলে প্যানেল খুলেই সেটা হাইলাইট করবে) */
   mode?: AiBubbleMode;
+  /** প্রি-সেট প্রেক্ষাপট-স্কোপ (যেমন রিভিউ-ট্যাব থেকে পুরো পেজ-যাচাই) */
+  scope?: 'selection' | 'page';
   /** প্রি-সেট নির্দেশ (custom মোডে ইনপুটে বসবে) */
   instruction?: string;
   /** ক্লিক করা ছবির dataURL (image-explain মোড) */

@@ -10,6 +10,7 @@
 
 import { useAiStore, providerPreset } from './ai-store';
 import { withTransientRetry } from './ai-retry';
+import { callTextApiStream } from './ai-stream';
 import type { AiBubbleMode } from './ai-bubble-store';
 import type { Editor } from '@tiptap/react';
 import type { Node as PMNode } from 'prosemirror-model';
@@ -176,6 +177,46 @@ export const SELECTION_MODES: SelectionModeDef[] = [
       `${custom?.trim() ? `লেখকের নির্দেশ: ${custom.trim()}\n\n` : ''}নিচের বইয়ের অংশটির ধারা অব্যাহত রেখে পরের অংশটি লিখে দাও — একই ভাষা, একই বিষয়, একই বলিষ্ঠা; আগের লেখা পুনরাবৃত্তি করবে না (৩–৫ প্যারাগ্রাফ):\n\n---\n${s}\n---`,
   },
   {
+    id: 'questions',
+    labelKey: 'ai.sel.questions',
+    tipKey: 'ai.sel.questions.tip',
+    kind: 'insert',
+    buildPrompt: (s) =>
+      `নিচের অংশ থেকে পাঠ্যবই-মানের ৫টি প্রশ্ন তৈরি করো (বৈচিত্র্যময়: জ্ঞানমূলক, ব্যাখ্যামূলক, প্রয়োগমূলক) — নম্বর-তালিকায়; উত্তর দেবে না, শুধু প্রশ্ন:\n\n---\n${s}\n---`,
+  },
+  {
+    id: 'examples',
+    labelKey: 'ai.sel.examples',
+    tipKey: 'ai.sel.examples.tip',
+    kind: 'insert',
+    buildPrompt: (s) =>
+      `নিচের বিষয়ের জন্য একটি বাস্তব ও স্পষ্ট উদাহরণ/প্রয়োগ লিখে দাও — বইয়ের পাঠকের উপযোগী, প্রেক্ষাপটের ভাষায়; কাল্পনিক পরিসংখ্যান বানাবে না:\n\n---\n${s}\n---`,
+  },
+  {
+    id: 'titles',
+    labelKey: 'ai.sel.titles',
+    tipKey: 'ai.sel.titles.tip',
+    kind: 'insert',
+    buildPrompt: (s) =>
+      `নিচের অংশের জন্য ৫টি আকর্ষণীয় ও প্রকাশনা-মানের শিরোনাম/অধ্যায়-নাম প্রস্তাব করো — নম্বর-তালিকায়, প্রতিটি এক লাইনে; ভাষা মূল লেখার সাথে মিলবে:\n\n---\n${s}\n---`,
+  },
+  {
+    id: 'outline',
+    labelKey: 'ai.sel.outline',
+    tipKey: 'ai.sel.outline.tip',
+    kind: 'insert',
+    buildPrompt: (s) =>
+      `নিচের অংশটি পড়ে একটি গোছানো রূপরেখা তৈরি করো — Markdown শিরোনাম ও বুলেটে; মূল বিষয়গুলোর ক্রম অটুট:\n\n---\n${s}\n---`,
+  },
+  {
+    id: 'summary',
+    labelKey: 'ai.sel.summary',
+    tipKey: 'ai.sel.summary.tip',
+    kind: 'insert',
+    buildPrompt: (s) =>
+      `নিচের অংশটির সারসংক্ষেপ লেখো — প্রথমে ২–৩ বাক্যের মূল সারমর্ম, তারপর গুরুত্বপূর্ণ পয়েন্টগুলোর সংক্ষিপ্ত তালিকা। নতুন তথ্য যোগ করবে না:\n\n---\n${s}\n---`,
+  },
+  {
     id: 'custom',
     labelKey: 'ai.sel.custom',
     tipKey: 'ai.sel.custom.tip',
@@ -287,9 +328,29 @@ export interface SelectionAiOptions {
   pageScope?: boolean;
   /** বইয়ের প্রেক্ষাপট-ব্লক (formatDocContext) — AI-কে পুরো বই বোঝাতে */
   docContext?: string;
+  /** স্ট্রিমিং — প্রতি টোকেনে জমানো পূর্ণ লেখা (লাইভ প্রিভিউ); দিলে স্ট্রিম-পথ চলে */
+  onDelta?: (fullText: string) => void;
 }
 
-/** সিলেকশন-ট্রান্সফর্ম চালানো → Markdown উত্তর */
+/** চূড়ান্ত উত্তরে বাংলা যতি-পরিমার্জন — মডেলের ফেলে আসা ফাঁকা-যতি ভুল ঠিক করে
+ *  (নির্ভুলতা): "বই ।" → "বই।", "।বাক্য" → "। বাক্য", "।।" → "।"। কোড-ব্লক ছোঁয় না। */
+export function polishBanglaPunctuation(mdRaw: string): string {
+  const md = (mdRaw ?? '').replace(/\r\n/g, '\n');
+  // ফেন্সড কোড-ব্লক সুরক্ষা — কোডের ফাঁকা অক্ষর অর্থবহ; শুধু বাইরের অংশ পরিমার্জন
+  const segments = md.split(/(```[^\n]*\n[\s\S]*?```)/g);
+  return segments
+    .map((seg, i) => {
+      if (i % 2 === 1) return seg; // কোড-ব্লক অক্ষত
+      let s = seg;
+      s = s.replace(/[ \t]+([।,;:!?])/g, '$1'); // যতির আগে বাড়তি ফাঁকা
+      s = s.replace(/।(?=[\u0980-\u09FFa-zA-Z0-9])/g, '। '); // দাঁড়ির পরে ফাঁকা
+      s = s.replace(/।{2,}/g, '।'); // দাঁড়ি-পুনরাবৃত্তি
+      return s;
+    })
+    .join('');
+}
+
+/** সিলেকশন-ট্রান্সফর্ম চালানো → Markdown উত্তর (onDelta দিলে স্ট্রিমিং) */
 export async function runSelectionAi(opts: SelectionAiOptions): Promise<AiTextResult> {
   // সার্ভার ২৪k ক্যাপ — প্রেক্ষাপট-ব্লকের জায়গা রেখে সিলেকশন ১৭k-তে সীমিত
   const sel = opts.selection.length > 17_000 ? `${opts.selection.slice(0, 17_000)}…` : opts.selection;
@@ -307,20 +368,35 @@ export async function runSelectionAi(opts: SelectionAiOptions): Promise<AiTextRe
       : `${base}\n\nউত্তর শুধু চূড়ান্ত Markdown কনটেন্ট হবে।`;
   // প্রেক্ষাপট-ব্লক সবার আগে — AI আগে বই বোঝে, তারপর কাজ পড়ে
   const prompt = ctx ? `${ctx}\n\n${core}` : core;
-  const res = await callTextApi({
-    prompt,
-    system: AI_EDIT_SYSTEM,
-    imageDataUrl: opts.imageDataUrl ?? null,
-  });
+  const res = opts.onDelta
+    ? await withTransientRetry(() =>
+        callTextApiStream({ prompt, system: AI_EDIT_SYSTEM, imageDataUrl: opts.imageDataUrl ?? null, onDelta: opts.onDelta }))
+    : await callTextApi({ prompt, system: AI_EDIT_SYSTEM, imageDataUrl: opts.imageDataUrl ?? null });
   if (!res.ok) return res;
-  const md = (res.markdown ?? res.text ?? '').trim();
-  if (!md) return { ok: false, error: 'EMPTY_RESPONSE', hintKey: 'ai.err.empty' };
-  return { ok: true, markdown: md, demo: res.demo, fixedModel: res.fixedModel };
+  const raw = (res.markdown ?? res.text ?? '').trim();
+  if (!raw) return { ok: false, error: 'EMPTY_RESPONSE', hintKey: 'ai.err.empty' };
+  // নির্ভুলতা — চূড়ান্ত উত্তরে যতি-পরিমার্জন (বাংলা টাইপোগ্রাফি)
+  return { ok: true, markdown: polishBanglaPunctuation(raw), demo: res.demo, fixedModel: res.fixedModel };
 }
 
 export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
+}
+
+/** চ্যাট-প্রম্পট গঠন — runChatAi ও runChatAiStream দুই পথেই একই গঠন */
+function buildChatPrompt(messages: ChatMessage[], docContext?: string): string {
+  // শেষ ১২ বার্তা — টোকেন সাশ্রয়; মোট ট্রান্সক্রিপ্ট ~১৪k-এ ক্যাপ (প্রেক্ষাপট-ব্লকসহ ২৪k-ক্যাপ নিরাপদ)
+  const MAX_TRANSCRIPT = 14_000;
+  let transcript = messages
+    .slice(-12)
+    .map((m) => `${m.role === 'user' ? 'লেখক' : 'আপনি (AI)'}: ${m.content.length > 6_000 ? `${m.content.slice(0, 6_000)}…` : m.content}`)
+    .join('\n\n---\n\n');
+  if (transcript.length > MAX_TRANSCRIPT) transcript = `…(আগের অংশ বাদ)\n\n${transcript.slice(-MAX_TRANSCRIPT)}`;
+  const ctx = docContext?.trim();
+  return ctx
+    ? `${ctx}\n\nকথোপকথন এখন পর্যন্ত:\n\n${transcript}\n\n---\n\nশেষ "লেখক"-বার্তার উত্তর দাও (চলতি কথোপকথন ও উপরের বইয়ের প্রেক্ষাপটের ধারাবাহিকতায়)।`
+    : `কথোপকথন এখন পর্যন্ত:\n\n${transcript}\n\n---\n\nশেষ "লেখক"-বার্তার উত্তর দাও (চলতি কথোপকথনের ধারাবাহিকতায়)।`;
 }
 
 /** চ্যাট বার্তা পাঠানো (সম্পূর্ণ কথোপকথন + বইয়ের প্রেক্ষাপটসহ) */
@@ -330,22 +406,32 @@ export async function runChatAi(opts: {
   /** বইয়ের প্রেক্ষাপট-ব্লক (formatDocContext) — থাকলে AI বই বুঝে উত্তর দেয় */
   docContext?: string;
 }): Promise<AiTextResult> {
-  // শেষ ১২ বার্তা — টোকেন সাশ্রয়; মোট ট্রান্সক্রিপ্ট ~১৪k-এ ক্যাপ (প্রেক্ষাপট-ব্লকসহ ২৪k-ক্যাপ নিরাপদ)
-  const MAX_TRANSCRIPT = 14_000;
-  let transcript = opts.messages
-    .slice(-12)
-    .map((m) => `${m.role === 'user' ? 'লেখক' : 'আপনি (AI)'}: ${m.content.length > 6_000 ? `${m.content.slice(0, 6_000)}…` : m.content}`)
-    .join('\n\n---\n\n');
-  if (transcript.length > MAX_TRANSCRIPT) transcript = `…(আগের অংশ বাদ)\n\n${transcript.slice(-MAX_TRANSCRIPT)}`;
-  const ctx = opts.docContext?.trim();
-  const prompt = ctx
-    ? `${ctx}\n\nকথোপকথন এখন পর্যন্ত:\n\n${transcript}\n\n---\n\nশেষ "লেখক"-বার্তার উত্তর দাও (চলতি কথোপকথন ও উপরের বইয়ের প্রেক্ষাপটের ধারাবাহিকতায়)।`
-    : `কথোপকথন এখন পর্যন্ত:\n\n${transcript}\n\n---\n\nশেষ "লেখক"-বার্তার উত্তর দাও (চলতি কথোপকথনের ধারাবাহিকতায়)।`;
-  return callTextApi({
+  const prompt = buildChatPrompt(opts.messages, opts.docContext);
+  const res = await callTextApi({
     prompt,
     system: AI_CHAT_SYSTEM,
     imageDataUrl: opts.imageDataUrl ?? null,
   });
+  if (!res.ok) return res;
+  const raw = (res.markdown ?? res.text ?? '').trim();
+  if (!raw) return { ok: false, error: 'EMPTY_RESPONSE', hintKey: 'ai.err.empty' };
+  return { ok: true, markdown: polishBanglaPunctuation(raw), demo: res.demo, fixedModel: res.fixedModel };
+}
+
+/** চ্যাট স্ট্রিমিং — প্রতি টোকেনে জমানো পূর্ণ লেখা onDelta-তে (লাইভ টাইপিং); চূড়ান্ত ফলাফল ফেরত */
+export async function runChatAiStream(opts: {
+  messages: ChatMessage[];
+  imageDataUrl?: string | null;
+  docContext?: string;
+  onDelta: (fullText: string) => void;
+}): Promise<AiTextResult> {
+  const prompt = buildChatPrompt(opts.messages, opts.docContext);
+  const res = await withTransientRetry(() =>
+    callTextApiStream({ prompt, system: AI_CHAT_SYSTEM, imageDataUrl: opts.imageDataUrl ?? null, onDelta: opts.onDelta }));
+  if (!res.ok) return res;
+  const raw = (res.markdown ?? res.text ?? '').trim();
+  if (!raw) return { ok: false, error: 'EMPTY_RESPONSE', hintKey: 'ai.err.empty' };
+  return { ok: true, markdown: polishBanglaPunctuation(raw), demo: res.demo, fixedModel: res.fixedModel };
 }
 
 // ─── নিরাপদ Markdown → HTML ───

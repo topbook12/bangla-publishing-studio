@@ -16,8 +16,16 @@
  *  - রেট-লিমিট: BYOK ৩০/মিনিট, ডেমো ৬/মিনিট প্রতি IP (প্ল্যাটফর্ম ক্রেডেনশিয়াল সুরক্ষা)
  *  - কি কখনো লগ/স্টোর হয় না; ত্রুটি-বার্তায়ও কি ফাঁস হয় না
  *
- * বডি: { prompt, system?, imageDataUrl?, config?: { baseUrl, apiKey, model, provider? } }
+ * বডি: { prompt, system?, imageDataUrl?, stream?, config?: { baseUrl, apiKey, model, provider? } }
  * উত্তর: { ok: true, text, fixedModel?, busyFallback? } | { ok: false, error, hintKey?, detail? }
+ * স্ট্রিম উত্তর (stream:true): text/event-stream — প্রতি ঘটনা `data: {"delta":"…"}`,
+ * শেষে `data: {"done":true, ok, fixedModel?, busyFallback?, demo?, error?, hintKey?}`।
+ * স্ট্রিমিং ব্যর্থ হলে স্বয়ংক্রিয়ভাবে non-streaming কলে পড়ে — ফলাফল একই, শুধু প্রথম
+ * টোকেন-পর্যন্ত অপেক্ষা (প্রম্পট-প্রসেসিং + পুরো উত্তর) ইউজারকে অনুভব করতে হয় না।
+ *
+ * গতি (thinking-budget): Gemini 2.5/3-ফ্যামিলির ফ্ল্যাশ মডেল ডিফল্টে "চিন্তা" করে —
+ * ৫–২০ সে খরচ, বই-সম্পাদনার ট্রান্সফর্মে অপ্রয়োজনীয়। thinkingBudget:0 দিলে
+ * উত্তর প্রায় ৩–১০× দ্রুত আসে (pro মডেলে প্রযোজ্য নয়, সেখানে স্কিপ)।
  *
  * ব্যস্ত-প্রতিরোধ (busy-resilience): 503 "high demand" জাতীয় অস্থায়ী ত্রুটিতে
  * Retry-After সম্মান করে ব্যাকঅফে ৩ বার পুনরায়; তবু থাকলে একই পরিবারের হালকা
@@ -46,6 +54,8 @@ interface ChatBody {
   prompt?: string;
   system?: string;
   imageDataUrl?: string | null;
+  /** SSE স্ট্রিমিং চাইলে true — উত্তর text/event-stream হয় */
+  stream?: boolean;
   config?: AiProxyConfig | null;
 }
 
@@ -172,7 +182,7 @@ interface GeminiPart {
 }
 
 /** OpenAI-ধাঁচের বডি → Gemini native generateContent বডি */
-function geminiPayload(body: ChatBody): Record<string, unknown> {
+function geminiPayload(body: ChatBody, model?: string): Record<string, unknown> {
   const parts: GeminiPart[] = [{ text: body.prompt ?? '' }];
   if (body.imageDataUrl) {
     const m = body.imageDataUrl.match(/^data:(image\/[a-z0-9.+-]+);base64,(.+)$/i);
@@ -182,8 +192,24 @@ function geminiPayload(body: ChatBody): Record<string, unknown> {
     contents: [{ role: 'user', parts }],
     generationConfig: { temperature: 0.4, maxOutputTokens: MAX_TOKENS },
   };
+  // গতি — চিন্তা-বাজেট ০: ফ্ল্যাশ-পরিবারের মডেল ডিফল্টে অন্তর্নিহিত চিন্তা করে;
+  // বই-সম্পাদনার নির্ধারিত ট্রান্সফর্মে সেটা সময়-নষ্ট। pro মডেলে ০ অনুমোদিত নয়।
+  if (model && geminiFastThinkingModel(model)) {
+    (payload.generationConfig as Record<string, unknown>).thinkingConfig = { thinkingBudget: 0 };
+  }
   if (body.system) payload.systemInstruction = { parts: [{ text: body.system }] };
   return payload;
+}
+
+/** Gemini ফ্ল্যাশ-পরিবারের চিন্তা-সক্ষম মডেল — thinkingBudget:0 বহন করতে পারে (pro বাদ) */
+function geminiFastThinkingModel(model: string): boolean {
+  const m = model.toLowerCase();
+  return /gemini-(2\.5|3)/.test(m) && /flash/.test(m) && !/pro/.test(m);
+}
+
+/** thinkingConfig-জনিত 400 — মডেল বাজেট-০ না মানলে কনফিগ ছাড়া একবার পুনরায় */
+function isThinkingConfigError(msg: string): boolean {
+  return /thinking/i.test(msg);
 }
 
 /** Gemini native এন্ডপয়েন্ট — সর্বাপেক্ষ নির্ভরযোগ্য পথ (compat স্তর বাদ) */
@@ -192,12 +218,32 @@ async function callGeminiNative(apiKey: string, model: string, body: ChatBody): 
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-    body: JSON.stringify(geminiPayload(body)),
+    body: JSON.stringify(geminiPayload(body, model)),
     signal: AbortSignal.timeout(TIMEOUT_MS),
     redirect: 'error', // SSRF — রিডাইরেক্টে গার্ড-বাইপাস বন্ধ
   });
+  // thinkingConfig অসমর্থিত মডেল হলে 400 — বাজেট-লাইন ছাড়া একবার পুনরায় (সঠিকতা > গতি)
+  if (res.status === 400 && geminiFastThinkingModel(model)) {
+    const detail = await providerErrorDetail(res);
+    if (isThinkingConfigError(detail)) {
+      const fallback = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+        body: JSON.stringify(geminiPayload(body)),
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+        redirect: 'error',
+      });
+      if (!fallback.ok) await throwUpstream(fallback);
+      return { text: await geminiTextFromResponse(fallback) };
+    }
+  }
   if (!res.ok) await throwUpstream(res);
 
+  return { text: await geminiTextFromResponse(res) };
+}
+
+/** Gemini উত্তর-JSON থেকে লেখা বের করা (native ও streaming native দুই পথেই ব্যবহৃত) */
+async function geminiTextFromResponse(res: Response): Promise<string> {
   const data = (await res.json()) as {
     candidates?: Array<{ content?: { parts?: Array<{ text?: string }> }; finishReason?: string }>;
     promptFeedback?: { blockReason?: string };
@@ -208,7 +254,7 @@ async function callGeminiNative(apiKey: string, model: string, body: ChatBody): 
     const why = data.promptFeedback?.blockReason ?? cand?.finishReason;
     throw new Error(why && why !== 'STOP' ? `EMPTY_RESPONSE:${why}` : 'EMPTY_RESPONSE');
   }
-  return { text };
+  return text;
 }
 
 /** প্রোভাইডার থেকে উপলব্ধ মডেল-তালিকা (Gemini-তে compat ব্যর্থ হলে native) */
@@ -384,6 +430,219 @@ async function callDemo(body: ChatBody): Promise<{ text: string }> {
   return { text };
 }
 
+// ─── স্ট্রিমিং (SSE) ───
+
+/** উৎস-SSE লাইন থেকে delta-লেখা বের করা — OpenAI (choices[0].delta.content) ও
+ *  Gemini (candidates[0].content.parts[].text) দুই শৈলীই ধরে */
+function deltaFromSsePayload(payload: string): string {
+  try {
+    const obj = JSON.parse(payload) as {
+      choices?: Array<{ delta?: { content?: unknown }; message?: { content?: unknown } }>;
+      candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+    };
+    const c0 = obj.choices?.[0];
+    const d = c0?.delta?.content ?? c0?.message?.content ?? '';
+    if (typeof d === 'string') return d;
+    if (Array.isArray(d)) return d.map((p) => (typeof p === 'string' ? p : (p as { text?: string })?.text ?? '')).join('');
+    const g = obj.candidates?.[0]?.content?.parts ?? [];
+    return g.map((p) => p?.text ?? '').join('');
+  } catch {
+    return '';
+  }
+}
+
+/** OpenAI-সামঞ্জস্য স্ট্রিম কল — upstream SSE পড়ে delta-লেখা onDelta-তে দেয় */
+async function streamOpenAiCompatible(config: AiProxyConfig, body: ChatBody, onDelta: (t: string) => void): Promise<string> {
+  const base = normalizeBase(config.baseUrl);
+  if (!base) throw new Error('BASE_URL_EMPTY');
+  if (!config.model?.trim()) throw new Error('MODEL_EMPTY');
+
+  const messages: Array<Record<string, unknown>> = [];
+  if (body.system) messages.push({ role: 'system', content: body.system });
+  messages.push({ role: 'user', content: body.prompt ?? '' });
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${config.apiKey}`,
+    Accept: 'text/event-stream',
+  };
+  if (config.provider === 'claude') {
+    headers['x-api-key'] = config.apiKey;
+    headers['anthropic-version'] = '2023-06-01';
+  }
+  if (config.provider === 'openrouter') {
+    headers['HTTP-Referer'] = 'https://bangla-publishing-studio.app';
+    headers['X-Title'] = 'Bangla Publishing Studio';
+  }
+
+  const res = await fetch(`${base}chat/completions`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ model: config.model.trim(), messages, temperature: 0.4, max_tokens: MAX_TOKENS, stream: true }),
+    signal: AbortSignal.timeout(TIMEOUT_MS),
+    redirect: 'error',
+  });
+  if (!res.ok) await throwUpstream(res);
+  if (!res.body) throw new Error('EMPTY_RESPONSE');
+
+  const text = await pumpSse(res.body, onDelta);
+  if (!text.trim()) throw new Error('EMPTY_RESPONSE');
+  return text;
+}
+
+/** Gemini native স্ট্রিম কল — :streamGenerateContent?alt=sse */
+async function streamGeminiNative(apiKey: string, model: string, body: ChatBody, onDelta: (t: string) => void): Promise<string> {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:streamGenerateContent?alt=sse`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+    body: JSON.stringify(geminiPayload(body, model)),
+    signal: AbortSignal.timeout(TIMEOUT_MS),
+    redirect: 'error',
+  });
+  // thinkingConfig-অসমর্থিত হলে বাজেট-লাইন ছাড়া পুনরায়
+  if (res.status === 400 && geminiFastThinkingModel(model)) {
+    const detail = await providerErrorDetail(res);
+    if (isThinkingConfigError(detail)) {
+      const fb = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+        body: JSON.stringify(geminiPayload(body)),
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+        redirect: 'error',
+      });
+      if (!fb.ok) await throwUpstream(fb);
+      if (!fb.body) throw new Error('EMPTY_RESPONSE');
+      const text = await pumpSse(fb.body, onDelta);
+      if (!text.trim()) throw new Error('EMPTY_RESPONSE');
+      return text;
+    }
+  }
+  if (!res.ok) await throwUpstream(res);
+  if (!res.body) throw new Error('EMPTY_RESPONSE');
+
+  const text = await pumpSse(res.body, onDelta);
+  if (!text.trim()) throw new Error('EMPTY_RESPONSE');
+  return text;
+}
+
+/** উৎস-বডি পড়ে SSE ঘটনা ভেঙে delta-জমা দেওয়া; পূর্ণ লেখা ফেরত */
+async function pumpSse(src: ReadableStream<Uint8Array>, onDelta: (t: string) => void): Promise<string> {
+  const reader = src.getReader();
+  const dec = new TextDecoder();
+  let buf = '';
+  let full = '';
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      // SSE ঘটনা খালি লাইনে শেষ হয় — "data: …" লাইনগুলো এক ঘটনা
+      let idx: number;
+      while ((idx = buf.indexOf('\n')) !== -1) {
+        const line = buf.slice(0, idx).replace(/\r$/, '');
+        buf = buf.slice(idx + 1);
+        if (!line.startsWith('data:')) continue;
+        const payload = line.slice(5).trim();
+        if (!payload || payload === '[DONE]') continue;
+        const delta = deltaFromSsePayload(payload);
+        if (delta) {
+          full += delta;
+          onDelta(delta);
+        }
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  return full;
+}
+
+/**
+ * স্ট্রিমিং-সচেতন ব্যস্ত-প্রতিরোধী কল — non-streaming callWithBusyRetry-র স্ট্রিম-সংস্করণ।
+ * ৪০৪-এ self-heal (সুপারিশ-মডেল → native → তালিকা-মিল), অস্থায়ী ত্রুটিতে ব্যাকঅফ-পুনরায়।
+ */
+async function streamWithSelfHeal(config: AiProxyConfig, body: ChatBody, onDelta: (t: string) => void): Promise<{ text: string; fixedModel?: string; busyFallback?: string }> {
+  const gemini = isGeminiHost(config.baseUrl);
+  const tryCompatStream = (model: string) => streamOpenAiCompatible({ ...config, model }, body, onDelta);
+  const tryNativeStream = (model: string) => streamGeminiNative(config.apiKey, model, body, onDelta);
+
+  const runOnce = async (): Promise<{ text: string; fixedModel?: string }> => {
+    try {
+      return { text: await tryCompatStream(config.model) };
+    } catch (err) {
+      const e = err as Error & { status?: number; providerDetail?: string };
+      if (e.status !== 404) throw err;
+      const detail = e.providerDetail ?? e.message ?? '';
+      const retired = isModelRetiredMessage(detail);
+      const suggested = extractSuggestedModel(detail, config.model);
+      if (suggested) {
+        try { return { text: await tryCompatStream(suggested), fixedModel: suggested }; } catch { /* নিচে */ }
+        if (gemini) {
+          try { return { text: await tryNativeStream(suggested), fixedModel: suggested }; } catch { /* নিচে */ }
+        }
+      }
+      if (gemini) {
+        try { return { text: await tryNativeStream(config.model) }; } catch (err2) {
+          const e2 = err2 as Error & { status?: number };
+          if (e2.status !== 404) throw err2;
+        }
+      }
+      try {
+        const ids = await fetchUpstreamModelIds(normalizeBase(config.baseUrl), config.apiKey, config.provider);
+        const usable = retired ? ids.filter((m) => m.toLowerCase() !== config.model.toLowerCase()) : ids;
+        const fixed = bestModelMatch(config.model, usable);
+        if (fixed && fixed.toLowerCase() !== config.model.toLowerCase()) {
+          return { text: await tryCompatStream(fixed), fixedModel: fixed };
+        }
+      } catch { /* আসল 404-ই ফেরত */ }
+      throw err;
+    }
+  };
+
+  let lastErr: (Error & { status?: number; retryAfterMs?: number }) | null = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      return await runOnce();
+    } catch (err) {
+      lastErr = err as Error & { status?: number; retryAfterMs?: number };
+      if (!isTransientStatus(lastErr?.status)) throw err;
+      if (attempt < 2) {
+        await new Promise((r) => setTimeout(r, backoffDelayMs(attempt, lastErr?.retryAfterMs)));
+      }
+    }
+  }
+  const status = lastErr?.status;
+  if (status === 503 || status === 529) {
+    for (const model of liteAlternativeModels(config.model)) {
+      try {
+        return { text: await tryCompatStream(model), busyFallback: model };
+      } catch {
+        if (isGeminiHost(config.baseUrl)) {
+          try { return { text: await tryNativeStream(model), busyFallback: model }; } catch { /* পরের */ }
+        }
+      }
+    }
+  }
+  throw lastErr ?? new Error('AI request failed');
+}
+
+/** SSE উত্তর-স্ট্রিম গড়া — ক্লায়েন্টে ai-stream.ts পার্স করে */
+function sseResponse(): { stream: ReadableStream<Uint8Array>; send: (event: Record<string, unknown>) => void; close: () => void } {
+  const enc = new TextEncoder();
+  let send: (event: Record<string, unknown>) => void = () => undefined;
+  let close: () => void = () => undefined;
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      send = (event) => controller.enqueue(enc.encode(`data: ${JSON.stringify(event)}\n\n`));
+      close = () => {
+        try { controller.close(); } catch { /* দুইবার ক্লোজ নয় */ }
+      };
+    },
+  });
+  return { stream, send, close };
+}
+
 export async function POST(req: NextRequest) {
   const originIsLocal = originIsLocalHost(req.headers.get('host'));
 
@@ -435,6 +694,72 @@ export async function POST(req: NextRequest) {
   const ip = clientIp(req);
   if (!allowRate(`${ip}:${hasKey ? 'byok' : 'demo'}`, hasKey ? RATE_BYOK : RATE_DEMO)) {
     return jsonError('Rate limit reached', hasKey ? 'ai.err.rateLimit' : 'ai.err.demoRate');
+  }
+
+  // ─── স্ট্রিম পথ — SSE: প্রথম টোকেনেই স্ক্রিনে লেখা (প্রিমিয়াম গতি) ───
+  if (body.stream) {
+    const { stream, send, close } = sseResponse();
+    const sse = new NextResponse(stream, {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/event-stream; charset=utf-8',
+        'Cache-Control': 'no-cache, no-transform',
+        Connection: 'keep-alive',
+        'X-Accel-Buffering': 'no',
+      },
+    });
+    void (async () => {
+      const push = (event: Record<string, unknown>) => {
+        try { send(event); } catch { /* ক্লায়েন্ট চলে গেলে */ }
+      };
+      try {
+        if (hasKey) {
+          // SSRF গার্ড + মডেল-পরিচ্ছন্ন — non-streaming পথের সাথে একই নিয়ম
+          const safeBase = assertSafeBase(c!.baseUrl, originIsLocal);
+          if (!safeBase) {
+            push({ done: true, ok: false, error: 'Base URL not allowed', hintKey: 'ai.err.badUrl' });
+            return;
+          }
+          const cfg: AiProxyConfig = {
+            baseUrl: safeBase,
+            apiKey: c!.apiKey.trim(),
+            model: sanitizeModelId(c!.model),
+            provider: c!.provider,
+          };
+          if (!cfg.model) {
+            push({ done: true, ok: false, error: 'MODEL_EMPTY', hintKey: 'ai.err.config' });
+            return;
+          }
+          const { text, fixedModel, busyFallback } = await streamWithSelfHeal(cfg, body, (delta) => push({ delta }));
+          // উৎস কোনো delta-ই না দিয়ে শেষ হলে (কিছু প্রোভাইডার) পূর্ণ লেখাটাই এক delta হিসেবে
+          push({ done: true, ok: true, text, ...(fixedModel ? { fixedModel } : {}), ...(busyFallback ? { busyFallback } : {}) });
+        } else {
+          // ডেমো SDK স্ট্রিম অ্যাপিতে নেই — পূর্ণ উত্তর এক delta হিসেবে (ফলাফল একই)
+          const { text } = await callDemo(body);
+          push({ delta: text });
+          push({ done: true, ok: true, text, demo: true });
+        }
+      } catch (err) {
+        const e = err as Error & { status?: number };
+        const msg = e?.message ?? 'AI request failed';
+        const status = e?.status;
+        // ত্রুটি-মানচিত্র — non-streaming পথের সাথে হুবহু একই নিয়ম
+        let hintKey = 'ai.err.network';
+        if (msg === 'BASE_URL_EMPTY' || msg === 'MODEL_EMPTY') hintKey = 'ai.err.config';
+        else if (msg === 'EMPTY_RESPONSE' || msg.startsWith('EMPTY_RESPONSE:')) hintKey = 'ai.err.empty';
+        else if (msg === 'TIMEOUT_ERROR' || e?.name === 'TimeoutError' || e?.name === 'AbortError') hintKey = 'ai.err.timeout';
+        else if (status === 401 || status === 403 || status === 402) hintKey = 'ai.err.auth';
+        else if (status === 400) hintKey = isInvalidKeyMessage(msg) ? 'ai.err.auth' : 'ai.err.badRequest';
+        else if (status === 404) hintKey = 'ai.err.model';
+        else if (status === 429) hintKey = 'ai.err.rate';
+        else if (status === 503 || status === 529) hintKey = 'ai.err.busy';
+        else if (status && status >= 500) hintKey = 'ai.err.server';
+        push({ done: true, ok: false, error: msg, hintKey });
+      } finally {
+        close();
+      }
+    })();
+    return sse;
   }
 
   if (hasKey) {
