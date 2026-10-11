@@ -70,6 +70,15 @@ function expandHtml(html: string): string {
     el.setAttribute('style', css);
   });
 
+  // মাল্টি-কলাম — কাঁচা স্টোরেজ HTML-এ div-এ শুধু data-attrs থাকতে পারে
+  // (টেমপ্লেট-ইনসার্ট/এডিটর-সিঙ্ক-পূর্ব); কলাম-নিয়ম data থেকে ইনলাইন style বসাই
+  root.querySelectorAll('div.doc-columns').forEach((el) => {
+    const count = Math.min(4, Math.max(1, Math.round(Number(el.getAttribute('data-count')) || 2)));
+    const gap = Math.max(8, Math.round(Number(el.getAttribute('data-gap')) || 24));
+    const rule = el.getAttribute('data-rule') === '1';
+    el.setAttribute('style', `column-count:${count};column-gap:${gap}px;column-fill:balance;${rule ? 'column-rule:1px solid;' : ''}`);
+  });
+
   // ফুটনোট — অ্যাপের মতোই: CSS কাউন্টারে নম্বর দেখায়, title-এ পূর্ণ লেখা
   root.querySelectorAll('sup.footnote').forEach((el) => {
     const note = el.getAttribute('data-note') ?? '';
@@ -145,6 +154,11 @@ a { cursor: pointer; }
 .doc-textbox { position: relative; }
 .doc-textbox p { margin: 0.1em 0; }
 .mcq-block { border: 1.5px solid rgba(100,116,139,.4); border-radius: 12px; padding: 12px 16px; margin: 12px 0; }
+/* মাল্টি-কলাম লেআউট — কলাম-নিয়ম ইনলাইন style-এই থাকে; এখানে শুধু ঘর-সংস্কার */
+.doc-columns { margin: 12px 0; }
+.doc-columns > *:first-child { margin-top: 0; }
+.doc-columns > *:last-child { margin-bottom: 0; }
+.doc-columns > p { orphans: 2; widows: 2; }
 .mcq-tag { background: #4f46e5; color: #fff; font-size: .78em; padding: 2px 10px; border-radius: 999px; font-weight: 700; }
 .mcq-options { display: flex; flex-wrap: wrap; gap: 4px 28px; margin-top: 6px; }
 .mcq-answer { background: rgba(22,163,74,.14); padding: 0 6px; border-radius: 6px; }

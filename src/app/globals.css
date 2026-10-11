@@ -1294,6 +1294,23 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
 .callout-box:hover .callout-delete { opacity: 0.7; }
 .callout-content p { margin: 0.1em 0; }
 
+/* ─── মাল্টি-কলাম লেআউট (প্রশ্নপত্র/সংবাদপত্র ধাঁচ) ─── */
+
+.doc-columns {
+  margin: 0.55em 0;
+  column-fill: balance;
+}
+/* কলামের ভেতরের ব্লকগুলোর নিজস্ব মার্জিন কলামের শুরু/শেষে ফাঁকা লাইন তৈরি করে না */
+.doc-columns > *:first-child { margin-top: 0; }
+.doc-columns > *:last-child { margin-bottom: 0; }
+.doc-columns > p { orphans: 2; widows: 2; }
+.doc-columns > ul,
+.doc-columns > ol { orphans: 2; widows: 2; }
+/* এডিটরে হালকা নির্দেশক — হোভারে ড্যাশড রেখা; প্রিন্ট/স্ট্যাটিক/এক্সপোর্টে নেই (.ProseMirror-স্কোপড) */
+.ProseMirror .doc-columns { transition: outline-color 0.15s; outline: 1px dashed transparent; outline-offset: 8px; border-radius: 4px; }
+.ProseMirror .doc-columns:hover,
+.ProseMirror .doc-columns:focus-within { outline-color: color-mix(in srgb, currentColor 28%, transparent); }
+
 /* ─── MCQ ব্লক ─── */
 
 .mcq-block {

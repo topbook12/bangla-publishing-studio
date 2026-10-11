@@ -18,7 +18,7 @@
  * তাই এডিটর, প্রিন্ট, ফরমা, HTML/DOCX এক্সপোর্ট সব জায়গায় একই চেহারা ধরে রাখে।
  */
 
-import { buildCalloutHtml, buildDesignBoxHtml, buildTocHtml } from './nodes-html';
+import { buildCalloutHtml, buildColumnsHtml, buildDesignBoxHtml, buildTocHtml } from './nodes-html';
 
 export type TemplateCategory = 'title' | 'front' | 'toc' | 'author' | 'chapter' | 'special';
 
@@ -523,6 +523,59 @@ ${buildCalloutHtml('note', 'এই বই থেকে আরও', '<ul><li>এ�
 <p style="text-align:center"><span style="font-size:12pt; color:#292524; letter-spacing:3px"><strong>প্রকাশনীর নাম</strong></span></p>
 <p style="text-align:center"><span style="font-size:9pt; color:#78716c; letter-spacing:1px">ঠিকানা · ফোন · ওয়েবসাইট · ইমেইল</span></p>
 ${sp(2)}
+${TIP_NOTE}
+`.trim(),
+  },
+  {
+    id: 'exam-2col',
+    name: 'প্রশ্নপত্র (দুই কলাম)',
+    desc: 'পরীক্ষার প্রশ্নপত্র ধাঁচ — শিরোনাম-ব্যানার সহ প্রশ্নগুলো দুই কলামে, মাঝে রেখা; লেখা স্বয়ংক্রিয়ভাবে কলামে বয়ে যায়',
+    accent: '#334155',
+    category: 'special',
+    kind: 'preface',
+    html: `
+<p style="text-align:center"><span style="font-size:10pt; color:#475569; letter-spacing:1px">শিক্ষা প্রতিষ্ঠানের নাম · শাখা</span></p>
+<h1 style="text-align:center; color:#1e293b; letter-spacing:1px"><span style="font-size:22pt">ষষ্ঠ শ্রেণি গণিত মিট</span></h1>
+<p style="text-align:center"><span style="font-size:10pt; color:#64748b">সময়: ২ ঘণ্টা ৩০ মিনিট &nbsp;·&nbsp; পূর্ণমান: ১০০</span></p>
+<p style="text-align:center; margin-top:6px"><span style="background:#334155; color:#ffffff; padding:4px 56px; font-size:12pt; letter-spacing:3px; border-radius:3px"><strong>অতিসংক্ষিপ্ত প্রশ্ন</strong></span></p>
+${buildColumnsHtml({ count: 2, gap: 26, rule: true }, `
+<p><strong>১.</strong> একটি বর্গাকার বাগানের ক্ষেত্রফল ২৫৬০০ বর্গমিটার।</p>
+<p style="padding-left:1.5em">ক. প্রতিটি বাহের দৈর্ঘ্য কত?</p>
+<p style="padding-left:1.5em">খ. বাগানের চারপাশে বেড়া দিতে কত মিটার বেড়া লাগবে?</p>
+<p style="padding-left:1.5em">গ. প্রতি মিটার বেড়ার খরচ ৭৫ টাকা হলে মোট খরচ কত হবে?</p>
+<p><strong>২.</strong> একটি আয়তাকার মাঠের দৈর্ঘ্য অপেক্ষা প্রস্থ ২০ মিটার কম এবং মাঠটির ক্ষেত্রফল ৩০০০০ বর্গমিটার।</p>
+<p style="padding-left:1.5em">ক. মাঠটির প্রস্থ কত?</p>
+<p style="padding-left:1.5em">খ. মাঠটির চার কোণে খুঁট দিতে কত মিটার তার লাগবে?</p>
+<p><strong>৩.</strong> একটি বর্গাকার ঘরের মেঝে পাকা করতে ৪৮৪টি বর্গফুট কাঠের তক্তা লাগে। ঘরটির এক বাহের দৈর্ঘ্য কত ফুট?</p>
+<p><strong>৪.</strong> ২.৪ শতাংশ ক্ষেত্রফলকে বর্গমিটারে প্রকাশ কর।</p>
+<p><strong>৫.</strong> একটি ত্রিভুজাকৃতি পতাকার ভূমি ৫০ সে.মি. ও উচ্চতা ৪০ সে.মি.। পতাকাটির ক্ষেত্রফল কত?</p>
+<p><strong>৬.</strong> কোনো বর্গক্ষেত্রের কর্ণের দৈর্ঘ্য দিয়ে ক্ষেত্রফল নির্ণয়ের নিয়ম লিখুন।</p>
+<p><strong>৭.</strong> একটি সমবাহু ত্রিভুজের পরিসীমা ৩৬ সে.মি. হলে প্রতিটি বাহের দৈর্ঘ্য কত?</p>
+<p><strong>৮.</strong> আয়তাকার একটি খেলার মাঠের চারপাশে দৌড়ে এক পাক দিতে ৪০০ মিটার। প্রস্থ ৬০ মিটার হলে দৈর্ঘ্য কত?</p>
+`)}
+${TIP_NOTE}
+`.trim(),
+  },
+  {
+    id: 'magazine-3col',
+    name: 'ম্যাগাজিন পাতা (তিন কলাম)',
+    desc: 'স্কুল-ম্যাগাজিন/সংবাদপত্র ধাঁচ — মাস্টহেড শিরোনাম ও তিন কলাম লেখা; নিউজলেটার, দেয়াল-পত্রিকায়ও ব্যবহারযোগ্য',
+    accent: '#9f1239',
+    category: 'special',
+    kind: 'preface',
+    html: `
+<p style="text-align:center"><span style="font-size:9pt; color:#9f1239; letter-spacing:5px">বার্ষিক সংখ্যা · সংখ্যা ১</span></p>
+<h1 style="text-align:center; color:#9f1239; letter-spacing:2px"><span style="font-size:26pt">স্কুল ম্যাগাজিন</span></h1>
+<p style="text-align:center"><span style="font-size:9.5pt; color:#78716c; letter-spacing:2px">প্রকাশ: মাস · সাল — সম্পাদনা: শিক্ষার্থী প্রকাশনা দল</span></p>
+<hr class="fancy-divider" data-style="double" />
+<h2 style="color:#44403c">প্রধান প্রতিবেদনের শিরোনাম এখানে</h2>
+${buildColumnsHtml({ count: 3, gap: 22, rule: true }, `
+<p style="text-indent:1.5em"><em>প্রথম কলাম:</em> লেখার শুরু এখানে — প্রতিবেদনের ভূমিকা, ঘটনার সূত্রপাত। প্লেসহোল্ডার লেখা মুছে নিজের লেখা বসান; এক কলাম ভরে গেলে লেখা স্বয়ংক্রিয়ভাবে পরের কলামে বয়ে যাবে।</p>
+<p style="text-indent:1.5em">দ্বিতীয় অনুচ্ছেদ — বিস্তারিত বর্ণনা, উদ্ধৃতি ও পরিসংখ্যান। কলামের প্রস্থ ছোট বলে বাক্য ছোট রাখলে পড়া সহজ হয়।</p>
+<p style="text-indent:1.5em">তৃতীয় অনুচ্ছেদ — ঘটনার পরিণতি ও ভবিষ্যৎ পরিকল্পনা।</p>
+<p style="text-indent:1.5em">শেষ অনুচ্ছেদ — লেখকের পরিচয়: শ্রেণি, রোল।</p>
+`)}
+<p style="text-align:center"><span style="font-size:9pt; color:#a16207; letter-spacing:3px">❦ ────── ❖ ────── ❦</span></p>
 ${TIP_NOTE}
 `.trim(),
   },

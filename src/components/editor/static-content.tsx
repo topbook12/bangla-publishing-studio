@@ -299,6 +299,23 @@ function blockNodes(container: Element, keyPrefix: string): ReactNode[] {
               </div>
             </div>,
           );
+        } else if (el.classList.contains('doc-columns')) {
+          // মাল্টি-কলাম লেআউট — কাঁচা স্টোরেজ HTML-এ (টেমপ্লেট-ইনসার্ট/এডিটর-সিঙ্ক-পূর্ব)
+          // div-এ শুধু data-attrs থাকে, ইনলাইন style নয়; তাই কলাম-নিয়ম data থেকেই ডেরাইভ
+          const colCount = Math.min(4, Math.max(1, Math.round(Number(el.getAttribute('data-count')) || 2)));
+          const colGap = Math.max(8, Math.round(Number(el.getAttribute('data-gap')) || 24));
+          const colRule = el.getAttribute('data-rule') === '1';
+          const colCss: React.CSSProperties = {
+            columnCount: colCount,
+            columnGap: colGap,
+            columnFill: 'balance',
+            ...(colRule ? { columnRule: '1px solid currentColor' } : {}),
+          };
+          out.push(
+            <div key={key} className="doc-columns" style={colCss}>
+              {blockNodes(el, key)}
+            </div>,
+          );
         } else if (el.classList.contains('doc-textbox')) {
           const style = docBoxInlineStyle({
             variant: (el.getAttribute('data-variant') ?? 'rounded') as never,

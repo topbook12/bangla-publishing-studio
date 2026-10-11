@@ -96,6 +96,23 @@ export const dictLayout: Dict = {
   'lay.wm.colorAria': { bn: 'পানির ছাপের রং {name}', hi: 'वॉटरमार्क रंग {name}', en: 'Watermark color {name}' },
   'lay.wm.warn': { bn: 'ছাপটি প্রিন্ট ও ফরমা PDF-এও আসে — চূড়ান্ত PDF বানানোর আগে Watermark টগল বন্ধ করে নিন।', hi: 'छाप प्रिंट और फ़रमा PDF में भी आती है — अंतिम PDF बनाने से पहले वॉटरमार्क टॉगल बंद कर लें।', en: 'The watermark also appears in print and Farma PDFs — turn the Watermark toggle off before producing the final PDF.' },
 
+  // ─── মাল্টি-কলাম লেআউট (প্রশ্নপত্র/সংবাদপত্র) ───
+  'lay.group.columns': { bn: 'কলাম', hi: 'कॉलम', en: 'Columns' },
+  'lay.columns.label': { bn: 'কলাম লেআউট', hi: 'कॉलम लेआउट', en: 'Column Layout' },
+  'lay.columns.tip': { bn: 'নির্বাচিত অংশ দুই/তিন কলামে সাজান — প্রশ্নপত্র, সংবাদপত্র, শব্দ-তালিকার জন্য; লেখা এক কলাম ভরে গেলে পরের কলামে বয়ে যায়', hi: 'चयनित भाग को दो/तीन कॉलम में सजाएँ — प्रश्नपत्र, समाचार पत्र, शब्द-सूची के लिए; एक कॉलम भरने पर लेख अगले कॉलम में बह जाता है', en: 'Arrange the selection into 2/3 columns — for question papers, newsletters, word lists; text flows into the next column automatically' },
+  'lay.columns.one': { bn: '১ কলাম — সাধারণ', hi: '1 कॉलम — सामान्य', en: '1 Column — Normal' },
+  'lay.columns.two': { bn: '২ কলাম', hi: '2 कॉलम', en: '2 Columns' },
+  'lay.columns.three': { bn: '৩ কলাম', hi: '3 कॉलम', en: '3 Columns' },
+  'lay.columns.rule': { bn: 'মাঝের রেখা', hi: 'मध्य रेखा', en: 'Middle Rule Line' },
+  'lay.columns.rule.tip': { bn: 'কলামগুলোর মাঝে উল্লম্ব রেখা দিন/সরান', hi: 'कॉलमों के बीच ऊर्ध्वाधर रेखा जोड़ें/हटाएँ', en: 'Add/remove a vertical line between columns' },
+  'lay.columns.gapLabel': { bn: 'কলামের ফাঁক', hi: 'कॉलम अंतर', en: 'Column Gap' },
+  'lay.columns.gap.narrow': { bn: 'সরু', hi: 'तंग', en: 'Narrow' },
+  'lay.columns.gap.medium': { bn: 'মাঝারি', hi: 'मध्यम', en: 'Medium' },
+  'lay.columns.gap.wide': { bn: 'চওড়া', hi: 'चौड़ा', en: 'Wide' },
+  'lay.columns.hint': { bn: 'কার্সর কলামের ভেতরে থাকলে বদল সেখানেই বসে; না থাকলে কার্সরের অনুচ্ছেদ মুড়ে যায়', hi: 'कर्सर कॉलम के अंदर होने पर बदलाव वहीं लागू होता है; न होने पर कर्सर का अनुच्छेद मुड़ जाता है', en: 'With the cursor inside a column block the change applies there; otherwise the cursor’s paragraph gets wrapped' },
+  'lay.columns.off': { bn: 'কলাম সরানো হয়েছে — লেখা এক কলামে ফিরেছে', hi: 'कॉलम हटा दिए गए — लेख एक कॉलम में लौटा', en: 'Columns removed — text is back to one column' },
+  'lay.columns.off.none': { bn: 'কার্সর কোনো কলাম-ব্লকের ভেতরে নেই', hi: 'कर्सर किसी कॉलम-ब्लॉक के अंदर नहीं है', en: 'The cursor is not inside a column block' },
+
   // ─── কনটেন্ট ফ্লো ───
   'lay.flow.fill': { bn: 'ফাঁকা জায়গা পূরণ', hi: 'खाली जगह भरें', en: 'Fill Empty Space' },
   'lay.flow.fill.tip': { bn: 'নিচের পাতার লেখা/ছবি/টেবিল এই পাতার ফাঁকা জায়গায় তুলুন', hi: 'नीचे वाले पृष्ठ का टेक्स्ट/चित्र/तालिका इस पृष्ठ के खाली स्थान में उठा लें', en: 'Lift text/images/tables from the next page into empty space on this page' },

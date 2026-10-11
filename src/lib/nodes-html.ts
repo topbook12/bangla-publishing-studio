@@ -152,6 +152,39 @@ export function buildFootnoteHtml(note: string): string {
   return `<sup class="footnote" data-note="${escapeAttr(note)}"></sup>`;
 }
 
+// ─────────────────────── মাল্টি-কলাম লেআউট (প্রশ্নপত্র/সংবাদপত্র) ───────────────────────
+
+export const COLUMNS_COUNT_DEFAULT = 2;
+export const COLUMNS_GAP_DEFAULT = 24;
+/** গ্যাপ প্রিসেট — সরু / মাঝারি / চওড়া (px) */
+export const COLUMNS_GAP_PRESETS = { narrow: 16, medium: 24, wide: 40 } as const;
+export type ColumnsGapPreset = keyof typeof COLUMNS_GAP_PRESETS;
+
+export interface ColumnsAttrs {
+  /** ১–৪ (১ = সাধারণ এক কলাম — মোড়ক তুলে দেওয়া) */
+  count: number;
+  /** কলামের মাঝের ফাঁক (px) */
+  gap: number;
+  /** কলামের মাঝের উল্লম্ব রেখা */
+  rule: boolean;
+}
+
+/** কলাম ব্লকের ইনলাইন CSS — এডিটর রেন্ডার, স্ট্যাটিক প্রিভিউ, HTML/ফরমা এক্সপোর্ট সবাই এক হেল্পার */
+export function columnsStyleText(a: Partial<ColumnsAttrs>): string {
+  const count = Math.min(4, Math.max(1, Math.round(Number(a.count) || COLUMNS_COUNT_DEFAULT)));
+  const gap = Math.max(8, Math.round(Number(a.gap) || COLUMNS_GAP_DEFAULT));
+  const rule = a.rule === true;
+  return `column-count:${count};column-gap:${gap}px;column-fill:balance;${rule ? 'column-rule:1px solid currentColor;' : ''}`;
+}
+
+/** কলাম ব্লক HTML নির্মাণ (টেমপ্লেট/AI/insertContent-এর জন্য) */
+export function buildColumnsHtml(attrs: Partial<ColumnsAttrs>, contentHtml = '<p></p>'): string {
+  const count = Math.min(4, Math.max(1, Math.round(Number(attrs.count) || COLUMNS_COUNT_DEFAULT)));
+  const gap = Math.max(8, Math.round(Number(attrs.gap) || COLUMNS_GAP_DEFAULT));
+  const rule = attrs.rule === true ? ' data-rule="1"' : '';
+  return `<div class="doc-columns" data-count="${count}" data-gap="${gap}"${rule}>${contentHtml || '<p></p>'}</div>`;
+}
+
 /**
  * TOC ব্লক HTML — manual=true হলে data-manual="true" যুক্ত হয়:
  * ম্যানুয়াল সূচি স্বয়ংক্রিয় স্ক্যান-ইঞ্জিন (useAutoToc) আর কখনো ওভাররাইট করবে না।

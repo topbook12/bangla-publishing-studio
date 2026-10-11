@@ -1,19 +1,21 @@
 /**
- * Layout tab — paper size, margins, paper color, page border, default typography,
- * content flow (ফাঁকা জায়গা পূরণ / স্মার্ট ফ্লো / ফাঁকা পাতা পরিষ্কার)
+ * Layout tab — paper size, margins, paper color, page border, multi-column layout,
+ * default typography, content flow (ফাঁকা জায়গা পূরণ / স্মার্ট ফ্লো / ফাঁকা পাতা পরিষ্কার)
  */
 
 'use client';
 
 import { Fragment } from 'react';
-import { ArrowUpToLine, Droplet, Eraser, SlidersHorizontal, SwatchBook, Wand2 } from 'lucide-react';
+import { ArrowUpToLine, Columns2, Columns3, Droplet, Eraser, SlidersHorizontal, SwatchBook, Wand2 } from 'lucide-react';
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Slider } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
-import { RibbonButton, RibbonDivider, RibbonGroup } from './ribbon-shell';
+import {
+  RibbonButton, RibbonDivider, RibbonGroup, refocusActiveEditor, runCommand, useActiveEditor,
+} from './ribbon-shell';
 import { useEditorStore } from '@/lib/store';
 import { getEditor } from '@/lib/editor-registry';
 import {
@@ -24,6 +26,7 @@ import {
   effectivePageBorderStyle, effectivePageBorderWidth, FONT_OPTIONS, fontStackOf, MARGIN_PRESETS,
   PAGE_BORDER_WIDTH_PX, PAPER_PRESETS,
 } from '@/lib/paper';
+import { COLUMNS_GAP_PRESETS, type ColumnsAttrs } from '@/lib/nodes-html';
 import { tFmt, useFmtNum, useLangStore, useT } from '@/lib/i18n';
 import type { DocumentSettings, Margins, PageBorderStyle, PageBorderWidth, PaperColor, WatermarkSettings } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -109,6 +112,30 @@ export function LayoutTab() {
   const lang = useLangStore((s) => s.lang);
 
   const setMargins = (patch: Partial<Margins>) => update({ margins: { ...settings.margins, ...patch } });
+
+  // ── মাল্টি-কলাম লেআউট (প্রশ্নপত্র/সংবাদপত্র) — কার্সর কলামের ভেতরে থাকলে
+  // বদল সেখানেই বসে, নইলে কার্সরের অনুচ্ছেদ নতুন কলাম-ব্লকে মুড়ে যায় ──
+  const ed = useActiveEditor();
+  const inColumns = (() => {
+    if (!ed || ed.isDestroyed) return false;
+    try { return ed.isActive('columns'); } catch { return false; }
+  })();
+  const colAttrs = (inColumns ? ed?.getAttributes('columns') : null) as Partial<ColumnsAttrs> | null | undefined;
+  const colCount = Math.max(1, Math.min(4, Math.round(Number(colAttrs?.count)) || 2));
+  const colGap = Math.round(Number(colAttrs?.gap)) || 24;
+  const colRule = colAttrs?.rule === true;
+
+  const applyColumns = (patch: Partial<ColumnsAttrs>) => {
+    runCommand((e) => e.chain().focus().setColumns(patch).run());
+  };
+  const removeColumns = () => {
+    if (!inColumns) {
+      toast.info(tt('lay.columns.off.none'));
+      return;
+    }
+    runCommand((e) => e.chain().focus().unsetColumns().run());
+    toast.success(tt('lay.columns.off'));
+  };
 
   // পুরনো ডকুমেন্টে pageBorderStyle/pageBorderWidth না থাকলে pageBorder কাইন্ড থেকে ডেরাইভ
   const borderStyle = effectivePageBorderStyle(settings);
@@ -359,6 +386,51 @@ export function LayoutTab() {
               onChange={(e) => update({ pageBorderColor: e.target.value })}
             />
           </div>
+        </div>
+      </RibbonGroup>
+      <RibbonDivider />
+      <RibbonGroup label={tt('lay.group.columns')} accent="columns layout">
+        <div className="flex flex-col gap-1">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button type="button" className="ribbon-select w-44" title={tt('lay.columns.tip')}>
+                {inColumns ? <Columns3 size={13} /> : <Columns2 size={13} />}{' '}
+                {inColumns ? tt(colCount >= 3 ? 'lay.columns.three' : 'lay.columns.two') : tt('lay.columns.label')}
+                <span aria-hidden="true">▾</span>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-64" onCloseAutoFocus={(e) => { e.preventDefault(); refocusActiveEditor(); }}>
+              <DropdownMenuItem onClick={() => applyColumns({ count: 2 })}>
+                <Columns2 size={14} aria-hidden="true" />
+                <span className={cn(inColumns && colCount === 2 && 'font-bold')}>{tt('lay.columns.two')}</span>
+                {inColumns && colCount === 2 && <span className="ml-auto font-bold">✓</span>}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => applyColumns({ count: 3 })}>
+                <Columns3 size={14} aria-hidden="true" />
+                <span className={cn(inColumns && colCount === 3 && 'font-bold')}>{tt('lay.columns.three')}</span>
+                {inColumns && colCount === 3 && <span className="ml-auto font-bold">✓</span>}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={removeColumns}>{tt('lay.columns.one')}</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => applyColumns({ rule: !colRule })}>
+                <span aria-hidden="true">{colRule ? '☑' : '☐'}</span>
+                <span className={cn(colRule && 'font-bold')}>{tt('lay.columns.rule')}</span>
+                <span className="ml-auto text-[10px] text-muted-foreground">{tt('lay.columns.rule.tip')}</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem disabled className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                {tt('lay.columns.gapLabel')}
+              </DropdownMenuItem>
+              {(Object.entries(COLUMNS_GAP_PRESETS) as Array<[string, number]>).map(([id, px]) => (
+                <DropdownMenuItem key={id} onClick={() => applyColumns({ gap: px })}>
+                  <span className={cn(inColumns && colGap === px && 'font-bold')}>{tt(`lay.columns.gap.${id}`)}</span>
+                  <span className="ml-auto text-[10px] text-muted-foreground">{fnum(px)}px</span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <p className="px-1 text-[10px] leading-snug text-muted-foreground">{tt('lay.columns.hint')}</p>
         </div>
       </RibbonGroup>
       <RibbonDivider />

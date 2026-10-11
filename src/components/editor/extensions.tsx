@@ -1,6 +1,6 @@
 /**
  * TipTap কাস্টম এক্সটেনশন — একাডেমিক কলআউট বক্স, MCQ ব্লক, ফুটনোট,
- * আলংকারিক ডিভাইডার, সূচিপত্র ব্লক ও লাইন-হাইট।
+ * আলংকারিক ডিভাইডার, সূচিপত্র ব্লক, মাল্টি-কলাম লেআউট ও লাইন-হাইট।
  *
  * স্টোরেজ কনট্রাক্ট (src/lib/nodes-html.ts এর সাথে মিলিয়ে দেখুন):
  *  - calloutBox:  <div class="callout-box" data-variant data-title> [content] </div>
@@ -8,19 +8,29 @@
  *  - footnote:    <sup class="footnote" data-note></sup>
  *  - fancyDivider:<hr class="fancy-divider" data-style />
  *  - tocBlock:    <div class="toc-block" data-title data-entries data-manual></div>
+ *  - columns:     <div class="doc-columns" data-count data-gap data-rule> [content] </div>
  */
 
 'use client';
 
 import { Node, Extension, mergeAttributes, type CommandProps } from '@tiptap/core';
 import { ReactNodeViewRenderer, NodeViewWrapper, NodeViewContent, type NodeViewProps } from '@tiptap/react';
+import { liftTarget } from 'prosemirror-transform';
 import { useState } from 'react';
 import { AlertTriangle, BookOpen, ChevronDown, ChevronUp, Lightbulb, Pencil, Pin, Plus, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { t, tFmt, useT } from '@/lib/i18n';
-import { parseMcqData, type DividerStyle, type McqData } from '@/lib/nodes-html';
+import {
+  COLUMNS_COUNT_DEFAULT,
+  COLUMNS_GAP_DEFAULT,
+  columnsStyleText,
+  parseMcqData,
+  type ColumnsAttrs,
+  type DividerStyle,
+  type McqData,
+} from '@/lib/nodes-html';
 
 // ─────────────────────────── কলআউট বক্স ───────────────────────────
 
@@ -620,6 +630,119 @@ declare module '@tiptap/core' {
   }
 }
 
+// ─────────────────────────── মাল্টি-কলাম লেআউট ───────────────────────────
+
+/**
+ * প্রশ্নপত্র/সংবাদপত্র ধাঁচের মাল্টি-কলাম লেআউট — CSS multi-column দিয়ে:
+ * লেখা এক কলাম ভরে গেলে স্বয়ংক্রিয়ভাবে পরের কলামে বয়ে যায় (MS Word-এর Columns-এর মতো)।
+ * মোড়কটি সাধারণ renderHTML div (NodeView নয়) — নেটিভ DOM-এ কার্সর/সিলেকশন/ইমিতে
+ * সবচেয়ে নির্ভরযোগ্য। স্টোরেজ কনট্র্যাক্ট:
+ *   <div class="doc-columns" data-count data-gap data-rule> [block+] </div>
+ */
+export const Columns = Node.create({
+  name: 'columns',
+  group: 'block',
+  content: 'block+',
+  defining: true,
+
+  addAttributes() {
+    return {
+      count: {
+        default: COLUMNS_COUNT_DEFAULT,
+        parseHTML: (el) => Math.min(4, Math.max(1, Math.round(Number(el.getAttribute('data-count')) || COLUMNS_COUNT_DEFAULT))),
+        renderHTML: (attrs) => ({ 'data-count': String(Math.round(Number(attrs.count) || COLUMNS_COUNT_DEFAULT)) }),
+      },
+      gap: {
+        default: COLUMNS_GAP_DEFAULT,
+        parseHTML: (el) => Math.max(8, Math.round(Number(el.getAttribute('data-gap')) || COLUMNS_GAP_DEFAULT)),
+        renderHTML: (attrs) => ({ 'data-gap': String(Math.round(Number(attrs.gap) || COLUMNS_GAP_DEFAULT)) }),
+      },
+      rule: {
+        default: false,
+        parseHTML: (el) => el.getAttribute('data-rule') === '1',
+        renderHTML: (attrs) => ({ 'data-rule': attrs.rule ? '1' : '0' }),
+      },
+    };
+  },
+
+  parseHTML() {
+    return [{ tag: 'div.doc-columns' }];
+  },
+
+  renderHTML({ node, HTMLAttributes }) {
+    return ['div', mergeAttributes(HTMLAttributes, {
+      class: 'doc-columns',
+      style: columnsStyleText(node.attrs as Partial<ColumnsAttrs>),
+    }), 0];
+  },
+
+  addCommands() {
+    return {
+      setColumns:
+        (attrs?: Partial<ColumnsAttrs>) =>
+        ({ state, commands }: CommandProps) => {
+          // ইতিমধ্যে কলাম-ব্লকের ভেতরে থাকলে নতুন মোড়ক না দিয়ে বর্তমানটির অ্যাট্রিবিউট বদলাই —
+          // নইলে কলামের ভেতরে আরেকটা কলাম বসে যেত (নেস্টিং বিশৃঙ্খলা)
+          let inside = false;
+          for (let d = state.selection.$from.depth; d > 0; d--) {
+            if (state.selection.$from.node(d).type.name === this.name) { inside = true; break; }
+          }
+          if (inside) return commands.updateAttributes(this.name, attrs ?? {});
+          return commands.wrapIn(this.name, {
+            count: attrs?.count ?? COLUMNS_COUNT_DEFAULT,
+            gap: attrs?.gap ?? COLUMNS_GAP_DEFAULT,
+            rule: attrs?.rule ?? false,
+          });
+        },
+      updateColumns:
+        (attrs: Partial<ColumnsAttrs>) =>
+        ({ commands }: CommandProps) =>
+          commands.updateAttributes(this.name, attrs),
+      unsetColumns:
+        () =>
+        ({ state, dispatch }: CommandProps) => {
+          // Word-এর Columns → One-এর মতো পুরো মোড়ক গুলিয়ে যায় — সব কনটেন্ট এক
+          // কলামে ফেরে। ProseMirror-এর ধাপে-ধাপে lift শুধু কার্সরের ব্লকটা তুলত,
+          // তাই এখানে মোড়কের পুরো ভেতর-রেঞ্জ ধরে liftTarget দিয়ে একবারে খোলা হয়।
+          const { $from, from } = state.selection;
+          let depth = -1;
+          for (let d = $from.depth; d > 0; d--) {
+            if ($from.node(d).type.name === this.name) { depth = d; break; }
+          }
+          let innerFrom: number;
+          let innerTo: number;
+          if (depth > 0) {
+            // কার্সর কলাম-ব্লকের ভেতরে — মোড়কের পুরো কনটেন্ট-রেঞ্জ
+            innerFrom = $from.start(depth);
+            innerTo = $from.end(depth);
+          } else {
+            // NodeSelection — কলাম-নোড নিজেই নির্বাচিত হতে পারে
+            const nodeAfter = state.doc.resolve(from).nodeAfter;
+            if (!nodeAfter || nodeAfter.type.name !== this.name) return false;
+            innerFrom = from + 1;
+            innerTo = from + nodeAfter.nodeSize - 1;
+          }
+          const range = state.doc.resolve(innerFrom).blockRange(state.doc.resolve(innerTo));
+          if (!range) return false;
+          const target = liftTarget(range);
+          if (target == null) return false;
+          if (dispatch) dispatch(state.tr.lift(range, target));
+          return true;
+        },
+    };
+  },
+});
+
+declare module '@tiptap/core' {
+  interface Commands<ReturnType> {
+    columns: {
+      setColumns: (attrs?: Partial<ColumnsAttrs>) => ReturnType;
+      updateColumns: (attrs: Partial<ColumnsAttrs>) => ReturnType;
+      unsetColumns: () => ReturnType;
+    };
+  }
+}
+
 // ─────────────────────────── লাইন-হাইট ───────────────────────────
 
 export const LineHeight = Extension.create({
@@ -719,6 +842,36 @@ declare module '@tiptap/core' {
     };
   }
 }
+
+// ─────────────────────────── অক্ষর-পটভূমি (span background) ───────────────────────────
+
+/**
+ * span-এর background-color — TextStyle মার্কে গ্লোবাল অ্যাট্রিবিউট।
+ * TipTap-এর ডিফল্ট TextStyle শুধু font-size/color/family বোঝে, তাই টেমপ্লেট/পেস্ট
+ * থেকে আসা <span style="background:#334155"> ব্যানারের পটভূমি নীরবে হারিয়ে
+ * সাদা-লেখা অদৃশ্য হয়ে যেত। এখন রাউন্ড-ট্রিপে (স্টোরেজ→এডিটর→স্ট্যাটিক→এক্সপোর্ট) টিকে থাকে।
+ */
+export const CharShading = Extension.create({
+  name: 'charShading',
+
+  addGlobalAttributes() {
+    return [
+      {
+        types: ['textStyle'],
+        attributes: {
+          background: {
+            default: null,
+            parseHTML: (el) => el.style.backgroundColor || null,
+            renderHTML: (attrs) => {
+              const v = (attrs as { background?: string | null }).background;
+              return v ? { style: `background-color: ${v}` } : {};
+            },
+          },
+        },
+      },
+    ];
+  },
+});
 
 // ─────────────────────────── অ্যাডভান্সড টাইপোগ্রাফি ───────────────────────────
 
@@ -924,4 +1077,4 @@ declare module '@tiptap/core' {
 
 // ─────────────────────────── সব একসাথে ───────────────────────────
 
-export const customExtensions = [CalloutBox, McqBlock, Footnote, FancyDivider, TocBlock, LineHeight, FontSize, AdvancedTypography];
+export const customExtensions = [CalloutBox, McqBlock, Footnote, FancyDivider, TocBlock, Columns, LineHeight, FontSize, CharShading, AdvancedTypography];
