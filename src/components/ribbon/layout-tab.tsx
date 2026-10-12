@@ -5,14 +5,18 @@
 
 'use client';
 
-import { Fragment } from 'react';
-import { ArrowUpToLine, Columns2, Columns3, Droplet, Eraser, SlidersHorizontal, SwatchBook, Wand2 } from 'lucide-react';
+import { Fragment, useState } from 'react';
+import {
+  ArrowUpToLine, Ban, Check, Columns2, Columns3, Droplet, Eraser, MoveDown, SlidersHorizontal, SwatchBook, Wand2,
+} from 'lucide-react';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Slider } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { Button } from '@/components/ui/button';
 import {
   RibbonButton, RibbonDivider, RibbonGroup, refocusActiveEditor, runCommand, useActiveEditor,
 } from './ribbon-shell';
@@ -26,7 +30,13 @@ import {
   effectivePageBorderStyle, effectivePageBorderWidth, FONT_OPTIONS, fontStackOf, MARGIN_PRESETS,
   PAGE_BORDER_WIDTH_PX, PAPER_PRESETS,
 } from '@/lib/paper';
-import { COLUMNS_GAP_PRESETS, type ColumnsAttrs } from '@/lib/nodes-html';
+import {
+  COLUMNS_GAP_PRESETS,
+  COLUMNS_RULE_WIDTH,
+  type ColumnsAttrs,
+  type ColumnsFill,
+  type ColumnsRuleStyle,
+} from '@/lib/nodes-html';
 import { tFmt, useFmtNum, useLangStore, useT } from '@/lib/i18n';
 import type { DocumentSettings, Margins, PageBorderStyle, PageBorderWidth, PaperColor, WatermarkSettings } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -104,6 +114,57 @@ const WATERMARK_DEFAULTS: WatermarkSettings = {
   enabled: false, text: 'খসড়া', opacity: 0.12, angle: -30, fontSize: 64, color: '#64748b',
 };
 
+// ─── মাল্টি-কলাম: প্রিমিয়াম পপওভারের মিনি-প্রিভিউ ও প্রিসেট ───
+
+/** এক-ঝলকে কলাম-স্টাইল বোঝাতে ছোট পাতার প্রিভিউ — n কলাম, ফাঁক, রেখা, জুড়ে-বসা প্রথম ব্লক */
+function ColMini({ n, gap = 6, rule = false, ruleStyle = 'solid', spanFirst = false, bars = 3 }: {
+  n: number; gap?: number; rule?: boolean; ruleStyle?: ColumnsRuleStyle; spanFirst?: boolean; bars?: number;
+}) {
+  const safeN = Math.min(4, Math.max(1, Math.round(n) || 1));
+  const halfGap = Math.max(1.5, Math.min(6, gap / 4));
+  const ruleBorder = rule ? `${COLUMNS_RULE_WIDTH[ruleStyle] ?? 1}px ${ruleStyle} color-mix(in srgb, currentColor 55%, transparent)` : undefined;
+  return (
+    <div className="flex h-9 w-full flex-col overflow-hidden rounded-[3px] border border-border/80 bg-background p-1" aria-hidden="true">
+      {spanFirst && <span className="mb-[3px] h-[3px] w-[88%] shrink-0 rounded-full bg-foreground/25" />}
+      <div className="flex min-h-0 flex-1">
+        {Array.from({ length: safeN }, (_, i) => (
+          <div
+            key={i}
+            className="flex min-w-0 flex-1 flex-col gap-[2.5px] overflow-hidden"
+            style={{
+              marginLeft: i === 0 ? 0 : halfGap,
+              marginRight: i === safeN - 1 ? 0 : halfGap,
+              borderLeft: i > 0 && rule ? ruleBorder : undefined,
+              paddingLeft: i > 0 && rule ? Math.max(2, halfGap) : undefined,
+            }}
+          >
+            {[0, 1, 2].slice(0, bars).map((r) => (
+              <span key={r} className="shrink-0 rounded-full bg-foreground/20" style={{ height: 2.5, width: `${[92, 72, 84][r]}%` }} />
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** রেখার ধরন বাছাই-চিপের নমুনা রেখা */
+function RuleSample({ style }: { style: ColumnsRuleStyle | 'none' }) {
+  if (style === 'none') return <Ban size={13} aria-hidden="true" className="text-muted-foreground" />;
+  const w = COLUMNS_RULE_WIDTH[style] ?? 1;
+  return <span aria-hidden="true" className="block h-0 w-5" style={{ borderTop: `${w}px ${style} currentColor` }} />;
+}
+
+/** ওয়ান-ক্লিক প্রিসেট — প্রশ্নপত্র / সংবাদপত্র / সাময়িকী / তালিকা */
+const COLUMN_PRESETS: Array<{ id: string; attrs: ColumnsAttrs }> = [
+  { id: 'qpaper', attrs: { count: 2, gap: 16, rule: true, ruleStyle: 'solid', fill: 'balance', firstSpan: false } },
+  { id: 'news', attrs: { count: 3, gap: 24, rule: true, ruleStyle: 'solid', fill: 'balance', firstSpan: false } },
+  { id: 'mag', attrs: { count: 3, gap: 40, rule: false, ruleStyle: 'solid', fill: 'balance', firstSpan: true } },
+  { id: 'dict', attrs: { count: 2, gap: 16, rule: false, ruleStyle: 'solid', fill: 'balance', firstSpan: false } },
+];
+
+const COLUMN_RULE_STYLES: ColumnsRuleStyle[] = ['solid', 'double', 'dashed', 'dotted'];
+
 export function LayoutTab() {
   const settings = useEditorStore((s) => s.settings);
   const update = useEditorStore((s) => s.updateSettings);
@@ -124,6 +185,12 @@ export function LayoutTab() {
   const colCount = Math.max(1, Math.min(4, Math.round(Number(colAttrs?.count)) || 2));
   const colGap = Math.round(Number(colAttrs?.gap)) || 24;
   const colRule = colAttrs?.rule === true;
+  const colRuleStyle = ((): ColumnsRuleStyle => {
+    const raw = colAttrs?.ruleStyle;
+    return raw === 'double' || raw === 'dashed' || raw === 'dotted' ? raw : 'solid';
+  })();
+  const colFill: ColumnsFill = colAttrs?.fill === 'start' ? 'start' : 'balance';
+  const colFirstSpan = colAttrs?.firstSpan === true;
 
   const applyColumns = (patch: Partial<ColumnsAttrs>) => {
     runCommand((e) => e.chain().focus().setColumns(patch).run());
@@ -136,6 +203,18 @@ export function LayoutTab() {
     runCommand((e) => e.chain().focus().unsetColumns().run());
     toast.success(tt('lay.columns.off'));
   };
+  const insertColBreak = () => {
+    if (!inColumns) {
+      toast.info(tt('lay.columns.break.outside'));
+      return;
+    }
+    runCommand((e) => e.chain().focus().insertColumnBreak().run());
+    toast.success(tt('lay.columns.break.toast'));
+  };
+
+  // গ্যাপ স্লাইডার — টেনে আনার সময় শুধু দেখায়, ছাড়ার সময় (commit) আসল বদল বসে
+  const [gapDraft, setGapDraft] = useState<number | null>(null);
+  const gapShown = gapDraft ?? colGap;
 
   // পুরনো ডকুমেন্টে pageBorderStyle/pageBorderWidth না থাকলে pageBorder কাইন্ড থেকে ডেরাইভ
   const borderStyle = effectivePageBorderStyle(settings);
@@ -391,46 +470,190 @@ export function LayoutTab() {
       <RibbonDivider />
       <RibbonGroup label={tt('lay.group.columns')} accent="columns layout">
         <div className="flex flex-col gap-1">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button type="button" className="ribbon-select w-44" title={tt('lay.columns.tip')}>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button type="button" className="ribbon-select w-48" title={tt('lay.columns.tip')}>
                 {inColumns ? <Columns3 size={13} /> : <Columns2 size={13} />}{' '}
-                {inColumns ? tt(colCount >= 3 ? 'lay.columns.three' : 'lay.columns.two') : tt('lay.columns.label')}
+                {inColumns ? tFmt('lay.columns.countN', { n: fnum(colCount) }) : tt('lay.columns.label')}
                 <span aria-hidden="true">▾</span>
               </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-64" onCloseAutoFocus={(e) => { e.preventDefault(); refocusActiveEditor(); }}>
-              <DropdownMenuItem onClick={() => applyColumns({ count: 2 })}>
-                <Columns2 size={14} aria-hidden="true" />
-                <span className={cn(inColumns && colCount === 2 && 'font-bold')}>{tt('lay.columns.two')}</span>
-                {inColumns && colCount === 2 && <span className="ml-auto font-bold">✓</span>}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => applyColumns({ count: 3 })}>
-                <Columns3 size={14} aria-hidden="true" />
-                <span className={cn(inColumns && colCount === 3 && 'font-bold')}>{tt('lay.columns.three')}</span>
-                {inColumns && colCount === 3 && <span className="ml-auto font-bold">✓</span>}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={removeColumns}>{tt('lay.columns.one')}</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => applyColumns({ rule: !colRule })}>
-                <span aria-hidden="true">{colRule ? '☑' : '☐'}</span>
-                <span className={cn(colRule && 'font-bold')}>{tt('lay.columns.rule')}</span>
-                <span className="ml-auto text-[10px] text-muted-foreground">{tt('lay.columns.rule.tip')}</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem disabled className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                {tt('lay.columns.gapLabel')}
-              </DropdownMenuItem>
-              {(Object.entries(COLUMNS_GAP_PRESETS) as Array<[string, number]>).map(([id, px]) => (
-                <DropdownMenuItem key={id} onClick={() => applyColumns({ gap: px })}>
-                  <span className={cn(inColumns && colGap === px && 'font-bold')}>{tt(`lay.columns.gap.${id}`)}</span>
-                  <span className="ml-auto text-[10px] text-muted-foreground">{fnum(px)}px</span>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <p className="px-1 text-[10px] leading-snug text-muted-foreground">{tt('lay.columns.hint')}</p>
+            </PopoverTrigger>
+            <PopoverContent
+              align="start"
+              collisionPadding={8}
+              className="max-h-[calc(100vh-9rem)] w-[324px] space-y-3 overflow-y-auto p-3"
+              // কন্ট্রোল চাপলে runCommand এডিটরে ফোকাস ফেরত পাঠায় — সেটায় পপওভার বন্ধ
+              // হয়ে যেত; প্রিমিয়াম অভিজ্ঞতায় প্যানেল খোলা থেকে যায়, বাইরে ক্লিক/Escape-এই বন্ধ
+              onFocusOutside={(e) => e.preventDefault()}
+              onCloseAutoFocus={(e) => { e.preventDefault(); refocusActiveEditor(); }}
+            >
+              {/* ওয়ান-ক্লিক প্রিসেট */}
+              <div>
+                <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{tt('lay.columns.presets')}</p>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {COLUMN_PRESETS.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      title={tt(`lay.columns.preset.${p.id}`)}
+                      aria-label={tt(`lay.columns.preset.${p.id}`)}
+                      className="group flex flex-col items-center gap-1 rounded-md border border-border bg-background p-1.5 transition-all hover:-translate-y-px hover:border-primary hover:shadow-sm"
+                      onClick={() => applyColumns(p.attrs)}
+                    >
+                      <ColMini n={p.attrs.count} gap={p.attrs.gap} rule={p.attrs.rule} ruleStyle={p.attrs.ruleStyle} spanFirst={p.attrs.firstSpan} bars={2} />
+                      <span className="w-full truncate text-center text-[10px] leading-none">{tt(`lay.columns.preset.${p.id}`)}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* কলাম সংখ্যা */}
+              <div>
+                <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{tt('lay.columns.layoutLabel')}</p>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {[2, 3, 4].map((n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      aria-pressed={inColumns && colCount === n}
+                      className={cn(
+                        'flex flex-col items-center gap-1 rounded-md border p-1.5 transition-all hover:-translate-y-px hover:shadow-sm',
+                        inColumns && colCount === n
+                          ? 'border-primary bg-primary/5 shadow-sm ring-1 ring-primary'
+                          : 'border-border bg-background hover:border-primary',
+                      )}
+                      onClick={() => applyColumns({ count: n })}
+                    >
+                      <ColMini n={n} gap={gapShown} rule={colRule} ruleStyle={colRuleStyle} spanFirst={colFirstSpan} />
+                      <span className="flex items-center gap-1 text-[10px] leading-none">
+                        {tFmt('lay.columns.countN', { n: fnum(n) })}
+                        {inColumns && colCount === n && <Check size={10} className="text-primary" aria-hidden="true" />}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* কলামের ফাঁক — প্রিসেট + সূক্ষ্ম স্লাইডার */}
+              <div>
+                <div className="mb-1.5 flex items-center justify-between">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{tt('lay.columns.gapLabel')}</p>
+                  <span className="tabular-nums text-[10px] text-muted-foreground">{fnum(gapShown)}px</span>
+                </div>
+                <div className="mb-2 grid grid-cols-3 gap-1.5">
+                  {(Object.entries(COLUMNS_GAP_PRESETS) as Array<[string, number]>).map(([id, px]) => (
+                    <button
+                      key={id}
+                      type="button"
+                      aria-pressed={colGap === px}
+                      className={cn(
+                        'rounded-md border px-1 py-1 text-[11px] transition-colors',
+                        colGap === px ? 'border-primary bg-primary/5 font-semibold text-primary' : 'border-border bg-background hover:border-primary',
+                      )}
+                      onClick={() => { setGapDraft(null); applyColumns({ gap: px }); }}
+                    >
+                      {tt(`lay.columns.gap.${id}`)}
+                    </button>
+                  ))}
+                </div>
+                <Slider
+                  value={[gapShown]}
+                  min={8}
+                  max={64}
+                  step={2}
+                  aria-label={tt('lay.columns.gapLabel')}
+                  onValueChange={(v) => setGapDraft(v[0] ?? gapShown)}
+                  onValueCommit={(v) => { setGapDraft(null); if (v[0] != null && v[0] !== colGap) applyColumns({ gap: v[0] }); }}
+                />
+              </div>
+
+              {/* মাঝের রেখা — ধরনসহ */}
+              <div>
+                <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{tt('lay.columns.ruleStyleLabel')}</p>
+                <div className="grid grid-cols-5 gap-1.5">
+                  <button
+                    type="button"
+                    aria-pressed={!colRule}
+                    title={tt('lay.columns.ruleStyle.none')}
+                    className={cn(
+                      'flex flex-col items-center gap-1 rounded-md border px-1 py-1.5 transition-colors',
+                      !colRule ? 'border-primary bg-primary/5 text-primary' : 'border-border bg-background hover:border-primary',
+                    )}
+                    onClick={() => applyColumns({ rule: false })}
+                  >
+                    <RuleSample style="none" />
+                    <span className="text-[10px] leading-none">{tt('lay.columns.ruleStyle.none')}</span>
+                  </button>
+                  {COLUMN_RULE_STYLES.map((st) => (
+                    <button
+                      key={st}
+                      type="button"
+                      aria-pressed={colRule && colRuleStyle === st}
+                      title={tt(`lay.columns.ruleStyle.${st}`)}
+                      className={cn(
+                        'flex flex-col items-center gap-1 rounded-md border px-1 py-1.5 transition-colors',
+                        colRule && colRuleStyle === st ? 'border-primary bg-primary/5 text-primary' : 'border-border bg-background hover:border-primary',
+                      )}
+                      onClick={() => applyColumns({ rule: true, ruleStyle: st })}
+                    >
+                      <RuleSample style={st} />
+                      <span className="text-[10px] leading-none">{tt(`lay.columns.ruleStyle.${st}`)}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* ভরাট ধরন */}
+              <div>
+                <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{tt('lay.columns.fillLabel')}</p>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {(['balance', 'start'] as ColumnsFill[]).map((f) => (
+                    <button
+                      key={f}
+                      type="button"
+                      aria-pressed={colFill === f}
+                      className={cn(
+                        'rounded-md border px-2 py-1.5 text-left transition-colors',
+                        colFill === f ? 'border-primary bg-primary/5' : 'border-border bg-background hover:border-primary',
+                      )}
+                      onClick={() => applyColumns({ fill: f })}
+                    >
+                      <span className="block text-[11px] font-semibold leading-tight">{tt(`lay.columns.fill.${f}`)}</span>
+                      <span className="block text-[10px] leading-snug text-muted-foreground">{tt(`lay.columns.fill.${f}.desc`)}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* প্রথম ব্লক সব কলাম জুড়ে */}
+              <label className="flex items-start gap-2.5 rounded-md border border-border bg-background p-2">
+                <Switch
+                  checked={colFirstSpan}
+                  onCheckedChange={(v) => applyColumns({ firstSpan: v })}
+                  aria-label={tt('lay.columns.firstSpan')}
+                  className="mt-0.5"
+                />
+                <span className="flex flex-col gap-0.5">
+                  <span className="text-[11px] font-semibold leading-tight">{tt('lay.columns.firstSpan')}</span>
+                  <span className="text-[10px] leading-snug text-muted-foreground">{tt('lay.columns.firstSpan.desc')}</span>
+                </span>
+              </label>
+
+              {/* কলাম ব্রেক + সরান */}
+              <div className="flex items-center gap-1.5 border-t border-border pt-2.5">
+                <Button type="button" variant="secondary" size="sm" className="h-7 flex-1 text-[11px]" title={tt('lay.columns.breakTip')} onClick={insertColBreak}>
+                  <MoveDown size={12} aria-hidden="true" />
+                  {tt('lay.columns.breakBtn')}
+                  <kbd className="ml-1 rounded border border-border bg-muted px-1 font-sans text-[9px] text-muted-foreground">Ctrl+⇧+↵</kbd>
+                </Button>
+                <Button type="button" variant="ghost" size="sm" className="h-7 text-[11px] text-destructive hover:text-destructive" onClick={removeColumns}>
+                  {tt('lay.columns.remove')}
+                </Button>
+              </div>
+              <p className="text-[10px] leading-snug text-muted-foreground">{tt('lay.columns.hint')}</p>
+            </PopoverContent>
+          </Popover>
+          <p className="px-1 text-[10px] leading-snug text-muted-foreground">{tt('lay.columns.tipShort')}</p>
         </div>
       </RibbonGroup>
       <RibbonDivider />

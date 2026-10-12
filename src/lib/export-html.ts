@@ -16,7 +16,7 @@
 
 import type { DocumentSettings, HeaderFooterSettings, PageData, PageNumberSettings } from './types';
 import { getPaperPreset, pageBorderVisual } from './paper';
-import { parseMcqData, docBoxStyleText, type DocBoxAttrs, type DocBoxVariant } from './nodes-html';
+import { parseMcqData, docBoxStyleText, columnsStyleText, parseColumnsAttrs, type DocBoxAttrs, type DocBoxVariant } from './nodes-html';
 import { healFigureSrcs } from './vector-catalog';
 import { formatPageNumber } from './bangla';
 import { oneColorExportCss } from './one-color';
@@ -73,10 +73,12 @@ function expandHtml(html: string): string {
   // মাল্টি-কলাম — কাঁচা স্টোরেজ HTML-এ div-এ শুধু data-attrs থাকতে পারে
   // (টেমপ্লেট-ইনসার্ট/এডিটর-সিঙ্ক-পূর্ব); কলাম-নিয়ম data থেকে ইনলাইন style বসাই
   root.querySelectorAll('div.doc-columns').forEach((el) => {
-    const count = Math.min(4, Math.max(1, Math.round(Number(el.getAttribute('data-count')) || 2)));
-    const gap = Math.max(8, Math.round(Number(el.getAttribute('data-gap')) || 24));
-    const rule = el.getAttribute('data-rule') === '1';
-    el.setAttribute('style', `column-count:${count};column-gap:${gap}px;column-fill:balance;${rule ? 'column-rule:1px solid;' : ''}`);
+    el.setAttribute('style', columnsStyleText(parseColumnsAttrs(el)));
+  });
+
+  // কলাম ব্রেক — ইনলাইন স্টাইল স্টোরেজে থাকতেই পারে; নিশ্চিত করি
+  root.querySelectorAll('div.col-break').forEach((el) => {
+    el.setAttribute('style', 'break-before:column;height:0;margin:0;');
   });
 
   // ফুটনোট — অ্যাপের মতোই: CSS কাউন্টারে নম্বর দেখায়, title-এ পূর্ণ লেখা
@@ -159,6 +161,8 @@ a { cursor: pointer; }
 .doc-columns > *:first-child { margin-top: 0; }
 .doc-columns > *:last-child { margin-bottom: 0; }
 .doc-columns > p { orphans: 2; widows: 2; }
+.doc-columns[data-first-span="1"] > *:first-child { column-span: all; }
+.col-break { break-before: column; height: 0; margin: 0; }
 .mcq-tag { background: #4f46e5; color: #fff; font-size: .78em; padding: 2px 10px; border-radius: 999px; font-weight: 700; }
 .mcq-options { display: flex; flex-wrap: wrap; gap: 4px 28px; margin-top: 6px; }
 .mcq-answer { background: rgba(22,163,74,.14); padding: 0 6px; border-radius: 6px; }

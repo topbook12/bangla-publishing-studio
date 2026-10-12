@@ -4,20 +4,22 @@
  */
 
 import {
-  AlignmentType, BorderStyle, Document, ExternalHyperlink, Footer, Header, HeadingLevel, ImageRun,
+  AlignmentType, BorderStyle, ColumnBreak, Document, ExternalHyperlink, Footer, Header, HeadingLevel, ImageRun,
   LevelFormat, PageBorderDisplay, PageBorderOffsetFrom, PageBorderZOrder,
-  Packer, Paragraph, ShadingType, Tab, Table, TableCell,
+  Packer, Paragraph, SectionType, ShadingType, Tab, Table, TableCell,
   TableRow, TabStopType, TextRun, VerticalAlign, WidthType,
 } from 'docx';
 import type { DocumentSettings, HeaderFooterSettings, PageData } from './types';
 import { effectivePageBorderStyle, effectivePageBorderWidth, getPaperPreset, PAGE_BORDER_WIDTH_PX } from './paper';
-import { parseMcqData, docBoxInlineStyle, type DocBoxAttrs, type DocBoxVariant } from './nodes-html';
+import { parseMcqData, docBoxInlineStyle, parseColumnsAttrs, type DocBoxAttrs, type DocBoxVariant } from './nodes-html';
 import { healFigureSrcs } from './vector-catalog';
 import { SHAPE_BY_ID, SHAPE_DEFS, readShapeAttrs } from './shape-catalog';
 import { displayPageNumber } from './pagenum';
 
 const MM_TO_TWIP = 56.6929;
 const INCH_TO_TWIP = 1440;
+/** CSS px → twip — 96dpi স্ক্রিনে ১px = 1440/96 = 15 twip */
+const PX_TO_TWIP = 15;
 
 interface Ctx {
   align?: (typeof AlignmentType)[keyof typeof AlignmentType];
@@ -1018,7 +1020,17 @@ export async function exportProjectToDocx(input: DocxExportInput): Promise<void>
     const effF = page.footerOverride ?? settings.footer;
     const { header, footer } = headerFooterParas(effH, effF, settings, pageIdx, showChrome);
 
-    const children: Array<Paragraph | Table> = [];
+    // পাতার ভেতরে একাধিক কলাম-অংশ থাকতে পারে (মাল্টি-কলাম ব্লক) — প্রতিটি অংশ =
+    // একটি continuous Word-section; মাল্টি-কলাম অংশে w:cols বসে (আসল Word কলাম)
+    const parts: Array<{
+      children: Array<Paragraph | Table>;
+      columns?: { count: number; space: number; separate: boolean };
+    }> = [];
+    let children: Array<Paragraph | Table> = [];
+    const flushPart = () => {
+      if (children.length) parts.push({ children });
+      children = [];
+    };
 
     if (page.kind === 'cover' && page.coverData) {
       const c = page.coverData;
@@ -1044,6 +1056,29 @@ export async function exportProjectToDocx(input: DocxExportInput): Promise<void>
       const parser = new DOMParser();
       const dom = parser.parseFromString(html, 'text/html');
       Array.from(dom.body.children).forEach((el) => {
+        // মাল্টি-কলাম ব্লক — আসল Word কলাম-section (w:cols): আগের অংশ ফ্লাশ করে
+        // কলাম-অংশ শুরু হয়; ব্লকের ভেতরের ব্লকগুলো সেই অংশে যায়। Word-এ রেখার
+        // ধরন (double/dashed) নেই — separate সাধারণ রেখা দেয়
+        if (el instanceof HTMLElement && el.classList.contains('doc-columns')) {
+          const colAttrs = parseColumnsAttrs(el);
+          if (colAttrs.count >= 2) {
+            flushPart();
+            parts.push({
+              children: Array.from(el.children).flatMap((child) => blockToDocx(child, {}, settings)),
+              columns: {
+                count: colAttrs.count,
+                space: Math.round(colAttrs.gap * PX_TO_TWIP),
+                separate: colAttrs.rule,
+              },
+            });
+            return;
+          }
+        }
+        // কলাম ব্রেক — Word-এর নিজস্ব column break ক্যারেক্টার
+        if (el instanceof HTMLElement && el.classList.contains('col-break')) {
+          children.push(new Paragraph({ children: [new ColumnBreak()] }));
+          return;
+        }
         children.push(...blockToDocx(el, {}, settings));
       });
 
@@ -1057,7 +1092,8 @@ export async function exportProjectToDocx(input: DocxExportInput): Promise<void>
           }));
         });
       }
-    }
+    } // বাকি লেখা (কলাম-ব্লকের পরের অংশ) আলাদা অংশে ফ্লাশ
+    flushPart();
 
     // gutter — অ্যাপের gutterSide লজিকের মতো অজর/জোড় পাতায় বিপরীত পাশে
     // (startAt-সচেতন প্যারিটি — pagenum.ts isEvenPage-এর সাথে মিল রেখে)
@@ -1066,22 +1102,37 @@ export async function exportProjectToDocx(input: DocxExportInput): Promise<void>
     const leftIn = gutterLeft ? m.left + m.gutter : m.left;
     const rightIn = gutterLeft ? m.right : m.right + m.gutter;
 
-    sections.push({
-      properties: {
-        page: {
-          size: { width: pageWidthTwip, height: pageHeightTwip },
-          margin: {
-            top: Math.round(m.top * INCH_TO_TWIP),
-            bottom: Math.round(m.bottom * INCH_TO_TWIP),
-            left: Math.round(leftIn * INCH_TO_TWIP),
-            right: Math.round(rightIn * INCH_TO_TWIP),
+    // প্রতিটি অংশ আলাদা Word-section — প্রথমটা পাতার মূল section, বাকিগুলো একই পাতায়
+    // চলতে থাকে (CONTINUOUS); কলাম-অংশে w:cols থাকে। হেডার/ফুটার প্রতিটি অংশে একই
+    parts.forEach((part, partIdx) => {
+      sections.push({
+        properties: {
+          ...(partIdx > 0 ? { type: SectionType.CONTINUOUS } : {}),
+          page: {
+            size: { width: pageWidthTwip, height: pageHeightTwip },
+            margin: {
+              top: Math.round(m.top * INCH_TO_TWIP),
+              bottom: Math.round(m.bottom * INCH_TO_TWIP),
+              left: Math.round(leftIn * INCH_TO_TWIP),
+              right: Math.round(rightIn * INCH_TO_TWIP),
+            },
+            ...borderProps,
           },
-          ...borderProps,
+          ...(part.columns
+            ? {
+                column: {
+                  count: part.columns.count,
+                  space: part.columns.space,
+                  separate: part.columns.separate,
+                  equalWidth: true,
+                },
+              }
+            : {}),
         },
-      },
-      headers: { default: header },
-      footers: { default: footer },
-      children,
+        headers: { default: header },
+        footers: { default: footer },
+        children: part.children,
+      });
     });
   }
 

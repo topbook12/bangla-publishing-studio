@@ -160,6 +160,18 @@ export const COLUMNS_GAP_DEFAULT = 24;
 export const COLUMNS_GAP_PRESETS = { narrow: 16, medium: 24, wide: 40 } as const;
 export type ColumnsGapPreset = keyof typeof COLUMNS_GAP_PRESETS;
 
+export type ColumnsRuleStyle = 'solid' | 'double' | 'dashed' | 'dotted';
+export type ColumnsFill = 'balance' | 'start';
+
+/** রেখার ধরন অনুযায়ী CSS width — double রেখা ছোট হলে চেনা যায় না, তাই 3px */
+export const COLUMNS_RULE_WIDTH: Record<ColumnsRuleStyle, number> = { solid: 1, double: 3, dashed: 1, dotted: 1 };
+
+/** রেখা-স্টাইলের CSS অংশ (currentColor — one-color ink মোডে কালির রঙ পায়) */
+export function columnsRuleCss(style: ColumnsRuleStyle): string {
+  const width = COLUMNS_RULE_WIDTH[style] ?? 1;
+  return `${width}px ${style} currentColor`;
+}
+
 export interface ColumnsAttrs {
   /** ১–৪ (১ = সাধারণ এক কলাম — মোড়ক তুলে দেওয়া) */
   count: number;
@@ -167,22 +179,58 @@ export interface ColumnsAttrs {
   gap: number;
   /** কলামের মাঝের উল্লম্ব রেখা */
   rule: boolean;
+  /** রেখার ধরন (rule=true হলে প্রযোজ্য) */
+  ruleStyle: ColumnsRuleStyle;
+  /** ভারসাম্য (balance — সব কলাম সমান উচ্চতায়) বা ক্রমিক (start — একটার পর একটা ভরে যায়) */
+  fill: ColumnsFill;
+  /** প্রথম ব্লক সব কলাম জুড়ে বসে (সাময়িকী-ধাঁচের শিরোনাম) */
+  firstSpan: boolean;
+}
+
+export const COLUMNS_ATTRS_DEFAULT: ColumnsAttrs = {
+  count: COLUMNS_COUNT_DEFAULT,
+  gap: COLUMNS_GAP_DEFAULT,
+  rule: false,
+  ruleStyle: 'solid',
+  fill: 'balance',
+  firstSpan: false,
+};
+
+/** data-attrs → ColumnsAttrs (স্টোরেজ/এক্সপোর্ট/স্ট্যাটিক প্রিভিউ — পুরনো ডকুমেন্টে ফলব্যাকসহ) */
+export function parseColumnsAttrs(el: {
+  getAttribute(name: string): string | null;
+}): ColumnsAttrs {
+  const count = Math.min(4, Math.max(1, Math.round(Number(el.getAttribute('data-count')) || COLUMNS_COUNT_DEFAULT)));
+  const gap = Math.max(8, Math.min(80, Math.round(Number(el.getAttribute('data-gap')) || COLUMNS_GAP_DEFAULT)));
+  const rule = el.getAttribute('data-rule') === '1';
+  const ruleStyleRaw = el.getAttribute('data-rule-style');
+  const ruleStyle: ColumnsRuleStyle =
+    ruleStyleRaw === 'double' || ruleStyleRaw === 'dashed' || ruleStyleRaw === 'dotted' ? ruleStyleRaw : 'solid';
+  const fill: ColumnsFill = el.getAttribute('data-fill') === 'start' ? 'start' : 'balance';
+  const firstSpan = el.getAttribute('data-first-span') === '1';
+  return { count, gap, rule, ruleStyle, fill, firstSpan };
 }
 
 /** কলাম ব্লকের ইনলাইন CSS — এডিটর রেন্ডার, স্ট্যাটিক প্রিভিউ, HTML/ফরমা এক্সপোর্ট সবাই এক হেল্পার */
 export function columnsStyleText(a: Partial<ColumnsAttrs>): string {
   const count = Math.min(4, Math.max(1, Math.round(Number(a.count) || COLUMNS_COUNT_DEFAULT)));
-  const gap = Math.max(8, Math.round(Number(a.gap) || COLUMNS_GAP_DEFAULT));
-  const rule = a.rule === true;
-  return `column-count:${count};column-gap:${gap}px;column-fill:balance;${rule ? 'column-rule:1px solid currentColor;' : ''}`;
+  const gap = Math.max(8, Math.min(80, Math.round(Number(a.gap) || COLUMNS_GAP_DEFAULT)));
+  const ruleStyle: ColumnsRuleStyle =
+    a.ruleStyle === 'double' || a.ruleStyle === 'dashed' || a.ruleStyle === 'dotted' ? a.ruleStyle : 'solid';
+  const rule = a.rule === true ? `column-rule:${columnsRuleCss(ruleStyle)};` : '';
+  const fill = a.fill === 'start' ? 'auto' : 'balance';
+  return `column-count:${count};column-gap:${gap}px;column-fill:${fill};${rule}`;
 }
 
 /** কলাম ব্লক HTML নির্মাণ (টেমপ্লেট/AI/insertContent-এর জন্য) */
 export function buildColumnsHtml(attrs: Partial<ColumnsAttrs>, contentHtml = '<p></p>'): string {
-  const count = Math.min(4, Math.max(1, Math.round(Number(attrs.count) || COLUMNS_COUNT_DEFAULT)));
-  const gap = Math.max(8, Math.round(Number(attrs.gap) || COLUMNS_GAP_DEFAULT));
-  const rule = attrs.rule === true ? ' data-rule="1"' : '';
-  return `<div class="doc-columns" data-count="${count}" data-gap="${gap}"${rule}>${contentHtml || '<p></p>'}</div>`;
+  const merged = { ...COLUMNS_ATTRS_DEFAULT, ...attrs };
+  const count = Math.min(4, Math.max(1, Math.round(Number(merged.count) || COLUMNS_COUNT_DEFAULT)));
+  const gap = Math.max(8, Math.min(80, Math.round(Number(merged.gap) || COLUMNS_GAP_DEFAULT)));
+  const rule = merged.rule ? ` data-rule="1" data-rule-style="${merged.ruleStyle}"` : '';
+  const fill = merged.fill === 'start' ? ' data-fill="start"' : '';
+  const firstSpan = merged.firstSpan ? ' data-first-span="1"' : '';
+  return `<div class="doc-columns" data-count="${count}" data-gap="${gap}"${rule}${fill}${firstSpan}>${contentHtml || '<p></p>'}</div>`;
 }
 
 /**

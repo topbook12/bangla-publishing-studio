@@ -6,7 +6,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { parseMcqData, docBoxInlineStyle } from '@/lib/nodes-html';
+import { parseMcqData, docBoxInlineStyle, columnsStyleText, parseColumnsAttrs } from '@/lib/nodes-html';
 import { t, useT } from '@/lib/i18n';
 import {
   SHAPE_BY_ID, SHAPE_DEFS, cssTextToStyle, readShapeAttrs,
@@ -301,21 +301,25 @@ function blockNodes(container: Element, keyPrefix: string): ReactNode[] {
           );
         } else if (el.classList.contains('doc-columns')) {
           // মাল্টি-কলাম লেআউট — কাঁচা স্টোরেজ HTML-এ (টেমপ্লেট-ইনসার্ট/এডিটর-সিঙ্ক-পূর্ব)
-          // div-এ শুধু data-attrs থাকে, ইনলাইন style নয়; তাই কলাম-নিয়ম data থেকেই ডেরাইভ
-          const colCount = Math.min(4, Math.max(1, Math.round(Number(el.getAttribute('data-count')) || 2)));
-          const colGap = Math.max(8, Math.round(Number(el.getAttribute('data-gap')) || 24));
-          const colRule = el.getAttribute('data-rule') === '1';
-          const colCss: React.CSSProperties = {
-            columnCount: colCount,
-            columnGap: colGap,
-            columnFill: 'balance',
-            ...(colRule ? { columnRule: '1px solid currentColor' } : {}),
-          };
+          // div-এ শুধু data-attrs থাকে, ইনলাইন style নয়; এক হেল্পার দিয়ে ডেরাইভ
+          const colCss: React.CSSProperties = {};
+          columnsStyleText(parseColumnsAttrs(el)).split(';').forEach((decl) => {
+            const idx = decl.indexOf(':');
+            if (idx <= 0) return;
+            const prop = decl.slice(0, idx).trim();
+            const val = decl.slice(idx + 1).trim();
+            if (!prop || !val) return;
+            const camel = prop.replace(/-([a-z])/g, (_, ch: string) => ch.toUpperCase());
+            (colCss as Record<string, string>)[camel] = val;
+          });
           out.push(
-            <div key={key} className="doc-columns" style={colCss}>
+            <div key={key} className="doc-columns" style={colCss} data-first-span={parseColumnsAttrs(el).firstSpan ? '1' : undefined}>
               {blockNodes(el, key)}
             </div>,
           );
+        } else if (el.classList.contains('col-break')) {
+          // কলাম ব্রেক — স্ট্যাটিক প্রিভিউতে নীরব খালি ব্লক
+          out.push(<div key={key} className="col-break" style={{ breakBefore: 'column', height: 0, margin: 0 }} />);
         } else if (el.classList.contains('doc-textbox')) {
           const style = docBoxInlineStyle({
             variant: (el.getAttribute('data-variant') ?? 'rounded') as never,

@@ -8,7 +8,8 @@
  *  - footnote:    <sup class="footnote" data-note></sup>
  *  - fancyDivider:<hr class="fancy-divider" data-style />
  *  - tocBlock:    <div class="toc-block" data-title data-entries data-manual></div>
- *  - columns:     <div class="doc-columns" data-count data-gap data-rule> [content] </div>
+ *  - columns:     <div class="doc-columns" data-count data-gap data-rule data-rule-style data-fill data-first-span> [content] </div>
+ *  - columnBreak: <div class="col-break" data-col-break="1"></div>
  */
 
 'use client';
@@ -25,9 +26,12 @@ import { t, tFmt, useT } from '@/lib/i18n';
 import {
   COLUMNS_COUNT_DEFAULT,
   COLUMNS_GAP_DEFAULT,
+  columnsRuleCss,
   columnsStyleText,
   parseMcqData,
   type ColumnsAttrs,
+  type ColumnsFill,
+  type ColumnsRuleStyle,
   type DividerStyle,
   type McqData,
 } from '@/lib/nodes-html';
@@ -637,7 +641,7 @@ declare module '@tiptap/core' {
  * লেখা এক কলাম ভরে গেলে স্বয়ংক্রিয়ভাবে পরের কলামে বয়ে যায় (MS Word-এর Columns-এর মতো)।
  * মোড়কটি সাধারণ renderHTML div (NodeView নয়) — নেটিভ DOM-এ কার্সর/সিলেকশন/ইমিতে
  * সবচেয়ে নির্ভরযোগ্য। স্টোরেজ কনট্র্যাক্ট:
- *   <div class="doc-columns" data-count data-gap data-rule> [block+] </div>
+ *   <div class="doc-columns" data-count data-gap data-rule data-rule-style data-fill data-first-span> [block+] </div>
  */
 export const Columns = Node.create({
   name: 'columns',
@@ -654,13 +658,31 @@ export const Columns = Node.create({
       },
       gap: {
         default: COLUMNS_GAP_DEFAULT,
-        parseHTML: (el) => Math.max(8, Math.round(Number(el.getAttribute('data-gap')) || COLUMNS_GAP_DEFAULT)),
+        parseHTML: (el) => Math.max(8, Math.min(80, Math.round(Number(el.getAttribute('data-gap')) || COLUMNS_GAP_DEFAULT))),
         renderHTML: (attrs) => ({ 'data-gap': String(Math.round(Number(attrs.gap) || COLUMNS_GAP_DEFAULT)) }),
       },
       rule: {
         default: false,
         parseHTML: (el) => el.getAttribute('data-rule') === '1',
         renderHTML: (attrs) => ({ 'data-rule': attrs.rule ? '1' : '0' }),
+      },
+      ruleStyle: {
+        default: 'solid' as ColumnsRuleStyle,
+        parseHTML: (el) => {
+          const raw = el.getAttribute('data-rule-style');
+          return raw === 'double' || raw === 'dashed' || raw === 'dotted' ? raw : 'solid';
+        },
+        renderHTML: (attrs) => ({ 'data-rule-style': String(attrs.ruleStyle || 'solid') }),
+      },
+      fill: {
+        default: 'balance' as ColumnsFill,
+        parseHTML: (el) => (el.getAttribute('data-fill') === 'start' ? 'start' : 'balance'),
+        renderHTML: (attrs) => ({ 'data-fill': attrs.fill === 'start' ? 'start' : 'balance' }),
+      },
+      firstSpan: {
+        default: false,
+        parseHTML: (el) => el.getAttribute('data-first-span') === '1',
+        renderHTML: (attrs) => ({ 'data-first-span': attrs.firstSpan ? '1' : '0' }),
       },
     };
   },
@@ -674,6 +696,16 @@ export const Columns = Node.create({
       class: 'doc-columns',
       style: columnsStyleText(node.attrs as Partial<ColumnsAttrs>),
     }), 0];
+  },
+
+  addKeyboardShortcuts() {
+    return {
+      // MS Word-এর কলাম-ব্রেক শর্টকাট — শুধু কলাম-ব্লকের ভেতরে কাজ করে
+      'Mod-Shift-Enter': () => {
+        if (!this.editor.isActive('columns')) return false;
+        return this.editor.commands.insertContent({ type: 'columnBreak' });
+      },
+    };
   },
 
   addCommands() {
@@ -692,6 +724,9 @@ export const Columns = Node.create({
             count: attrs?.count ?? COLUMNS_COUNT_DEFAULT,
             gap: attrs?.gap ?? COLUMNS_GAP_DEFAULT,
             rule: attrs?.rule ?? false,
+            ruleStyle: attrs?.ruleStyle ?? 'solid',
+            fill: attrs?.fill ?? 'balance',
+            firstSpan: attrs?.firstSpan ?? false,
           });
         },
       updateColumns:
@@ -739,6 +774,47 @@ declare module '@tiptap/core' {
       setColumns: (attrs?: Partial<ColumnsAttrs>) => ReturnType;
       updateColumns: (attrs: Partial<ColumnsAttrs>) => ReturnType;
       unsetColumns: () => ReturnType;
+    };
+  }
+}
+
+// ─────────────────────────── কলাম ব্রেক ───────────────────────────
+
+/**
+ * কলাম ব্রেক (MS Word-এর Column Break-এর মতো) — কলাম-ব্লকের ভেতরে বসলে পরের
+ * লেখা পরের কলাম থেকে শুরু হয় (CSS break-before: column)। কলামের বাইরে থাকলে
+ * সাধারণ খালি ব্লক — কোনো ক্ষতি নেই। শর্টকাট: Ctrl/Cmd+Shift+Enter।
+ * স্টোরেজ কনট্র্যাক্ট: <div class="col-break" data-col-break="1"></div>
+ */
+export const ColumnBreak = Node.create({
+  name: 'columnBreak',
+  group: 'block',
+  atom: true,
+  selectable: true,
+  draggable: false,
+
+  parseHTML() {
+    return [{ tag: 'div.col-break' }];
+  },
+
+  renderHTML() {
+    return ['div', { class: 'col-break', 'data-col-break': '1', style: 'break-before:column;height:0;margin:0;' }];
+  },
+
+  addCommands() {
+    return {
+      insertColumnBreak:
+        () =>
+        ({ commands }: CommandProps) =>
+          commands.insertContent({ type: this.name }),
+    };
+  },
+});
+
+declare module '@tiptap/core' {
+  interface Commands<ReturnType> {
+    columnBreak: {
+      insertColumnBreak: () => ReturnType;
     };
   }
 }
@@ -1077,4 +1153,4 @@ declare module '@tiptap/core' {
 
 // ─────────────────────────── সব একসাথে ───────────────────────────
 
-export const customExtensions = [CalloutBox, McqBlock, Footnote, FancyDivider, TocBlock, Columns, LineHeight, FontSize, CharShading, AdvancedTypography];
+export const customExtensions = [CalloutBox, McqBlock, Footnote, FancyDivider, TocBlock, Columns, ColumnBreak, LineHeight, FontSize, CharShading, AdvancedTypography];

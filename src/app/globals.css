@@ -1306,10 +1306,49 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
 .doc-columns > p { orphans: 2; widows: 2; }
 .doc-columns > ul,
 .doc-columns > ol { orphans: 2; widows: 2; }
+/* সাময়িকী-ধাঁচ — প্রথম ব্লক (শিরোনাম/লিড) সব কলাম জুড়ে বসে */
+.doc-columns[data-first-span="1"] > *:first-child { column-span: all; }
+/* কলাম ব্রেক — Word-এর Column Break; খালি ব্লক, পরের লেখা পরের কলামে যায় */
+.col-break { break-before: column; height: 0; margin: 0; }
 /* এডিটরে হালকা নির্দেশক — হোভারে ড্যাশড রেখা; প্রিন্ট/স্ট্যাটিক/এক্সপোর্টে নেই (.ProseMirror-স্কোপড) */
 .ProseMirror .doc-columns { transition: outline-color 0.15s; outline: 1px dashed transparent; outline-offset: 8px; border-radius: 4px; }
 .ProseMirror .doc-columns:hover,
 .ProseMirror .doc-columns:focus-within { outline-color: color-mix(in srgb, currentColor 28%, transparent); }
+/* কলাম ব্রেক মার্কার — এডিটরেই শুধু দৃশ্যমান; ক্লিক করে সিলেক্ট করে Delete/Backspace-এ মুছে যায় */
+.ProseMirror .col-break {
+  position: relative;
+  height: 0 !important;
+  overflow: visible;
+  cursor: pointer;
+}
+.ProseMirror .col-break::before {
+  content: '';
+  position: absolute;
+  inset: -0.4em 0;
+  border-top: 2px dashed color-mix(in srgb, currentColor 34%, transparent);
+}
+.ProseMirror .col-break::after {
+  content: '↧';
+  position: absolute;
+  inset-block-start: -0.9em;
+  inset-inline-start: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  line-height: 1;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, currentColor 8%, transparent);
+  color: color-mix(in srgb, currentColor 62%, transparent);
+  pointer-events: none;
+}
+.ProseMirror .col-break:hover::before { border-top-color: color-mix(in srgb, currentColor 60%, transparent); }
+.ProseMirror .col-break.ProseMirror-selectednode::before {
+  border-top: 2px dashed var(--primary);
+}
+.ProseMirror .col-break.ProseMirror-selectednode::after {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
 
 /* ─── MCQ ব্লক ─── */
 
