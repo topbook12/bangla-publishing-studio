@@ -78,6 +78,43 @@ function samplePathPoints(d: string, push: (x: number, y: number) => void): void
   const tokens = d.match(/[a-zA-Z]|-?\d*\.?\d+(?:e-?\d+)?/g) ?? [];
   let i = 0;
   let cmd = '';
+  /** এলিপটিক্যাল আর্ক স্যাম্পল — শুধু এন্ডপয়েন্ট নিলে অর্ধবৃত্ত/বৃত্তচাপ কেটে যেত */
+  const pushArc = (rx: number, ry: number, rotDeg: number, largeArc: number, sweep: number, x: number, y: number) => {
+    if (rx === 0 || ry === 0) { push(x, y); return; }
+    const phi = (rotDeg * Math.PI) / 180;
+    const cosP = Math.cos(phi), sinP = Math.sin(phi);
+    const x1 = cx, y1 = cy, x2 = x, y2 = y;
+    const dx2 = (x1 - x2) / 2, dy2 = (y1 - y2) / 2;
+    const xp = cosP * dx2 + sinP * dy2;
+    const yp = -sinP * dx2 + cosP * dy2;
+    let rx2 = rx * rx, ry2 = ry * ry;
+    const lam = (xp * xp) / rx2 + (yp * yp) / ry2;
+    if (lam > 1) { const s = Math.sqrt(lam); rx *= s; ry *= s; rx2 = rx * rx; ry2 = ry * ry; }
+    const sign = largeArc !== sweep ? 1 : -1;
+    const denom = rx2 * yp * yp + ry2 * xp * xp;
+    const rad = denom > 0 ? Math.sqrt(Math.max(0, (rx2 * ry2 - denom) / denom)) : 0;
+    const cxp = (sign * rad * rx * yp) / ry;
+    const cyp = (-sign * rad * ry * xp) / rx;
+    const cxA = cosP * cxp - sinP * cyp + (x1 + x2) / 2;
+    const cyA = sinP * cxp + cosP * cyp + (y1 + y2) / 2;
+    const ang = (ux: number, uy: number, vx: number, vy: number) => {
+      const dot = ux * vx + uy * vy;
+      const len = Math.sqrt(ux * ux + uy * uy) * Math.sqrt(vx * vx + vy * vy);
+      let a = Math.acos(Math.max(-1, Math.min(1, dot / (len || 1))));
+      if (ux * vy - uy * vx < 0) a = -a;
+      return a;
+    };
+    const t1 = ang(1, 0, (xp - cxp) / rx, (yp - cyp) / ry);
+    let dt = ang((xp - cxp) / rx, (yp - cyp) / ry, (-xp - cxp) / rx, (-yp - cyp) / ry);
+    if (!sweep && dt > 0) dt -= 2 * Math.PI;
+    if (sweep && dt < 0) dt += 2 * Math.PI;
+    for (let s = 0; s <= 12; s++) {
+      const t = t1 + (dt * s) / 12;
+      const px = cxA + rx * Math.cos(t) * cosP - ry * Math.sin(t) * sinP;
+      const py = cyA + rx * Math.cos(t) * sinP + ry * Math.sin(t) * cosP;
+      push(px, py);
+    }
+  };
   let cx = 0, cy = 0, sx = 0, sy = 0;
   const num = () => parseFloat(tokens[i++] ?? '0');
   while (i < tokens.length) {
@@ -126,10 +163,11 @@ function samplePathPoints(d: string, push: (x: number, y: number) => void): void
         break;
       }
       case 'A': case 'a': {
-        num(); num(); num(); num(); num();
+        const rx = num(), ry = num(), rot = num(), large = num(), sweep = num();
         const x = num(), y = num();
+        // rx/ry রেডিয়াস রিলেটিভ আর্কেও স্কেল হয় না — শুধু এন্ডপয়েন্ট সরে
+        pushArc(rx, ry, rot, large, sweep, cmd === 'a' ? cx + x : x, cmd === 'a' ? cy + y : y);
         cx = cmd === 'a' ? cx + x : x; cy = cmd === 'a' ? cy + y : y;
-        push(cx, cy);
         break;
       }
       default: i++;
@@ -139,6 +177,9 @@ function samplePathPoints(d: string, push: (x: number, y: number) => void): void
 
 type TightTf = (x: number, y: number) => [number, number];
 const IDENTITY_TF: TightTf = (x, y) => [x, y];
+
+/** g-স্ট্যাকের এন্ট্রি — transform-এর সাথে উত্তরাধিকারসূত্রে পাওয়া stroke-width-ও থাকে */
+interface TightFrame { tf: TightTf; sw: number }
 
 /** transform অ্যাট্রিবিউট → পূর্ববর্তী ট্রান্সফর্মের সাথে যুক্ত ফাংশন */
 function composeTf(prev: TightTf, transform: string): TightTf {
@@ -177,7 +218,7 @@ const NUM_ATTR = (attrs: string, name: string, dflt: number): number => {
  * একটি SVG-র আসল কনটেন্ট-বাউন্ডিং-বক্স মাপা (স্ট্রোক + টেক্সট-আনুমানিকসহ)।
  * রিটার্ন null = মাপা গেল না (অজানা কাঠামো) — কলার আসল SVG রাখবে।
  */
-function measureSvgBBox(svg: string): TightBox | null {
+export function measureSvgBBox(svg: string): TightBox | null {
   // হোল্ডার-অবজেক্ট — ক্লোজার-অ্যাসাইনমেন্টে TS-এর never-ন্যারোয়িং ফাঁকি দিতে
   const held: { box: TightBox | null } = { box: null };
   let maxStroke = 0;
@@ -190,9 +231,9 @@ function measureSvgBBox(svg: string): TightBox | null {
     }
   };
 
-  // সাধারণ XML ওয়াকার — নেস্টেড <g transform> স্ট্যাকসহ
+  // সাধারণ XML ওয়াকার — নেস্টেড <g transform> + উত্তরাধিকারসূত্রে stroke-width স্ট্যাকসহ
   const tagRe = /<(\/)?([a-zA-Z][a-zA-Z0-9]*)((?:"[^"]*"|[^>])*?)(\/?)>/g;
-  const stack: TightTf[] = [];
+  const stack: TightFrame[] = [];
   let m: RegExpExecArray | null;
 
   while ((m = tagRe.exec(svg)) !== null) {
@@ -200,27 +241,31 @@ function measureSvgBBox(svg: string): TightBox | null {
 
     if (closing) { stack.pop(); continue; }
 
-    const tf = composeTf(stack[stack.length - 1] ?? IDENTITY_TF, attrs.match(/transform\s*=\s*"([^"]*)"/)?.[1] ?? '');
+    const parent = stack[stack.length - 1];
+    const tf = composeTf(parent?.tf ?? IDENTITY_TF, attrs.match(/transform\s*=\s*"([^"]*)"/)?.[1] ?? '');
+    // stroke-width উত্তরাধিকার — নিজের অ্যাট্রিবিউট > বাবা-g-এরটা; stroke="none" হলে ০
+    // (সতর্কতা: 'stroke-width='-এ 'stroke=' সাবস্ট্রিং নেই — আলাদা চেক লাগে)
+    const strokeNone = /stroke\s*=\s*"\s*none\s*"/.test(attrs);
+    const ownSw = NUM_ATTR(attrs, 'stroke-width', 0);
+    const effSw = strokeNone ? 0 : (ownSw > 0 ? ownSw : (parent?.sw ?? 0));
+    if (effSw > maxStroke) maxStroke = effSw;
 
-    const sw = NUM_ATTR(attrs, 'stroke-width', 0);
-    if (sw > maxStroke) maxStroke = sw;
-
-    if (tag === 'g' && !selfClose) { stack.push(tf); continue; }
+    if (tag === 'g' && !selfClose) { stack.push({ tf, sw: effSw }); continue; }
     if (tag === 'text' && !selfClose) {
       // <text> লেবেল — বন্ধ-ট্যাগ পর্যন্ত লেখা তুলে আনুমানিক বক্স (বাংলা গ্লিফ চওড়া — সেফটি ফ্যাক্টরসহ)
-      stack.push(tf);
+      stack.push({ tf, sw: effSw });
       const closeIdx = svg.indexOf('</text>', tagRe.lastIndex);
       const label = (closeIdx >= 0 ? svg.slice(tagRe.lastIndex, closeIdx) : '').replace(/<[^>]*>/g, '').trim();
       if (label) {
         const x = NUM_ATTR(attrs, 'x', 0), y = NUM_ATTR(attrs, 'y', 0);
         const fs = NUM_ATTR(attrs, 'font-size', 12);
         const anchor = attrs.match(/text-anchor\s*=\s*"([^"]*)"/)?.[1] ?? 'start';
-        const w = Math.max(1, label.length) * fs * 0.74;
+        const w = Math.max(1, label.length) * fs * 0.68;
         let x0 = x, x1 = x + w;
         if (anchor === 'middle') { x0 = x - w / 2; x1 = x + w / 2; }
         else if (anchor === 'end') { x0 = x - w; x1 = x; }
-        push(...tf(x0, y - fs * 1.32));
-        push(...tf(x1, y + fs * 0.32));
+        push(...tf(x0, y - fs * 1.18));
+        push(...tf(x1, y + fs * 0.3));
       }
       continue;
     }
@@ -266,15 +311,20 @@ export function tightenVectorSvg(svg: string): string {
   const vbM = svg.match(/viewBox\s*=\s*"\s*(-?[\d.]+)[\s,]+(-?[\d.]+)[\s,]+(-?[\d.]+)[\s,]+(-?[\d.]+)\s*"/);
   const box = measureSvgBBox(svg);
   if (vbM && box) {
-    const vwRaw = vbM[3], vhRaw = vbM[4];
-    const vw = parseFloat(vwRaw), vh = parseFloat(vhRaw);
+    const vx = parseFloat(vbM[1]), vy = parseFloat(vbM[2]);
+    const vw = parseFloat(vbM[3]), vh = parseFloat(vbM[4]);
     if (vw > 0 && vh > 0) {
       const pad = Math.max(3, Math.round(Math.max(vw, vh) * 0.03));
-      const nx0 = Math.floor(box.x0 - pad), ny0 = Math.floor(box.y0 - pad);
-      const nx1 = Math.ceil(box.x1 + pad), ny1 = Math.ceil(box.y1 + pad);
+      // ভিউবক্সের বাইরের কনটেন্ট আগেই অদৃশ্য — তাই নতুন বক্স ভিউবক্সের সাথে intersect করলেই
+      // যথেষ্ট; আগের নরম গার্ড (box ⊆ viewBox) টেক্সট/স্ট্রোক-প্যাড ১-২px বাইরে গেলেই
+      // পুরো টাইটেনিং বাতিল করে দিত — বিশাল মৃত-স্পেস থেকে যেত (geo-globe-ধাঁচের অ্যাসেট)।
+      const nx0 = Math.max(Math.floor(box.x0 - pad), vx);
+      const ny0 = Math.max(Math.floor(box.y0 - pad), vy);
+      const nx1 = Math.min(Math.ceil(box.x1 + pad), vx + vw);
+      const ny1 = Math.min(Math.ceil(box.y1 + pad), vy + vh);
       const nw = nx1 - nx0, nh = ny1 - ny0;
-      // শুধু তখনই প্রয়োগ যখন সত্যিই সাঁটা যায় (কনটেন্ট ভিউবক্সের বাইরে গেলে আসলটাই থাক)
-      if (nw > 0 && nh > 0 && nw <= vw && nh <= vh && (nw * nh) < (vw * vh) * 0.985) {
+      // শুধু তখনই প্রয়োগ যখন সত্যিই সাঁটা যায় (≥১.৫% সাশ্রয় না হলে আসলটাই থাক)
+      if (nw > 0 && nh > 0 && (nw * nh) < (vw * vh) * 0.985) {
         out = svg.replace(vbM[0], `viewBox="${nx0} ${ny0} ${nw} ${nh}"`);
       }
     }

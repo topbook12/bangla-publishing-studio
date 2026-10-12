@@ -18,7 +18,7 @@ import { Node, Extension, mergeAttributes, type CommandProps } from '@tiptap/cor
 import { ReactNodeViewRenderer, NodeViewWrapper, NodeViewContent, type NodeViewProps } from '@tiptap/react';
 import { liftTarget } from 'prosemirror-transform';
 import { useState } from 'react';
-import { AlertTriangle, BookOpen, ChevronDown, ChevronUp, Lightbulb, Pencil, Pin, Plus, Trash2, X } from 'lucide-react';
+import { AlertTriangle, BookOpen, ChevronDown, ChevronUp, Lightbulb, Lock, Pencil, Pin, Plus, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -498,10 +498,24 @@ function TocNodeView({ node, updateAttributes, deleteNode }: NodeViewProps) {
               <X size={13} aria-hidden="true" />
             </button>
           </div>
-          <label className="toc-edit-auto">
-            <input type="checkbox" checked={autoSync} onChange={(e) => setAutoSync(e.target.checked)} />
-            <span>{tt('ws.toc.auto')}</span>
-          </label>
+          <div className="toc-mode-seg" role="group" aria-label={tt('ws.toc.panelTitle')}>
+            <button
+              type="button"
+              className={cn('toc-mode-btn', autoSync && 'active')}
+              onClick={() => setAutoSync(true)}
+              aria-pressed={autoSync}
+            >
+              {tt('ws.toc.modeAuto')}
+            </button>
+            <button
+              type="button"
+              className={cn('toc-mode-btn', !autoSync && 'active')}
+              onClick={() => setAutoSync(false)}
+              aria-pressed={!autoSync}
+            >
+              {tt('ws.toc.modeManual')}
+            </button>
+          </div>
           <p className="toc-edit-desc">{autoSync ? tt('ws.toc.autoDesc') : tt('ws.toc.manualDesc')}</p>
           <input
             className="toc-edit-title-input"
@@ -510,49 +524,59 @@ function TocNodeView({ node, updateAttributes, deleteNode }: NodeViewProps) {
             placeholder={tt('dsn.toc.title')}
             aria-label={tt('ws.toc.entryTitle')}
           />
-          {!autoSync && (
-            <>
-              {draftEntries.map((e, i) => (
-                <div className="toc-edit-row" key={i}>
-                  <select
-                    value={String(e.level ?? 1)}
-                    onChange={(ev) => patchEntry(i, { level: Number(ev.target.value) })}
-                    aria-label={tt('ws.toc.level')}
-                  >
-                    <option value="1">{tt('ws.toc.level1')}</option>
-                    <option value="2">{tt('ws.toc.level2')}</option>
-                    <option value="3">{tt('ws.toc.level3')}</option>
-                  </select>
-                  <input
-                    className="toc-edit-text"
-                    value={e.text}
-                    onChange={(ev) => patchEntry(i, { text: ev.target.value })}
-                    placeholder={tt('ws.toc.entryText')}
-                    aria-label={tt('ws.toc.entryText')}
-                  />
-                  <input
-                    className="toc-edit-page"
-                    value={e.pageNumber}
-                    onChange={(ev) => patchEntry(i, { pageNumber: ev.target.value })}
-                    placeholder={tt('ws.toc.entryPage')}
-                    aria-label={tt('ws.toc.entryPage')}
-                  />
-                  <button type="button" className="toc-edit-icon-btn" onClick={() => moveEntry(i, -1)} disabled={i === 0} title={tt('ws.toc.moveUp')} aria-label={tt('ws.toc.moveUp')}>
-                    <ChevronUp size={12} aria-hidden="true" />
-                  </button>
-                  <button type="button" className="toc-edit-icon-btn" onClick={() => moveEntry(i, 1)} disabled={i === draftEntries.length - 1} title={tt('ws.toc.moveDown')} aria-label={tt('ws.toc.moveDown')}>
-                    <ChevronDown size={12} aria-hidden="true" />
-                  </button>
-                  <button type="button" className="toc-edit-icon-btn toc-edit-del" onClick={() => removeEntry(i)} title={tt('ws.toc.entryRemove')} aria-label={tt('ws.toc.entryRemove')}>
-                    <Trash2 size={12} aria-hidden="true" />
-                  </button>
-                </div>
-              ))}
-              <button type="button" className="toc-edit-add" onClick={addEntry}>
-                <Plus size={12} aria-hidden="true" />
-                {tt('ws.toc.addEntry')}
+          {autoSync && (
+            <div className="toc-auto-hint">
+              <Lock size={12} aria-hidden="true" />
+              <span>{tt('ws.toc.autoHint')}</span>
+              <button type="button" className="toc-auto-hint-btn" onClick={() => setAutoSync(false)}>
+                {tt('ws.toc.goManual')}
               </button>
-            </>
+            </div>
+          )}
+          {draftEntries.map((e, i) => (
+            <div className={cn('toc-edit-row', autoSync && 'toc-locked')} key={i}>
+              <select
+                value={String(e.level ?? 1)}
+                onChange={(ev) => patchEntry(i, { level: Number(ev.target.value) })}
+                disabled={autoSync}
+                aria-label={tt('ws.toc.level')}
+              >
+                <option value="1">{tt('ws.toc.level1')}</option>
+                <option value="2">{tt('ws.toc.level2')}</option>
+                <option value="3">{tt('ws.toc.level3')}</option>
+              </select>
+              <input
+                className="toc-edit-text"
+                value={e.text}
+                onChange={(ev) => patchEntry(i, { text: ev.target.value })}
+                disabled={autoSync}
+                placeholder={tt('ws.toc.entryText')}
+                aria-label={tt('ws.toc.entryText')}
+              />
+              <input
+                className="toc-edit-page"
+                value={e.pageNumber}
+                onChange={(ev) => patchEntry(i, { pageNumber: ev.target.value })}
+                disabled={autoSync}
+                placeholder={tt('ws.toc.entryPage')}
+                aria-label={tt('ws.toc.entryPage')}
+              />
+              <button type="button" className="toc-edit-icon-btn" onClick={() => moveEntry(i, -1)} disabled={autoSync || i === 0} title={tt('ws.toc.moveUp')} aria-label={tt('ws.toc.moveUp')}>
+                <ChevronUp size={12} aria-hidden="true" />
+              </button>
+              <button type="button" className="toc-edit-icon-btn" onClick={() => moveEntry(i, 1)} disabled={autoSync || i === draftEntries.length - 1} title={tt('ws.toc.moveDown')} aria-label={tt('ws.toc.moveDown')}>
+                <ChevronDown size={12} aria-hidden="true" />
+              </button>
+              <button type="button" className="toc-edit-icon-btn toc-edit-del" onClick={() => removeEntry(i)} disabled={autoSync} title={tt('ws.toc.entryRemove')} aria-label={tt('ws.toc.entryRemove')}>
+                <Trash2 size={12} aria-hidden="true" />
+              </button>
+            </div>
+          ))}
+          {!autoSync && (
+            <button type="button" className="toc-edit-add" onClick={addEntry}>
+              <Plus size={12} aria-hidden="true" />
+              {tt('ws.toc.addEntry')}
+            </button>
           )}
           <div className="toc-edit-actions">
             <button type="button" className="toc-edit-cancel" onClick={() => setEditing(false)}>{tt('hdr.cancel')}</button>

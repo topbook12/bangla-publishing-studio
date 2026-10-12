@@ -92,8 +92,31 @@ export function hasTocBlock(pages: PageData[]): boolean {
   return pages.some((p) => p.html.includes('toc-block'));
 }
 
-/** প্রথম toc-block-বিশিষ্ট পাতার HTML থেকে data-title বের করা (না পেলে ডিফল্ট) */
-function extractTocTitle(pages: PageData[]): string {
+/**
+ * টেমপ্লেট ঢোকানোর মুহূর্তেই খালি সূচিপত্র ভরে দেওয়া — খালি-সূচির ফ্ল্যাশ নেই।
+ * শুধু data-entries="[]" এমন অটো-সূচিতে লেখে (ম্যানুয়াল/ভরা সূচি অক্ষত)।
+ * pages = ঢোকানোর পরের সম্পূর্ণ পাতা-তালিকা (নতুন পাতাসহ) — স্ক্যান ওখানেই চলে।
+ */
+export function primeTocEntriesInHtml(html: string, pages: PageData[], settings: DocumentSettings): string {
+  if (!html.includes('toc-block')) return html;
+  if (!html.includes('data-entries="[]"')) return html; // শুধু খালি অটো-সূচি
+  let entries: TocEntry[];
+  try {
+    entries = scanTocEntries(pages, settings);
+  } catch {
+    return html;
+  }
+  if (entries.length === 0) return html;
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const block = doc.querySelector('.toc-block');
+  if (!block || block.getAttribute('data-manual') === 'true') return html;
+  block.setAttribute('data-entries', JSON.stringify(entries));
+  return doc.body.innerHTML;
+}
+
+/** প্রথম toc-block-বিশিষ্ট পাতার HTML থেকে data-title বের করা (না পেলে ডিফল্ট) —
+ *  টেমপ্লেট টাইটেল (বিষয়সূচি/রান্নার তালিকা/এ সংখ্যায়) ধরে রাখতে সর্বত্র এটাই ব্যবহার করুন */
+export function extractTocTitle(pages: PageData[]): string {
   const page = pages.find((p) => p.html.includes('toc-block'));
   if (!page) return 'সূচিপত্র';
   try {

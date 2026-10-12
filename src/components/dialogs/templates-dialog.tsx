@@ -39,6 +39,7 @@ import {
 import { getPaperPreset, fontStackOf } from '@/lib/paper';
 import { newId } from '@/lib/dexie';
 import { ensurePageEditorMounted, fitTemplatePage } from '@/components/editor/page-ops';
+import { primeTocEntriesInHtml } from '@/lib/toc';
 import { StaticContent } from '@/components/editor/static-content';
 import type { DocumentSettings, HeaderFooterSettings } from '@/lib/types';
 import { useT, useFmtNum } from '@/lib/i18n';
@@ -306,6 +307,20 @@ async function fitAllBlueprintPages(pageIds: string[]): Promise<void> {
   }
 }
 
+/**
+ * ঢোকানো টেমপ্লেট পাতার খালি সূচিপত্র সঙ্গে সঙ্গে ভরে দেওয়া —
+ * ইঞ্জিনের ১২০০ms অপেক্ষার খালি-সূচির ফ্ল্যাশ আর নেই (পরে ইঞ্জিন নিজেই সিঙ্ক রাখে)।
+ */
+function primeEmptyTocs(pageIds: string[]): void {
+  const st = useEditorStore.getState();
+  for (const id of pageIds) {
+    const page = st.pages.find((p) => p.id === id);
+    if (!page) continue;
+    const html = primeTocEntriesInHtml(page.html, st.pages, st.settings);
+    if (html !== page.html) st.replacePageHtml(id, html);
+  }
+}
+
 // ═════════════════════════ মূল স্টোর-ডায়ালগ ═════════════════════════
 
 type StoreTab = 'book' | 'page';
@@ -337,6 +352,7 @@ export function TemplatesDialog() {
       const pages = blueprintToPageData(bp, newId);
       const finalPages = cover ? [cover, ...pages] : pages;
       s.replaceBook(finalPages, blueprintSettingsPatch(bp));
+      primeEmptyTocs(finalPages.map((p) => p.id));
       toast.success(tt('store.bp.toastStarted').split('{name}').join(bp.name), {
         description: tt('store.bp.toastStartedDesc'),
       });
@@ -356,6 +372,7 @@ export function TemplatesDialog() {
       newIds.push(id);
       after = id;
     }
+    primeEmptyTocs(newIds);
     toast.success(tt('store.bp.toastInserted').split('{name}').join(bp.name), {
       description: tt('store.bp.toastInsertedDesc'),
     });
@@ -372,6 +389,7 @@ export function TemplatesDialog() {
     // করলেই লক নিজে থেকেই খুলে যায় (page-editor onUpdate)
     s.updatePage(newId2, { flowLock: true });
     s.setActivePage(newId2);
+    primeEmptyTocs([newId2]);
     toast.success(tt('dlg1.tpl.toastAdded').split('{name}').join(tpl.name), {
       description: tt('dlg1.tpl.toastAddedDesc'),
     });
@@ -390,6 +408,7 @@ export function TemplatesDialog() {
     s.replacePageHtml(pageId, replaceTarget.html);
     s.updatePage(pageId, { flowLock: true });
     s.setActivePage(pageId);
+    primeEmptyTocs([pageId]);
     toast.success(tt('dlg1.tpl.toastReplaced').split('{name}').join(replaceTarget.name));
     setReplaceTarget(null);
     close();

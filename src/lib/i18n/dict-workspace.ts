@@ -237,3 +237,7 @@ dictWorkspace['ws.toc.save'] = { bn: 'সংরক্ষণ', hi: 'सहेज�
 dictWorkspace['ws.toc.moveUp'] = { bn: 'ওপরে তুলুন', hi: 'ऊपर ले जाएँ', en: 'Move up' };
 dictWorkspace['ws.toc.moveDown'] = { bn: 'নিচে নামান', hi: 'नीचे ले जाएँ', en: 'Move down' };
 dictWorkspace['ws.toc.entryRemove'] = { bn: 'এন্ট্রি মুছুন', hi: 'प्रविष्टि मिटाएँ', en: 'Remove entry' };
+dictWorkspace['ws.toc.modeAuto'] = { bn: 'অটো-স্ক্যান', hi: 'ऑटो-स्कैन', en: 'Auto-scan' };
+dictWorkspace['ws.toc.modeManual'] = { bn: 'ম্যানুয়াল', hi: 'मैনुअल', en: 'Manual' };
+dictWorkspace['ws.toc.autoHint'] = { bn: 'অটো-স্ক্যান চালু — তালিকা বইয়ের H1/H2/H3 শিরোনাম থেকে নিজে নিজে তৈরি হচ্ছে। নিজের মতো এন্ট্রি বদলাতে ম্যানুয়াল মোডে যান।', hi: 'ऑटो-स्कैन चालू — सूची किताब के H1/H2/H3 शीर्षकों से स्वयं बनती है। अपने हिसाब से प्रविष्टियाँ बदलने के लिए मैनुअल मोड पर जाएँ।', en: 'Auto-scan is on — the list builds itself from the book’s H1/H2/H3 headings. Switch to Manual mode to edit entries yourself.' };
+dictWorkspace['ws.toc.goManual'] = { bn: 'ম্যানুয়ালে যান', hi: 'मैनुअल पर जाएँ', en: 'Go manual' };

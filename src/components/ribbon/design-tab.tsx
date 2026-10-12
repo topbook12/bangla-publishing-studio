@@ -12,7 +12,7 @@ import { RibbonButton, RibbonDivider, RibbonGroup } from './ribbon-shell';
 import { BOOK_THEMES } from '@/lib/paper';
 import { useEditorStore } from '@/lib/store';
 import { useUiStore } from '@/lib/ui-store';
-import { scanTocEntries, updateTocNodes } from '@/lib/toc';
+import { extractTocTitle, scanTocEntries, updateTocNodes } from '@/lib/toc';
 import { getAllEditors, getEditor } from '@/lib/editor-registry';
 import { ensurePageEditorMounted } from '@/components/editor/page-ops';
 import { formatPageNumber } from '@/lib/bangla';
@@ -62,7 +62,9 @@ export function DesignTab() {
       toast.error(tt('dsn.toast.noeditor'));
       return;
     }
-    updateTocNodes(editors, entries, tt('dsn.toc.title'));
+    // টেমপ্লেটের টাইটেল (বিষয়সূচি/রান্নার তালিকা/এ সংখ্যায়) যেন 'সূচিপত্র'-এ ফিরে না যায় —
+    // ডকুমেন্টের বর্তমান toc-block থেকেই টাইটেল নেওয়া হয়
+    updateTocNodes(editors, entries, extractTocTitle(s.pages));
     if (entries.length === 0) {
       toast.info(tt('dsn.toast.noheadings'));
     } else {
