@@ -4081,10 +4081,14 @@ html.dark .ai-chat-count-over { color: oklch(0.8 0.16 25); }
 /* নকশা কার্ড */
 .qp-formats {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 9px;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
 }
-@media (max-width: 640px) { .qp-formats { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 860px) { .qp-formats { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 640px) {
+  .qp-formats { grid-template-columns: 1fr 1fr; }
+  .qp-format:last-child { grid-column: 1 / -1; }
+}
 .qp-format {
   display: flex;
   flex-direction: column;
@@ -4179,7 +4183,7 @@ html.dark .qp-format-vis { background: oklch(0.27 0.01 260); border-color: rgb(2
   overflow: auto;
   max-height: 52dvh;
 }
-.qp-preview-spacer { flex-shrink: 0; margin: 0 auto; }
+.qp-preview-spacer { flex-shrink: 0; margin: 0 auto; position: relative; }
 .qp-sheet {
   width: 794px; /* A4 @96dpi */
   min-height: 1123px;
@@ -4198,6 +4202,10 @@ html.dark .qp-format-vis { background: oklch(0.27 0.01 260); border-color: rgb(2
 .qp-sheet ul { margin: 6px 0; padding-left: 22px; }
 .qp-sheet blockquote { margin: 2px 0 2px 24px; padding: 0; border: none; }
 .qp-sheet sup, .qp-sheet sub { line-height: 0; }
+/* বোর্ড-বক্স হেডার টেবিল — এডিটরের টেবিল-চেহারার সঙ্গে মিল রেখে */
+.qp-sheet table { border-collapse: collapse; width: 100%; table-layout: fixed; margin: 10px 0 12px; }
+.qp-sheet td { border: 1.2px solid #3f3f46; padding: 6px 11px; vertical-align: top; }
+.qp-sheet td p { margin: 3px 0; }
 
 /* AI কাজের ওভারলে */
 .qp-progress {
@@ -4235,4 +4243,126 @@ html.dark .qp-format-vis { background: oklch(0.27 0.01 260); border-color: rgb(2
 @media (max-width: 640px) {
   .qp-sheet { padding: 34px 26px; }
   .qp-preview { padding: 10px; }
+}
+
+/* ═══════════════ প্রশ্নপত্র স্টুডিও — প্রো আপগ্রেড ═══════════════ */
+
+/* বোর্ড ফরম্যাট-কার্ডের মিনি-বক্স */
+.qp-vis-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  padding: 4px 5px;
+  border: 1.4px solid color-mix(in oklab, var(--foreground) 55%, transparent);
+  border-radius: 3px;
+}
+.qp-vis-boxrow {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  width: 100%;
+}
+.qp-vis-boxrow .qp-vis-bar { margin: 0 !important; }
+
+/* নকশা-ধাপ: টাইপোগ্রাফি স্কেল + সেট বৈচিত্র্য */
+.qp-design-opts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px 16px;
+  align-items: start;
+  padding: 11px 13px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: color-mix(in oklab, var(--muted) 42%, transparent);
+}
+@media (max-width: 560px) { .qp-design-opts { grid-template-columns: 1fr; } }
+.qp-design-block { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.qp-scale { display: inline-flex; gap: 4px; padding: 3px; border: 1px solid var(--border); border-radius: 9px; background: var(--background); }
+.qp-scale-btn {
+  font: inherit; font-size: 11.5px; font-weight: 600;
+  padding: 4px 13px; border: none; border-radius: 7px;
+  background: transparent; color: var(--muted-foreground); cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.qp-scale-btn:hover:not(:disabled) { color: var(--foreground); background: var(--accent); }
+.qp-scale-on { background: var(--primary) !important; color: var(--primary-foreground) !important; box-shadow: 0 1px 4px color-mix(in oklab, var(--primary) 45%, transparent); }
+.qp-design-shuffle {
+  flex-direction: row !important;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.qp-shuffle-label { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.qp-shuffle-label strong { font-size: 12.5px; color: var(--foreground); }
+.qp-shuffle-desc { font-size: 10.5px; line-height: 1.5; color: var(--muted-foreground); }
+
+/* ধাপ ১: সাম্প্রতিক প্রশ্নপত্র */
+.qp-hist { display: flex; flex-direction: column; gap: 6px; }
+.qp-hist-title {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10.5px; font-weight: 700; letter-spacing: .02em;
+  color: var(--muted-foreground); text-transform: uppercase;
+}
+.qp-hist-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.qp-hist-chip {
+  display: inline-flex; align-items: stretch; overflow: hidden;
+  border: 1px solid var(--border); border-radius: 999px;
+  background: var(--background);
+  transition: border-color .15s, box-shadow .15s;
+}
+.qp-hist-chip:hover { border-color: color-mix(in oklab, var(--primary) 45%, var(--border)); box-shadow: 0 1px 6px rgb(15 23 42 / 0.08); }
+.qp-hist-open {
+  display: inline-flex; align-items: center; gap: 4px;
+  font: inherit; font-size: 11.5px;
+  padding: 4px 6px 4px 11px; border: none; background: transparent;
+  color: var(--foreground); cursor: pointer; min-height: 26px;
+}
+.qp-hist-name { font-weight: 600; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qp-hist-sub { color: var(--muted-foreground); font-size: 10.5px; }
+.qp-hist-x {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; border: none; background: transparent;
+  color: var(--muted-foreground); cursor: pointer;
+}
+.qp-hist-x:hover { color: #dc2626; }
+
+/* প্রিভিউ: মোট-নম্বর সতর্কতা ও সেট-ব্যাজ */
+.qp-stat-warn {
+  background: color-mix(in oklab, #f59e0b 16%, var(--muted));
+  color: #92400e;
+  border: 1px solid color-mix(in oklab, #f59e0b 45%, transparent);
+}
+html.dark .qp-stat-warn { color: #fbbf24; }
+.qp-stat-set {
+  background: color-mix(in oklab, var(--primary) 14%, var(--muted));
+  color: var(--primary);
+  border: 1px dashed color-mix(in oklab, var(--primary) 45%, transparent);
+}
+
+/* প্রিভিউ: পাতা-বিভাজক নির্দেশক */
+.qp-page-guide {
+  position: absolute;
+  left: -14px;
+  right: -14px;
+  border-top: 1.6px dashed rgb(23 23 23 / 0.35);
+  pointer-events: none;
+}
+.qp-page-guide::after {
+  content: attr(data-page);
+  position: absolute;
+  right: 0;
+  top: -9px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .03em;
+  color: #fff;
+  background: #171717;
+  padding: 1px 8px;
+  border-radius: 999px;
+}
+
+@media print {
+  .qp-page-guide { display: none !important; }
 }

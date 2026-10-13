@@ -156,4 +156,51 @@ export const dictQuestionPaper = {
   },
   'qp.demo.badge': { bn: 'ডেমো', hi: 'डेमो', en: 'Demo' },
   'qp.progress.tag': { bn: 'AI কাজ করছে', hi: 'AI काम कर रहा है', en: 'AI working' },
+
+  // ── প্রো আপগ্রেড: বোর্ড ফরম্যাট, টাইপোগ্রাফি, সেট বৈচিত্র্য ──
+  'qp.format.board': {
+    bn: 'বোর্ড স্টাইল',
+    hi: 'बोर्ड शैली',
+    en: 'Board Style',
+  },
+  'qp.format.board.desc': {
+    bn: 'বক্স-হেডারসহ বোর্ড পরীক্ষার চিরচেনা ছাঁদ',
+    hi: 'बॉक्स-हेडर वाली बोर्ड परीक्षा की जानी-पहचानी शैली',
+    en: 'Classic board-exam layout with a boxed header',
+  },
+  'qp.typo.title': { bn: 'লেখার আকার', hi: 'टेक्स्ट आकार', en: 'Text size' },
+  'qp.typo.sm': { bn: 'ছোট', hi: 'छोटा', en: 'Small' },
+  'qp.typo.md': { bn: 'মাঝারি', hi: 'मध्यम', en: 'Medium' },
+  'qp.typo.lg': { bn: 'বড়', hi: 'बड़ा', en: 'Large' },
+  'qp.shuffle': { bn: 'সেট বৈচিত্র্য', hi: 'सेट विविधता', en: 'Set variation' },
+  'qp.shuffle.desc': {
+    bn: 'প্রশ্নের ক্রম এলোমেলো হবে — প্রতিবার নতুন সেট (অপশন ও নম্বর-মান অপরিবর্তিত)',
+    hi: 'प्रश्नों का क्रम बदलेगा — हर बार नया सेट (विकल्प व अंक अपरिवर्तित)',
+    en: 'Shuffles question order — a fresh set every time (options and marks untouched)',
+  },
+
+  // ── সাম্প্রতিক প্রশ্নপত্র ──
+  'qp.hist.title': { bn: 'সাম্প্রতিক', hi: 'हाल के', en: 'Recent' },
+  'qp.hist.load': { bn: 'আবার খুলুন', hi: 'फिर खोलें', en: 'Open again' },
+  'qp.hist.del': { bn: 'তালিকা থেকে মুছুন', hi: 'सूची से हटाएँ', en: 'Remove from list' },
+
+  // ── প্রিভিউ প্রো: মোট নম্বর, পৃষ্ঠা-নির্দেশক, সরাসরি প্রিন্ট ──
+  'qp.stat.total': { bn: 'মোট নম্বর', hi: 'कुल अंक', en: 'total marks' },
+  'qp.stat.mismatch': {
+    bn: 'প্রশ্নগুলোর মোট নম্বর পূর্ণমানের সঙ্গে মিলছে না',
+    hi: 'प्रश्नों के कुल अंक पूर्णांक से मेल नहीं खा रहे',
+    en: "Question marks don't add up to the full marks",
+  },
+  'qp.guide.page': { bn: 'পৃষ্ঠা', hi: 'पृष्ठ', en: 'Page' },
+  'qp.print': { bn: 'সরাসরি প্রিন্ট', hi: 'सीधे प्रिंट', en: 'Print now' },
+  'qp.toast.print': {
+    bn: 'প্রিন্ট উইন্ডো খুলছে — সেখান থেকেই প্রিন্ট বা PDF সেভ করুন',
+    hi: 'प्रिंट विंडो खुल रही है — वहीं से प्रिंट या PDF सेव करें',
+    en: 'Print window opening — print or save as PDF from there',
+  },
+  'qp.toast.popup': {
+    bn: 'পপ-আপ ব্লক হয়েছে — প্রিন্ট-ফাইল নামিয়ে নিন',
+    hi: 'पॉप-अप ब्लॉक हो गया — प्रिंट-फ़ाइल डाउनलोड करें',
+    en: 'Popup blocked — the print file downloaded instead',
+  },
 } as const;

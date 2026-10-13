@@ -18,8 +18,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   BookPlus, CalendarDays, Camera, Check, ChevronLeft, ChevronRight, CircleAlert,
-  Download, FileQuestion, Loader2, PenLine, RefreshCw, Sparkles, Trash2, Wand2,
-  Zap, ZoomIn, ZoomOut, Image as ImageIcon,
+  Download, FileQuestion, History, Loader2, PenLine, Printer, RefreshCw, Sparkles,
+  Trash2, Wand2, X, Zap, ZoomIn, ZoomOut, Image as ImageIcon,
 } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
@@ -35,10 +35,11 @@ import type { PreparedImage } from '@/lib/ai-client';
 import { useEditorStore } from '@/lib/store';
 import {
   QP_SCHOOL_KEY, QP_STRUCTURE_SYSTEM, QP_TRANSCRIBE_SYSTEM, defaultQpMeta,
-  extractQpJson, normalizeQpJson, paperToEditorHtml,
-  paperToStandaloneHtml, parseQuestionText, qpSampleText, resolveQpFormat,
+  extractQpJson, loadQpHistory, normalizeQpJson, paperToEditorHtml,
+  paperToStandaloneHtml, parseLocaleInt, parseQuestionText, pushQpHistory,
+  qpSampleText, removeQpHistoryItem, resolveQpFormat, shufflePaper, sumQpMarks,
 } from '@/lib/question-paper';
-import type { QpFormat, QpMeta, QuestionPaper } from '@/lib/question-paper';
+import type { QpFontScale, QpFormat, QpHistoryItem, QpMeta, QuestionPaper } from '@/lib/question-paper';
 import { runCommand } from '@/components/ribbon/ribbon-shell';
 import { useLangStore, useT, useFmtNum } from '@/lib/i18n';
 import { formatDateLong } from '@/lib/i18n/core';
@@ -58,9 +59,16 @@ const STEPS: Array<{ id: Step; key: string }> = [
 
 const FORMATS: Array<{ id: QpFormat; label: string; desc: string }> = [
   { id: 'auto', label: 'qp.format.auto', desc: 'qp.format.auto.desc' },
+  { id: 'board', label: 'qp.format.board', desc: 'qp.format.board.desc' },
   { id: 'classic', label: 'qp.format.classic', desc: 'qp.format.classic.desc' },
   { id: 'modern', label: 'qp.format.modern', desc: 'qp.format.modern.desc' },
   { id: 'compact', label: 'qp.format.compact', desc: 'qp.format.compact.desc' },
+];
+
+const FONT_SCALES: Array<{ id: QpFontScale; key: string }> = [
+  { id: 'sm', key: 'qp.typo.sm' },
+  { id: 'md', key: 'qp.typo.md' },
+  { id: 'lg', key: 'qp.typo.lg' },
 ];
 
 /** নকশা-কার্ডের ভেতরের মিনি-প্রিভিউ (গ্রে বার) */
@@ -79,6 +87,16 @@ function FormatVis({ id }: { id: QpFormat }) {
   }
   if (id === 'modern') {
     return <>{bar('38%')}<span className="qp-vis-rule" />{bar('70%')}{bar('58%')}</>;
+  }
+  if (id === 'board') {
+    return (
+      <span className="qp-vis-box">
+        {bar('46%', true)}{bar('34%', true)}
+        <span className="qp-vis-boxrow">
+          {bar('38%')}{bar('26%', true)}
+        </span>
+      </span>
+    );
   }
   return <>{bar('26%')}{bar('78%')}{bar('78%')}{bar('70%')}{bar('78%')}{bar('52%')}</>;
 }
@@ -108,6 +126,12 @@ export function QuestionPaperDialog() {
     return d;
   });
   const [format, setFormat] = useState<QpFormat>('auto');
+  const [fontScale, setFontScale] = useState<QpFontScale>('md');
+  const [shuffle, setShuffle] = useState(false);
+  // সাম্প্রতিক প্রশ্নপত্র — ডায়ালগ খোলা অবস্থায় localStorage থেকে derive;
+  // তালিকা বদলালে (push/remove) histVersion বাড়ে → নতুন করে পড়ে
+  const [histVersion, setHistVersion] = useState(0);
+  const history = useMemo(() => (open ? loadQpHistory() : []), [open, histVersion]);
   const [phase, setPhase] = useState<Phase>('idle');
   const [paper, setPaper] = useState<QuestionPaper | null>(null);
   const [isDemo, setIsDemo] = useState(false);
@@ -216,10 +240,15 @@ export function QuestionPaperDialog() {
     setError(null);
 
     const finish = (result: QuestionPaper, demo: boolean) => {
-      setPaper(result);
+      // সেট বৈচিত্র্য চালু থাকলে প্রশ্নের ক্রম এলোমেলো + নতুন ধারাবাহিক নম্বর
+      const final = shuffle ? shufflePaper(result) : result;
+      setPaper({ ...final, fontScale });
       setIsDemo(demo);
       setPhase('done');
       setStep(4);
+      // সাম্প্রতিক তালিকায় তুলে রাখা — পরের বার এক ক্লিকে ফেরত
+      pushQpHistory({ ts: Date.now(), rawText: rawText.trim(), meta, format, fontScale });
+      setHistVersion((v) => v + 1);
     };
 
     if (useAi) {
@@ -304,6 +333,43 @@ export function QuestionPaperDialog() {
     toast.success(tt('qp.toast.download'));
   };
 
+  // সরাসরি প্রিন্ট — স্বয়ংসম্পূর্ণ প্রিন্ট-ফাইল নতুন উইন্ডোতে লিখে প্রিন্ট-ডায়ালগ
+  const printPaper = () => {
+    if (!paper) return;
+    const w = window.open('', '_blank');
+    if (!w) {
+      // পপ-আপ ব্লক — ডাউনলোডে নেমে পড়ুন
+      downloadPaper();
+      toast.info(tt('qp.toast.popup'));
+      return;
+    }
+    w.document.open();
+    w.document.write(paperToStandaloneHtml(paper, lang));
+    w.document.close();
+    toast.success(tt('qp.toast.print'));
+    window.setTimeout(() => {
+      try { w.focus(); w.print(); } catch { /* ব্লক/বন্ধ */ }
+    }, 450);
+  };
+
+  // সাম্প্রতিক প্রশ্নপত্র — এক ক্লিকে উইজার্ডে ফেরত
+  const loadHistory = (h: QpHistoryItem) => {
+    if (busy) return;
+    setRawText(h.rawText);
+    setMeta((prev) => ({ ...(prev ?? defaultQpMeta(lang)), ...h.meta }));
+    setFormat(h.format);
+    setFontScale(h.fontScale);
+    setImage(null);
+    setPhase('idle');
+    setError(null);
+    setStep(2);
+  };
+
+  const removeHistory = (ts: number) => {
+    removeQpHistoryItem(ts);
+    setHistVersion((v) => v + 1);
+  };
+
   const goStep = (s: Step) => {
     if (busy) return;
     if (s > 1 && !rawText.trim()) {
@@ -333,6 +399,15 @@ export function QuestionPaperDialog() {
     }
     return { q, sec: paper.sections.length, mcq };
   }, [paper]);
+  // প্রো-যাচাই: প্রশ্নের মোট নম্বর বনাম ফর্মের পূর্ণমান
+  const totals = useMemo(() => {
+    if (!paper) return null;
+    const got = sumQpMarks(paper);
+    if (got == null) return null;
+    const want = parseLocaleInt(paper.meta.fullMarks);
+    return { got, want };
+  }, [paper]);
+  const marksMismatch = totals?.want != null && totals.want !== totals.got;
 
   const pages = Math.max(1, Math.ceil((sheetH || 1123) / 1123));
   const effScale = Math.max(0.25, Math.min(1.4, fitScale * zoomMult));
@@ -437,6 +512,35 @@ export function QuestionPaperDialog() {
         <p className="qp-hint">{tt('qp.raw.hint')}</p>
       </div>
 
+      {history.length > 0 ? (
+        <div className="qp-hist">
+          <span className="qp-hist-title"><History size={11} aria-hidden="true" /> {tt('qp.hist.title')}</span>
+          <div className="qp-hist-row">
+            {history.map((h) => {
+              const label = h.meta.schoolName || h.meta.subject || h.meta.examTitle || tt('qp.title');
+              return (
+                <span key={h.ts} className="qp-hist-chip">
+                  <button
+                    type="button" className="qp-hist-open" title={tt('qp.hist.load')}
+                    onClick={() => loadHistory(h)}
+                  >
+                    <span className="qp-hist-name">{label}</span>
+                    {h.meta.subject ? <span className="qp-hist-sub">· {h.meta.subject}</span> : null}
+                  </button>
+                  <button
+                    type="button" className="qp-hist-x" title={tt('qp.hist.del')}
+                    aria-label={`${tt('qp.hist.del')}: ${label}`}
+                    onClick={() => removeHistory(h.ts)}
+                  >
+                    <X size={10} aria-hidden="true" />
+                  </button>
+                </span>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+
       <div className="flex justify-end">
         <Button onClick={gotoNextFromInput} disabled={busy || !rawText.trim()}>
           {tt('qp.next')} <ChevronRight size={14} aria-hidden="true" />
@@ -529,6 +633,31 @@ export function QuestionPaperDialog() {
         ))}
       </div>
 
+      <div className="qp-design-opts">
+        <div className="qp-design-block">
+          <span className="ai-field-label">{tt('qp.typo.title')}</span>
+          <div className="qp-scale" role="radiogroup" aria-label={tt('qp.typo.title')}>
+            {FONT_SCALES.map((s) => (
+              <button
+                key={s.id} type="button" role="radio" aria-checked={fontScale === s.id}
+                className={cn('qp-scale-btn', fontScale === s.id && 'qp-scale-on')}
+                onClick={() => setFontScale(s.id)}
+                disabled={busy}
+              >
+                {tt(s.key)}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="qp-design-block qp-design-shuffle">
+          <span className="qp-shuffle-label">
+            <strong>{tt('qp.shuffle')}</strong>
+            <span className="qp-shuffle-desc">{tt('qp.shuffle.desc')}</span>
+          </span>
+          <Switch checked={shuffle} onCheckedChange={(v) => setShuffle(v)} disabled={busy} aria-label={tt('qp.shuffle')} />
+        </div>
+      </div>
+
       {!configured ? (
         <div className="ai-setup" role="note">
           <p className="ai-setup-title"><Sparkles size={14} aria-hidden="true" /> {tt('ai.setup.title')}</p>
@@ -564,6 +693,16 @@ export function QuestionPaperDialog() {
         <span className="qp-stat"><strong>{fmtNum(stats.sec)}</strong> {tt('qp.count.sec')}</span>
         <span className="qp-stat"><strong>{fmtNum(stats.q)}</strong> {tt('qp.count.q')}</span>
         {stats.mcq > 0 ? <span className="qp-stat"><strong>{fmtNum(stats.mcq)}</strong> {tt('qp.count.mcq')}</span> : null}
+        {totals ? (
+          <span
+            className={cn('qp-stat', marksMismatch && 'qp-stat-warn')}
+            title={marksMismatch ? tt('qp.stat.mismatch') : undefined}
+          >
+            <strong>{fmtNum(totals.got)}</strong> {tt('qp.stat.total')}
+            {marksMismatch ? <CircleAlert size={11} aria-hidden="true" className="ml-1 inline" /> : null}
+          </span>
+        ) : null}
+        {shuffle ? <span className="qp-stat qp-stat-set">{tt('qp.shuffle')}</span> : null}
         <span className="qp-stat qp-stat-page">{tt('qp.preview.pages').replace('{n}', fmtNum(pages))}</span>
         {isDemo ? <span className="ai-demo-badge">{tt('qp.demo.badge')}</span> : null}
         <span className="qp-stat-zoom">
@@ -588,6 +727,16 @@ export function QuestionPaperDialog() {
             style={{ transform: `scale(${effScale})`, transformOrigin: 'top left' }}
             dangerouslySetInnerHTML={{ __html: previewHtml }}
           />
+          {/* পাতা-বিভাজক নির্দেশক — কোথায় আসল পাতা ভাঙবে তার আন্দাজ */}
+          {Array.from({ length: Math.max(0, pages - 1) }, (_, i) => (
+            <span
+              key={i}
+              className="qp-page-guide"
+              style={{ top: 1123 * effScale * (i + 1) }}
+              data-page={`${tt('qp.guide.page')} ${fmtNum(i + 2)}`}
+              aria-hidden="true"
+            />
+          ))}
         </div>
       </div>
       <p className="qp-hint">{tt('qp.preview.hint')}</p>
@@ -599,6 +748,9 @@ export function QuestionPaperDialog() {
         <div className="flex flex-wrap justify-end gap-2">
           <Button variant="outline" onClick={() => void generate(true)} disabled={busy}>
             <RefreshCw size={14} aria-hidden="true" /> {tt('qp.regen')}
+          </Button>
+          <Button variant="outline" onClick={printPaper} disabled={busy} title={tt('qp.toast.print')}>
+            <Printer size={14} aria-hidden="true" /> {tt('qp.print')}
           </Button>
           <Button variant="outline" onClick={downloadPaper} disabled={busy}>
             <Download size={14} aria-hidden="true" /> {tt('qp.download')}
