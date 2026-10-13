@@ -67,16 +67,19 @@ export interface PreparedImage {
 }
 
 const MAX_DIM = 1568; // বড় ভিশন মডেলগুলোর সুইট-স্পট
-const MAX_FILE_BYTES = 4_500_000; // সার্ভারের ~5MB ক্যাপের আগেই ধরি (বেস৬৪ বাড়তি ৩৪%)
+const MAX_RAW_FILE_BYTES = 15_000_000; // ফোনের ছবি ৬–১২MB হয় — ক্যানভাসে বসানোর আগেই ফেলব না
+const MAX_ENCODED_BYTES = 4_500_000; // সার্ভারের ~5MB ক্যাপের আগেই ধরি (বেস৬৪ বাড়তি ৩৪%)
 
 /**
  * ফাইল → প্রয়োজনে ডাউনস্কেল করা dataURL (PNG হলে PNG, নইলে JPEG)
  * opts.maxDim: হাতের-লেখার ছবিতে ছোট অক্ষর টিক রাখতে বেশি রেজোলিউশন দরকার —
  * প্রশ্নপত্র স্টুডিও ২২০০px-এ কল করে, বাকি জায়গায় ডিফল্ট ১৫৬৮px।
+ * ফোনের বড় ছবিও (≤১৫MB) আগে ছোট করে নেওয়া হয় — আগে ছিল উল্টো (কাঁচা সাইজেই
+ * প্রত্যাখ্যান) — তাই শিক্ষকের ফোন-ফটো প্রায়ই "ছবি বড়" ত্রুটিতে আটকাত।
  */
 export async function prepareImageFile(file: File, opts?: { maxDim?: number }): Promise<PreparedImage> {
   const maxDim = Math.max(512, Math.min(4096, opts?.maxDim ?? MAX_DIM));
-  if (file.size > MAX_FILE_BYTES) throw new Error('IMAGE_TOO_LARGE');
+  if (file.size > MAX_RAW_FILE_BYTES) throw new Error('IMAGE_TOO_LARGE');
   const rawUrl = await readAsDataUrl(file);
   const img = await loadImage(rawUrl);
   // GIF ক্যানভাসে গেলে অ্যানিমেশন ও স্বচ্ছতা ভাঙে — সরাসরি মূল dataURL-ই সেরা
@@ -84,21 +87,48 @@ export async function prepareImageFile(file: File, opts?: { maxDim?: number }): 
     const bytes = Math.round((rawUrl.length - rawUrl.indexOf(',') - 1) * 0.75);
     return { dataUrl: rawUrl, width: img.naturalWidth, height: img.naturalHeight, name: file.name || 'image', bytes };
   }
-  const scale = Math.min(1, maxDim / Math.max(img.naturalWidth, img.naturalHeight));
-  const w = Math.max(1, Math.round(img.naturalWidth * scale));
-  const h = Math.max(1, Math.round(img.naturalHeight * scale));
 
-  const canvas = document.createElement('canvas');
-  canvas.width = w;
-  canvas.height = h;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return { dataUrl: rawUrl, width: img.naturalWidth, height: img.naturalHeight, name: file.name, bytes: file.size };
-  ctx.drawImage(img, 0, 0, w, h);
+  const bytesOf = (url: string) => Math.round((url.length - url.indexOf(',') - 1) * 0.75);
+  const drawScaled = (w: number, h: number, mime: string, quality?: number): string => {
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.drawImage(img, 0, 0, w, h);
+    }
+    return canvas.toDataURL(mime, quality);
+  };
 
   const isPng = /image\/png/i.test(file.type);
+  // হাতের-লেখার জন্য PNG নিরাপদ (ঝাপসা নয়), ফোন-ফটোর জন্য JPEG ছোট
   const mime = isPng ? 'image/png' : 'image/jpeg';
-  const dataUrl = canvas.toDataURL(mime, isPng ? undefined : 0.9);
-  const bytes = Math.round((dataUrl.length - dataUrl.indexOf(',') - 1) * 0.75);
+  let scale = Math.min(1, maxDim / Math.max(img.naturalWidth, img.naturalHeight));
+  let w = Math.max(1, Math.round(img.naturalWidth * scale));
+  let h = Math.max(1, Math.round(img.naturalHeight * scale));
+
+  let dataUrl = drawScaled(w, h, mime, isPng ? undefined : 0.9);
+  let bytes = bytesOf(dataUrl);
+
+  // এনকোড-সাইজ ক্যাপ — প্রয়োজনে মান/মাপ ধাপে ধাপে কমিয়ে নেমে আসে (ছবি কখনো বাতিল হয় না)।
+  // ছোট মাপে JPEG-এ নেমে পড়ি — PNG বড় মাপেই ভারী।
+  const steps: Array<{ q?: number; dim: number; png: boolean }> = [
+    { q: 0.82, dim: maxDim, png: isPng },
+    { q: 0.72, dim: 1800, png: isPng },
+    { q: 0.72, dim: 1600, png: false },
+    { q: 0.62, dim: 1400, png: false },
+    { q: 0.55, dim: 1250, png: false },
+  ];
+  for (const st of steps) {
+    if (bytes <= MAX_ENCODED_BYTES) break;
+    scale = Math.min(1, st.dim / Math.max(img.naturalWidth, img.naturalHeight));
+    w = Math.max(1, Math.round(img.naturalWidth * scale));
+    h = Math.max(1, Math.round(img.naturalHeight * scale));
+    dataUrl = drawScaled(w, h, st.png ? 'image/png' : 'image/jpeg', st.q);
+    bytes = bytesOf(dataUrl);
+  }
+
+  // চরম ক্ষেত্রেও বড় হলে (বিরল) — ক্যাপ ভেঙে সার্ভার বার্তাই সঠিক
   return { dataUrl, width: w, height: h, name: file.name || 'image', bytes };
 }
 
@@ -143,6 +173,8 @@ export async function callAi(opts: {
   imageDataUrl?: string | null;
   /** কি বাদ দিয়ে বিল্ট-ইন ডেমো SDK ব্যবহার */
   demo?: boolean;
+  /** হস্তলিপি-উদ্ধারের মতো নির্ভুলতা-জরুরি কাজে মডেলের "চিন্তা" চালু — ধীর কিন্তু নির্ভুল */
+  thinking?: boolean;
 }): Promise<AiCallResult> {
   const attempt = async (): Promise<AiCallResult> => {
     const config = useAiStore.getState().config;
@@ -161,6 +193,7 @@ export async function callAi(opts: {
         prompt: opts.prompt,
         system: opts.system,
         imageDataUrl: opts.imageDataUrl ?? null,
+        thinking: opts.thinking === true,
         config: useOwnKey
           ? {
               baseUrl,

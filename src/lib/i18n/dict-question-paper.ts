@@ -47,6 +47,16 @@ export const dictQuestionPaper = {
   },
   'qp.drop.title': { bn: 'ছবি এখানে ফেলুন বা ক্লিক করুন', hi: 'फ़ोटो यहाँ डालें या क्लिक करें', en: 'Drop a photo here or click' },
   'qp.drop.hint': { bn: 'ফোনে তোলা হাতের লেখাও চলবে · Ctrl+V পেস্ট', hi: 'फ़ोन से ली गई हस्तलेख फ़ोटो भी चलेगी · Ctrl+V पेस्ट', en: 'Phone photos of handwriting work · Ctrl+V paste' },
+  'qp.drop.tips': {
+    bn: 'টিপস: সোজা হয়ে স্পষ্ট আলোয় তুলুন, পুরো পাতা ফ্রেমে রাখুন, ছায়া পড়ুক না — স্পষ্ট ছবি = নির্ভুল পড়া।',
+    hi: 'सुझाव: सीधा रखकर साफ़ रोशनी में लें, पूरा पेज फ्रेम में रखें, छाया न पड़े — साफ़ फ़ोटो = सही पढ़ाई।',
+    en: 'Tips: shoot straight in good light, keep the whole page in frame, avoid shadows — a clear photo means accurate reading.',
+  },
+  'qp.drop.tips': {
+    bn: 'টিপস: সোজা হয়ে স্পষ্ট আলোয় তুলুন, পুরো পাতা ফ্রেমে রাখুন, ছায়া পড়ুক না — স্পষ্ট ছবি = নির্ভুল পড়া।',
+    hi: 'सुझाव: सीधा रखकर साफ़ रोशनी में लें, पूरा पेज फ्रेम में रखें, छाया न पड़े — साफ़ फ़ोटो = सही पढ़ाई।',
+    en: 'Tips: shoot straight in good light, keep the whole page in frame, avoid shadows — a clear photo means accurate reading.',
+  },
   'qp.transcribe': { bn: 'লেখা তুলে আনুন', hi: 'लेखा निकालें', en: 'Extract Writing' },
   'qp.transcribing': { bn: 'হাতের লেখা পড়া হচ্ছে…', hi: 'हस्तलेख पढ़ा जा रहा है…', en: 'Reading the handwriting…' },
   'qp.transcribe.done': {
@@ -59,6 +69,16 @@ export const dictQuestionPaper = {
     bn: 'প্রতি লাইনে একটি প্রশ্ন — নম্বর (১.), বিভাগ (বিভাগ – ক), নম্বর-মান [২], ক/খ/গ/ঘ অপশন বুঝে নেবে',
     hi: 'प्रति पंक्ति एक प्रश्न — नंबर (१.), खण्ड, अंक [२], क/ख/ग/घ विकल्प समझ लेगा',
     en: 'One question per line — numbers (1.), sections, marks [2], ক/খ/গ/ঘ options are understood',
+  },
+  'qp.raw.check': {
+    bn: 'ছবির সাথে মিলিয়ে দেখুন — কোনো শব্দ/সংখ্যা ভুল পড়া হয়ে থাকলে উপরের ঘরে ঠিক করে নিন, তারপর পরের ধাপে যান।',
+    hi: 'फ़ोटो से मिलाकर जाँचें — कोई शब्द/अंक ग़लत पढ़ा गया हो तो ऊपर ठीक करें, फिर अगले चरण पर जाएँ।',
+    en: 'Check against the photo — if any word/number was misread, correct it above before continuing to the next step.',
+  },
+  'qp.raw.check': {
+    bn: 'ছবির সাথে মিলিয়ে দেখুন — কোনো শব্দ/সংখ্যা ভুল পড়া হয়ে থাকলে উপরের ঘরে ঠিক করে নিন, তারপর পরের ধাপে যান।',
+    hi: 'फ़ोटो से मिलाकर जाँचें — कोई शब्द/अंक ग़लत पढ़ा गया हो तो ऊपर ठीक करें, फिर अगले चरण पर जाएँ।',
+    en: 'Check against the photo — if any word/number was misread, correct it above before continuing to the next step.',
   },
   'qp.raw.ph': {
     bn: 'উদাহরণ:\n১. গোলকের আয়তনের সূত্র লেখো। [২]\n২. $\\frac{3}{4}$ + $\\frac{1}{4}$ = ?\nবিভাগ – খ\n৩. …',
@@ -202,5 +222,27 @@ export const dictQuestionPaper = {
     bn: 'পপ-আপ ব্লক হয়েছে — প্রিন্ট-ফাইল নামিয়ে নিন',
     hi: 'पॉप-अप ब्लॉक हो गया — प्रिंट-फ़ाइल डाउनलोड करें',
     en: 'Popup blocked — the print file downloaded instead',
+  },
+
+  // ── নতুন: দুই-পাস প্রতিলিপি + হেডার স্বয়ংক্রিয়-ভরাট ──
+  'qp.busy.verify': {
+    bn: 'পড়া ঠিক আছে কি না ছবির সাথে মিলিয়ে দেখা হচ্ছে…',
+    hi: 'पढ़ाई सही है या नहीं, फ़ोटो से मिलाया जा रहा है…',
+    en: 'Double-checking the reading against the photo…',
+  },
+  'qp.drop.tips': {
+    bn: 'টিপস: সোজা হয়ে স্পষ্ট আলোয় তুলুন, পুরো পাতা ফ্রেমে রাখুন, ছায়া পড়ুক না — স্পষ্ট ছবি = নির্ভুল পড়া।',
+    hi: 'सुझाव: सीधा रखकर साफ़ रोशनी में लें, पूरा पेज फ्रेम में रखें, छाया न पड़े — साफ़ फ़ोटो = सही पढ़ाई।',
+    en: 'Tips: shoot straight in good light, keep the whole page in frame, avoid shadows — a clear photo means accurate reading.',
+  },
+  'qp.raw.check': {
+    bn: 'ছবির সাথে মিলিয়ে দেখুন — কোনো শব্দ/সংখ্যা ভুল পড়া হয়ে থাকলে উপরের ঘরে ঠিক করে নিন, তারপর পরের ধাপে যান।',
+    hi: 'फ़ोटो से मिलाकर जाँचें — कोई शब्द/अंक ग़लत पढ़ा गया हो तो ऊपर ठीक करें, फिर अगले चरण पर जाएँ।',
+    en: 'Check against the photo — if any word/number was misread, correct it above before continuing to the next step.',
+  },
+  'qp.photo.byokNote': {
+    bn: 'সবচেয়ে নির্ভুল পড়ার জন্য AI সেটিংসে নিজের Gemini/OpenAI কি যোগ করুন — ডেমো মোডে হস্তলিপি-পড়া সীমিত।',
+    hi: 'सबसे सही पढ़ाई के लिए AI सेटिंग्स में अपनी Gemini/OpenAI की जोड़ें — डेमो मोड में हस्तलेख-पढ़ाई सीमित है।',
+    en: 'For the most accurate reading, add your own Gemini/OpenAI key in AI Settings — demo-mode handwriting reading is limited.',
   },
 } as const;

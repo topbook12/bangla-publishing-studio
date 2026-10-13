@@ -4043,6 +4043,13 @@ html.dark .ai-chat-count-over { color: oklch(0.8 0.16 25); }
 /* কাঁচা লেখা */
 .qp-raw { font-size: 13px; line-height: 1.65; }
 .qp-hint { font-size: 11px; line-height: 1.55; color: var(--muted-foreground); margin-top: 6px; }
+/* হস্তলিপি-পড়ার পর শুদ্ধিকরণ-আহ্বান + ছবি-তোলার টিপস */
+.qp-check-hint { color: var(--warning-foreground, #8a6d1a); display: flex; align-items: flex-start; gap: 4px; }
+.dark .qp-check-hint { color: #d9b45c; }
+.qp-drop-tips { margin-top: 8px; }
+.qp-byok-note { color: var(--muted-foreground); }
+.qp-byok-link { color: var(--primary); text-decoration: underline; text-underline-offset: 2px; font-weight: 600; }
+.qp-byok-link:hover { opacity: 0.85; }
 
 /* বিস্তারিত ফর্ম */
 .qp-form {

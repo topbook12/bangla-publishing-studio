@@ -81,10 +81,12 @@ export interface QpHistoryItem {
   meta: QpMeta;
   format: QpFormat;
   fontScale: QpFontScale;
+  /** v2 — প্রিভিউ-চিপে দেখানোর হিসাব */
+  counts?: { sections: number; questions: number; marks: number };
 }
 
-export const QP_HISTORY_KEY = 'bwp-qp-history-v1';
-const QP_HISTORY_MAX = 3;
+export const QP_HISTORY_KEY = 'bwp-qp-history-v2';
+const QP_HISTORY_MAX = 8;
 
 export function loadQpHistory(): QpHistoryItem[] {
   try {
@@ -158,6 +160,120 @@ export function defaultQpMeta(lang: Lang): QpMeta {
   };
 }
 
+// ─── কাঁচা-লেখার হেডার পড়ে ফর্ম পূরণ (preamble meta) ───
+
+/** ভাষা-অনুযায়ী ডিফল্ট মান — শিক্ষক নিজে বদলাননি (ডিফল্টই আছে) এমন ঘর চিনতে */
+function defaultQpValues(lang: Lang): { time: string; fullMarks: string; examTitle: string } {
+  const d = defaultQpMeta(lang);
+  return { time: d.time, fullMarks: d.fullMarks, examTitle: d.examTitle };
+}
+
+const QP_KEY_PATTERNS: Array<{ field: 'subject' | 'classLabel' | 'date' | 'time' | 'fullMarks'; re: RegExp }> = [
+  { field: 'subject', re: /^(?:বিষয়|subject|विषय)\s*[:：\-–—=]/i },
+  { field: 'classLabel', re: /^(?:শ্রেণ[িী]|class|कक्षा)\s*[:：\-–—=]/i },
+  { field: 'date', re: /^(?:তারিখ|date|दिनांक)\s*[:：\-–—=]/i },
+  { field: 'time', re: /^(?:সময়|समय|time)\s*[:：\-–—=]/i },
+  { field: 'fullMarks', re: /^(?:পূর্ণমান|পূর্ণ\s*মান|ফুল\s*মার্কস|সর্বমোট\s*নম্বর|পুরো\s*নম্বর|full\s*marks?|पूर्णांक)\s*[:：\-–—=]/i },
+];
+
+const QP_SCHOOL_WORD = /(?:বিদ্যালয়|বিদ্যাপীঠ|স্কুল|মাদ্রাসা|কলেজ|academy|school|college|vidyalaya|विद्यालय|स्कूल|महाविद्यालय)/i;
+const QP_EXAM_WORD = /(?:বার্ষিক|অর্ধবার্ষিক|নির্বাচনী|সাময়িক|বোর্ড|সাপ্তাহিক|মাসিক|পরীক্ষা|টেস্ট|annual|half.?yearly|terminal|exam|test|परीक्षा)/i;
+
+/** "পূর্ণমান ৭০" জাতীয় কোলন-ছাড়া রূপও ধরে */
+const QP_MARKS_BARE = /^(?:পূর্ণমান|পূর্ণ\s*মান|ফুল\s*মার্কস|পুরো\s*নম্বর|पूर्णांक)\s+([\u09e6-\u09ef\u0966-\u096f0-9]{1,4})\s*$/i;
+
+/** কী-মান লাইনের মান অংশ — "বিষয়: গণিত" → "গণিত" */
+function afterKeyValue(line: string): string {
+  const i = line.search(/[:：=]/);
+  return i >= 0 ? line.slice(i + 1).trim() : '';
+}
+
+/**
+ * কাঁচা-লেখার প্রথম কয়েক লাইন থেকে হেডার-তথ্য (স্কুল/পরীক্ষা/বিষয়/শ্রেণি/তারিখ/সময়/পূর্ণমান)
+ * পড়ে ফর্মে বসায় — শুধু ফাঁকা বা ভাষা-ডিফল্ট ঘরে; শিক্ষকের নিজের লেখা ঘর কখনো বদলায় না।
+ * এতে হেডার শিক্ষকের নিজের লেখার সাথে মিলে যায় — "সময় ভুল এসেছে" জাতীয় অসঙ্গতি বন্ধ।
+ * এক লাইনে কয়েকটি ঘর ("সময়: ২ ঘণ্টা, পূর্ণমান: ৫০") থাকলেও সবগুলো ধরা পড়ে।
+ */
+export function qpPreambleMeta(raw: string, meta: QpMeta, lang: Lang): QpMeta {
+  const lines = (raw ?? '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean).slice(0, 12);
+  if (lines.length === 0) return meta;
+  const def = defaultQpValues(lang);
+  const patch: Partial<QpMeta> = {};
+  const canFill = (cur: string, defVal?: string) => !cur.trim() || (!!defVal && cur.trim() === defVal);
+  const put = (field: keyof QpMeta, val: string, defVal?: string) => {
+    const cur = meta[field];
+    if (typeof cur === 'string' && canFill(cur, defVal) && !patch[field]) (patch as Record<string, string>)[field] = val;
+  };
+
+  let school: string | null = null;
+  let exam: string | null = null;
+
+  for (const line of lines) {
+    // এক লাইনে একাধিক কী-মান থাকতে পারে — কমা/পাইপে ভেঙে প্রতিটি খণ্ড আলাদা চিনি
+    const segments = line.split(/\s*[,|;·]\s*/).map((s) => s.trim()).filter(Boolean);
+
+    for (const seg of segments) {
+      let matched = false;
+      for (const kp of QP_KEY_PATTERNS) {
+        if (kp.re.test(seg)) {
+          const val = afterKeyValue(seg);
+          if (val) {
+            if (kp.field === 'time') put('time', val, def.time);
+            else if (kp.field === 'fullMarks') put('fullMarks', val, def.fullMarks);
+            else if (kp.field === 'subject') put('subject', val);
+            else if (kp.field === 'classLabel') put('classLabel', val);
+            else if (kp.field === 'date') put('date', val);
+          }
+          matched = true;
+          break;
+        }
+      }
+      if (matched) continue;
+      const bm = seg.match(QP_MARKS_BARE);
+      if (bm) { put('fullMarks', bm[1], def.fullMarks); continue; }
+      // পরীক্ষার নাম — পরীক্ষা-শব্দমাখা খণ্ড (স্কুল-শব্দ না থাকলে)
+      if (exam === null && QP_EXAM_WORD.test(seg) && seg.length < 90 && !QP_SCHOOL_WORD.test(seg)) {
+        exam = seg;
+        continue;
+      }
+      // স্কুলের নাম — স্কুল-শব্দমাখা প্রথম খণ্ড
+      if (school === null && QP_SCHOOL_WORD.test(seg) && seg.length < 80) {
+        school = seg;
+      }
+    }
+  }
+
+  if (school && canFill(meta.schoolName)) patch.schoolName = school;
+  if (exam && canFill(meta.examTitle, def.examTitle)) patch.examTitle = exam;
+  return Object.keys(patch).length > 0 ? { ...meta, ...patch } : meta;
+}
+
+/**
+ * নির্দেশনা-তালিকা পরিষ্কার — AI/পার্সার যে-কোনো উৎস থেকে আসুক, সময়/পূর্ণমান/তারিখ/
+ * বিষয়/স্কুল-জাতীয় হেডার-লাইন নির্দেশনা হিসেবে বসবে না (সেগুলো হেডারের জায়গা)।
+ */
+export function cleanQpInstructions(list: unknown): string[] {
+  if (!Array.isArray(list)) return [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const item of list.slice(0, 12)) {
+    const s = (typeof item === 'string' ? item : '').trim();
+    if (!s || s.length > 160) continue;
+    const isHeader =
+      QP_KEY_PATTERNS.some((kp) => kp.re.test(s)) ||
+      /^(?:সময়|पूर्णांक|date|दिनांक)\s*[:：]/i.test(s) ||
+      QP_MARKS_BARE.test(s) ||
+      (QP_SCHOOL_WORD.test(s) && s.length < 70);
+    if (isHeader) continue;
+    const key = s.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(s);
+    if (out.length >= 6) break;
+  }
+  return out;
+}
+
 // ─── AI সিস্টেম-প্রম্পট ───
 
 /** হাতের লেখা ছবি → বিশ্বস্ত টেক্সট (কঠোর JSON) */
@@ -192,10 +308,14 @@ You receive a HEADER block (teacher's exam details) and RAW QUESTION TEXT (typed
 
 Return ONLY valid JSON — no markdown fences, no commentary. Shape exactly:
 {
+  "schoolName": string,       // school name ONLY if stated in RAW text and missing from HEADER
   "examTitle": string,        // e.g. "বার্ষিক পরীক্ষা — ২০২৫" ("" if unknown)
   "subject": string,          // "" if unknown
   "classLabel": string,       // e.g. "ষষ্ঠ শ্রেণি", "" if unknown
-  "instructions": string[],   // 2–4 short exam instructions in the paper's language
+  "date": string,             // exam date exactly as written in source ("" if unknown)
+  "time": string,             // exam duration exactly as written ("" if unknown)
+  "fullMarks": string,        // total marks exactly as written ("" if unknown)
+  "instructions": string[],   // 2–4 short exam-day directives in the paper's language
   "sections": [
     {
       "title": string,        // "বিভাগ – ক" / "Section A"; "" only if a single unnamed section
@@ -215,7 +335,8 @@ Return ONLY valid JSON — no markdown fences, no commentary. Shape exactly:
 
 Rules:
 - LANGUAGE MIRROR: everything in the SAME language and numeral system as the RAW text (default Bengali). NEVER translate.
-- HEADER FIDELITY: use the HEADER block values exactly when provided; otherwise infer from the RAW text; otherwise "" — never invent a school name.
+- HEADER FIDELITY: use the HEADER block values exactly when provided; otherwise infer from the RAW text; otherwise "" — never invent a school name. Meta fields (schoolName/examTitle/subject/classLabel/date/time/fullMarks) fill ONLY what the HEADER block lacks or leaves empty.
+- INSTRUCTIONS MUST BE DIRECTIVES ONLY: "উত্তর পরিষ্কার হস্তাক্ষরে লিখতে হবে", "সব প্রশ্নের উত্তর দিতে হবে" style. NEVER put time/marks/date/subject/school lines into instructions — those are HEADER data, not directives.
 - FIDELITY: keep EVERY question from the source. NEVER invent, drop or merge questions. Light grammar/spacing polish only.
 - NUMBERING: clean sequential numbering within each section; keep the source's numbers when they are already sequential.
 - MARKS: attach marks only when the source states them; never invent marks.
@@ -226,6 +347,20 @@ Rules:
 - SUB-QUESTIONS: keep "(ক)" "(i)" style prefixes inside sub text.
 
 OUTPUT: Return ONLY a single valid JSON object — no markdown fences, no commentary before or after. Inside every JSON string, escape line breaks as \\n — never put raw line breaks inside a JSON string.`;
+
+/** প্রতিলিপি দ্বিতীয় পাস — নিজের পড়া ছবির সাথে মিলিয়ে শুদ্ধ করা */
+export const QP_VERIFY_SYSTEM = `You are the verification engine of "Bangla Publishing Studio" — the second pair of eyes that proofreads a transcription of a handwritten/printed question-paper photo against the original image.
+
+You receive: (1) the photo, (2) a DRAFT transcription produced in a first pass. The draft may contain reading errors: wrong words, wrong Bengali/Devanagari numerals, missed lines, or invented text.
+
+Verify the draft LINE BY LINE against the image:
+- Correct every word/numeral that does not match the image (e.g. প্রতিসরণ vs প্রতিফলন, ৫০ vs ৬০).
+- ADD any question, section header, option, marks value or header line visible in the image but missing from the draft.
+- REMOVE any line that is NOT in the image (invented text) — never keep hallucinated questions.
+- Keep the original language and numerals; keep MATH in $...$ LaTeX; keep the same output shape.
+- Line-shape rules: one question per line with its number ("১."), MCQ options on their own lines ("ক."), marks at line end in brackets [২], section headers on their own lines, exam/school header at top.
+
+OUTPUT: Return ONLY a valid JSON object — { "text": "the corrected complete transcription" }. No markdown fences, no commentary. Inside the JSON string, escape every line break as \\n.`;
 
 /** AI প্রথম উত্তর ভাঙা JSON দিলে মেরামত-পুনরায়ের অনুরোধ */
 export const QP_REPAIR_NOTE = `Your previous reply could not be parsed as JSON. Reply again with ONLY the JSON object itself — no markdown fences, no commentary. Inside JSON strings, escape every line break as \\n.`;
@@ -319,10 +454,99 @@ function unescapeJsonText(s: string): string {
 const QP_TRANSCRIPT_KEYS = ['text', 'transcription', 'transcript', 'result', 'content', 'output'];
 
 /**
+ * মডেল প্রায়ই আমাদের কঠোর-আকার উপেক্ষা করে নিজের কাঠামোতে উত্তর দেয়:
+ * {"header":{...}, "questions":[{number,text,marks,options},…]} — এই আকার থেকে
+ * লাইন-ভিত্তিক কাঁচা-লেখা গড়ে তোলা। প্রশ্ন-অ্যারে থাকলেই যথেষ্ট।
+ */
+function transcriptFromStructuredQuestions(obj: Record<string, unknown>): string | null {
+  // নেস্ট-আবরণ: {data|result|paper: {questions…}}
+  let root: Record<string, unknown> = obj;
+  for (let i = 0; i < 2; i++) {
+    if (asArr(root.questions).length > 0) break;
+    const nest = root.data ?? root.result ?? root.paper;
+    if (nest && typeof nest === 'object' && !Array.isArray(nest)) { root = nest as Record<string, unknown>; continue; }
+    break;
+  }
+  const questions = asArr(root.questions);
+  if (questions.length === 0) return null;
+
+  const lines: string[] = [];
+  // হেডার (থাকলে) — স্কুল/পরীক্ষা/বিষয়/সময়/পূর্ণমান
+  const head = root.header ?? root.meta ?? root.exam;
+  if (head && typeof head === 'object' && !Array.isArray(head)) {
+    const h = head as Record<string, unknown>;
+    const headerBits: string[] = [];
+    for (const k of ['school', 'school_name', 'schoolName', 'institution']) {
+      const v = asStr(h[k]); if (v) { headerBits.push(v); break; }
+    }
+    for (const k of ['exam', 'examTitle', 'exam_title', 'title']) {
+      const v = asStr(h[k]); if (v) { headerBits.push(v); break; }
+    }
+    for (const k of ['subject', 'sub']) {
+      const v = asStr(h[k]); if (v) { headerBits.push(`বিষয়: ${v}`); break; }
+    }
+    for (const k of ['class', 'classLabel', 'class_name', 'cls']) {
+      const v = asStr(h[k]); if (v) { headerBits.push(`শ্রেণি: ${v}`); break; }
+    }
+    if (headerBits.length > 0) lines.push(headerBits.join(' — '));
+    for (const k of ['time', 'duration']) {
+      const v = asStr(h[k]); if (v) { lines.push(`সময়: ${v}`); break; }
+    }
+    for (const k of ['fullMarks', 'full_marks', 'totalMarks', 'total_marks']) {
+      const v = asStr(h[k]); if (v) { lines.push(`পূর্ণমান: ${v}`); break; }
+    }
+  }
+  // বিভাগ-হেডার (থাকলে)
+  for (const k of ['section_title', 'sectionTitle', 'section']) {
+    const v = asStr(root[k]);
+    if (v) { lines.push('', v); break; }
+  }
+
+  for (const qRaw of questions) {
+    if (typeof qRaw === 'string') {
+      const s = qRaw.trim();
+      if (s) lines.push(s);
+      continue;
+    }
+    if (!qRaw || typeof qRaw !== 'object') continue;
+    const q = qRaw as Record<string, unknown>;
+    const num = asStr(q.number ?? q.no ?? q.num ?? q.qno);
+    const text = asStr(q.text ?? q.question ?? q.question_text ?? q.body ?? q.q);
+    if (!text) continue;
+    const marks = asStr(q.marks ?? q.mark ?? q.value ?? q.points);
+    lines.push(`${num ? `${num}. ` : ''}${text}${marks ? ` [${marks}]` : ''}`);
+    for (const o of asArr(q.options ?? q.choices ?? q.mcq)) {
+      if (typeof o === 'string') {
+        const s = o.trim();
+        if (s) lines.push(s);
+      } else if (o && typeof o === 'object') {
+        const ob = o as Record<string, unknown>;
+        const label = asStr(ob.label ?? ob.option ?? ob.key ?? ob.letter);
+        const otext = asStr(ob.text ?? ob.value ?? ob.content);
+        if (otext) lines.push(`${label ? `${label}. ` : ''}${otext}`);
+      }
+    }
+    for (const sb of asArr(q.subs ?? q.sub_questions ?? q.parts)) {
+      if (typeof sb === 'string') {
+        const s = sb.trim();
+        if (s) lines.push(s);
+      } else if (sb && typeof sb === 'object') {
+        const sb2 = sb as Record<string, unknown>;
+        const stext = asStr(sb2.text ?? sb2.question ?? sb2.q);
+        const smarks = asStr(sb2.marks ?? sb2.mark);
+        if (stext) lines.push(`${stext}${smarks ? ` [${smarks}]` : ''}`);
+      }
+    }
+  }
+  return lines.length > 0 ? lines.join('\n') : null;
+}
+
+/**
  * AI-প্রতিলিপি উত্তর থেকে কাঁচা লেখা বের করা — সর্বোচ্চ সহনশীলতা:
  *  ১) পার্স-হওয়া JSON হলে চেনা কি (text/transcription/…) থেকে;
- *  ২) JSON ভাঙা হলে এক-কি-শেপ রেগেক্সে উদ্ধার (মডেল পড়েছে, কেবল ফরম্যাট ভেঙেছে);
- *  ৩) JSON-ই না হলে পুরো উত্তরটাই প্রতিলিপি হিসেবে নেয়।
+ *  ২) মডেলের নিজেছে-কাঠামো ({questions:[{number,text,marks}]}) থেকে লাইন গড়ে;
+ *  ৩) JSON ভাঙা হলে এক-কি-শেপ রেগেক্সে উদ্ধার (মডেল পড়েছে, কেবল ফরম্যাট ভেঙেছে);
+ *  ৪) JSON-ই না হলে পুরো উত্তরটাই প্রতিলিপি হিসেবে নেয়।
  * এতে "হাতের লেখা পড়া গেছে, তবু ব্যর্থ দেখাচ্ছে" — সেই মূল বাগ বন্ধ হয়।
  */
 export function extractTranscriptText(raw: string): string | null {
@@ -339,6 +563,9 @@ export function extractTranscriptText(raw: string): string | null {
         return (v as string[]).join('\n');
       }
     }
+    // মডেলের নিজেছে-কাঠামো — questions-অ্যারে থেকে লাইন বানায়
+    const structured = transcriptFromStructuredQuestions(obj);
+    if (structured) return structured;
     return null; // JSON পার্স হয়েছে কিন্তু প্রতিলিপি-কি নেই
   }
 
@@ -545,15 +772,23 @@ export function normalizeQpJson(data: unknown, meta: QpMeta, format: QpFormat): 
   const valid = sections.filter((s) => s.questions.length > 0);
   if (valid.length === 0) return null;
 
-  // হেডার: AI-এর মান দিয়ে ফর্মের ফাঁকা ঘর পূরণ — শিক্ষকের লেখাই প্রাধান্য পায়
-  const aiInstructions = asArr(d.instructions).map(asStr).filter(Boolean);
+  // হেডার: ফর্মের ফাঁকা ঘরে AI-এর মান বসে — শিক্ষকের লেখা/আগে-থেকে-ভরা ঘরই প্রাধান্য পায়।
+  // AI-কে নির্দেশ দেওয়া আছে কেবল RAW লেখায় স্পষ্ট লেখা তথ্যই মেটা-ফাঁকে দিতে।
+  const fillIfEmpty = (cur: string, ...keys: string[]): string => {
+    if (cur.trim()) return cur;
+    return firstStr(d, keys);
+  };
+  const aiInstructions = cleanQpInstructions(asArr(d.instructions));
   return {
     meta: {
       ...meta,
-      schoolName: meta.schoolName || '',
-      examTitle: meta.examTitle || firstStr(d, ['examTitle', 'exam_title', 'exam', 'title']),
-      subject: meta.subject || firstStr(d, ['subject', 'sub', 'subjectName']),
-      classLabel: meta.classLabel || firstStr(d, ['classLabel', 'class', 'className', 'class_name']),
+      schoolName: fillIfEmpty(meta.schoolName, 'schoolName', 'school', 'school_name', 'institution'),
+      examTitle: fillIfEmpty(meta.examTitle, 'examTitle', 'exam_title', 'exam', 'title'),
+      subject: fillIfEmpty(meta.subject, 'subject', 'sub', 'subjectName'),
+      classLabel: fillIfEmpty(meta.classLabel, 'classLabel', 'class', 'className', 'class_name'),
+      date: fillIfEmpty(meta.date, 'date', 'examDate'),
+      time: fillIfEmpty(meta.time, 'time', 'duration', 'examTime'),
+      fullMarks: fillIfEmpty(meta.fullMarks, 'fullMarks', 'full_marks', 'totalMarks', 'total_marks'),
       instructions: aiInstructions.length > 0 ? aiInstructions : meta.instructions,
     },
     sections: valid,
@@ -770,10 +1005,9 @@ export function parseQuestionText(raw: string, meta: QpMeta, format: QpFormat, l
     for (const q of sec.questions) if (!q.marks) q.marks = markVal;
   }
 
-  // প্রথম প্রশ্নের আগের লাইনগুলো নির্দেশনা হিসেবে ধরা হয় (প্রায়ই হয়)
-  const instructions = preamble
-    .filter((l) => !/^(?:সময়|পূর্ণমান|ফুল মার্কস|समय|पूर्णांक|time|marks?)/i.test(l) || l.length > 80)
-    .slice(0, 6);
+  // প্রথম প্রশ্নের আগের লাইনগুলো নির্দেশনা হিসেবে ধরা হয় (প্রায়ই হয়) —
+  // সময়/পূর্ণমান-জাতীয় হেডার-লাইন cleanQpInstructions ছেঁটে ফেলে
+  const instructions = cleanQpInstructions(preamble);
 
   return {
     meta: { ...meta, instructions: meta.instructions.length > 0 ? meta.instructions : instructions },

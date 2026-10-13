@@ -34,10 +34,10 @@ import { callAi, prepareImageFile } from '@/lib/ai-client';
 import type { PreparedImage } from '@/lib/ai-client';
 import { useEditorStore } from '@/lib/store';
 import {
-  QP_SCHOOL_KEY, QP_REPAIR_NOTE, QP_STRUCTURE_SYSTEM, QP_TRANSCRIBE_SYSTEM, defaultQpMeta,
-  extractQpJson, extractTranscriptText, loadQpHistory, normalizeQpJson, paperToEditorHtml,
-  paperToStandaloneHtml, parseLocaleInt, parseQuestionText, pushQpHistory,
-  qpSampleText, removeQpHistoryItem, resolveQpFormat, shufflePaper, sumQpMarks,
+  QP_SCHOOL_KEY, QP_REPAIR_NOTE, QP_STRUCTURE_SYSTEM, QP_TRANSCRIBE_SYSTEM, QP_VERIFY_SYSTEM,
+  defaultQpMeta, extractQpJson, extractTranscriptText, loadQpHistory, normalizeQpJson,
+  paperToEditorHtml, paperToStandaloneHtml, parseLocaleInt, parseQuestionText, pushQpHistory,
+  qpPreambleMeta, qpSampleText, removeQpHistoryItem, resolveQpFormat, shufflePaper, sumQpMarks,
 } from '@/lib/question-paper';
 import type { QpFontScale, QpFormat, QpHistoryItem, QpMeta, QuestionPaper } from '@/lib/question-paper';
 import { runCommand } from '@/components/ribbon/ribbon-shell';
@@ -47,7 +47,7 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
 type Step = 1 | 2 | 3 | 4;
-type Phase = 'idle' | 'transcribing' | 'generating' | 'done' | 'error';
+type Phase = 'idle' | 'transcribing' | 'verifying' | 'generating' | 'done' | 'error';
 type QpError = { hintKey: string; detail?: string };
 
 const STEPS: Array<{ id: Step; key: string }> = [
@@ -188,7 +188,9 @@ export function QuestionPaperDialog() {
     }
   }, [tt]);
 
-  // হাতের লেখা ছবি → টেক্সট (AI / ডেমো SDK)
+  // হাতের লেখা ছবি → টেক্সট (AI / ডেমো SDK) — দুই-পাস: পড়া → ছবির সাথে মিলিয়ে শুদ্ধ করা
+  // এক-পাসে ভিশন-মডেল প্রায়ই শব্দ/সংখ্যা ভুল পড়ে বা বানিয়ে ফেলে — দ্বিতীয় পাসে নিজের
+  // খসড়া ছবির সাথে লাইন-ধরে-লাইন মিলিয়ে ভুল শুদ্ধ হয়, ভুয়া প্রশ্ন বাদ যায়।
   const transcribe = async () => {
     if (!image || busy) return;
     setPhase('transcribing');
@@ -197,23 +199,40 @@ export function QuestionPaperDialog() {
       prompt: 'এই ছবির সব প্রশ্ন, হেডার ও নম্বর-মান সম্পূর্ণ উদ্ধার করে উপরের JSON ফরম্যাটে দাও। অস্পষ্ট হাতের লেখাও যতটা পারো পড়ো — কোনো প্রশ্ন বাদ দেবে না।',
       system: QP_TRANSCRIBE_SYSTEM,
       imageDataUrl: image.dataUrl,
+      thinking: true, // হস্তলিপি-পড়া নির্ভুলতা-জরুরি — ধীর হলেও শুদ্ধ
     });
-    if (res.ok && res.text) {
-      // সর্বোচ্চ সহনশীল উদ্ধার — JSON ভাঙা/অন্য-কি-নাম/সরাসরি লেখা, সব চলে
-      const text = extractTranscriptText(res.text) ?? '';
-      if (text) {
-        setRawText((prev) => (prev.trim() ? `${prev}\n${text}` : text));
-        setIsDemo(!!res.demo);
-        setPhase('idle');
-        toast.success(tt('qp.transcribe.done'));
-        return;
-      }
+    if (!(res.ok && res.text)) {
+      setError({ hintKey: res.hintKey ?? 'ai.err.title', detail: res.detail });
+      setPhase('error');
+      return;
+    }
+    const draft = extractTranscriptText(res.text) ?? '';
+    if (!draft) {
       setError({ hintKey: 'qp.err.empty' });
       setPhase('error');
       return;
     }
-    setError({ hintKey: res.hintKey ?? 'ai.err.title', detail: res.detail });
-    setPhase('error');
+
+    // দ্বিতীয় পাস — নিজের পড়া ছবির সাথে মিলিয়ে শুদ্ধ; ব্যর্থ হলে প্রথম পাসের খসড়াই থাকে
+    setPhase('verifying');
+    const ver = await callAi({
+      prompt: [
+        'DRAFT TRANSCRIPTION (first pass):',
+        draft.slice(0, 8000),
+        '',
+        'Verify this draft line by line against the image and return the corrected complete transcription in the JSON shape.',
+      ].join('\n'),
+      system: QP_VERIFY_SYSTEM,
+      imageDataUrl: image.dataUrl,
+      thinking: true,
+    });
+    const verified = ver.ok && ver.text ? extractTranscriptText(ver.text) : null;
+    const text = verified && verified.trim().length >= 4 ? verified : draft;
+
+    setRawText((prev) => (prev.trim() ? `${prev}\n${text}` : text));
+    setIsDemo(!!res.demo);
+    setPhase('idle');
+    toast.success(tt('qp.transcribe.done'));
   };
 
   // Ctrl+V পেস্ট — ইনপুট ধাপে ছবি সরাসরি বসে
@@ -240,6 +259,12 @@ export function QuestionPaperDialog() {
     setPhase('generating');
     setError(null);
 
+    // কাঁচা-লেখার হেডার (স্কুল/পরীক্ষা/বিষয়/শ্রেণি/সময়/পূর্ণমান) ফর্মে স্বয়ংক্রিয় বসানো —
+    // শুধু ফাঁকা/ডিফল্ট ঘর ভরে, শিক্ষকের নিজের লেখা অক্ষত থাকে। ফর্মে দেখা যায়,
+    // তাই হেডার যা-ই হোক — শিক্ষকের চোখের সামনেই সেটা।
+    const effMeta = qpPreambleMeta(rawText, meta, lang);
+    setMeta(effMeta);
+
     const finish = (result: QuestionPaper, demo: boolean) => {
       // সেট বৈচিত্র্য চালু থাকলে প্রশ্নের ক্রম এলোমেলো + নতুন ধারাবাহিক নম্বর
       const final = shuffle ? shufflePaper(result) : result;
@@ -248,19 +273,31 @@ export function QuestionPaperDialog() {
       setPhase('done');
       setStep(4);
       // সাম্প্রতিক তালিকায় তুলে রাখা — পরের বার এক ক্লিকে ফেরত
-      pushQpHistory({ ts: Date.now(), rawText: rawText.trim(), meta, format, fontScale });
+      const got = sumQpMarks(final);
+      pushQpHistory({
+        ts: Date.now(),
+        rawText: rawText.trim(),
+        meta: effMeta,
+        format,
+        fontScale,
+        counts: {
+          sections: final.sections.length,
+          questions: final.sections.reduce((n, s) => n + s.questions.length, 0),
+          marks: got ?? 0,
+        },
+      });
       setHistVersion((v) => v + 1);
     };
 
     if (useAi) {
       const header = [
-        meta.schoolName && `school_name: ${meta.schoolName}`,
-        meta.examTitle && `exam_title: ${meta.examTitle}`,
-        meta.subject && `subject: ${meta.subject}`,
-        meta.classLabel && `class: ${meta.classLabel}`,
-        meta.date && `date: ${meta.date}`,
-        meta.time && `time: ${meta.time}`,
-        meta.fullMarks && `full_marks: ${meta.fullMarks}`,
+        effMeta.schoolName && `school_name: ${effMeta.schoolName}`,
+        effMeta.examTitle && `exam_title: ${effMeta.examTitle}`,
+        effMeta.subject && `subject: ${effMeta.subject}`,
+        effMeta.classLabel && `class: ${effMeta.classLabel}`,
+        effMeta.date && `date: ${effMeta.date}`,
+        effMeta.time && `time: ${effMeta.time}`,
+        effMeta.fullMarks && `full_marks: ${effMeta.fullMarks}`,
       ].filter(Boolean).join('\n');
       const prompt = [
         'HEADER:',
@@ -279,13 +316,13 @@ export function QuestionPaperDialog() {
         const retry = await callAi({ prompt: `${prompt}\n\n${QP_REPAIR_NOTE}`, system: QP_STRUCTURE_SYSTEM });
         if (retry.ok && retry.text) data = extractQpJson<unknown>(retry.text);
       }
-      const result = data ? normalizeQpJson(data, meta, format) : null;
+      const result = data ? normalizeQpJson(data, effMeta, format) : null;
       if (result) {
         finish(result, !!res.demo);
         return;
       }
       // AI সাড়া দেয়নি / বোধগম্য কাঠামো দেয়নি — অফলাইন পার্সার ফলব্যাক (গ্রেসফুল)
-      const local = parseQuestionText(rawText, meta, format, lang);
+      const local = parseQuestionText(rawText, effMeta, format, lang);
       if (local) {
         finish(local, false);
         toast.info(tt('qp.noai'));
@@ -297,7 +334,7 @@ export function QuestionPaperDialog() {
     }
 
     // সরাসরি অফলাইন পার্সার
-    const local = parseQuestionText(rawText, meta, format, lang);
+    const local = parseQuestionText(rawText, effMeta, format, lang);
     if (!local) {
       setError({ hintKey: 'qp.toast.parseFail' });
       setPhase('error');
@@ -471,8 +508,8 @@ export function QuestionPaperDialog() {
                 <p className="ai-thumb-dim">{image.width} × {image.height}</p>
                 <div className="flex flex-wrap gap-1.5">
                   <Button size="sm" onClick={() => void transcribe()} disabled={busy}>
-                    {phase === 'transcribing'
-                      ? <><Loader2 size={13} className="animate-spin" aria-hidden="true" /> {tt('qp.transcribing')}</>
+                    {phase === 'transcribing' || phase === 'verifying'
+                      ? <><Loader2 size={13} className="animate-spin" aria-hidden="true" /> {tt(phase === 'verifying' ? 'qp.busy.verify' : 'qp.transcribing')}</>
                       : <><Sparkles size={13} aria-hidden="true" /> {tt('qp.transcribe')}</>}
                   </Button>
                   <Button size="sm" variant="outline" onClick={() => fileInputRef.current?.click()}>{tt('ai.drop.change')}</Button>
@@ -489,6 +526,15 @@ export function QuestionPaperDialog() {
               e.target.value = '';
             }}
           />
+          <p className="qp-hint qp-drop-tips">{tt('qp.drop.tips')}</p>
+          {!configured ? (
+            <p className="qp-hint qp-byok-note">
+              {tt('qp.photo.byokNote')}{' '}
+              <button type="button" className="qp-byok-link" onClick={() => openDialog('aiSettings')}>
+                {tt('ai.setup.open')}
+              </button>
+            </p>
+          ) : null}
         </>
       ) : null}
 
@@ -514,6 +560,9 @@ export function QuestionPaperDialog() {
           disabled={busy}
         />
         <p className="qp-hint">{tt('qp.raw.hint')}</p>
+        {mode === 'photo' && image && rawText.trim() ? (
+          <p className="qp-hint qp-check-hint">{tt('qp.raw.check')}</p>
+        ) : null}
       </div>
 
       {history.length > 0 ? (
@@ -522,6 +571,7 @@ export function QuestionPaperDialog() {
           <div className="qp-hist-row">
             {history.map((h) => {
               const label = h.meta.schoolName || h.meta.subject || h.meta.examTitle || tt('qp.title');
+              const cnt = h.counts;
               return (
                 <span key={h.ts} className="qp-hist-chip">
                   <button
@@ -530,6 +580,9 @@ export function QuestionPaperDialog() {
                   >
                     <span className="qp-hist-name">{label}</span>
                     {h.meta.subject ? <span className="qp-hist-sub">· {h.meta.subject}</span> : null}
+                    {cnt && cnt.questions > 0 ? (
+                      <span className="qp-hist-sub">· {fmtNum(cnt.questions)} {tt('qp.count.q')}</span>
+                    ) : null}
                   </button>
                   <button
                     type="button" className="qp-hist-x" title={tt('qp.hist.del')}
@@ -830,7 +883,7 @@ export function QuestionPaperDialog() {
             <div className="qp-progress-card">
               <Loader2 size={22} className="qp-progress-spin" aria-hidden="true" />
               <p className="qp-progress-title">
-                {phase === 'transcribing' ? tt('qp.busy.read') : tt('qp.busy.analyze')}
+                {phase === 'transcribing' ? tt('qp.busy.read') : phase === 'verifying' ? tt('qp.busy.verify') : tt('qp.busy.analyze')}
               </p>
               <p className="qp-progress-wait">{tt('qp.busy.wait')}</p>
               <span className="ai-progress" aria-hidden="true"><span /></span>

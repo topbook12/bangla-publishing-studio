@@ -56,6 +56,8 @@ interface ChatBody {
   imageDataUrl?: string | null;
   /** SSE স্ট্রিমিং চাইলে true — উত্তর text/event-stream হয় */
   stream?: boolean;
+  /** হস্তলিপি-উদ্ধারের মতো নির্ভুলতা-জরুরি কাজ — মডেলের চিন্তা বন্ধ করা হয় না */
+  thinking?: boolean;
   config?: AiProxyConfig | null;
 }
 
@@ -194,7 +196,9 @@ function geminiPayload(body: ChatBody, model?: string): Record<string, unknown> 
   };
   // গতি — চিন্তা-বাজেট ০: ফ্ল্যাশ-পরিবারের মডেল ডিফল্টে অন্তর্নিহিত চিন্তা করে;
   // বই-সম্পাদনার নির্ধারিত ট্রান্সফর্মে সেটা সময়-নষ্ট। pro মডেলে ০ অনুমোদিত নয়।
-  if (model && geminiFastThinkingModel(model)) {
+  // তবে হস্তলিপি-উদ্ধারের মতো নির্ভুলতা-জরুরি কাজে (body.thinking) চিন্তা চালুই থাকে —
+  // ধীর হলেও পড়া অনেক শুদ্ধ হয়।
+  if (model && geminiFastThinkingModel(model) && body.thinking !== true) {
     (payload.generationConfig as Record<string, unknown>).thinkingConfig = { thinkingBudget: 0 };
   }
   if (body.system) payload.systemInstruction = { parts: [{ text: body.system }] };
@@ -413,7 +417,9 @@ async function callDemo(body: ChatBody): Promise<{ text: string }> {
           ],
         },
       ],
-      thinking: { type: 'disabled' },
+      // হস্তলিপি-উদ্ধার (thinking:true) — নির্ভুলতার জন্য মডেলের চিন্তা চালু থাকে;
+      // বাকি ভিশন-কাজে গতির জন্য বন্ধ
+      ...(body.thinking === true ? {} : { thinking: { type: 'disabled' as const } }),
     });
     const text = res.choices[0]?.message?.content ?? '';
     if (!text.trim()) throw new Error('EMPTY_RESPONSE');
