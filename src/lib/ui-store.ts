@@ -28,6 +28,9 @@ export type DialogName =
 /** AI ডায়ালগের কোন ট্যাব নিয়ে খুলবে */
 export type AiVisionTab = 'vision' | 'text';
 
+/** নেভিগেটর সাইডবারের ট্যাব — আউটলাইন (শিরোনাম) বা পাতা (থাম্বনেইল) */
+export type NavigatorTab = 'outline' | 'pages';
+
 /** localStorage থেকে '1'/'0' ফ্ল্যাগ পড়া — ব্যর্থ হলে fallback */
 function readBoolFlag(key: string, fallback: boolean): boolean {
   try {
@@ -79,6 +82,8 @@ interface UiState {
   aiVisionTab: AiVisionTab;
   /** আউটলাইন নেভিগেটর সাইডবার খোলা আছে কি না */
   navigatorOpen: boolean;
+  /** নেভিগেটরের চলতি ট্যাব — শিরোনাম-তালিকা বা পৃষ্ঠা-থাম্বনেইল */
+  navigatorTab: NavigatorTab;
   /** ফোকাস মোড (নিরবচ্ছিন্ন লেখা) চালু আছে কি না */
   focusMode: boolean;
   /** AI চ্যাট প্যানেল (ডান পাশ) খোলা আছে কি না */
@@ -93,6 +98,7 @@ interface UiState {
   openPageChrome: (pageId: string) => void;
   close: () => void;
   toggleNavigator: () => void;
+  setNavigatorTab: (t: NavigatorTab) => void;
   setFocusMode: (v: boolean) => void;
   toggleFocusMode: () => void;
   toggleAiChat: () => void;
@@ -105,7 +111,8 @@ export const useUiStore = create<UiState>((set, get) => ({
   openDialog: null,
   pageChromeId: null,
   aiVisionTab: 'vision',
-  navigatorOpen: readBoolFlag('bwp-navigator-open', false),
+  navigatorOpen: readBoolFlag('bwp-navigator-open', false) && (typeof window === 'undefined' || window.innerWidth >= 640),
+  navigatorTab: readStrFlag('bwp-navigator-tab', 'outline') === 'pages' ? 'pages' : 'outline',
   focusMode: readBoolFlag('bwp-focus-mode', false),
   aiChatOpen: false,
   // স্কেল/রুলার — ডেস্কটপে ডিফল্ট চালু, ছোট স্ক্রিনে (মোবাইল) ডিফল্ট বন্ধ
@@ -119,6 +126,10 @@ export const useUiStore = create<UiState>((set, get) => ({
     const next = !get().navigatorOpen;
     writeBoolFlag('bwp-navigator-open', next);
     set({ navigatorOpen: next });
+  },
+  setNavigatorTab: (t) => {
+    writeStrFlag('bwp-navigator-tab', t);
+    set({ navigatorTab: t });
   },
   setFocusMode: (v) => {
     writeBoolFlag('bwp-focus-mode', v);

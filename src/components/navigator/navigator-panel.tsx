@@ -1,5 +1,7 @@
 /**
- * আউটলাইন নেভিগেটর — বইয়ের h1/h2/h3 শিরোনামের সাইডবার তালিকা
+ * বুক নেভিগেটর — PDF রিডার-ধাঁচের সাইডবার, দুই ট্যাবে:
+ *  - আউটলাইন: বইয়ের h1/h2/h3 শিরোনামের তালিকা (নিচের scanOutline)
+ *  - পাতা: প্রতিটি পাতার স্কেলড থাম্বনেইল (PageThumbsPanel)
  *
  * toc.ts-এর মতোই DOMParser দিয়ে পৃষ্ঠার HTML স্ক্যান করে (মাউন্ট-স্বাধীন —
  * রিসাইক্লিং-এ আনমাউন্ট হওয়া দূরের পাতার শিরোনামও তালিকায় থাকে)।
@@ -9,15 +11,16 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { ListTree, Search, X } from 'lucide-react';
+import { ListTree, Search, SquareStack, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useEditorStore } from '@/lib/store';
-import { useUiStore } from '@/lib/ui-store';
+import { useUiStore, type NavigatorTab } from '@/lib/ui-store';
 import { getEditor } from '@/lib/editor-registry';
 import { useT, useFmtNum } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import type { PageData } from '@/lib/types';
+import { PageThumbsPanel } from './page-thumbs-panel';
 
 export interface OutlineEntry {
   pageIndex: number;
@@ -44,11 +47,10 @@ export function scanOutline(pages: PageData[]): OutlineEntry[] {
   return entries;
 }
 
-export function NavigatorPanel() {
+function OutlineTab() {
   const pages = useEditorStore((s) => s.pages);
   const activePageId = useEditorStore((s) => s.activePageId);
   const setActivePage = useEditorStore((s) => s.setActivePage);
-  const toggleNavigator = useUiStore((s) => s.toggleNavigator);
   const tt = useT();
   const fn = useFmtNum();
 
@@ -109,34 +111,7 @@ export function NavigatorPanel() {
   };
 
   return (
-    <nav
-      className="flex h-full w-[264px] shrink-0 flex-col border-r bg-background/95 no-print"
-      role="complementary"
-      aria-label={tt('ws.nav.aria', 'Book outline')}
-    >
-      {/* হেডার */}
-      <div className="flex shrink-0 items-center gap-2 border-b px-3 py-2.5">
-        <ListTree size={15} className="shrink-0 text-primary/80" aria-hidden="true" />
-        <div className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate text-[13px] font-semibold leading-tight">{tt('ws.nav.title', 'Outline')}</span>
-          <span className="text-[10px] leading-tight text-muted-foreground">
-            {tt('ws.nav.counts', '{a} chapters · {b} headings')
-              .split('{a}').join(fn(chapterCount))
-              .split('{b}').join(fn(outline.length))}
-          </span>
-        </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
-          aria-label={tt('ws.nav.close', 'Close navigator')}
-          title={tt('ws.nav.close', 'Close navigator')}
-          onClick={toggleNavigator}
-        >
-          <X size={14} />
-        </Button>
-      </div>
-
+    <>
       {/* ফিল্টার */}
       <div className="relative shrink-0 px-3 py-2">
         <Search
@@ -196,6 +171,84 @@ export function NavigatorPanel() {
             );
           })
         )}
+      </div>
+    </>
+  );
+}
+
+export function NavigatorPanel() {
+  const toggleNavigator = useUiStore((s) => s.toggleNavigator);
+  const tab = useUiStore((s) => s.navigatorTab);
+  const setTab = useUiStore((s) => s.setNavigatorTab);
+  const tt = useT();
+
+  // সাবটাইটেল শুধু হালকা হিসাব — পূর্ণ আউটলাইন-স্ক্যান OutlineTab-এর ডিবাউন্সড কাজ
+  const tabMeta: Record<NavigatorTab, { icon: typeof ListTree; title: string }> = {
+    outline: {
+      icon: ListTree,
+      title: tt('ws.nav.title', 'Outline'),
+    },
+    pages: {
+      icon: SquareStack,
+      title: tt('ws.nav.pagesTitle', 'Pages'),
+    },
+  };
+
+  return (
+    <nav
+      className="flex h-full w-[264px] shrink-0 flex-col border-r bg-background/95 no-print max-lg:absolute max-lg:inset-y-0 max-lg:left-0 max-lg:z-40 max-lg:shadow-2xl"
+      role="complementary"
+      aria-label={tt('ws.nav.aria', 'Book outline')}
+    >
+      {/* ট্যাব-স্ট্রিপ — আউটলাইন বা পাতা */}
+      <div className="flex shrink-0 items-center gap-1.5 border-b px-2 py-2">
+        <div className="nav-tabs flex min-w-0 flex-1" role="tablist" aria-label={tt('ws.nav.aria', 'Book outline')}>
+          {(Object.keys(tabMeta) as NavigatorTab[]).map((key) => {
+            const meta = tabMeta[key];
+            const Icon = meta.icon;
+            const selected = tab === key;
+            return (
+              <button
+                key={key}
+                type="button"
+                role="tab"
+                aria-selected={selected}
+                aria-controls="navigator-tabpanel"
+                title={meta.title}
+                onClick={() => setTab(key)}
+                className={cn(
+                  'nav-tab flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-[12px] font-medium transition-colors',
+                  selected
+                    ? 'bg-primary/10 text-foreground shadow-[inset_0_-2px_0_0_var(--primary)]'
+                    : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground',
+                )}
+              >
+                <Icon size={13} className="shrink-0" aria-hidden="true" />
+                <span className="truncate">{meta.title}</span>
+              </button>
+            );
+          })}
+        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+          aria-label={tt('ws.nav.close', 'Close navigator')}
+          title={tt('ws.nav.close', 'Close navigator')}
+          onClick={toggleNavigator}
+        >
+          <X size={14} />
+        </Button>
+      </div>
+
+      {/* ট্যাব-বডি */}
+      <div
+        id="navigator-tabpanel"
+        role="tabpanel"
+        aria-label={tabMeta[tab].title}
+        className="flex min-h-0 flex-1 flex-col"
+      >
+        {tab === 'outline' ? <OutlineTab /> : <PageThumbsPanel />}
       </div>
     </nav>
   );

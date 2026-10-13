@@ -3877,3 +3877,70 @@ html.dark .ai-chat-count-over { color: oklch(0.8 0.16 25); }
 }
 
 /* ink-swatch rebuild marker */
+
+/* ─── বুক নেভিগেটর — ট্যাব ও পৃষ্ঠা-থাম্বনেইল (PDF রিডার-ধাঁচের সাইডবার) ─── */
+
+.nav-tab:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+
+.page-thumb {
+  --pt-w: 196px;
+  --pt-h: 277px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  padding: 6px 6px 7px;
+  margin: 0 auto 2px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  cursor: pointer;
+  transition: background-color 0.12s, border-color 0.12s;
+  /* পারফরম্যান্স: ভিউপোর্টের বাইরের থাম্বনেইল ব্রাউজার আঁকেই না — শত-পাতার বইয়েও হালকা */
+  content-visibility: auto;
+  contain-intrinsic-size: auto calc(var(--pt-h) + 30px);
+}
+.page-thumb:hover { background: color-mix(in oklab, var(--accent) 55%, transparent); }
+.page-thumb.is-active {
+  border-color: color-mix(in oklab, var(--primary) 45%, transparent);
+  background: color-mix(in oklab, var(--primary) 8%, transparent);
+}
+.page-thumb-clip {
+  display: block;
+  overflow: hidden;
+  border-radius: 3px;
+  box-shadow:
+    0 0 0 1px rgb(15 23 42 / 0.14),
+    0 1px 3px rgb(15 23 42 / 0.12);
+  transition: box-shadow 0.12s;
+}
+.page-thumb.is-active .page-thumb-clip {
+  box-shadow:
+    0 0 0 2px var(--primary),
+    0 2px 8px rgb(15 23 42 / 0.16);
+}
+/* আসল মাপের পাতা — transform দিয়ে ছোট; paper-inner-এর সব কাঠামো-CSS তাই একই রকম বসে */
+.page-thumb-paper {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  transform-origin: top left;
+  overflow: hidden;
+  border-radius: 2px;
+}
+.page-thumb-paper .page-content-text { display: block; }
+.page-thumb-paper .page-editor-shell { height: 100%; }
+.page-thumb-num {
+  font-size: 10.5px;
+  line-height: 1;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted-foreground);
+}
+.page-thumb.is-active .page-thumb-num { color: var(--primary); }
+
+/* thumb css marker v2 */

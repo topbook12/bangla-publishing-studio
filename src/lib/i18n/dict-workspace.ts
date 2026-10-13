@@ -15,6 +15,14 @@ export const dictWorkspace: Dict = {
   'ws.nav.searchPh': { bn: 'শিরোনাম খুঁজুন…', hi: 'शीर्षक खोजें…', en: 'Search headings…' },
   'ws.nav.filterAria': { bn: 'আউটলাইন ফিল্টার', hi: 'आउटलाइन फ़िल्टर', en: 'Outline filter' },
   'ws.nav.empty': { bn: 'কোনো শিরোনাম নেই — লেখায় H1/H2/H3 স্টাইল ব্যবহার করুন', hi: 'कोई शीर्षक नहीं — लेखन में H1/H2/H3 शैली का उपयोग करें', en: 'No headings yet — use the H1/H2/H3 styles in your text' },
+  'ws.nav.pagesTitle': { bn: 'পাতা', hi: 'पृष्ठ', en: 'Pages' },
+
+  // ─── পৃষ্ঠা-থাম্বনেইল প্যানেল ───
+  'ws.thumbs.aria': { bn: 'পৃষ্ঠার থাম্বনেইল', hi: 'पृष्ठ थंबनेल', en: 'Page thumbnails' },
+  'ws.thumbs.count': { bn: '{n}টি পাতা', hi: '{n} पृष्ठ', en: '{n} pages' },
+  'ws.thumbs.goto': { bn: 'পৃষ্ঠা {n}-এ যান', hi: 'पृष्ठ {n} पर जाएँ', en: 'Go to page {n}' },
+  'ws.thumbs.goCover': { bn: 'প্রচ্ছদে যান', hi: 'कवर पर जाएँ', en: 'Go to the cover page' },
+  'ws.thumbs.cover': { bn: 'প্রচ্ছদ', hi: 'कवर', en: 'Cover' },
 
   // ─── ওয়ার্কস্পেস / পৃষ্ঠা মেনু ───
   'ws.pages.aria': { bn: 'বইয়ের পৃষ্ঠাসমূহ', hi: 'पुस्तक के पृष्ठ', en: 'Book pages' },

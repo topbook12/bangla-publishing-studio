@@ -86,7 +86,7 @@ export default function EditorApp() {
     <div className={cn('app-root flex h-screen flex-col overflow-hidden', focusMode && 'focus-mode')}>
       <AppHeader />
       <Ribbon />
-      <div className="flex min-h-0 flex-1 overflow-hidden">
+      <div className="relative flex min-h-0 flex-1 overflow-hidden">
         {navigatorOpen ? <NavigatorPanel /> : null}
         <Workspace />
       </div>
