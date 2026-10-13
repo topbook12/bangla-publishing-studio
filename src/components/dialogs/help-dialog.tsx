@@ -27,6 +27,7 @@ const SHORTCUTS: Array<[string, string]> = [
   ['dlg2.help.keys.save', 'dlg2.help.sc.save'],
   ['dlg2.help.keys.print', 'dlg2.help.sc.print'],
   ['dlg2.help.keys.zoom', 'dlg2.help.sc.zoom'],
+  ['dlg2.help.keys.ruler', 'dlg2.help.sc.ruler'],
 ];
 
 /** অ্যাবাউট ফিচার-চিপ — [আইকন, dict-কী] */

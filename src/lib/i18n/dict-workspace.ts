@@ -241,3 +241,14 @@ dictWorkspace['ws.toc.modeAuto'] = { bn: 'অটো-স্ক্যান', hi: 
 dictWorkspace['ws.toc.modeManual'] = { bn: 'ম্যানুয়াল', hi: 'मैনुअल', en: 'Manual' };
 dictWorkspace['ws.toc.autoHint'] = { bn: 'অটো-স্ক্যান চালু — তালিকা বইয়ের H1/H2/H3 শিরোনাম থেকে নিজে নিজে তৈরি হচ্ছে। নিজের মতো এন্ট্রি বদলাতে ম্যানুয়াল মোডে যান।', hi: 'ऑटो-स्कैन चालू — सूची किताब के H1/H2/H3 शीर्षकों से स्वयं बनती है। अपने हिसाब से प्रविष्टियाँ बदलने के लिए मैनुअल मोड पर जाएँ।', en: 'Auto-scan is on — the list builds itself from the book’s H1/H2/H3 headings. Switch to Manual mode to edit entries yourself.' };
 dictWorkspace['ws.toc.goManual'] = { bn: 'ম্যানুয়ালে যান', hi: 'मैनुअल पर जाएँ', en: 'Go manual' };
+
+// ─── ওয়ার্কস্পেস স্কেল/রুলার (MS Word-ধাঁচের) ───
+dictWorkspace['ws.ruler.aria'] = { bn: 'স্কেল (রুলার)', hi: 'स्केल (रूलर)', en: 'Ruler' };
+dictWorkspace['ws.ruler.unit'] = { bn: 'একক বদলান: সেন্টিমিটার ↔ ইঞ্চি', hi: 'इकाई बदलें: सेंटीमीटर ↔ इंच', en: 'Switch unit: centimeter ↔ inch' };
+dictWorkspace['ws.ruler.cm'] = { bn: 'সেমি', hi: 'सेमी', en: 'cm' };
+dictWorkspace['ws.ruler.inch'] = { bn: 'ইঞ্চি', hi: 'इंच', en: 'in' };
+dictWorkspace['ws.ruler.dragTip'] = { bn: 'টেনে মার্জিন বদলান — লেআউট সাথে সাথে আপডেট হবে', hi: 'खींचकर मार्जिन बदलें — लेआउट तुरंत अपडेट होगा', en: 'Drag to adjust the margin — the layout updates live' };
+dictWorkspace['ws.ruler.left'] = { bn: 'বাম মার্জিন', hi: 'बायाँ मार्जिन', en: 'Left margin' };
+dictWorkspace['ws.ruler.right'] = { bn: 'ডান মার্জিন', hi: 'दायाँ मार्जिन', en: 'Right margin' };
+dictWorkspace['ws.ruler.top'] = { bn: 'উপরের মার্জিন', hi: 'ऊपरी मार्जिन', en: 'Top margin' };
+dictWorkspace['ws.ruler.bottom'] = { bn: 'নিচের মার্জিন', hi: 'निचला मार्जिन', en: 'Bottom margin' };

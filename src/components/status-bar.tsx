@@ -16,6 +16,7 @@ import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useEditorStore } from '@/lib/store';
+import { useUiStore } from '@/lib/ui-store';
 import { useDocStats } from '@/lib/doc-stats';
 import { getGoal, setGoal, useWritingSession } from '@/lib/writing-session';
 import type { WritingGoal } from '@/lib/writing-session';
@@ -287,6 +288,8 @@ export function StatusBar() {
   const activePageId = useEditorStore((s) => s.activePageId);
   const zoom = useEditorStore((s) => s.zoom);
   const setZoom = useEditorStore((s) => s.setZoom);
+  const rulerVisible = useUiStore((s) => s.rulerVisible);
+  const toggleRuler = useUiStore((s) => s.toggleRuler);
   const { words } = useDocStats();
 
   const activeIndex = pages.findIndex((p) => p.id === activePageId);
@@ -332,6 +335,22 @@ export function StatusBar() {
         <TrimSizePill />
       </div>
       <div className="flex shrink-0 items-center gap-0.5">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className={cn('h-7 w-7 max-md:h-11 max-md:w-11', rulerVisible && 'text-primary')}
+              aria-label={tt('st.ruler')}
+              aria-pressed={rulerVisible}
+              title={tt('st.ruler')}
+              onClick={toggleRuler}
+            >
+              <Ruler size={13} />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="top">{tt('st.ruler')}</TooltipContent>
+        </Tooltip>
         <Tooltip>
           <TooltipTrigger asChild>
             <Button

@@ -171,6 +171,7 @@ export const dictDialogsB: Dict = {
   'dlg2.help.keys.save': { bn: 'Ctrl+S', hi: 'Ctrl+S', en: 'Ctrl+S' },
   'dlg2.help.keys.print': { bn: 'Ctrl+P', hi: 'Ctrl+P', en: 'Ctrl+P' },
   'dlg2.help.keys.zoom': { bn: 'স্ক্রল + Ctrl', hi: 'स्क्रॉल + Ctrl', en: 'Scroll + Ctrl' },
+  'dlg2.help.keys.ruler': { bn: 'স্ট্যাটাস বার → স্কেল', hi: 'स्टेटस बार → रूलर', en: 'Status bar → Ruler' },
   'dlg2.help.sc.bold': { bn: 'বোল্ড / ইটালিক / আন্ডারলাইন', hi: 'बोल्ड / इटैलिक / अंडरलाइन', en: 'Bold / Italic / Underline' },
   'dlg2.help.sc.find': { bn: 'খোঁজ ও প্রতিস্থাপন (সব পাতায়)', hi: 'खोजें और बदलें (सभी पृष्ठों में)', en: 'Find & Replace (all pages)' },
   'dlg2.help.sc.undo': { bn: 'আনডু / রিডু', hi: 'अनडू / रीडू', en: 'Undo / Redo' },
@@ -178,6 +179,7 @@ export const dictDialogsB: Dict = {
   'dlg2.help.sc.save': { bn: 'সেভ (অটোসেভ সবসময় চালু)', hi: 'सेव (ऑटोसेव हमेशा चालू)', en: 'Save (autosave is always on)' },
   'dlg2.help.sc.print': { bn: 'প্রিন্ট / PDF', hi: 'प्रिंट / PDF', en: 'Print / PDF' },
   'dlg2.help.sc.zoom': { bn: 'জুম ইন/আউট (কাগজের উপর)', hi: 'ज़ूम इन/आउट (कागज़ पर)', en: 'Zoom in/out (on the paper)' },
+  'dlg2.help.sc.ruler': { bn: 'স্কেল দেখাও/লুকাও — স্কেলের প্রাইমারি হাতল টেনে মার্জিন বদলান', hi: 'रूलर दिखाएँ/छिपाएँ — रूलर के हैंडल खींचकर मार्जिन बदलें', en: 'Show/hide the ruler — drag its handles to adjust margins' },
 
   // ফুটার নোট
   'dlg2.help.foot': { bn: 'আরও কিছু দরকার হলে অ্যাপের ভেতরে কোনো টুলের উপর মাউস রাখুন — প্রতিটি টুলেই টুল-টিপ আছে।', hi: 'और कुछ चाहिए तो ऐप में किसी भी टूल पर माउस रखें — हर टूल पर टूल-टिप मौजूद है।', en: 'Need more? Hover any tool inside the app — every tool has a tooltip.' },

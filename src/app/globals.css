@@ -2159,6 +2159,205 @@ html.dark .paper-active {
   transform: translateY(0);
 }
 
+/* ═══════════════ ওয়ার্কস্পেস স্কেল/রুলার — MS Word-ধাঁচের মাপকাঠি ═══════════════
+   অনুভূমিক রুলার workspace-inner-এর ভেতরে sticky (CSS zoom-ই স্কেল করে —
+   মার্জিন-রেখা কাগজের সাথে পিক্সেল-পারফেক্ট)। টিক = repeating-linear-gradient
+   (CSS mm ইউনিট 96dpi-তে mmToPx-এর সমান) — টিক প্রতি DOM নোড শূন্য।
+   প্রিন্টে .no-print রুল এগুলোকে বাদ দেয়; Farma ক্লোন paper-page-ভিত্তিক — নিরাপদ। */
+
+.ws-ruler-h {
+  position: sticky;
+  top: 6px;
+  z-index: 30;
+  flex-shrink: 0;
+  height: 26px;
+  margin-bottom: -6px;
+  border-radius: 6px;
+  background: color-mix(in oklab, var(--card) 88%, transparent);
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--foreground) 11%, transparent),
+    0 3px 12px -3px rgb(15 23 42 / 0.22);
+  user-select: none;
+  cursor: default;
+}
+
+/* টিক — ছোট (১ মিমি / ১/৮ ইঞ্চি), মাঝারি (৫ মিমি / ১/৪ ইঞ্চি), বড় (১ সেমি / ১ ইঞ্চি) */
+.ws-ruler-h .ws-ruler-ticks,
+.ws-ruler-v .ws-ruler-ticks {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  --ruler-tick: color-mix(in oklab, var(--foreground) 42%, transparent);
+}
+.ws-ruler-h .ws-ruler-ticks {
+  background-image:
+    linear-gradient(to right, var(--ruler-tick) 0 1px, transparent 1px),
+    linear-gradient(to right, var(--ruler-tick) 0 1px, transparent 1px),
+    linear-gradient(to right, var(--ruler-tick) 0 1px, transparent 1px);
+  background-repeat: repeat-x;
+  background-position: left bottom, left bottom, left bottom;
+  background-size: 1mm 5px, 5mm 9px, 10mm 13px;
+}
+.ws-ruler-h[data-unit='in'] .ws-ruler-ticks {
+  background-size: 3.175mm 5px, 6.35mm 9px, 25.4mm 13px;
+}
+
+/* মার্জিন-অঞ্চলের ছায়া + কনটেন্ট-বাউন্ডারির ড্যাশড রেখা */
+.ws-ruler-zone {
+  position: absolute;
+  pointer-events: none;
+  background: color-mix(in oklab, var(--foreground) 7%, transparent);
+}
+.ws-ruler-h .ws-ruler-zone[data-side='left'] { border-right: 1px dashed color-mix(in oklab, var(--foreground) 30%, transparent); }
+.ws-ruler-h .ws-ruler-zone[data-side='right'] { border-left: 1px dashed color-mix(in oklab, var(--foreground) 30%, transparent); }
+.ws-ruler-v .ws-ruler-zone[data-side='top'] { border-bottom: 1px dashed color-mix(in oklab, var(--foreground) 30%, transparent); }
+.ws-ruler-v .ws-ruler-zone[data-side='bottom'] { border-top: 1px dashed color-mix(in oklab, var(--foreground) 30%, transparent); }
+
+/* লেবেল — চলতি ভাষার সংখ্যা (বাংলা/দেবনাগরী/ল্যাটিন) */
+.ws-ruler-label {
+  position: absolute;
+  font-size: 8.5px;
+  font-weight: 650;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: color-mix(in oklab, var(--foreground) 64%, transparent);
+  pointer-events: none;
+}
+.ws-ruler-h .ws-ruler-label { bottom: 2px; transform: translateX(-50%); }
+.ws-ruler-v .ws-ruler-label { right: 3px; transform: translateY(-50%); }
+
+/* টেনে-মার্জিন-বদলানোর হাতল — প্রাইমারি রঙে, গ্রিপ-দাগসহ */
+.ws-ruler-handle {
+  position: absolute;
+  z-index: 2;
+  border-radius: 4px;
+  background: color-mix(in oklab, var(--primary) 72%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--primary) 42%, transparent),
+    0 1px 5px rgb(15 23 42 / 0.28);
+  transition: background 0.12s ease, transform 0.12s ease;
+  touch-action: none;
+}
+.ws-ruler-handle::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 1px;
+  background: rgb(255 255 255 / 0.9);
+}
+.ws-ruler-h .ws-ruler-handle {
+  top: -4px;
+  bottom: -4px;
+  width: 9px;
+  transform: translateX(-50%);
+  cursor: ew-resize;
+}
+.ws-ruler-h .ws-ruler-handle::after { width: 1px; height: 9px; }
+.ws-ruler-h .ws-ruler-handle:hover {
+  background: var(--primary);
+  transform: translateX(-50%) scaleY(1.07);
+}
+.ws-ruler-v .ws-ruler-handle {
+  left: -4px;
+  right: -4px;
+  height: 9px;
+  transform: translateY(-50%);
+  cursor: ns-resize;
+}
+.ws-ruler-v .ws-ruler-handle::after { width: 9px; height: 1px; }
+.ws-ruler-v .ws-ruler-handle:hover {
+  background: var(--primary);
+  transform: translateY(-50%) scaleX(1.07);
+}
+
+/* টানার সময় ভ্যালু-ব্যাজ (সেমি/ইঞ্চি, চলতি ভাষার সংখ্যায়) */
+.ws-ruler-badge {
+  position: absolute;
+  bottom: calc(100% + 7px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  white-space: nowrap;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  box-shadow: 0 5px 14px rgb(15 23 42 / 0.32);
+  pointer-events: none;
+}
+
+/* একক-চিপ — সেমি ↔ ইঞ্চি টগল */
+.ws-ruler-unit {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 3;
+  height: 17px;
+  padding: 0 7px;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, var(--foreground) 17%, transparent);
+  background: color-mix(in oklab, var(--card) 75%, transparent);
+  color: color-mix(in oklab, var(--foreground) 72%, transparent);
+  cursor: pointer;
+  transition: border-color 0.12s ease, color 0.12s ease;
+}
+.ws-ruler-unit:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+/* উল্লম্ব রুলার — প্রতি পাতার বাঁ পাশে (Workspace মাপা: জায়গা থাকলেই রেন্ডার) */
+.ws-ruler-v {
+  position: absolute;
+  top: 0;
+  right: calc(100% + 12px);
+  width: 26px;
+  border-radius: 6px;
+  background: color-mix(in oklab, var(--card) 84%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--foreground) 10%, transparent),
+    0 2px 10px -3px rgb(15 23 42 / 0.16);
+  user-select: none;
+}
+.ws-ruler-v .ws-ruler-ticks {
+  background-image:
+    linear-gradient(to bottom, var(--ruler-tick) 0 1px, transparent 1px),
+    linear-gradient(to bottom, var(--ruler-tick) 0 1px, transparent 1px),
+    linear-gradient(to bottom, var(--ruler-tick) 0 1px, transparent 1px);
+  background-repeat: repeat-y;
+  background-position: right top, right top, right top;
+  background-size: 5px 1mm, 9px 5mm, 13px 10mm;
+}
+.ws-ruler-v[data-unit='in'] .ws-ruler-ticks {
+  background-size: 5px 3.175mm, 9px 6.35mm, 13px 25.4mm;
+}
+
+html.dark .ws-ruler-h,
+html.dark .ws-ruler-v {
+  background: color-mix(in oklab, var(--card) 74%, transparent);
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 0.09),
+    0 3px 14px -3px rgb(0 0 0 / 0.5);
+}
+html.dark .ws-ruler-zone { background: rgb(255 255 255 / 0.055); }
+
+@media print {
+  .ws-ruler-h,
+  .ws-ruler-v { display: none !important; }
+}
+
 /* ═══════════════ প্রিন্ট (প্রেস-রেডি) ═══════════════ */
 
 /* ফলব্যাক @page — এক্সপোর্ট ট্যাব না চালিয়ে সরাসরি Ctrl+P চাপলেও কাগজ A4

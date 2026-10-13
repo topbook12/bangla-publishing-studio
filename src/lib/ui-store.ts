@@ -51,6 +51,26 @@ function writeBoolFlag(key: string, value: boolean): void {
   }
 }
 
+/** localStorage থেকে স্ট্রিং পড়া — ব্যর্থ হলে fallback */
+function readStrFlag(key: string, fallback: string): string {
+  try {
+    if (typeof window === 'undefined') return fallback;
+    return window.localStorage.getItem(key) ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+/** localStorage-এ স্ট্রিং লেখা — চুপচাপ এড়িয়ে যাওয়া */
+function writeStrFlag(key: string, value: string): void {
+  try {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem(key, value);
+  } catch {
+    // প্রাইভেট মোড/কোটা ত্রুটি — UI অবস্থা তো মেমোরিতেই আছে
+  }
+}
+
 interface UiState {
   openDialog: DialogName | null;
   /** pageChrome ডায়ালগ কোন পাতার জন্য খোলা হয়েছে */
@@ -63,6 +83,10 @@ interface UiState {
   focusMode: boolean;
   /** AI চ্যাট প্যানেল (ডান পাশ) খোলা আছে কি না */
   aiChatOpen: boolean;
+  /** ওয়ার্কস্পেসের স্কেল/রুলার (MS Word-ধাঁচের) দেখা যাচ্ছে কি না */
+  rulerVisible: boolean;
+  /** রুলারের একক — সেন্টিমিটার বা ইঞ্চি (অনুভূমিক + উল্লম্ব দুটোতেই একসাথে) */
+  rulerUnit: 'cm' | 'in';
   open: (name: DialogName) => void;
   /** AI ডায়ালগ নির্দিষ্ট ট্যাবসহ খোলা */
   openAi: (tab: AiVisionTab) => void;
@@ -72,6 +96,9 @@ interface UiState {
   setFocusMode: (v: boolean) => void;
   toggleFocusMode: () => void;
   toggleAiChat: () => void;
+  setRulerVisible: (v: boolean) => void;
+  toggleRuler: () => void;
+  setRulerUnit: (u: 'cm' | 'in') => void;
 }
 
 export const useUiStore = create<UiState>((set, get) => ({
@@ -81,6 +108,9 @@ export const useUiStore = create<UiState>((set, get) => ({
   navigatorOpen: readBoolFlag('bwp-navigator-open', false),
   focusMode: readBoolFlag('bwp-focus-mode', false),
   aiChatOpen: false,
+  // স্কেল/রুলার — ডেস্কটপে ডিফল্ট চালু, ছোট স্ক্রিনে (মোবাইল) ডিফল্ট বন্ধ
+  rulerVisible: typeof window !== 'undefined' && window.innerWidth >= 900,
+  rulerUnit: readStrFlag('bwp-ruler-unit', 'cm') === 'in' ? 'in' : 'cm',
   open: (name) => set({ openDialog: name }),
   openAi: (tab) => set({ openDialog: 'aiVision', aiVisionTab: tab }),
   openPageChrome: (pageId) => set({ openDialog: 'pageChrome', pageChromeId: pageId }),
@@ -96,4 +126,13 @@ export const useUiStore = create<UiState>((set, get) => ({
   },
   toggleFocusMode: () => get().setFocusMode(!get().focusMode),
   toggleAiChat: () => set((s) => ({ aiChatOpen: !s.aiChatOpen })),
+  setRulerVisible: (v) => {
+    writeBoolFlag('bwp-ruler-visible', v);
+    set({ rulerVisible: v });
+  },
+  toggleRuler: () => get().setRulerVisible(!get().rulerVisible),
+  setRulerUnit: (u) => {
+    writeStrFlag('bwp-ruler-unit', u);
+    set({ rulerUnit: u });
+  },
 }));

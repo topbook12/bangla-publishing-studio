@@ -4,7 +4,7 @@
 
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ArrowDown, ArrowUp, ArrowUpToLine, ChevronDown, Copy, Eye, EyeOff, FilePlus2, RotateCcw, Settings2, Trash2,
 } from 'lucide-react';
@@ -22,6 +22,7 @@ import { availableHeightOfEditor, fillFromNextPage } from './page-ops';
 import { getPageDimensionsMm, mmToPx } from '@/lib/paper';
 import { PaperPage } from './paper-page';
 import { PageEditor } from './page-editor';
+import { WorkspaceHRule, PageVRule } from './workspace-ruler';
 import { ContextMenuHost } from './context-menu';
 import { AiBubbleHost } from './ai-bubble';
 
@@ -123,9 +124,12 @@ export function Workspace() {
   const zoom = useEditorStore((s) => s.zoom);
   const activePageId = useEditorStore((s) => s.activePageId);
   const setActivePage = useEditorStore((s) => s.setActivePage);
+  const rulerVisible = useUiStore((s) => s.rulerVisible);
   const tt = useT();
   const fn = useFmtNum();
   const scrollRef = useRef<HTMLDivElement>(null);
+  // উল্লম্ব রুলারের জন্য কাগজের বাঁ পাশে যথেষ্ট জায়গা আছে কি না (স্ক্রিন-প্রস্থ বনাম কাগজ+রুলার)
+  const [vRoom, setVRoom] = useState(false);
 
   // অটোসেভ ফ্লাশ — ট্যাব বন্ধের আগে
   useEffect(() => {
@@ -186,6 +190,23 @@ export function Workspace() {
     return () => el.removeEventListener('wheel', onWheel);
   }, []);
 
+  // উল্লম্ব রুলার কখন দেখানো যাবে — কনটেইনারে কাগজ (জুমসহ) + রুলার-প্রস্থের চেয়ে
+  // বেশি জায়গা থাকলে; নইলে অনুভূমিক ওভারফ্লো-স্ক্রলবার হাজির হত।
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const measure = () => {
+      const s = useEditorStore.getState();
+      const dims = getPageDimensionsMm(s.settings.paperSize, s.settings.orientation, s.settings.customPaper);
+      const onScreenPagePx = mmToPx(dims.widthMm) * s.zoom;
+      setVRoom(el.clientWidth >= onScreenPagePx + 120);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [zoom, settings.paperSize, settings.orientation, settings.customPaper.widthMm, settings.customPaper.heightMm]);
+
   return (
     <main
       ref={scrollRef}
@@ -197,12 +218,16 @@ export function Workspace() {
         style={{ zoom, ...(settings.singleColor ? { ['--book-ink' as string]: settings.singleColor } : {}) }}
         {...(settings.singleColor ? { 'data-one-color': settings.singleColor } : {})}
       >
+        {/* MS Word-ধাঁচের স্কেল/রুলার — sticky, কাগজের প্রস্থ অনুযায়ী */}
+        {rulerVisible ? <WorkspaceHRule /> : null}
         {pages.map((page, index) => (
           <section key={page.id} className="page-slot relative" aria-label={tt('ws.page.n', 'Page {n}').split('{n}').join(fn(index + 1))}>
             <div className="page-toolbar no-print" aria-hidden="true">
               <span className="page-slot-index">{fn(index + 1)}</span>
               <PageMenu pageId={page.id} index={index} />
             </div>
+            {/* উল্লম্ব স্কেল — প্রতি পাতার বাঁ পাশে (জায়গা থাকলে) */}
+            {rulerVisible ? <PageVRule index={index} visible={vRoom} /> : null}
             <PaperPage
               page={page}
               index={index}
