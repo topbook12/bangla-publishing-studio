@@ -18,6 +18,7 @@ import { AiVisionDialog } from './ai-vision-dialog';
 import { AiSettingsDialog } from './ai-settings-dialog';
 import { AssetStoreDialog } from './asset-store-dialog';
 import { VectorLibraryDialog } from './vector-library-dialog';
+import { QuestionPaperDialog } from './question-paper-dialog';
 
 export function Dialogs() {
   useFindReplaceShortcuts();
@@ -36,6 +37,7 @@ export function Dialogs() {
       <AiSettingsDialog />
       <AssetStoreDialog />
       <VectorLibraryDialog />
+      <QuestionPaperDialog />
       <HelpDialog />
     </>
   );

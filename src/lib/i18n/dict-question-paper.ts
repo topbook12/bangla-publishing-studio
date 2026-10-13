@@ -1,0 +1,159 @@
+/**
+ * প্রশ্নপত্র স্টুডিও (Question Paper Studio) — UI অভিধান
+ * শিক্ষক হাতে-লেখা ছবি/কাঁচা লেখা দেয় → AI প্রিন্ট-রেডি প্রশ্নপত্র বানায়।
+ */
+
+export const dictQuestionPaper = {
+  // ── Insert ট্যাবে এন্ট্রি ──
+  'ins.qpstudio': {
+    bn: 'প্রশ্নপত্র',
+    hi: 'प्रश्नपत्र',
+    en: 'Question Paper',
+  },
+  'ins.qpstudio.tip': {
+    bn: 'প্রশ্নপত্র স্টুডিও — হাতের লেখা বা কাঁচা লেখা থেকে প্রিন্ট-রেডি প্রশ্নপত্র',
+    hi: 'प्रश्नपत्र स्टूडियो — हस्तलिखित या कच्चे टेक्स्ट से प्रिंट-रेडी प्रश्नपत्र',
+    en: 'Question Paper Studio — print-ready paper from handwriting or raw text',
+  },
+
+  // ── হেডার ও ধাপ ──
+  'qp.title': {
+    bn: 'প্রশ্নপত্র স্টুডিও',
+    hi: 'प्रश्नपत्र स्टूडियो',
+    en: 'Question Paper Studio',
+  },
+  'qp.desc': {
+    bn: 'হাতের লেখা ছবি বা কাঁচা লেখা দিন — AI বিশ্লেষণ করে পূর্ণ প্রিন্ট-রেডি প্রশ্নপত্র বানিয়ে দেবে।',
+    hi: 'हस्तलिखित फ़ोटो या कच्चा टेक्स्ट दें — AI विश्लेषण कर पूरा प्रिंट-रेडी प्रश्नपत्र बना देगा।',
+    en: 'Give a handwritten photo or raw text — AI analyzes it and builds a full print-ready question paper.',
+  },
+  'qp.step.input': { bn: 'ইনপুট', hi: 'इनपुट', en: 'Input' },
+  'qp.step.details': { bn: 'বিস্তারিত', hi: 'विवरण', en: 'Details' },
+  'qp.step.format': { bn: 'নকশা', hi: 'डिज़ाइन', en: 'Design' },
+  'qp.step.preview': { bn: 'প্রিভিউ', hi: 'प्रीव्यू', en: 'Preview' },
+
+  // ── ধাপ ১: ইনপুট ──
+  'qp.mode.photo': { bn: 'হাতের লেখা (ছবি)', hi: 'हस्तलेख (फ़ोटो)', en: 'Handwriting (Photo)' },
+  'qp.mode.photo.desc': {
+    bn: 'হাতে লেখা প্রশ্নের ছবি তুলে দিন — AI নিজে পড়ে নেবে',
+    hi: 'हाथ से लिखे प्रश्नों की फ़ोटो दें — AI खुद पढ़ लेगा',
+    en: 'Photograph handwritten questions — AI reads them for you',
+  },
+  'qp.mode.text': { bn: 'লেখা (টাইপ/পেস্ট)', hi: 'टेक्स्ट (टाइप/पेस्ट)', en: 'Text (Type/Paste)' },
+  'qp.mode.text.desc': {
+    bn: 'প্রশ্নগুলো টাইপ করুন বা কোথাও থেকে পেস্ট করুন',
+    hi: 'प्रश्न टाइप करें या कहीं से पेस्ट करें',
+    en: 'Type the questions or paste them from anywhere',
+  },
+  'qp.drop.title': { bn: 'ছবি এখানে ফেলুন বা ক্লিক করুন', hi: 'फ़ोटो यहाँ डालें या क्लिक करें', en: 'Drop a photo here or click' },
+  'qp.drop.hint': { bn: 'ফোনে তোলা হাতের লেখাও চলবে · Ctrl+V পেস্ট', hi: 'फ़ोन से ली गई हस्तलेख फ़ोटो भी चलेगी · Ctrl+V पेस्ट', en: 'Phone photos of handwriting work · Ctrl+V paste' },
+  'qp.transcribe': { bn: 'লেখা তুলে আনুন', hi: 'लेखा निकालें', en: 'Extract Writing' },
+  'qp.transcribing': { bn: 'হাতের লেখা পড়া হচ্ছে…', hi: 'हस्तलेख पढ़ा जा रहा है…', en: 'Reading the handwriting…' },
+  'qp.transcribe.done': {
+    bn: 'লেখা তুলে আনা হয়েছে — দরকারলে ঠিক করে নিন',
+    hi: 'लेखा निकाला गया — आवश्यक हो तो संशोधित करें',
+    en: 'Text extracted — fix it if needed',
+  },
+  'qp.raw.label': { bn: 'প্রশ্নের কাঁচা লেখা', hi: 'प्रश्नों का कच्चा टेक्स्ट', en: 'Raw question text' },
+  'qp.raw.hint': {
+    bn: 'প্রতি লাইনে একটি প্রশ্ন — নম্বর (১.), বিভাগ (বিভাগ – ক), নম্বর-মান [২], ক/খ/গ/ঘ অপশন বুঝে নেবে',
+    hi: 'प्रति पंक्ति एक प्रश्न — नंबर (१.), खण्ड, अंक [२], क/ख/ग/घ विकल्प समझ लेगा',
+    en: 'One question per line — numbers (1.), sections, marks [2], ক/খ/গ/ঘ options are understood',
+  },
+  'qp.raw.ph': {
+    bn: 'উদাহরণ:\n১. গোলকের আয়তনের সূত্র লেখো। [২]\n২. $\\frac{3}{4}$ + $\\frac{1}{4}$ = ?\nবিভাগ – খ\n৩. …',
+    hi: 'उदाहरण:\n१. गोले का आयतन सूत्र लिखें। [२]\n२. $\\frac{3}{4}$ + $\\frac{1}{4}$ = ?\nखण्ड – क\n३. …',
+    en: 'Example:\n1. Write the volume formula of a sphere. [2]\n2. $\\frac{3}{4}$ + $\\frac{1}{4}$ = ?\nSection B\n3. …',
+  },
+  'qp.sample': { bn: 'নমুনা', hi: 'नमूना', en: 'Sample' },
+  'qp.clear': { bn: 'মুছুন', hi: 'मिटाएँ', en: 'Clear' },
+  'qp.next': { bn: 'পরবর্তী', hi: 'आगे', en: 'Next' },
+  'qp.back': { bn: 'পূর্ববর্তী', hi: 'पीछे', en: 'Back' },
+
+  // ── ধাপ ২: বিস্তারিত ──
+  'qp.meta.school': { bn: 'স্কুল/প্রতিষ্ঠানের নাম', hi: 'स्कूल/संस्था का नाम', en: 'School / institution name' },
+  'qp.meta.school.ph': { bn: 'যেমন: আদর্শ উচ্চ বিদ্যালয়', hi: 'जैसे: आदर्श उच्च विद्यालय', en: 'e.g. Model High School' },
+  'qp.meta.exam': { bn: 'পরীক্ষার নাম', hi: 'परीक्षा का नाम', en: 'Examination title' },
+  'qp.meta.subject': { bn: 'বিষয়', hi: 'विषय', en: 'Subject' },
+  'qp.meta.class': { bn: 'শ্রেণি', hi: 'कक्षा', en: 'Class' },
+  'qp.meta.date': { bn: 'তারিখ', hi: 'दिनांक', en: 'Date' },
+  'qp.meta.time': { bn: 'সময়', hi: 'समय', en: 'Time' },
+  'qp.meta.marks': { bn: 'পূর্ণমান', hi: 'पूर्णांक', en: 'Full marks' },
+  'qp.meta.instructions': { bn: 'সাধারণ নির্দেশনা — প্রতি লাইনে একটি', hi: 'सामान्य निर्देश — प्रति पंक्ति एक', en: 'General instructions — one per line' },
+  'qp.meta.studentLine': { bn: 'শিক্ষার্থীর নাম-রোল ঘর রাখুন', hi: 'छात्र के नाम-रोल का घर रखें', en: 'Include student name-roll fields' },
+  'qp.meta.today': { bn: 'আজ', hi: 'आज', en: 'Today' },
+
+  // ── ধাপ ৩: নকশা ──
+  'qp.format.title': { bn: 'নকশা বাছুন', hi: 'डिज़ाइन चुनें', en: 'Choose a design' },
+  'qp.format.auto': { bn: 'স্বয়ংক্রিয়', hi: 'स्वतः', en: 'Automatic' },
+  'qp.format.auto.desc': { bn: 'প্রশ্ন দেখে সেরা নকশা বাছবে', hi: 'प्रश्न देखकर सर्वोत्तम डिज़ाइन चुनेगा', en: 'Picks the best design for the questions' },
+  'qp.format.classic': { bn: 'ক্লাসিক', hi: 'क्लासिक', en: 'Classic' },
+  'qp.format.classic.desc': { bn: 'মাঝে হেডার — ঐতিহ্যবাহী পরীক্ষার ছাঁদ', hi: 'केंद्र में हेडर — पारंपरिक परीक्षा शैली', en: 'Centered header — traditional exam layout' },
+  'qp.format.modern': { bn: 'মডার্ন', hi: 'मॉडर्न', en: 'Modern' },
+  'qp.format.modern.desc': { bn: 'বাঁ-সারিত হেডার — পরিষ্কার আধুনিক ভাব', hi: 'बाईं-संरेखित हेडर — साफ़ आधुनिक रूप', en: 'Left-aligned header — clean modern look' },
+  'qp.format.compact': { bn: 'কমপ্যাক্ট', hi: 'कॉम्पैक्ट', en: 'Compact' },
+  'qp.format.compact.desc': { bn: 'ছোট হেডার — অল্প জায়গায় বেশি প্রশ্ন', hi: 'छोटा हेडर — कम जगह में अधिक प्रश्न', en: 'Small header — more questions per page' },
+  'qp.generate': { bn: 'প্রশ্নপত্র বানান', hi: 'प्रश्नपत्र बनाएँ', en: 'Generate Paper' },
+  'qp.generating': { bn: 'বানানো হচ্ছে…', hi: 'बनाया जा रहा है…', en: 'Generating…' },
+  'qp.noai': { bn: 'AI ছাড়া দ্রুত সাজান', hi: 'AI के बिना तेज़ी से सजाएँ', en: 'Quick arrange without AI' },
+  'qp.noai.tip': {
+    bn: 'অফলাইনেও কাজ করে — নম্বর, বিভাগ, [মান] ও অপশন লাইন থেকে শনাক্ত হয়',
+    hi: 'ऑफ़लाइन भी काम करता है — नंबर, खण्ड, [अंक] व विकल्प पंक्ति से पहचाने जाते हैं',
+    en: 'Works offline — numbers, sections, [marks] and options detected from lines',
+  },
+
+  // ── তৈরির সময় ──
+  'qp.busy.read': { bn: 'হাতের লেখা পড়া হচ্ছে…', hi: 'हस्तलेख पढ़ा जा रहा है…', en: 'Reading handwriting…' },
+  'qp.busy.analyze': { bn: 'প্রশ্ন বিশ্লেষণ ও সাজানো হচ্ছে…', hi: 'प्रश्न विश्लेषण व सजाया जा रहा है…', en: 'Analyzing and arranging questions…' },
+  'qp.busy.wait': { bn: 'কিছুক্ষণ সময় লাগতে পারে…', hi: 'कुछ क्षण लग सकते हैं…', en: 'This may take a moment…' },
+
+  // ── ধাপ ৪: প্রিভিউ ──
+  'qp.preview.title': { bn: 'প্রস্তুত প্রশ্নপত্র', hi: 'तैयार प्रश्नपत्र', en: 'Ready paper' },
+  'qp.preview.pages': { bn: '{n} পাতা (আন্দাজ)', hi: '{n} पृष्ठ (अनुमानित)', en: '{n} page(s) (est.)' },
+  'qp.preview.hint': {
+    bn: 'বইয়ে বসার পর আসল পাতা-ভাগ, হেডার-ফুটার ও প্রিন্ট যা যা আছে সব কাজ করবে',
+    hi: 'बुक में जाने के बाद असली पृष्ठ-विभाजन, हेडर-फ़ुटर व प्रिंट सब काम करेगा',
+    en: 'After inserting into the book, real pagination, headers/footers and print all apply',
+  },
+  'qp.insert': { bn: 'শীটে বসান', hi: 'शीट में डालें', en: 'Insert into Sheet' },
+  'qp.insert.tip': {
+    bn: 'সরাসরি বইয়ের পাতায় — তারপর আসল পেজিনেশন, প্রিন্ট, PDF, DOCX সব চলে',
+    hi: 'सीधे बुक के पृष्ठ में — फिर असली पेजिनेशन, प्रिंट, PDF, DOCX सब चलता है',
+    en: 'Straight into the book page — then real pagination, print, PDF, DOCX all work',
+  },
+  'qp.download': { bn: 'প্রিন্ট-ফাইল নামান', hi: 'प्रिंट-फ़ाइल डाउनलोड करें', en: 'Download print file' },
+  'qp.regen': { bn: 'আবার বানান', hi: 'फिर बनाएँ', en: 'Regenerate' },
+  'qp.editback': { bn: 'লেখা বদলান', hi: 'टेक्स्ट बदलें', en: 'Edit text' },
+
+  // ── গণনা/স্ট্যাট ──
+  'qp.count.q': { bn: 'প্রশ্ন', hi: 'प्रश्न', en: 'questions' },
+  'qp.count.sec': { bn: 'বিভাগ', hi: 'खण्ड', en: 'sections' },
+  'qp.count.mcq': { bn: 'MCQ', hi: 'MCQ', en: 'MCQ' },
+
+  // ── টোস্ট ও ত্রুটি ──
+  'qp.toast.inserted': {
+    bn: 'প্রশ্নপত্র পাতায় বসেছে — দরকারলে সাজিয়ে প্রিন্ট করুন',
+    hi: 'प्रश्नपत्र पृष्ठ पर आ गया — चाहें तो सजाकर प्रिंट करें',
+    en: 'Question paper inserted — format and print as needed',
+  },
+  'qp.toast.download': {
+    bn: 'প্রিন্ট-ফাইল নামে গেছে — খুলে সরাসরি প্রিন্ট করুন',
+    hi: 'प्रिंट-फ़ाइल डाउनलोड हो गई — खोलकर सीधे प्रिंट करें',
+    en: 'Print file downloaded — open it and print directly',
+  },
+  'qp.toast.parseFail': {
+    bn: 'কাঠামো শনাক্ত হয়নি — প্রতিটি প্রশ্ন আলাদা লাইনে দিন (১. ২. ৩. …)',
+    hi: 'संरचना पहचानी नहीं गई — हर प्रश्न अलग पंक्ति में दें (१. २. ३. …)',
+    en: 'Could not detect structure — put each question on its own line (1. 2. 3. …)',
+  },
+  'qp.toast.noText': { bn: 'আগে প্রশ্নের লেখা দিন', hi: 'पहले प्रश्नों का टेक्स्ट दें', en: 'Add the question text first' },
+  'qp.err.title': { bn: 'প্রশ্নপত্র বানানো যায়নি', hi: 'प्रश्नपत्र नहीं बन सका', en: 'Could not generate the paper' },
+  'qp.err.empty': { bn: 'AI কোনো প্রশ্ন খুঁজে পায়নি — লেখা পরীক্ষা করে আবার চেষ্টা করুন', hi: 'AI को कोई प्रश्न नहीं मिला — टेक्स्ट जाँचकर पुनः प्रयास करें', en: 'AI found no questions — check the text and retry' },
+  'qp.setup.note': {
+    bn: 'API Key ছাড়াও বিল্ট-ইন ডেমো মোডে কাজ করবে — নিজের কি দিলে আরও শক্তিশালী',
+    hi: 'API Key के बिना भी बिल्ट-इन डेमो मोड में चलेगा — अपनी की दें तो और बेहतर',
+    en: 'Works without an API key in built-in demo mode — add your own key for more power',
+  },
+  'qp.demo.badge': { bn: 'ডেমো', hi: 'डेमो', en: 'Demo' },
+  'qp.progress.tag': { bn: 'AI কাজ করছে', hi: 'AI काम कर रहा है', en: 'AI working' },
+} as const;

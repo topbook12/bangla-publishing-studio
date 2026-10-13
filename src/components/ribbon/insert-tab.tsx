@@ -6,7 +6,7 @@
 
 import { useMemo, useRef, useState, type CSSProperties } from 'react';
 import {
-  AlertTriangle, BookOpen, CalendarDays, ChevronDown, DraftingCompass, Frame, Hash, Image as ImageIcon,
+  AlertTriangle, BookOpen, CalendarDays, ChevronDown, DraftingCompass, FileQuestion, Frame, Hash, Image as ImageIcon,
   Lightbulb, Link2, ListTree, Minus, Pin, Shapes, Square, Store, Table as TableIcon, FilePlus2, HelpCircle,
 } from 'lucide-react';
 import {
@@ -747,6 +747,12 @@ export function InsertTab() {
       <RibbonGroup label={tt('ins.group.academic')} accent="academic blocks">
         <div className="flex flex-col gap-1">
           <div className="flex gap-1">
+            <RibbonButton
+              icon={FileQuestion}
+              label={tt('ins.qpstudio')}
+              title={tt('ins.qpstudio.tip')}
+              onClick={() => openDialog('questionPaper')}
+            />
             <RibbonButton icon={Lightbulb} label={tt('ins.conceptBox')} onClick={() => runCommand((e) => e.commands.insertCallout('concept', t('ins.callout.concept')))} />
             <RibbonButton icon={AlertTriangle} label={tt('ins.warningBox')} onClick={() => runCommand((e) => e.commands.insertCallout('warning', t('ins.callout.warning')))} />
             <RibbonButton icon={BookOpen} label={tt('ins.formulaBox')} onClick={() => runCommand((e) => e.commands.insertCallout('formula', t('ins.callout.formula')))} />

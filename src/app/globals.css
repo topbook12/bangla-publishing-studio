@@ -3944,3 +3944,295 @@ html.dark .ai-chat-count-over { color: oklch(0.8 0.16 25); }
 .page-thumb.is-active .page-thumb-num { color: var(--primary); }
 
 /* thumb css marker v2 */
+
+/* ═════════════════ প্রশ্নপত্র স্টুডিও (Question Paper Studio) ═════════════════ */
+
+/* ধাপ-নির্দেশক */
+.qp-steps {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 4px 12px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.qp-steps::-webkit-scrollbar { display: none; }
+.qp-step {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: none;
+  border: none;
+  padding: 4px 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--muted-foreground);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  flex-shrink: 0;
+  transition: color 0.15s, background 0.15s;
+}
+.qp-step:disabled { cursor: default; }
+.qp-step:hover:not(:disabled) { color: var(--foreground); }
+.qp-step-dot {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: 1.5px solid var(--border);
+  background: var(--muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  transition: border-color 0.15s, background 0.15s, color 0.15s, box-shadow 0.15s;
+}
+.qp-step-on { color: var(--foreground); }
+.qp-step-on .qp-step-dot {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--primary-foreground);
+  box-shadow: 0 2px 8px color-mix(in oklab, var(--primary) 35%, transparent);
+}
+.qp-step-done { color: var(--foreground); }
+.qp-step-done .qp-step-dot {
+  border-color: color-mix(in oklab, oklch(0.62 0.15 155) 55%, var(--border));
+  background: color-mix(in oklab, oklch(0.62 0.15 155) 14%, var(--muted));
+  color: oklch(0.55 0.14 155);
+}
+.qp-step-label { white-space: nowrap; }
+.qp-step-line {
+  width: clamp(16px, 5vw, 44px);
+  height: 2px;
+  background: color-mix(in oklab, var(--foreground) 22%, var(--border));
+  margin: 0 6px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* ইনপুট-মোড কার্ড */
+.qp-modes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+@media (max-width: 480px) { .qp-modes { grid-template-columns: 1fr; } }
+.qp-mode {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: left;
+  padding: 12px 13px;
+  border-radius: 12px;
+  border: 1.5px solid var(--border);
+  background: var(--card);
+  cursor: pointer;
+  font: inherit;
+  transition: border-color 0.15s, background 0.15s, transform 0.12s, box-shadow 0.15s;
+}
+.qp-mode:hover { border-color: color-mix(in oklab, var(--primary) 40%, var(--border)); transform: translateY(-1px); }
+.qp-mode-on {
+  border-color: var(--primary);
+  background: color-mix(in oklab, var(--primary) 7%, var(--card));
+  box-shadow: 0 2px 10px color-mix(in oklab, var(--primary) 16%, transparent);
+}
+.qp-mode svg { color: color-mix(in oklab, var(--primary) 75%, var(--muted-foreground)); margin-bottom: 3px; }
+.qp-mode-name { font-size: 13px; font-weight: 700; color: var(--foreground); }
+.qp-mode-desc { font-size: 11px; line-height: 1.5; color: var(--muted-foreground); }
+
+/* কাঁচা লেখা */
+.qp-raw { font-size: 13px; line-height: 1.65; }
+.qp-hint { font-size: 11px; line-height: 1.55; color: var(--muted-foreground); margin-top: 6px; }
+
+/* বিস্তারিত ফর্ম */
+.qp-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 12px;
+}
+@media (max-width: 560px) { .qp-form { grid-template-columns: 1fr; } }
+.qp-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--foreground);
+}
+.qp-field-full { grid-column: 1 / -1; }
+.qp-switch-row {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 11px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: color-mix(in oklab, var(--muted) 50%, transparent);
+}
+.qp-nav-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+/* নকশা কার্ড */
+.qp-formats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 9px;
+}
+@media (max-width: 640px) { .qp-formats { grid-template-columns: 1fr 1fr; } }
+.qp-format {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 10px 10px 11px;
+  border-radius: 12px;
+  border: 1.5px solid var(--border);
+  background: var(--card);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s, transform 0.12s, box-shadow 0.15s;
+}
+.qp-format:hover { border-color: color-mix(in oklab, var(--primary) 40%, var(--border)); transform: translateY(-1px); }
+.qp-format-on {
+  border-color: var(--primary);
+  background: color-mix(in oklab, var(--primary) 7%, var(--card));
+  box-shadow: 0 2px 10px color-mix(in oklab, var(--primary) 16%, transparent);
+}
+.qp-format strong { font-size: 12.5px; color: var(--foreground); }
+.qp-format-desc { font-size: 10.5px; line-height: 1.45; color: var(--muted-foreground); }
+.qp-format-vis {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  justify-content: center;
+  min-height: 64px;
+  padding: 9px;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px solid rgb(15 23 42 / 0.08);
+}
+html.dark .qp-format-vis { background: oklch(0.27 0.01 260); border-color: rgb(255 255 255 / 0.1); }
+.qp-vis-bar {
+  display: block;
+  height: 4px;
+  border-radius: 2px;
+  background: color-mix(in oklab, var(--foreground) 34%, transparent);
+}
+.qp-vis-rule {
+  display: block;
+  height: 1.5px;
+  margin: 3px 0;
+  border-radius: 2px;
+  background: color-mix(in oklab, var(--foreground) 55%, transparent);
+}
+
+/* স্ট্যাট বার */
+.qp-stats {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  font-size: 11.5px;
+  color: var(--muted-foreground);
+}
+.qp-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--muted);
+  font-weight: 600;
+}
+.qp-stat strong { color: var(--foreground); font-variant-numeric: tabular-nums; }
+.qp-stat-page { background: color-mix(in oklab, var(--primary) 10%, var(--muted)); color: var(--foreground); }
+.qp-stat-zoom { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; }
+.qp-stat-zoom button {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  cursor: pointer;
+  color: var(--foreground);
+  transition: background 0.12s;
+}
+.qp-stat-zoom button:hover:not(:disabled) { background: var(--accent); }
+.qp-stat-zoom span { font-variant-numeric: tabular-nums; min-width: 34px; text-align: center; }
+
+/* প্রিভিউ — সাদা A4 শীট (থাম্বনেইলের মতো print-real: ডার্ক মোডেও কাগজ সাদা) */
+.qp-preview {
+  display: flex;
+  justify-content: center;
+  background: color-mix(in oklab, var(--muted) 62%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  overflow: auto;
+  max-height: 52dvh;
+}
+.qp-preview-spacer { flex-shrink: 0; margin: 0 auto; }
+.qp-sheet {
+  width: 794px; /* A4 @96dpi */
+  min-height: 1123px;
+  background: #fff;
+  color: #171717;
+  padding: 64px 62px; /* ≈17mm × 16mm */
+  font-size: 12pt;
+  line-height: 1.62;
+  border-radius: 2px;
+  box-shadow:
+    0 4px 22px rgb(15 23 42 / 0.18),
+    0 0 0 1px rgb(15 23 42 / 0.06);
+}
+.qp-sheet hr { border: none; border-top: 1.6px solid #171717; margin: 10px 0 12px; }
+.qp-sheet p { margin: 7px 0; }
+.qp-sheet ul { margin: 6px 0; padding-left: 22px; }
+.qp-sheet blockquote { margin: 2px 0 2px 24px; padding: 0; border: none; }
+.qp-sheet sup, .qp-sheet sub { line-height: 0; }
+
+/* AI কাজের ওভারলে */
+.qp-progress {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  background: color-mix(in oklab, var(--background) 62%, transparent);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+.qp-progress-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  max-width: 320px;
+  padding: 22px 28px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  box-shadow: 0 12px 40px rgb(15 23 42 / 0.25);
+  text-align: center;
+}
+.qp-progress-spin {
+  color: var(--primary);
+  animation: qp-spin 0.9s linear infinite;
+}
+@keyframes qp-spin { to { transform: rotate(360deg); } }
+.qp-progress-title { font-size: 13.5px; font-weight: 700; color: var(--foreground); margin: 0; }
+.qp-progress-wait { font-size: 11.5px; color: var(--muted-foreground); margin: 0; }
+
+/* মোবাইলে প্রশ্নপত্রের শীট-প্রিভিউ সরু */
+@media (max-width: 640px) {
+  .qp-sheet { padding: 34px 26px; }
+  .qp-preview { padding: 10px; }
+}
