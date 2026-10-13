@@ -34,8 +34,8 @@ import { callAi, prepareImageFile } from '@/lib/ai-client';
 import type { PreparedImage } from '@/lib/ai-client';
 import { useEditorStore } from '@/lib/store';
 import {
-  QP_SCHOOL_KEY, QP_STRUCTURE_SYSTEM, QP_TRANSCRIBE_SYSTEM, defaultQpMeta,
-  extractQpJson, loadQpHistory, normalizeQpJson, paperToEditorHtml,
+  QP_SCHOOL_KEY, QP_REPAIR_NOTE, QP_STRUCTURE_SYSTEM, QP_TRANSCRIBE_SYSTEM, defaultQpMeta,
+  extractQpJson, extractTranscriptText, loadQpHistory, normalizeQpJson, paperToEditorHtml,
   paperToStandaloneHtml, parseLocaleInt, parseQuestionText, pushQpHistory,
   qpSampleText, removeQpHistoryItem, resolveQpFormat, shufflePaper, sumQpMarks,
 } from '@/lib/question-paper';
@@ -178,7 +178,8 @@ export function QuestionPaperDialog() {
   const acceptFile = useCallback(async (file: File) => {
     if (!file.type.startsWith('image/')) return;
     try {
-      const prepared = await prepareImageFile(file);
+      // হাতের-লেখার ছোট অক্ষর টিক রাখতে বেশি রেজোলিউশন (ভিশনের জন্য ২২০০px)
+      const prepared = await prepareImageFile(file, { maxDim: 2200 });
       setImage(prepared);
       setMode('photo');
       setError(null);
@@ -193,13 +194,13 @@ export function QuestionPaperDialog() {
     setPhase('transcribing');
     setError(null);
     const res = await callAi({
-      prompt: 'এই ছবির সব প্রশ্ন ও হেডার সম্পূর্ণ উদ্ধার করে উপরের JSON ফরম্যাটে দাও।',
+      prompt: 'এই ছবির সব প্রশ্ন, হেডার ও নম্বর-মান সম্পূর্ণ উদ্ধার করে উপরের JSON ফরম্যাটে দাও। অস্পষ্ট হাতের লেখাও যতটা পারো পড়ো — কোনো প্রশ্ন বাদ দেবে না।',
       system: QP_TRANSCRIBE_SYSTEM,
       imageDataUrl: image.dataUrl,
     });
     if (res.ok && res.text) {
-      const data = extractQpJson<{ text?: string }>(res.text);
-      const text = data?.text?.trim() ?? '';
+      // সর্বোচ্চ সহনশীল উদ্ধার — JSON ভাঙা/অন্য-কি-নাম/সরাসরি লেখা, সব চলে
+      const text = extractTranscriptText(res.text) ?? '';
       if (text) {
         setRawText((prev) => (prev.trim() ? `${prev}\n${text}` : text));
         setIsDemo(!!res.demo);
@@ -266,31 +267,31 @@ export function QuestionPaperDialog() {
         header || '(none provided)',
         '',
         'RAW QUESTION TEXT:',
-        rawText.trim(),
+        rawText.trim().slice(0, 20000),
         '',
         'Structure this into the final question paper JSON now.',
       ].join('\n');
 
       const res = await callAi({ prompt, system: QP_STRUCTURE_SYSTEM });
-      if (res.ok && res.text) {
-        const data = extractQpJson<unknown>(res.text);
-        const result = data ? normalizeQpJson(data, meta, format) : null;
-        if (result) {
-          finish(result, !!res.demo);
-          return;
-        }
-        setError({ hintKey: 'qp.err.empty' });
-        setPhase('error');
+      // প্রথম উত্তর ভাঙা JSON হলে একবার মেরামত-পুনরায় — মডেল প্রায়ই দ্বিতীয়বার ঠিক করে
+      let data = res.ok && res.text ? extractQpJson<unknown>(res.text) : null;
+      if (res.ok && res.text && !data) {
+        const retry = await callAi({ prompt: `${prompt}\n\n${QP_REPAIR_NOTE}`, system: QP_STRUCTURE_SYSTEM });
+        if (retry.ok && retry.text) data = extractQpJson<unknown>(retry.text);
+      }
+      const result = data ? normalizeQpJson(data, meta, format) : null;
+      if (result) {
+        finish(result, !!res.demo);
         return;
       }
-      // AI সাড়া দিল না — অফলাইন পার্সার ফলব্যাক
+      // AI সাড়া দেয়নি / বোধগম্য কাঠামো দেয়নি — অফলাইন পার্সার ফলব্যাক (গ্রেসফুল)
       const local = parseQuestionText(rawText, meta, format, lang);
       if (local) {
         finish(local, false);
         toast.info(tt('qp.noai'));
         return;
       }
-      setError({ hintKey: res.hintKey ?? 'ai.err.title', detail: res.detail });
+      setError({ hintKey: res.ok ? 'qp.err.empty' : (res.hintKey ?? 'ai.err.title'), detail: res.detail });
       setPhase('error');
       return;
     }
@@ -308,8 +309,11 @@ export function QuestionPaperDialog() {
   const insertIntoSheet = () => {
     if (!paper) return;
     const html = paperToEditorHtml(paper, lang);
+    // সম্পূর্ণ প্রশ্নপত্র — ডকুমেন্টের একদম শেষে বসে। কারেন্ট-সিলেকশনে
+    // insertContent করলে TipTap টেক্সট-ব্লকের মাঝে মাল্টি-ব্লক HTML-এর
+    // <ul>-এর পরের অংশ নীরবে ফেলে দেয় — তাই স্পষ্ট পজিশনে insertContentAt
     const ok = runCommand((ed) => {
-      ed.chain().focus().insertContent(html).run();
+      ed.chain().focus().insertContentAt(ed.state.doc.content.size, html).run();
     });
     if (ok) {
       toast.success(tt('qp.toast.inserted'));

@@ -69,8 +69,13 @@ export interface PreparedImage {
 const MAX_DIM = 1568; // বড় ভিশন মডেলগুলোর সুইট-স্পট
 const MAX_FILE_BYTES = 4_500_000; // সার্ভারের ~5MB ক্যাপের আগেই ধরি (বেস৬৪ বাড়তি ৩৪%)
 
-/** ফাইল → প্রয়োজনে ডাউনস্কেল করা dataURL (PNG হলে PNG, নইলে JPEG) */
-export async function prepareImageFile(file: File): Promise<PreparedImage> {
+/**
+ * ফাইল → প্রয়োজনে ডাউনস্কেল করা dataURL (PNG হলে PNG, নইলে JPEG)
+ * opts.maxDim: হাতের-লেখার ছবিতে ছোট অক্ষর টিক রাখতে বেশি রেজোলিউশন দরকার —
+ * প্রশ্নপত্র স্টুডিও ২২০০px-এ কল করে, বাকি জায়গায় ডিফল্ট ১৫৬৮px।
+ */
+export async function prepareImageFile(file: File, opts?: { maxDim?: number }): Promise<PreparedImage> {
+  const maxDim = Math.max(512, Math.min(4096, opts?.maxDim ?? MAX_DIM));
   if (file.size > MAX_FILE_BYTES) throw new Error('IMAGE_TOO_LARGE');
   const rawUrl = await readAsDataUrl(file);
   const img = await loadImage(rawUrl);
@@ -79,7 +84,7 @@ export async function prepareImageFile(file: File): Promise<PreparedImage> {
     const bytes = Math.round((rawUrl.length - rawUrl.indexOf(',') - 1) * 0.75);
     return { dataUrl: rawUrl, width: img.naturalWidth, height: img.naturalHeight, name: file.name || 'image', bytes };
   }
-  const scale = Math.min(1, MAX_DIM / Math.max(img.naturalWidth, img.naturalHeight));
+  const scale = Math.min(1, maxDim / Math.max(img.naturalWidth, img.naturalHeight));
   const w = Math.max(1, Math.round(img.naturalWidth * scale));
   const h = Math.max(1, Math.round(img.naturalHeight * scale));
 

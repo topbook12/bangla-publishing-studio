@@ -161,21 +161,29 @@ export function defaultQpMeta(lang: Lang): QpMeta {
 // ─── AI সিস্টেম-প্রম্পট ───
 
 /** হাতের লেখা ছবি → বিশ্বস্ত টেক্সট (কঠোর JSON) */
-export const QP_TRANSCRIBE_SYSTEM = `You are the handwriting-transcription engine of "Bangla Publishing Studio", built for teachers converting handwritten question papers into print-ready documents.
+export const QP_TRANSCRIBE_SYSTEM = `You are the handwriting-transcription engine of "Bangla Publishing Studio" — a teacher's tool that converts photos of handwritten question papers into print-ready text. Accuracy of READING is your single top priority.
 
-You will receive a photo/scan of handwritten or printed question paper(s), rough question notes, or a textbook exercise page. Transcribe it FAITHFULLY:
-- Keep the ORIGINAL language and numerals (Bengali ১২৩…, Devanagari ०-९…, Latin 0-9…). Never translate.
+You receive a photo/scan of handwritten or printed question paper(s), rough question notes, or a textbook exercise page. Transcribe it FAITHFULLY:
+
+READING RULES (handwriting):
+- Survey the whole page first (header, columns, margins), then read line by line, zooming mentally into unclear words and reading stroke by stroke.
+- Transcribe EVERY question visible, in the ORIGINAL order — including two-column layouts (finish the left column top-to-bottom, then the right).
+- Keep the ORIGINAL language and numerals (Bengali ১২৩…, Devanagari ०-९…, Latin 0-9…). NEVER translate, NEVER convert numerals.
+- Keep the writer's spelling; drop only obvious stray marks. If a word is unclear, still write your best reading of it — NEVER invent extra questions, NEVER skip a question you can see, NEVER write "unclear" placeholders.
+- Read at slight angles, faint pencil, crossed-out corrections (use the corrected reading) and stamps/watermarks (ignore them).
+
+LAYOUT RULES (output text shape):
 - One question per line, prefixed by its number exactly as written ("১." or "1." or "(খ)").
-- MCQ options on their own lines, prefixed with their labels ("ক." "খ." or "a." "b.").
-- Marks at the END of the line inside brackets: [২] or [3].
+- MCQ options each on their own line, prefixed with their labels ("ক." "খ." or "a." "b.").
+- Marks at the END of the line in brackets: [২] or [3].
 - Section headers on their own lines: "বিভাগ – ক", "Section A", "খণ্ড: গ" etc.
 - Sub-questions prefixed "(ক)" "(i)" etc. on their own lines.
-- MATH in LaTeX inside $...$ : fractions $\frac{5}{8}$, powers $x^2$, roots $\sqrt{25}$, equations $2x + 3 = 7$. Use ASCII digits inside math.
-- If handwriting is unclear, transcribe your best reading — NEVER invent extra questions, NEVER skip a question you can see.
-- Output the exam/school header text too if present in the image.
+- Exam/school header text at the top, exactly as in the image.
+- MATH in LaTeX inside $...$ : fractions $\\frac{5}{8}$, powers $x^2$, roots $\\sqrt{25}$, equations $2x + 3 = 7$. Use ASCII digits inside math.
 
-Return ONLY valid JSON — no markdown fences, no commentary. Shape exactly:
-{ "text": "the complete transcription, one question per line" }`;
+OUTPUT: Return ONLY a valid JSON object — no markdown fences, no commentary. Shape exactly:
+{ "text": "the complete transcription, one question per line" }
+Inside the JSON string, escape every line break as \\n — never put raw line breaks inside the JSON string.`;
 
 /** কাঁচা প্রশ্ন-লেখা → কাঠামোবদ্ধ প্রশ্নপত্র (কঠোর JSON) */
 export const QP_STRUCTURE_SYSTEM = `You are the examination-composition engine of "Bangla Publishing Studio" — an expert school-exam setter that turns rough teacher notes into a perfectly structured question paper.
@@ -215,7 +223,12 @@ Rules:
 - SECTIONS: only split by the source's own section markers (বিভাগ/খণ্ড/Section); if none, one section with title "".
 - MATH: expressions remain in $...$ LaTeX ($\frac{3}{4}$, $x^2$, $\sqrt{50}$) with ASCII digits inside math.
 - MCQ: 4 options with ক/খ/গ/ঘ labels (Bengali) or A/B/C/D (Latin-script papers).
-- SUB-QUESTIONS: keep "(ক)" "(i)" style prefixes inside sub text.`;
+- SUB-QUESTIONS: keep "(ক)" "(i)" style prefixes inside sub text.
+
+OUTPUT: Return ONLY a single valid JSON object — no markdown fences, no commentary before or after. Inside every JSON string, escape line breaks as \\n — never put raw line breaks inside a JSON string.`;
+
+/** AI প্রথম উত্তর ভাঙা JSON দিলে মেরামত-পুনরায়ের অনুরোধ */
+export const QP_REPAIR_NOTE = `Your previous reply could not be parsed as JSON. Reply again with ONLY the JSON object itself — no markdown fences, no commentary. Inside JSON strings, escape every line break as \\n.`;
 
 // ─── সাধারণ সহায়ক ───
 
@@ -228,11 +241,48 @@ export function escapeQpHtml(s: string): string {
     .replace(/'/g, '&#39;');
 }
 
-/** AI-এর উত্তর থেকে প্রথম balanced JSON অবজেক্ট */
+/**
+ * JSON-স্ট্রিং-এর ভেতরের কাঁচা নিউলাইন/ট্যাব এস্কেপ করে এবং স্ট্রিং-এর বাইরের
+ * ট্রেলিং কমা বাদ দেয় — মডেলদের সবচেয়ে প্রচলিত JSON-ভাঙা দুই রোগের মেরামত।
+ */
+function repairJsonChars(s: string): string {
+  let out = '';
+  let inStr = false;
+  let esc = false;
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+    if (inStr) {
+      if (esc) { esc = false; out += ch; continue; }
+      if (ch === '\\') { esc = true; out += ch; continue; }
+      if (ch === '"') { inStr = false; out += ch; continue; }
+      if (ch === '\n') { out += '\\n'; continue; }
+      if (ch === '\r') { out += '\\r'; continue; }
+      if (ch === '\t') { out += '\\t'; continue; }
+      out += ch;
+      continue;
+    }
+    if (ch === '"') { inStr = true; out += ch; continue; }
+    if (ch === ',') {
+      let j = i + 1;
+      while (j < s.length && (s[j] === ' ' || s[j] === '\t' || s[j] === '\n' || s[j] === '\r')) j++;
+      if (j < s.length && (s[j] === '}' || s[j] === ']')) continue; // ট্রেলিং কমা বাদ
+    }
+    out += ch;
+  }
+  return out;
+}
+
+function tryParseJson<T>(s: string): T | null {
+  try { return JSON.parse(s) as T; } catch { /* মেরামত করে আবার */ }
+  try { return JSON.parse(repairJsonChars(s)) as T; } catch { return null; }
+}
+
+/** AI-এর উত্তর থেকে প্রথম balanced JSON অবজেক্ট — ভাঙা JSON যতটা সম্ভব মেরামত করে */
 export function extractQpJson<T>(raw: string): T | null {
   if (!raw) return null;
   let s = raw.trim();
-  s = s.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+  // কোড-ফেন্স যেকোনো জায়গায় থাকতে পারে
+  s = s.replace(/```(?:json)?/gi, '').trim();
   const start = s.indexOf('{');
   if (start === -1) return null;
   let depth = 0;
@@ -247,12 +297,61 @@ export function extractQpJson<T>(raw: string): T | null {
     if (ch === '{') depth++;
     else if (ch === '}') {
       depth--;
-      if (depth === 0) {
-        try { return JSON.parse(s.slice(start, i + 1)) as T; } catch { return null; }
-      }
+      if (depth === 0) return tryParseJson<T>(s.slice(start, i + 1));
     }
   }
+  // ভারসাম্যহীন — শেষ } পর্যন্ত যা আছে তা-ই চেষ্টা করি
+  const last = s.lastIndexOf('}');
+  if (last > start) return tryParseJson<T>(s.slice(start, last + 1));
   return null;
+}
+
+function unescapeJsonText(s: string): string {
+  return s
+    .replace(/\\r\\n/g, '\n')
+    .replace(/\\n/g, '\n')
+    .replace(/\\t/g, '\t')
+    .replace(/\\"/g, '"')
+    .replace(/\\'/g, "'")
+    .replace(/\\\\/g, '\\');
+}
+
+const QP_TRANSCRIPT_KEYS = ['text', 'transcription', 'transcript', 'result', 'content', 'output'];
+
+/**
+ * AI-প্রতিলিপি উত্তর থেকে কাঁচা লেখা বের করা — সর্বোচ্চ সহনশীলতা:
+ *  ১) পার্স-হওয়া JSON হলে চেনা কি (text/transcription/…) থেকে;
+ *  ২) JSON ভাঙা হলে এক-কি-শেপ রেগেক্সে উদ্ধার (মডেল পড়েছে, কেবল ফরম্যাট ভেঙেছে);
+ *  ৩) JSON-ই না হলে পুরো উত্তরটাই প্রতিলিপি হিসেবে নেয়।
+ * এতে "হাতের লেখা পড়া গেছে, তবু ব্যর্থ দেখাচ্ছে" — সেই মূল বাগ বন্ধ হয়।
+ */
+export function extractTranscriptText(raw: string): string | null {
+  if (!raw) return null;
+  const s = raw.trim();
+  if (!s) return null;
+
+  const obj = extractQpJson<Record<string, unknown>>(s);
+  if (obj && typeof obj === 'object') {
+    for (const k of QP_TRANSCRIPT_KEYS) {
+      const v = obj[k];
+      if (typeof v === 'string' && v.trim()) return v.trim();
+      if (Array.isArray(v) && v.length > 0 && v.every((x) => typeof x === 'string' && (x as string).trim())) {
+        return (v as string[]).join('\n');
+      }
+    }
+    return null; // JSON পার্স হয়েছে কিন্তু প্রতিলিপি-কি নেই
+  }
+
+  // ভাঙা/অসম্পূর্ণ JSON — এক-কি-শেপ থেকে উদ্ধার
+  const m = s.match(/\{\s*"(?:text|transcription|transcript|result|content|output)"\s*:\s*"([\s\S]+)"\s*\}?/);
+  if (m) {
+    const salv = unescapeJsonText(m[1]).trim();
+    if (salv) return salv;
+  }
+
+  // JSON-ই নেই — মডেল সরাসরি লেখা দিয়েছে: পুরোটাই প্রতিলিপি
+  const plain = s.replace(/```(?:json)?/gi, '').trim();
+  return plain.length >= 4 ? plain : null;
 }
 
 // ─── গণিত রেন্ডারিং ($…$ → এডিটর-নিরাপদ HTML) ───
@@ -323,41 +422,125 @@ export function latexToSafeHtml(src: string): string {
 const asStr = (v: unknown): string => (typeof v === 'string' ? v.trim() : '');
 const asArr = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
 
-/** AI-এর সম্ভাব্য-ভাঙা JSON-কে নিরাপদ QuestionPaper-এ রূপান্তর */
+/** একাধিক সম্ভাব্য কি-নাম থেকে প্রথম নন-খালি স্ট্রিং (AI-দের নানা নামকরণ সহন) */
+function firstStr(rec: Record<string, unknown>, keys: string[]): string {
+  for (const k of keys) {
+    const v = rec[k];
+    if (typeof v === 'string' && v.trim()) return v.trim();
+    if (typeof v === 'number') return String(v);
+  }
+  return '';
+}
+
+/** স্ট্রিং-অপশন "ক) ফল" / "a. text" / "ক. text" → label+text */
+function parseOptionString(s: string): QpOption | null {
+  const t = s.trim();
+  if (!t) return null;
+  const m = t.match(/^\(?\s*([কখগঘঙa-dA-Dकखगघ])\s*[).):।ঃ-]\s*(.+)$/);
+  if (m) return { label: m[1], text: m[2].trim() };
+  return { label: '', text: t };
+}
+
+/** স্ট্রিং-প্রশ্ন "১. লেখা [২]" → number/text/marks */
+function parseQuestionString(s: string): { number: string; text: string; marks: string } | null {
+  let t = s.trim();
+  if (!t) return null;
+  let number = '';
+  const en = toEnglishDigits(t);
+  const nm = en.match(/^(?:q(?:uestion)?\.?\s*)?(\d{1,3})\s*[.)।ঃ:\-–—]\s*/i);
+  if (nm) {
+    number = String(nm[1]);
+    t = t.slice(nm[0].length).trim();
+  }
+  const { text, marks } = splitTrailingMarks(t);
+  if (!text) return null;
+  return { number, text, marks };
+}
+
+/**
+ * AI-এর সম্ভাব্য-ভাঙা JSON-কে নিরাপদ QuestionPaper-এ রূপান্তর — সর্বোচ্চ সহনশীল:
+ * নেস্ট-আবরণ ({paper|data|result:{…}}), সমতল questions, স্ট্রিং-প্রশ্ন/অপশন,
+ * বিকল্প কি-নাম (question/body, mark/value, choices, sub_questions ইত্যাদি) সব চলে।
+ */
 export function normalizeQpJson(data: unknown, meta: QpMeta, format: QpFormat): QuestionPaper | null {
-  if (!data || typeof data !== 'object') return null;
-  const d = data as Record<string, unknown>;
+  let root = data;
+  // নেস্ট-আবরণ খোলা: { paper|questionPaper|data|result|qp: { sections… } }
+  for (let i = 0; i < 3; i++) {
+    if (!root || typeof root !== 'object' || Array.isArray(root)) break;
+    const rec = root as Record<string, unknown>;
+    if (asArr(rec.sections).length > 0 || asArr(rec.questions).length > 0) break;
+    const nest = rec.paper ?? rec.questionPaper ?? rec.data ?? rec.result ?? rec.qp;
+    if (nest && typeof nest === 'object') { root = nest; continue; }
+    break;
+  }
+  if (!root || typeof root !== 'object') return null;
+  // শুধু প্রশ্নের অ্যারে এলেও চলে
+  if (Array.isArray(root)) root = { sections: [{ title: '', note: '', questions: root }] };
+
+  const d = root as Record<string, unknown>;
+  let sectionsRaw = asArr(d.sections);
+  // সমতল questions দিলেও কাজ চলে
+  if (sectionsRaw.length === 0) {
+    const flat = asArr(d.questions);
+    if (flat.length > 0) sectionsRaw = [{ title: '', note: '', questions: flat }];
+  }
+  if (sectionsRaw.length === 0) return null;
+
   const sections: QpSection[] = [];
-  for (const secRaw of asArr(d.sections)) {
-    if (!secRaw || typeof secRaw !== 'object') continue;
-    const sec = secRaw as Record<string, unknown>;
+  for (const secRaw of sectionsRaw.slice(0, 12)) {
+    if (!secRaw) continue;
+    // বিভাগ সরাসরি প্রশ্নের অ্যারে হলে
+    const secVal = Array.isArray(secRaw) ? { questions: secRaw } : secRaw;
+    if (typeof secVal !== 'object') continue;
+    const sec = secVal as Record<string, unknown>;
     const questions: QpQuestion[] = [];
-    for (const qRaw of asArr(sec.questions)) {
-      if (!qRaw || typeof qRaw !== 'object') continue;
+    for (const qRaw of asArr(sec.questions).slice(0, 80)) {
+      if (!qRaw) continue;
+      if (typeof qRaw === 'string') {
+        const pq = parseQuestionString(qRaw);
+        if (pq) questions.push({ ...pq, options: [], subs: [] });
+        continue;
+      }
+      if (typeof qRaw !== 'object') continue;
       const q = qRaw as Record<string, unknown>;
-      const text = asStr(q.text);
+      const text = firstStr(q, ['text', 'question', 'question_text', 'questionText', 'q', 'body', 'title']);
       if (!text) continue;
-      const options = asArr(q.options)
-        .map((o) => {
-          const ob = (o ?? {}) as Record<string, unknown>;
-          return { label: asStr(ob.label), text: asStr(ob.text) };
-        })
-        .filter((o) => o.label || o.text);
-      const subs = asArr(q.subs)
-        .map((sb) => {
-          const sb2 = (sb ?? {}) as Record<string, unknown>;
-          return { text: asStr(sb2.text), marks: asStr(sb2.marks) };
-        })
-        .filter((sb) => sb.text);
+      const options: QpOption[] = [];
+      for (const o of asArr(q.options ?? q.choices ?? q.mcq)) {
+        if (typeof o === 'string') {
+          const po = parseOptionString(o);
+          if (po && po.text) options.push(po);
+        } else if (o && typeof o === 'object') {
+          const ob = o as Record<string, unknown>;
+          const label = firstStr(ob, ['label', 'option', 'key', 'letter', 'opt']);
+          const otext = firstStr(ob, ['text', 'value', 'content', 'ans', 'answer']);
+          if (label || otext) options.push({ label, text: otext });
+        }
+      }
+      const subs: QpSubQ[] = [];
+      for (const sb of asArr(q.subs ?? q.sub_questions ?? q.subquestions ?? q.parts)) {
+        if (typeof sb === 'string') {
+          const ps = parseQuestionString(sb);
+          if (ps) subs.push({ text: ps.text, marks: ps.marks });
+        } else if (sb && typeof sb === 'object') {
+          const sb2 = sb as Record<string, unknown>;
+          const stext = firstStr(sb2, ['text', 'question', 'q', 'body']);
+          if (stext) subs.push({ text: stext, marks: firstStr(sb2, ['marks', 'mark', 'value', 'points']) });
+        }
+      }
       questions.push({
-        number: asStr(q.number),
+        number: firstStr(q, ['number', 'no', 'num', 'qno', 'serial']),
         text,
-        marks: asStr(q.marks),
+        marks: firstStr(q, ['marks', 'mark', 'value', 'points', 'nombor']),
         options,
         subs,
       });
     }
-    sections.push({ title: asStr(sec.title), note: asStr(sec.note), questions });
+    sections.push({
+      title: firstStr(sec, ['title', 'name', 'heading', 'section']),
+      note: firstStr(sec, ['note', 'instruction', 'directions', 'note_text']),
+      questions,
+    });
   }
   const valid = sections.filter((s) => s.questions.length > 0);
   if (valid.length === 0) return null;
@@ -368,9 +551,9 @@ export function normalizeQpJson(data: unknown, meta: QpMeta, format: QpFormat): 
     meta: {
       ...meta,
       schoolName: meta.schoolName || '',
-      examTitle: meta.examTitle || asStr(d.examTitle),
-      subject: meta.subject || asStr(d.subject),
-      classLabel: meta.classLabel || asStr(d.classLabel),
+      examTitle: meta.examTitle || firstStr(d, ['examTitle', 'exam_title', 'exam', 'title']),
+      subject: meta.subject || firstStr(d, ['subject', 'sub', 'subjectName']),
+      classLabel: meta.classLabel || firstStr(d, ['classLabel', 'class', 'className', 'class_name']),
       instructions: aiInstructions.length > 0 ? aiInstructions : meta.instructions,
     },
     sections: valid,
@@ -456,9 +639,11 @@ export function shufflePaper(p: QuestionPaper): QuestionPaper {
 
 // ─── ফলব্যাক: AI ছাড়া লাইন-পার্সার ───
 
-/** লাইনের শেষে বন্ধনীতে নম্বর-মান [২] (3) — খুঁজে আলাদা করে */
+/** লাইনের শেষে বন্ধনীতে নম্বর-মান [২] (3) [মান: ২] [Marks: 2] — খুঁজে আলাদা করে */
 function splitTrailingMarks(s: string): { text: string; marks: string } {
-  const m = s.match(/\s*[\[{(]\s*([০-৯0-9]{1,3})\s*(?:নম্বর|মার্কস|মার্ক্স|marks?|নং)?\s*[\]})]\s*$/);
+  const m = s.match(
+    /\s*[\[{(]\s*(?:নম্বর|নং|মান|মার্কস|মার্ক্স|नंबर|अंक|marks?|mark)?\s*[:=]?\s*([\u09e6-\u09ef\u0966-\u096f0-9]{1,3})\s*(?:নম্বর|নং|মান|মার্কস|মার্ক্স|नंबर|अंक|marks?|mark)?\s*[\]})]\s*$/i,
+  );
   if (m && m.index !== undefined && s.slice(0, m.index).trim()) {
     return { text: s.slice(0, m.index).trim(), marks: m[1] };
   }
@@ -496,33 +681,37 @@ export function parseQuestionText(raw: string, meta: QpMeta, format: QpFormat, l
       q = null;
       continue;
     }
-    // প্রশ্ন: "১." / "12)" / "৩ঃ" — নম্বর-শনাক্তে en, কিন্তু বিষয়বস্তু মূল লাইন থেকে
-    // (toEnglishDigits ১:১ দৈর্ঘ্য-সমান রূপান্তর — নইলে লেখার ভেতরের বাংলা ডিজিট
-    //  নীরবে ইংরেজি হয়ে যেত; prefix দৈর্ঘ্য = পূর্ণ ম্যাচ − শেষ গ্রুপ)
-    const qm = en.match(/^(\d{1,3})\s*[.)।ঃ:]\s*(.+)$/);
+    // প্রশ্ন: "১." / "12)" / "৩ঃ" / "১ ক" (ফাঁকা) / "প্রশ্ন ১:" / "১-" — নম্বর-শনাক্তে en,
+    // কিন্তু বিষয়বস্তু মূল লাইন থেকে (toEnglishDigits ১:১ দৈর্ঘ্য-সমান রূপান্তর)
+    const qm = en.match(/^(?:প্রশ্ন(?:হ)?\s*|प्रश्न\s*|q(?:uestion)?\.?\s*)?(\d{1,3})(?:\s*[.)।ঃ:\-–—]+\s*|\s+)(.+)$/i);
     if (qm) {
-      if (!cur) { cur = { title: '', note: '', questions: [] }; sections.push(cur); }
-      qNo++;
-      const rest = line.slice(qm[0].length - qm[2].length);
-      const { text, marks } = splitTrailingMarks(rest);
-      q = {
-        number: banglaNums ? toBanglaNumber(qNo) : String(qNo),
-        text,
-        marks,
-        options: [],
-        subs: [],
-      };
-      cur.questions.push(q);
-      continue;
+      const num = parseInt(qm[1], 10);
+      // চলমান প্রশ্নের ভেতরে "৩৬ মিটার…" জাতীয় লাইন নতুন প্রশ্ন নয় —
+      // ঠিক পরের ধারাবাহিক সংখ্যা (বা নতুন বিভাগের ১) হলেই কেবল নতুন প্রশ্ন
+      if (!q || num === qNo + 1 || num === 1) {
+        if (!cur) { cur = { title: '', note: '', questions: [] }; sections.push(cur); }
+        qNo++;
+        const rest = line.slice(qm[0].length - qm[2].length);
+        const { text, marks } = splitTrailingMarks(rest);
+        q = {
+          number: banglaNums ? toBanglaNumber(qNo) : String(qNo),
+          text,
+          marks,
+          options: [],
+          subs: [],
+        };
+        cur.questions.push(q);
+        continue;
+      }
     }
-    // MCQ অপশন: "ক)" / "a." (শুধু প্রশ্নের ভেতরে)
-    const om = line.match(/^([কখগঘঙa-dA-D])\s*[.):]\s*(.+)$/);
+    // MCQ অপশন: "ক)" / "a." / "ক।" / "क)" (শুধু প্রশ্নের ভেতরে)
+    const om = line.match(/^([কখগঘঙa-dA-Dकखगघ])\s*[.):।ঃ-]\s*(.+)$/);
     if (om && q) {
       q.options.push({ label: om[1], text: om[2].trim() });
       continue;
     }
-    // উপ-প্রশ্ন: "(ক)" / "(i)" / "i."
-    const sm = line.match(/^\(?\s*([কখগঘঞ]|i{1,3}v?|v)\s*[).):\u0964]\s+(.+)$/i);
+    // উপ-প্রশ্ন: "(ক)" / "(i)" / "i." / "(क)"
+    const sm = line.match(/^\(?\s*([কখগঘঞकखगघ]|i{1,3}v?|v|vi{1,3}|ix|x)\s*[).):।ঃ\u0964]\s*(.+)$/i);
     if (sm && q) {
       const { text, marks } = splitTrailingMarks(sm[2]);
       q.subs.push({ text, marks });
@@ -539,7 +728,32 @@ export function parseQuestionText(raw: string, meta: QpMeta, format: QpFormat, l
   }
 
   const valid = sections.filter((s) => s.questions.length > 0);
-  if (valid.length === 0) return null;
+
+  // শেষ-ভরসা: কোনো প্রশ্ন-চিহ্নই না মেললে প্রতিটি অর্থবহ লাইনই প্রশ্ন —
+  // ফরম্যাটিং কখনো "ব্যর্থ" হয় না, শিক্ষক অন্তত সাজানো খসড়া পান
+  if (valid.length === 0) {
+    const cand = preamble.filter((l) => l.length >= 4);
+    if (cand.length > 0) {
+      const sec: QpSection = { title: '', note: '', questions: [] };
+      for (const l of cand) {
+        const { text, marks } = splitTrailingMarks(l);
+        if (!text) continue;
+        qNo++;
+        sec.questions.push({
+          number: banglaNums ? toBanglaNumber(qNo) : String(qNo),
+          text,
+          marks,
+          options: [],
+          subs: [],
+        });
+      }
+      if (sec.questions.length > 0) {
+        sections.push(sec);
+        valid.push(sec);
+      }
+    }
+    if (valid.length === 0) return null;
+  }
 
   // বিভাগ-নোটে "প্রতিটি ২ নম্বর" জাতীয় উল্লেখ থাকলে সেই মান সে বিভাগের যেসব
   // প্রশ্নে নম্বর-মান নেই সবগুলোতে বসে (উৎসেই লেখা — নতুন করে বানানো নয়)
@@ -558,7 +772,7 @@ export function parseQuestionText(raw: string, meta: QpMeta, format: QpFormat, l
 
   // প্রথম প্রশ্নের আগের লাইনগুলো নির্দেশনা হিসেবে ধরা হয় (প্রায়ই হয়)
   const instructions = preamble
-    .filter((l) => !/^(?:সময়|পূর্ণমান|ফুল মার্কস|time|marks)/i.test(l) || l.length > 80)
+    .filter((l) => !/^(?:সময়|পূর্ণমান|ফুল মার্কস|समय|पूर्णांक|time|marks?)/i.test(l) || l.length > 80)
     .slice(0, 6);
 
   return {
