@@ -7,7 +7,7 @@
 
 import { Fragment, useState } from 'react';
 import {
-  ArrowUpToLine, Ban, Check, Columns2, Columns3, Droplet, Eraser, MoveDown, SlidersHorizontal, SwatchBook, Wand2,
+  ArrowUpToLine, Ban, Check, Columns2, Columns3, Droplet, Eraser, MoveDown, RotateCcw, SlidersHorizontal, SwatchBook, Wand2,
 } from 'lucide-react';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
@@ -25,6 +25,7 @@ import { getEditor } from '@/lib/editor-registry';
 import {
   availableHeightOfEditor, fillFromNextPage, removeEmptyPages, smartFlowWholeBook,
 } from '@/components/editor/page-ops';
+import { effectivePageMargins, effectivePageTypography } from '@/components/editor/page-chrome';
 import { toast } from 'sonner';
 import {
   effectivePageBorderStyle, effectivePageBorderWidth, FONT_OPTIONS, fontStackOf, MARGIN_PRESETS,
@@ -38,7 +39,7 @@ import {
   type ColumnsRuleStyle,
 } from '@/lib/nodes-html';
 import { tFmt, useFmtNum, useLangStore, useT } from '@/lib/i18n';
-import type { DocumentSettings, Margins, PageBorderStyle, PageBorderWidth, PaperColor, WatermarkSettings } from '@/lib/types';
+import type { DocumentSettings, Margins, PageBorderStyle, PageBorderWidth, PageData, PageTypographyOverride, PaperColor, WatermarkSettings } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -165,14 +166,138 @@ const COLUMN_PRESETS: Array<{ id: string; attrs: ColumnsAttrs }> = [
 
 const COLUMN_RULE_STYLES: ColumnsRuleStyle[] = ['solid', 'double', 'dashed', 'dotted'];
 
+// ─── স্কোপ: বদল কোথায় বসবে — এই পাতায় নাকি সব পাতায় ───
+
+type LayoutScope = 'page' | 'all';
+
+/**
+ * স্কোপ-চিপ — মার্জিন ও টাইপোগ্রাফি গ্রুপে একই state ভাগ করে দেখানো হয়।
+ * ডিফল্ট "এই পাতায়" — ব্যবহারকারী যে পাতায় দাঁড়িয়ে সেখানেই বদল বসে (আগে
+ * নিঃশর্ত সব পাতায় যেত — মূল অভিযোগ)। পাতায় কাস্টম মান থাকলে অ্যাম্বার
+ * "কাস্টম" ব্যাজ দেখায় — ব্যাজেই ক্লিক করলে কাস্টম মুছে গ্লোবালে ফেরে।
+ */
+function ScopePicker({ scope, onScope, custom, onReset }: {
+  scope: LayoutScope;
+  onScope: (s: LayoutScope) => void;
+  /** এই গ্রুপে সক্রিয় পাতার নিজস্ব কাস্টম মান আছে কি না */
+  custom: boolean;
+  onReset: () => void;
+}) {
+  const tt = useT();
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className="whitespace-nowrap text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{tt('lay.scope.label')}</span>
+      <div className="flex overflow-hidden rounded-md border border-border" role="group" aria-label={tt('lay.scope.label')}>
+        <button
+          type="button"
+          className={cn(
+            'px-2 py-0.5 text-[11px] transition-colors',
+            scope === 'page' ? 'bg-primary/10 font-semibold text-primary' : 'bg-background text-muted-foreground hover:text-foreground',
+          )}
+          aria-pressed={scope === 'page'}
+          title={tt('lay.scope.pageTip')}
+          onClick={() => onScope('page')}
+        >
+          {tt('lay.scope.page')}
+        </button>
+        <button
+          type="button"
+          className={cn(
+            'px-2 py-0.5 text-[11px] transition-colors',
+            scope === 'all' ? 'bg-primary/10 font-semibold text-primary' : 'bg-background text-muted-foreground hover:text-foreground',
+          )}
+          aria-pressed={scope === 'all'}
+          title={tt('lay.scope.allTip')}
+          onClick={() => onScope('all')}
+        >
+          {tt('lay.scope.all')}
+        </button>
+      </div>
+      {custom ? (
+        <button
+          type="button"
+          className="flex items-center gap-0.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-semibold text-amber-700 transition hover:bg-amber-500/20 dark:text-amber-400"
+          title={tt('lay.scope.customTip')}
+          onClick={onReset}
+        >
+          <RotateCcw size={9} aria-hidden="true" /> {tt('lay.scope.custom')}
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
 export function LayoutTab() {
   const settings = useEditorStore((s) => s.settings);
   const update = useEditorStore((s) => s.updateSettings);
+  const pages = useEditorStore((s) => s.pages);
+  const activePageId = useEditorStore((s) => s.activePageId);
+  const activePage: PageData | null = (activePageId ? pages.find((p) => p.id === activePageId) : null) ?? null;
   const tt = useT();
   const fnum = useFmtNum();
   const lang = useLangStore((s) => s.lang);
 
-  const setMargins = (patch: Partial<Margins>) => update({ margins: { ...settings.margins, ...patch } });
+  // ── স্কোপ: ডিফল্ট "এই পাতায়" — ব্যবহারকারী যে পাতায় কাজ করছেন সেখানেই বদল বসে ──
+  const [scope, setScope] = useState<LayoutScope>('page');
+  const perPage = scope === 'page' && Boolean(activePage);
+
+  // প্রদর্শিত মান — স্কোপ অনুযায়ী পাতার কার্যকর মান বা গ্লোবাল ডিফল্ট
+  const effMargins = perPage && activePage ? effectivePageMargins(activePage, settings) : settings.margins;
+  const effTypo = perPage && activePage
+    ? effectivePageTypography(activePage, settings)
+    : {
+        defaultFont: settings.defaultFont,
+        defaultFontSize: settings.defaultFontSize,
+        lineHeight: settings.lineHeight,
+        paragraphSpacing: settings.paragraphSpacing,
+      };
+
+  /**
+   * মার্জিন লেখা — স্কোপ অনুযায়ী:
+   *  · "এই পাতায়" → কেবল সক্রিয় পাতার marginsOverride (গ্লোবাল অক্ষত)
+   *  · "সব পাতায়" → গ্লোবাল ডিফল্ট + সব পাতার কাস্টম মার্জিন রিসেট (নইলে
+   *    কাস্টম পাতাগুলো পুরনো মানে আটকে “সব পাতায় বসল না” অভিযোগ ফিরে আসত)
+   */
+  const applyMargins = (patch: Partial<Margins>) => {
+    if (perPage && activePage) {
+      const base = activePage.marginsOverride ?? settings.margins;
+      useEditorStore.getState().updatePage(activePage.id, { marginsOverride: { ...base, ...patch } });
+      return;
+    }
+    if (scope === 'page' && !activePage) toast.info(tt('lay.scope.noPage'));
+    update({ margins: { ...settings.margins, ...patch } });
+    if (scope === 'all') {
+      const n = useEditorStore.getState().clearPageOverrides('margins');
+      if (n > 0) toast.info(tFmt('lay.scope.clearedMargins', { n: fnum(n) }));
+    }
+  };
+
+  /** টাইপোগ্রাফি লেখা — applyMargins-এর মতোই স্কোপ-সচেতন */
+  const applyTypo = (patch: Partial<PageTypographyOverride>) => {
+    if (perPage && activePage) {
+      const base = activePage.typeOverride ?? {};
+      useEditorStore.getState().updatePage(activePage.id, { typeOverride: { ...base, ...patch } });
+      return;
+    }
+    if (scope === 'page' && !activePage) toast.info(tt('lay.scope.noPage'));
+    update(patch as Partial<DocumentSettings>);
+    if (scope === 'all') {
+      const n = useEditorStore.getState().clearPageOverrides('type');
+      if (n > 0) toast.info(tFmt('lay.scope.clearedType', { n: fnum(n) }));
+    }
+  };
+
+  // কাস্টম ব্যাজে ক্লিক — এই পাতার কাস্টম মান মুছে ডকুমেন্ট-ডিফল্টে ফেরা
+  const resetPageMargins = () => {
+    if (!activePage) return;
+    useEditorStore.getState().updatePage(activePage.id, { marginsOverride: null });
+    toast.success(tt('lay.toast.pageMarginReset'));
+  };
+  const resetPageType = () => {
+    if (!activePage) return;
+    useEditorStore.getState().updatePage(activePage.id, { typeOverride: null });
+    toast.success(tt('lay.toast.pageTypeReset'));
+  };
 
   // ── মাল্টি-কলাম লেআউট (প্রশ্নপত্র/সংবাদপত্র) — কার্সর কলামের ভেতরে থাকলে
   // বদল সেখানেই বসে, নইলে কার্সরের অনুচ্ছেদ নতুন কলাম-ব্লকে মুড়ে যায় ──
@@ -343,6 +468,12 @@ export function LayoutTab() {
       <RibbonDivider />
       <RibbonGroup label={tt('lay.group.margins')} accent="margins (in)">
         <div className="flex flex-col gap-1">
+          <ScopePicker
+            scope={scope}
+            onScope={setScope}
+            custom={Boolean(perPage && activePage?.marginsOverride)}
+            onReset={resetPageMargins}
+          />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button type="button" className="ribbon-select w-44">
@@ -351,7 +482,7 @@ export function LayoutTab() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-56">
               {MARGIN_PRESETS.map((p) => (
-                <DropdownMenuItem key={p.id} onClick={() => update({ margins: { ...p.margins, gutter: 0 } })}>
+                <DropdownMenuItem key={p.id} onClick={() => applyMargins({ ...p.margins, gutter: 0 })}>
                   {p.name}
                 </DropdownMenuItem>
               ))}
@@ -359,19 +490,19 @@ export function LayoutTab() {
           </DropdownMenu>
           <div className="flex flex-wrap gap-x-3 gap-y-1">
             <Field label={tt('lay.margin.top')}>
-              <NumberInput value={settings.margins.top} onChange={(v) => setMargins({ top: v })} />
+              <NumberInput value={effMargins.top} onChange={(v) => applyMargins({ top: v })} />
             </Field>
             <Field label={tt('lay.margin.bottom')}>
-              <NumberInput value={settings.margins.bottom} onChange={(v) => setMargins({ bottom: v })} />
+              <NumberInput value={effMargins.bottom} onChange={(v) => applyMargins({ bottom: v })} />
             </Field>
             <Field label={tt('lay.margin.left')}>
-              <NumberInput value={settings.margins.left} onChange={(v) => setMargins({ left: v })} />
+              <NumberInput value={effMargins.left} onChange={(v) => applyMargins({ left: v })} />
             </Field>
             <Field label={tt('lay.margin.right')}>
-              <NumberInput value={settings.margins.right} onChange={(v) => setMargins({ right: v })} />
+              <NumberInput value={effMargins.right} onChange={(v) => applyMargins({ right: v })} />
             </Field>
             <Field label={tt('lay.margin.gutter')}>
-              <NumberInput value={settings.margins.gutter} onChange={(v) => setMargins({ gutter: v })} max={1.5} />
+              <NumberInput value={effMargins.gutter} onChange={(v) => applyMargins({ gutter: v })} max={1.5} />
             </Field>
           </div>
         </div>
@@ -797,10 +928,16 @@ export function LayoutTab() {
       <RibbonDivider />
       <RibbonGroup label={tt('lay.group.typo')} accent="default typography">
         <div className="flex flex-col gap-1">
+          <ScopePicker
+            scope={scope}
+            onScope={setScope}
+            custom={Boolean(perPage && activePage?.typeOverride)}
+            onReset={resetPageType}
+          />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button type="button" className="ribbon-select w-40" style={{ fontFamily: `'${settings.defaultFont}', sans-serif` }}>
-                {settings.defaultFont} <span aria-hidden="true">▾</span>
+              <button type="button" className="ribbon-select w-40" style={{ fontFamily: `'${effTypo.defaultFont}', sans-serif` }}>
+                {effTypo.defaultFont} <span aria-hidden="true">▾</span>
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="max-h-[24rem] w-72 overflow-y-auto">
@@ -822,9 +959,9 @@ export function LayoutTab() {
                     ) : null}
                     <DropdownMenuItem
                       style={{ fontFamily: f.stack }}
-                      className={cn(settings.defaultFont === f.family && 'bg-accent')}
+                      className={cn(effTypo.defaultFont === f.family && 'bg-accent')}
                       title={f.legacy ? tt('home.legacy.tip') : undefined}
-                      onClick={() => update({ defaultFont: f.family })}
+                      onClick={() => applyTypo({ defaultFont: f.family })}
                     >
                       <span className="truncate">{f.name}</span>
                       {f.note ? <span className="ml-auto shrink-0 text-[10px] text-muted-foreground/70">{f.note[lang]}</span> : null}
@@ -836,13 +973,13 @@ export function LayoutTab() {
           </DropdownMenu>
           <div className="flex flex-wrap gap-x-3 gap-y-1">
             <Field label={tt('lay.typo.size')}>
-              <NumberInput value={settings.defaultFontSize} onChange={(v) => update({ defaultFontSize: v })} step={0.5} min={8} max={28} />
+              <NumberInput value={effTypo.defaultFontSize} onChange={(v) => applyTypo({ defaultFontSize: v })} step={0.5} min={8} max={28} />
             </Field>
             <Field label={tt('lay.typo.lineHeight')}>
-              <NumberInput value={settings.lineHeight} onChange={(v) => update({ lineHeight: v })} step={0.05} min={1} max={3} />
+              <NumberInput value={effTypo.lineHeight} onChange={(v) => applyTypo({ lineHeight: v })} step={0.05} min={1} max={3} />
             </Field>
             <Field label={tt('lay.typo.paraGap')}>
-              <NumberInput value={settings.paragraphSpacing} onChange={(v) => update({ paragraphSpacing: v })} step={1} min={0} max={28} />
+              <NumberInput value={effTypo.paragraphSpacing} onChange={(v) => applyTypo({ paragraphSpacing: v })} step={1} min={0} max={28} />
             </Field>
           </div>
         </div>

@@ -60,6 +60,13 @@ interface EditorActions {
   updatePageHtml: (pageId: string, html: string) => void;
   updatePage: (pageId: string, patch: Partial<PageData>) => void;
   replacePageHtml: (pageId: string, html: string) => void;
+  /**
+   * সব পাতার নিজস্ব layout-override মুছে ফেলা — Layout ট্যাবে "সব পাতায়" স্কোপে
+   * মার্জিন/টাইপোগ্রাফি বদলালে ডাকা হয়, নইলে কাস্টম পাতাগুলো পুরনো মানে আটকে থাকত।
+   * kind: 'margins' → marginsOverride, 'type' → typeOverride ফিল্ড পরিষ্কার হয়।
+   * রিটার্ন: যত পাতার override আসলেই ছিল (টোস্টে জানানোর জন্য)।
+   */
+  clearPageOverrides: (kind: 'margins' | 'type') => number;
   splitPageAt: (pageId: string, keptHtml: string, overflowHtml: string) => void;
   flowOverflow: (pageId: string, keptHtml: string, overflowHtml: string) => void;
 
@@ -456,6 +463,21 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
     const pages = get().pages.map((p) => (p.id === pageId ? { ...p, ...patch } : p));
     set({ pages });
     touch(get);
+  },
+
+  clearPageOverrides: (kind) => {
+    const key = kind === 'margins' ? 'marginsOverride' : 'typeOverride';
+    let cleared = 0;
+    const pages = get().pages.map((p) => {
+      if (!p[key]) return p;
+      cleared += 1;
+      return { ...p, [key]: null };
+    });
+    if (cleared > 0) {
+      set({ pages });
+      touch(get);
+    }
+    return cleared;
   },
 
   replacePageHtml: (pageId, html) => {

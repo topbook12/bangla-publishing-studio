@@ -89,7 +89,7 @@ const PageThumb = memo(
             className={cn('page-thumb-paper', paperClass)}
             style={{ width: pageW, height: pageH, transform: `scale(${scale})` }}
           >
-            <span className="paper-inner" style={{ padding: pagePaddingStyle(index, settings) }}>
+            <span className="paper-inner" style={{ padding: pagePaddingStyle(page, index, settings) }}>
               <PageWatermark settings={settings} />
               <PageHeader
                 index={index}
@@ -103,7 +103,7 @@ const PageThumb = memo(
                 {isCover && page.coverData ? (
                   <CoverView cover={page.coverData} />
                 ) : (
-                  <span className="page-content-text" style={pageFontStyle(settings)}>
+                  <span className="page-content-text" style={pageFontStyle(page, settings)}>
                     <StaticContent html={page.html} />
                   </span>
                 )}

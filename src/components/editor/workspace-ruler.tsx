@@ -26,6 +26,8 @@ import { useEditorStore } from '@/lib/store';
 import { getPageDimensionsMm, inchToPx, mmToPx, MM_PER_INCH } from '@/lib/paper';
 import { useT, useFmtNum } from '@/lib/i18n';
 import { useUiStore } from '@/lib/ui-store';
+import { effectivePageMargins } from './page-chrome';
+import type { Margins, PageData } from '@/lib/types';
 
 type HDragSide = 'left' | 'right';
 type VDragSide = 'top' | 'bottom';
@@ -37,6 +39,23 @@ const MIN_CONTENT_IN = 0.5;
 const SNAP_IN = 0.05;
 
 const clamp = (v: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, v));
+
+/**
+ * রুলার-টানে মার্জিন লেখা — ★ পাতা-সচেতন।
+ * সক্রিয় পাতা থাকলে বদল কেবল সেই পাতার marginsOverride-এ বসে (আগে গ্লোবাল
+ * settings-এ লিখে সব পাতা বদলে যেত — ব্যবহারকারীর প্রত্যাশার বিপরীত)।
+ * সক্রিয় পাতা না থাকলে গ্লোবাল ডিফল্টে লেখা হয়।
+ */
+function writeMargins(pageId: string | null | undefined, patch: Partial<Margins>): void {
+  const s = useEditorStore.getState();
+  const page = pageId ? s.pages.find((p) => p.id === pageId) : null;
+  if (page) {
+    const base = effectivePageMargins(page, s.settings);
+    s.updatePage(page.id, { marginsOverride: { ...base, ...patch } });
+    return;
+  }
+  s.updateSettings({ margins: { ...s.settings.margins, ...patch } });
+}
 
 /** ইঞ্চি → চলতি এককের প্রদর্শন-মান (সেমি: দশমিক ১ ঘর, ইঞ্চি: ২ ঘর) */
 function displayValue(inch: number, unit: 'cm' | 'in'): number {
@@ -65,6 +84,10 @@ function UnitChip() {
 
 export function WorkspaceHRule() {
   const settings = useEditorStore((s) => s.settings);
+  // রুলারটি সবসময় সক্রিয় পাতার মার্জিন দেখায়/বদলায় — Word-এর সেকশন-রুলারের মতো
+  const pages = useEditorStore((s) => s.pages);
+  const activePageId = useEditorStore((s) => s.activePageId);
+  const activePage: PageData | null = (activePageId ? pages.find((p) => p.id === activePageId) : null) ?? null;
   const unit = useUiStore((s) => s.rulerUnit);
   const tt = useT();
   const f = useFmtNum();
@@ -75,7 +98,7 @@ export function WorkspaceHRule() {
   const widthIn = widthMm / MM_PER_INCH;
   const widthPx = mmToPx(widthMm);
 
-  const m = settings.margins;
+  const m = effectivePageMargins(activePage, settings);
   const leftPx = m.left * 96;
   const rightPx = m.right * 96;
 
@@ -101,15 +124,17 @@ export function WorkspaceHRule() {
     const rect = el.getBoundingClientRect();
     const inch = ((e.clientX - rect.left) / rect.width) * widthIn;
     const raw = Math.round(inch / SNAP_IN) * SNAP_IN;
-    const cur = useEditorStore.getState().settings.margins;
+    const st = useEditorStore.getState();
+    const page = st.activePageId ? st.pages.find((p) => p.id === st.activePageId) : null;
+    const cur = effectivePageMargins(page, st.settings);
     if (drag === 'left') {
       const hi = widthIn - cur.right - MIN_CONTENT_IN;
       if (hi <= MIN_MARGIN_IN) return;
-      useEditorStore.getState().updateSettings({ margins: { ...cur, left: clamp(raw, MIN_MARGIN_IN, hi) } });
+      writeMargins(st.activePageId, { left: clamp(raw, MIN_MARGIN_IN, hi) });
     } else {
       const hi = widthIn - cur.left - MIN_CONTENT_IN;
       if (hi <= MIN_MARGIN_IN) return;
-      useEditorStore.getState().updateSettings({ margins: { ...cur, right: clamp(raw, MIN_MARGIN_IN, hi) } });
+      writeMargins(st.activePageId, { right: clamp(raw, MIN_MARGIN_IN, hi) });
     }
   };
 
@@ -176,15 +201,17 @@ export function WorkspaceHRule() {
 
 interface PageVRuleProps {
   index: number;
+  /** এই রুলার যে পাতার পাশে বসে — টানলে কেবল এই পাতার মার্জিন বদলায় */
+  page: PageData;
   visible: boolean;
 }
 
 /**
- * memo — settings স্টোর-সাবস্ক্রিপশন থেকে আসে, তাই comparator-এ শুধু props;
- * পাতার HTML বদলালেও (pages অ্যারে ক্লোন) রুলার রি-রেন্ডার হয় না।
+ * memo — settings/page স্টোর-সাবস্ক্রিপশন বা props থেকে আসে, তাই comparator-এ
+ * page-ও তুলনা করা হয়; পাতার নিজস্ব মার্জিন বদলালে রুলার সাথে সাথে আপডেট হয়।
  */
 export const PageVRule = memo(
-  function PageVRule({ index, visible }: PageVRuleProps) {
+  function PageVRule({ index, page, visible }: PageVRuleProps) {
     const settings = useEditorStore((s) => s.settings);
     const unit = useUiStore((s) => s.rulerUnit);
     const tt = useT();
@@ -198,7 +225,8 @@ export const PageVRule = memo(
     const heightIn = heightMm / MM_PER_INCH;
     const heightPx = mmToPx(heightMm);
 
-    const m = settings.margins;
+    // এই পাতারই কার্যকর মার্জিন — override থাকলে সেটাই, নইলে গ্লোবাল
+    const m = effectivePageMargins(page, settings);
     const topPx = m.top * 96;
     const bottomPx = m.bottom * 96;
 
@@ -223,15 +251,15 @@ export const PageVRule = memo(
       const rect = el.getBoundingClientRect();
       const inch = ((e.clientY - rect.top) / rect.height) * heightIn;
       const raw = Math.round(inch / SNAP_IN) * SNAP_IN;
-      const cur = useEditorStore.getState().settings.margins;
+      const cur = effectivePageMargins(page, useEditorStore.getState().settings);
       if (drag === 'top') {
         const hi = heightIn - cur.bottom - MIN_CONTENT_IN;
         if (hi <= MIN_MARGIN_IN) return;
-        useEditorStore.getState().updateSettings({ margins: { ...cur, top: clamp(raw, MIN_MARGIN_IN, hi) } });
+        writeMargins(page.id, { top: clamp(raw, MIN_MARGIN_IN, hi) });
       } else {
         const hi = heightIn - cur.top - MIN_CONTENT_IN;
         if (hi <= MIN_MARGIN_IN) return;
-        useEditorStore.getState().updateSettings({ margins: { ...cur, bottom: clamp(raw, MIN_MARGIN_IN, hi) } });
+        writeMargins(page.id, { bottom: clamp(raw, MIN_MARGIN_IN, hi) });
       }
     };
 
@@ -293,5 +321,5 @@ export const PageVRule = memo(
       </div>
     );
   },
-  (prev, next) => prev.index === next.index && prev.visible === next.visible,
+  (prev, next) => prev.index === next.index && prev.visible === next.visible && prev.page === next.page,
 );

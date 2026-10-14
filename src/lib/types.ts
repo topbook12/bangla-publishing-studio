@@ -121,6 +121,20 @@ export interface DocumentSettings {
   singleColor?: string | null;
 }
 
+/**
+ * পাতার নিজস্ব টাইপোগ্রাফি ওভাররাইড (আংশিক) — শুধু ব্যবহারকারী যে ফিল্ডগুলো
+ * বদলেছেন সেগুলোই থাকে; বাকি ফিল্ড গ্লোবাল settings থেকে আসে।
+ */
+export interface PageTypographyOverride {
+  defaultFont?: string;
+  /** pt এককে */
+  defaultFontSize?: number;
+  /** লাইন হাইট (মাল্টিপ্লায়ার) */
+  lineHeight?: number;
+  /** প্যারাগ্রাফের নিচে স্পেসিং (px) */
+  paragraphSpacing?: number;
+}
+
 // ─── পৃষ্ঠা ও প্রজেক্ট ───
 
 export type PageKind = 'normal' | 'cover';
@@ -148,6 +162,13 @@ export interface PageData {
   headerOverride?: HeaderFooterSettings | null;
   /** এই পাতার জন্য কাস্টম ফুটার — null/অনুপস্থিত হলে গ্লোবাল settings.footer */
   footerOverride?: HeaderFooterSettings | null;
+  /**
+   * এই পাতার নিজস্ব মার্জিন — null/অনুপস্থিত হলে গ্লোবাল settings.margins।
+   * Layout ট্যাবে "এই পাতায়" স্কোপে বা রুলার-হাতল টেনে বদলালে কেবল এই পাতায় বসে।
+   */
+  marginsOverride?: Margins | null;
+  /** এই পাতার নিজস্ব টাইপোগ্রাফি (ফন্ট/সাইজ/লাইন-হাইট/প্যারা-ফাঁক) — null/অনুপস্থিত হলে গ্লোবাল */
+  typeOverride?: PageTypographyOverride | null;
   /**
    * টেমপ্লেট-ডিজাইন লক — অটো-ফ্লো এই পাতাকে ভাঙবে/উপরে টানবে না (কভারের মতোই
    * পূর্ণ-পাতার নকশা)। ব্যবহারকারী প্রথম নিজে কিছু সম্পাদনা করলেই লক খুলে যায়।

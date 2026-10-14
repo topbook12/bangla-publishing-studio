@@ -12,6 +12,7 @@ import {
 import type { DocumentSettings, HeaderFooterSettings, PageData } from './types';
 import { effectivePageBorderStyle, effectivePageBorderWidth, getPaperPreset, PAGE_BORDER_WIDTH_PX } from './paper';
 import { parseMcqData, docBoxInlineStyle, parseColumnsAttrs, type DocBoxAttrs, type DocBoxVariant } from './nodes-html';
+import { effectivePageMargins, settingsWithPageTypography } from './page-layout';
 import { healFigureSrcs } from './vector-catalog';
 import { SHAPE_BY_ID, SHAPE_DEFS, readShapeAttrs } from './shape-catalog';
 import { displayPageNumber } from './pagenum';
@@ -967,7 +968,6 @@ export async function exportProjectToDocx(input: DocxExportInput): Promise<void>
   const portrait = settings.orientation === 'portrait';
   const pageWidthTwip = Math.round((portrait ? size.w : size.h) * MM_TO_TWIP);
   const pageHeightTwip = Math.round((portrait ? size.h : size.w) * MM_TO_TWIP);
-  const m = settings.margins;
 
   // পেজ বর্ডার — অ্যাপের কনফিগ (রং/স্টাইল/প্রস্থ) অনুযায়ী (docx border size = ১/৮ pt)
   const borderProps = settings.pageBorder !== 'none'
@@ -1011,6 +1011,11 @@ export async function exportProjectToDocx(input: DocxExportInput): Promise<void>
   }> = [];
   for (let pageIdx = 0; pageIdx < pages.length; pageIdx++) {
     const page = pages[pageIdx];
+    // পাতার কার্যকর মার্জিন/টাইপোগ্রাফি — স্ক্রিনের মতোই পাতার নিজস্ব override-সচেতন
+    // (lib/page-layout.ts-এর একই বেইজ); প্রতি পাতা = একটি Word-section বলে
+    // per-page মার্জিন এখানে হুবহু বসে
+    const m = effectivePageMargins(page, settings);
+    const pageSettings = settingsWithPageTypography(page, settings);
     currentFootnotes = [];
     // differentFirst — স্ক্রিন ও HTML এক্সপোর্টের মতো প্রথম পাতায় সব ক্রোম লুকানো
     // (আগে শুধু নম্বর লুকাত, হেডার/ফুটার লেখা ছাপা হতো — স্ক্রিনের সাথে অমিল)
@@ -1064,7 +1069,7 @@ export async function exportProjectToDocx(input: DocxExportInput): Promise<void>
           if (colAttrs.count >= 2) {
             flushPart();
             parts.push({
-              children: Array.from(el.children).flatMap((child) => blockToDocx(child, {}, settings)),
+              children: Array.from(el.children).flatMap((child) => blockToDocx(child, {}, pageSettings)),
               columns: {
                 count: colAttrs.count,
                 space: Math.round(colAttrs.gap * PX_TO_TWIP),
@@ -1079,7 +1084,7 @@ export async function exportProjectToDocx(input: DocxExportInput): Promise<void>
           children.push(new Paragraph({ children: [new ColumnBreak()] }));
           return;
         }
-        children.push(...blockToDocx(el, {}, settings));
+        children.push(...blockToDocx(el, {}, pageSettings));
       });
 
       // ফুটনোট তালিকা

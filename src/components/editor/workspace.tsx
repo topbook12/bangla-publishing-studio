@@ -226,8 +226,8 @@ export function Workspace() {
               <span className="page-slot-index">{fn(index + 1)}</span>
               <PageMenu pageId={page.id} index={index} />
             </div>
-            {/* উল্লম্ব স্কেল — প্রতি পাতার বাঁ পাশে (জায়গা থাকলে) */}
-            {rulerVisible ? <PageVRule index={index} visible={vRoom} /> : null}
+            {/* উল্লম্ব স্কেল — প্রতি পাতার বাঁ পাশে (জায়গা থাকলে); টানলে কেবল এই পাতার মার্জিন বদলায় */}
+            {rulerVisible ? <PageVRule index={index} page={page} visible={vRoom} /> : null}
             <PaperPage
               page={page}
               index={index}

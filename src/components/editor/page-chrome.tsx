@@ -12,7 +12,8 @@
 'use client';
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import type { DocumentSettings, HeaderFooterSettings } from '@/lib/types';
+import type { DocumentSettings, HeaderFooterSettings, PageData } from '@/lib/types';
+import { effectivePageMargins, effectivePageTypography } from '@/lib/page-layout';
 import { displayPageNumber, gutterSide, isEvenPage } from '@/lib/pagenum';
 import { fontStackOf } from '@/lib/paper';
 import { useEditorStore } from '@/lib/store';
@@ -374,21 +375,29 @@ export function PageFooter({ index, settings, pageKind, noChrome, pageId, footer
   );
 }
 
-/** পৃষ্ঠার মার্জিন স্টাইল (gutter সহ) */
-export function pagePaddingStyle(index: number, settings: DocumentSettings): string {
-  const m = settings.margins;
+/**
+ * কার্যকর মার্জিন/টাইপোগ্রাফির একমাত্র বেইজ lib/page-layout.ts-এ — এখানে রি-এক্সপোর্ট
+ * (কম্পোনেন্ট-দিকের পুরনো আমদানি অক্ষত থাকে; এক্সপোর্ট-দিক lib থেকে সরাসরি নেয়)।
+ */
+export { effectivePageMargins, effectivePageTypography } from '@/lib/page-layout';
+
+/** পৃষ্ঠার মার্জিন স্টাইল (gutter সহ) — পাতার নিজস্ব মার্জিন override-সচেতন */
+export function pagePaddingStyle(page: PageData, index: number, settings: DocumentSettings): string {
+  const m = effectivePageMargins(page, settings);
   const side = gutterSide(index, settings.pageNumber.oddEven, settings.pageNumber.startAt);
   const left = side === 'left' ? m.left + m.gutter : m.left;
   const right = side === 'right' ? m.right + m.gutter : m.right;
   return `${m.top}in ${right}in ${m.bottom}in ${left}in`;
 }
 
-export function pageFontStyle(settings: DocumentSettings): React.CSSProperties {
+/** পাতার কনটেন্ট-টেক্সটের ফন্ট স্টাইল — পাতার নিজস্ব টাইপোগ্রাফি override-সচেতন */
+export function pageFontStyle(page: PageData | null | undefined, settings: DocumentSettings): React.CSSProperties {
+  const typo = effectivePageTypography(page, settings);
   return {
-    fontFamily: fontStackOf(settings.defaultFont),
-    fontSize: `${settings.defaultFontSize}pt`,
-    lineHeight: settings.lineHeight,
-    '--page-paragraph-gap': `${settings.paragraphSpacing}px`,
+    fontFamily: fontStackOf(typo.defaultFont),
+    fontSize: `${typo.defaultFontSize}pt`,
+    lineHeight: typo.lineHeight,
+    '--page-paragraph-gap': `${typo.paragraphSpacing}px`,
   } as React.CSSProperties;
 }
 

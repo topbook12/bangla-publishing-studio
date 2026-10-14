@@ -29,6 +29,20 @@ export const dictLayout: Dict = {
   'lay.margin.right': { bn: 'ডান', hi: 'दाएँ', en: 'Right' },
   'lay.margin.gutter': { bn: 'গাটার', hi: 'गटर', en: 'Gutter' },
 
+  // ─── স্কোপ: বদল কোথায় বসবে (মার্জিন/টাইপোগ্রাফি) ───
+  'lay.scope.label': { bn: 'প্রযোজ্য হবে', hi: 'लागू होगा', en: 'Apply to' },
+  'lay.scope.page': { bn: 'এই পাতায়', hi: 'इस पृष्ठ पर', en: 'This page' },
+  'lay.scope.all': { bn: 'সব পাতায়', hi: 'सभी पृष्ठों पर', en: 'All pages' },
+  'lay.scope.pageTip': { bn: 'বদল শুধু এই পাতায় বসবে — বাকি পাতা অক্ষত থাকবে', hi: 'बदलाव केवल इस पृष्ठ पर लागू होगा — बाकी पृष्ठ अपरिवर्तित रहेंगे', en: 'Changes apply only to this page — other pages stay untouched' },
+  'lay.scope.allTip': { bn: 'বদল সব পাতায় বসবে — পাতার কাস্টম মার্জিন/টাইপোগ্রাফিও রিসেট হবে', hi: 'बदलाव सभी पृष्ठों पर लागू होगा — पृष्ठों की कस्टम मार्जिन/टाइपोग्राफ़ी भी रीसेट होगी', en: 'Changes apply to every page — custom page margins/typography are reset too' },
+  'lay.scope.custom': { bn: 'কাস্টম', hi: 'कस्टम', en: 'Custom' },
+  'lay.scope.customTip': { bn: 'এই পাতায় কাস্টম মান আছে — ক্লিক করলে মুছে ডকুমেন্ট-ডিফল্টে ফিরে যাবে', hi: 'इस पृष्ठ पर कस्टम मान हैं — क्लिक करने पर मिटकर दस्तावेज़ डिफ़ॉल्ट पर लौटेगा', en: "This page has custom values — click to remove them and return to the document default" },
+  'lay.scope.noPage': { bn: 'কোনো পাতা নির্বাচিত নয় — সব পাতায় প্রয়োগ হলো', hi: 'कोई पृष्ठ चयनित नहीं — सभी पृष्ठों पर लागू हुआ', en: 'No page selected — applied to all pages' },
+  'lay.scope.clearedMargins': { bn: '{n}টি পাতার কাস্টম মার্জিন রিসেট হলো — এখন সব পাতা নতুন মানে চলছে', hi: '{n} पृष्ठों का कस्टम मार्जिन रीसेट हुआ — अब सभी पृष्ठ नए मान पर हैं', en: 'Custom margins on {n} page(s) were reset — all pages now follow the new value' },
+  'lay.scope.clearedType': { bn: '{n}টি পাতার কাস্টম টাইপোগ্রাফি রিসেট হলো — এখন সব পাতা নতুন মানে চলছে', hi: '{n} पृष्ठों की कस्टम टाइपोग्राफ़ी रीसेट हुई — अब सभी पृष्ठ नए मान पर हैं', en: 'Custom typography on {n} page(s) was reset — all pages now follow the new value' },
+  'lay.toast.pageMarginReset': { bn: 'এই পাতার মার্জিন ডকুমেন্ট-ডিফল্টে ফিরেছে', hi: 'इस पृष्ठ का मार्जिन दस्तावेज़ डिफ़ॉल्ट पर लौटा', en: "This page's margins reverted to the document default" },
+  'lay.toast.pageTypeReset': { bn: 'এই পাতার টাইপোগ্রাফি ডকুমেন্ট-ডিফল্টে ফিরেছে', hi: 'इस पृष्ठ की टाइपोग्राफ़ी दस्तावेज़ डिफ़ॉल्ट पर लौटी', en: "This page's typography reverted to the document default" },
+
   // ─── কাগজের রং ───
   'lay.color.white': { bn: 'সাদা', hi: 'सफ़ेद', en: 'White' },
   'lay.color.cream': { bn: 'ক্রিম (বইয়ের কাগজ)', hi: 'क्रीम (पुस्तक कागज़)', en: 'Cream (Book Paper)' },

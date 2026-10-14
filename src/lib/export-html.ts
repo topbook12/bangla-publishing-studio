@@ -15,6 +15,7 @@
  */
 
 import type { DocumentSettings, HeaderFooterSettings, PageData, PageNumberSettings } from './types';
+import { effectivePageMargins, effectivePageTypography } from './page-layout';
 import { getPaperPreset, pageBorderVisual } from './paper';
 import { parseMcqData, docBoxStyleText, columnsStyleText, parseColumnsAttrs, type DocBoxAttrs, type DocBoxVariant } from './nodes-html';
 import { healFigureSrcs } from './vector-catalog';
@@ -513,15 +514,17 @@ export function buildStandaloneHtml(title: string, settings: DocumentSettings, p
   const portrait = settings.orientation === 'portrait';
   const w = portrait ? size.w : size.h;
   const h = portrait ? size.h : size.w;
-  const m = settings.margins;
-  const gutter = m.gutter;
 
   const pageHtmls = pages.map((page, index) => {
+    // পাতার কার্যকর মার্জিন/টাইপোগ্রাফি — স্ক্রিনের মতোই পাতার নিজস্ব override-সচেতন
+    // (lib/page-layout.ts-এর একই বেইজ — এক্সপোর্ট স্ক্রিনের হুবহু প্রতিফলন)
+    const m = effectivePageMargins(page, settings);
+    const typo = effectivePageTypography(page, settings);
     // gutter side — pagenum.ts gutterSide-এর সাথে মিল রেখে (startAt-সচেতন প্যারিটি)
     const startAt = settings.pageNumber.startAt;
     const side = settings.pageNumber.oddEven && (startAt + index) % 2 === 0 ? 'right' : 'left';
-    const leftM = side === 'left' ? m.left + gutter : m.left;
-    const rightM = side === 'right' ? m.right + gutter : m.right;
+    const leftM = side === 'left' ? m.left + m.gutter : m.left;
+    const rightM = side === 'right' ? m.right + m.gutter : m.right;
     const padding = `${m.top}in ${rightM}in ${m.bottom}in ${leftM}in`;
 
     // পেজ বর্ডার — অ্যাপের মতো একই কনফিগ (রং/স্টাইল/প্রস্থ) pageBorderVisual থেকে
@@ -532,7 +535,7 @@ export function buildStandaloneHtml(title: string, settings: DocumentSettings, p
 
     const contentInner = page.kind === 'cover' && page.coverData
       ? coverHtml(page.coverData, settings)
-      : `<div class="page-content-text" style="font-family:'${settings.defaultFont}',sans-serif;font-size:${settings.defaultFontSize}pt;line-height:${settings.lineHeight};--p-gap:${settings.paragraphSpacing}px">${expandHtml(healFigureSrcs(page.html))}</div>`;
+      : `<div class="page-content-text" style="font-family:'${typo.defaultFont}',sans-serif;font-size:${typo.defaultFontSize}pt;line-height:${typo.lineHeight};--p-gap:${typo.paragraphSpacing}px">${expandHtml(healFigureSrcs(page.html))}</div>`;
 
     return `<div class="page paper-${settings.paperColor}" style="width:${w}mm;height:${h}mm">
       <div class="paper-inner" style="padding:${padding}">

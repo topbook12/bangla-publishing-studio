@@ -287,10 +287,12 @@ export function PageEditor({ page, index, isFirstPage }: PageEditorProps) {
     return () => window.clearTimeout(t);
   }, [editor, page.html]);
 
-  // কাগজের সাইজ/মার্জিন/থিম/টাইপোগ্রাফি পরিবর্তনে অটো-ফ্লো পুনঃমূল্যায়ন
+  // কাগজের সাইজ/মার্জিন/থিম/টাইপোগ্রাফি পরিবর্তনে অটো-ফ্লো পুনঃমূল্যায়ন —
+  // পাতার নিজস্ব margin/type override-ও এখানে ধরা হয় (এই পাতায় মার্জিন বদলালে
+  // লভ্য উচ্চতা বদলায়, ফলে ভাঙ নতুন করে গণনা হওয়া চাই)
   useEffect(() => {
     scheduleFlow();
-  }, [scheduleFlow, settings.paperSize, settings.orientation, settings.margins, settings.header, settings.footer, settings.defaultFont, settings.defaultFontSize, settings.lineHeight, settings.paragraphSpacing]);
+  }, [scheduleFlow, settings.paperSize, settings.orientation, settings.margins, settings.header, settings.footer, settings.defaultFont, settings.defaultFontSize, settings.lineHeight, settings.paragraphSpacing, page.marginsOverride, page.typeOverride]);
 
   // বাংলা ওয়েবফন্ট লেট-সোয়াপ রেস — ফলব্যাক ফন্টে মেপে ভাঙা পাতা পরে ঠিক হত না।
   // ফন্ট লোড শেষে একবার পুনঃমূল্যায়ন করলে আসল মেট্রিক্সে ভাঙ পুনঃগণনা হয়।
@@ -326,7 +328,7 @@ export function PageEditor({ page, index, isFirstPage }: PageEditorProps) {
   if (!mounted) {
     return (
       <div ref={wrapperRef} className={`page-editor-shell${overflowing ? ' is-overflowing' : ''}`}>
-        <div className="bwp-static-wrap" style={pageFontStyle(settings)}>
+        <div className="bwp-static-wrap" style={pageFontStyle(page, settings)}>
           <StaticContent html={page.html} />
         </div>
       </div>

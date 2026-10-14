@@ -63,7 +63,7 @@ export const PaperPage = memo(
       onClick={onPageClick}
       data-page-index={index}
     >
-      <div className="paper-inner" style={{ padding: pagePaddingStyle(index, settings) }}>
+      <div className="paper-inner" style={{ padding: pagePaddingStyle(page, index, settings) }}>
         {/* ওয়াটারমার্ক লেয়ার — কনটেন্টের নিচে, প্রিন্টেও ছাপা হয় (খসড়া/নমুনা কপি) */}
         <PageWatermark settings={settings} />
         <PageHeader
@@ -78,7 +78,7 @@ export const PaperPage = memo(
           {isCover && page.coverData ? (
             <CoverView cover={page.coverData} />
           ) : (
-            <div className="page-content-text" style={pageFontStyle(settings)}>
+            <div className="page-content-text" style={pageFontStyle(page, settings)}>
               {children}
             </div>
           )}
