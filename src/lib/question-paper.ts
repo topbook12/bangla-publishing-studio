@@ -23,8 +23,8 @@ import { columnsStyleText } from './nodes-html';
 
 // ─── টাইপ ───
 
-export type QpFormat = 'auto' | 'classic' | 'modern' | 'compact' | 'board';
-export type QpResolvedFormat = 'classic' | 'modern' | 'compact' | 'board';
+export type QpFormat = 'auto' | 'classic' | 'modern' | 'compact' | 'board' | 'royal' | 'twocol' | 'university';
+export type QpResolvedFormat = 'classic' | 'modern' | 'compact' | 'board' | 'royal' | 'twocol' | 'university';
 /** টাইপোগ্রাফি স্কেল — ছোট / মাঝারি / বড় */
 export type QpFontScale = 'sm' | 'md' | 'lg';
 
@@ -588,6 +588,21 @@ export function escapeQpHtml(s: string): string {
 }
 
 /**
+ * কাঁচা HTML টেবিলের `<colgroup>` — স্তম্ভ-প্রস্থ স্পষ্ট ধরে রাখে:
+ *  · ডায়ালগ-প্রিভিউ ও স্বয়ংসম্পূর্ণ প্রিন্ট-ফাইলে (কাঁচা HTML) `style="width:..px"`-ই কাজ করে —
+ *    `table-layout: fixed`-এ width ছাড়া স্তম্ভ সমান ভাগে বাঁটে → প্রশ্ন-লেখা অর্ধেকে চাপা +
+ *    মাঝখানে বিশাল ফাঁক (ব্যবহারকারীর মূল অভিযোগ)।
+ *  · এডিটরে TipTap কলগ্রুপ স্কিমা-বাইরে ফেলে দেয় — সেখানে সেলের `colwidth` অ্যাট্রিবিউটই
+ *    প্রস্থ ধরে (tipTap TableCell parseHTML: colwidth="44")।
+ * null = নমনীয় স্তম্ভ (বাকি জায়গা নেয়)।
+ */
+function qpColgroup(widths: Array<number | null>): string {
+  return `<colgroup>${widths
+    .map((w) => (w != null ? `<col style="width:${w}px" />` : '<col />'))
+    .join('')}</colgroup>`;
+}
+
+/**
  * JSON-স্ট্রিং-এর ভেতরের কাঁচা নিউলাইন/ট্যাব এস্কেপ করে এবং স্ট্রিং-এর বাইরের
  * ট্রেলিং কমা বাদ দেয় — মডেলদের সবচেয়ে প্রচলিত JSON-ভাঙা দুই রোগের মেরামত।
  */
@@ -790,6 +805,45 @@ export function extractTranscriptText(raw: string): string | null {
   // JSON-ই নেই — মডেল সরাসরি লেখা দিয়েছে: পুরোটাই প্রতিলিপি
   const plain = s.replace(/```(?:json)?/gi, '').trim();
   return plain.length >= 4 ? plain : null;
+}
+
+// ─── কাঁচা-লেখা পরিষ্কারণ (হাতের-লেখা প্রতিলিপির আবর্জনা ছাঁটাই) ───
+
+/** আবর্জনা-রেখা: কেবল দাগ/দোত/আন্ডারস্কোর/তারকা — হাতের-লেখার আলাদা-করা রেখা বা স্ক্যান-শিল্পী */
+const QP_JUNK_LINE_RE = /^[\s\-.–—_=+~·•∙…•⋆*#|/\\]{3,}$/;
+/** পাতার নম্বর/মুখপত্র-রেখা: "- 2 -", "—১৩—", "· ৩ ·", "Page 3", "পৃষ্ঠা ০৪" — খাঁটি সংখ্যা রেখে দেয় (মান/উত্তর হতে পারে) */
+const QP_PAGE_NUM_RE = /^(?:[-–—•·∙*]\s*[\u09e6-\u09ef\u0966-\u096f0-9]{1,3}\s*[-–—•·∙*]?|[-–—•·∙*]?\s*[\u09e6-\u09ef\u0966-\u096f0-9]{1,3}\s*[-–—•·∙*]|page\s*[-–—:\s]*\d+|পৃষ্ঠা\s*[\u09e6-\u09ef\u0966-\u096f0-9]+)$/i;
+
+/**
+ * প্রতিলিপি/টাইপ-করা কাঁচা-লেখা পরিষ্কার — ফরমেটিংয়ের আগেই আবর্জনা বাদ:
+ *  · কেবল দাগ/দোত জাতীয় রেখা (হাতের-লেখার separator) বাদ
+ *  · পাতার নম্বর/মুখপত্র-রেখা বাদ
+ *  · পরপর হুবহু একই লাইন (বহু-পাতার ছবিতে হেডার বারবার) একবারই রাখা
+ *  · বাড়তি ফাঁকা লাইন (২-এর বেশি পরপর) গুটানো, লাইনের শেষ/ভেতরের বাড়তি স্পেস গুটানো
+ * রিটার্ন: { text, removed } — removed = কতটি রেখা বাদ পড়ল (টোস্টে জানানোর জন্য)।
+ */
+export function cleanRawQpText(raw: string): { text: string; removed: number } {
+  const lines = raw.split(/\r?\n/);
+  const out: string[] = [];
+  let removed = 0;
+  let blanks = 0;
+  for (const rawLine of lines) {
+    const line = rawLine.replace(/[ \t\u00a0]+/g, ' ').trim();
+    if (!line) {
+      // ফাঁকা লাইন — পরপর ২-এর বেশি গুটানো (বিভাগ-বিভাজনে ১টি যথেষ্ট)
+      blanks += 1;
+      if (blanks <= 1) out.push('');
+      else removed += 1;
+      continue;
+    }
+    blanks = 0;
+    if (QP_JUNK_LINE_RE.test(line)) { removed += 1; continue; }
+    if (QP_PAGE_NUM_RE.test(line) && line.length <= 16) { removed += 1; continue; }
+    // হুবহু আগের লাইনের পুনরাবৃত্তি — বহু-পাতার ছবিতে হেডার/বিভাগ-শিরোনাম বারবার আসে
+    if (out.length > 0 && out[out.length - 1] === line && line.length < 60) { removed += 1; continue; }
+    out.push(line);
+  }
+  return { text: out.join('\n').replace(/^\n+/, '').replace(/\n+$/, '\n').replace(/\n{3,}/g, '\n\n'), removed };
 }
 
 // ─── গণিত রেন্ডারিং ($…$ → এডিটর-নিরাপদ HTML) ───
@@ -1448,9 +1502,16 @@ function qpLabels(lang: Lang): QpLabels {
 
 // ─── আসল-প্রশ্নপত্র হেডার-উপাদান (borderless/বক্স টেবিল — স্কিমা-সাপোর্টেড) ───
 
-/** বর্ডার-ছাড়া সেল — সময়/পূর্ণমান split-line ও নম্বর-কলামের মূল উপাদান */
-function qpTdFree(content: string, extra = ''): string {
-  return `<td${extra ? ` ${extra}` : ''} style="border:none;padding:1px 2px">${content}</td>`;
+/**
+ * বর্ডার-ছাড়া সেল — সময়/পূর্ণমান split-line ও নম্বর-কলামের মূল উপাদান।
+ * ★ data-border="none" অবশ্যই: এডিটরে TipTap সেলের সাধারণ style অ্যাট্রিবিউট ফেলে দেয়,
+ *   কিন্তু data-border পার্স করে (TableCellWithBg) — এই অ্যাট্রিবিউট ছাড়া এডিটরে
+ *   বর্ডারহীন সেলগুলো পূর্ণ বর্ডার + ভারী প্যাডিং পেয়ে "খারাপ দেখা" হত।
+ * ★ colwidth অ্যাট্রিবিউট: এডিটরে স্তম্ভ-প্রস্থ ধরে রাখে (colwidth="44" → ৪৪px স্তম্ভ)।
+ */
+function qpTdFree(content: string, extra = '', colwidth?: number): string {
+  const cw = colwidth != null ? ` colwidth="${colwidth}"` : '';
+  return `<td${cw}${extra ? ` ${extra}` : ''} data-border="none" style="border:none;padding:1px 2px">${content}</td>`;
 }
 
 /** সময় ↔ পূর্ণমান split-line — বাঁযে সময়, ডানে পূর্ণমান (৪টি আসল পত্রেই এই প্রথা) */
@@ -1458,31 +1519,34 @@ function qpSplitLineHtml(m: QpMeta, L: QpLabels): string | null {
   const left = m.time ? `${L.time}: ${m.time}` : '';
   const right = m.fullMarks ? `${L.marks}: ${m.fullMarks}` : '';
   if (!left && !right) return null;
-  return `<table style="margin:4px 0 2px"><tbody><tr>`
+  return `<table style="margin:4px 0 2px"><colgroup><col /><col /></colgroup><tbody><tr>`
     + `${qpTdFree(`<p style="text-align:left;margin:2px 0"><strong>${escapeQpHtml(left)}</strong></p>`)}`
     + `${qpTdFree(`<p style="text-align:right;margin:2px 0"><strong>${escapeQpHtml(right)}</strong></p>`)}`
     + `</tr></tbody></table>`;
 }
 
-/** বিষয় কোড-ডিজিট-বক্স + সেট-বক্স — বোর্ড-পত্রের সই-চেনা কোণা */
+/** বিষয় কোড-ডিজিট-বক্স + সেট-বক্স — বোর্ড-পত্রের সই-চেনা কোণা; স্তম্ভ-প্রস্থ স্পষ্ট (কমপ্যাক্ট বাক্স) */
 function qpCodeBoxHtml(m: QpMeta, L: QpLabels): string | null {
   const digits = (m.subjectCode || '').replace(/\s+/g, '').slice(0, 4);
   const set = (m.setCode || '').trim().slice(0, 3);
   if (!digits && !set) return null;
+  const widths: Array<number | null> = [110, ...[...digits].map(() => 26)];
+  if (set) widths.push(40);
   const rows: string[] = [];
   if (digits) {
     const digitCells = [...digits]
-      .map((d) => `<td style="text-align:center;padding:2px 8px"><p style="margin:2px 0"><strong>${escapeQpHtml(d)}</strong></p></td>`)
+      .map((d) => `<td colwidth="26" style="text-align:center;padding:2px 8px"><p style="margin:2px 0;text-align:center"><strong>${escapeQpHtml(d)}</strong></p></td>`)
       .join('');
-    rows.push(`<tr>${qpTdFree(`<p style="margin:2px 0"><strong>${escapeQpHtml(L.code)}</strong> :</p>`)}${digitCells}</tr>`);
+    rows.push(`<tr>${qpTdFree(`<p style="margin:2px 0"><strong>${escapeQpHtml(L.code)}</strong> :</p>`, '', 110)}${digitCells}</tr>`);
   }
   if (set) {
     rows.push(
-      `<tr>${qpTdFree(`<p style="margin:2px 0"><strong>${escapeQpHtml(L.set)}</strong> :</p>`)}`
-      + `<td style="text-align:center;padding:2px 10px"><p style="margin:2px 0"><strong>${escapeQpHtml(set)}</strong></p></td></tr>`,
+      `<tr>${qpTdFree(`<p style="margin:2px 0"><strong>${escapeQpHtml(L.set)}</strong> :</p>`, '', 110)}`
+      + `<td colwidth="40" style="text-align:center;padding:2px 10px"><p style="margin:2px 0;text-align:center"><strong>${escapeQpHtml(set)}</strong></p></td></tr>`,
     );
   }
-  return `<table style="width:auto;min-width:38%;margin:4px 0"><tbody>${rows.join('')}</tbody></table>`;
+  // table-layout:auto — কাঁচা-HTML প্রিভিউ/প্রিন্টেও বাক্সটা কমপ্যাক্ট থাকে (পুরো প্রস্থ নেয় না)
+  return `<table style="width:auto;min-width:38%;table-layout:auto"><colgroup>${widths.map((w) => (w != null ? `<col style="width:${w}px" />` : '<col />')).join('')}</colgroup><tbody>${rows.join('')}</tbody></table>`;
 }
 
 /** নির্দেশনা-বক্স — শ্রেণি-পত্রের নির্দেশনা ও বোর্ড-MCQ-র "বিশেষ দ্রষ্টব্য" একই রূপে */
@@ -1492,21 +1556,23 @@ function qpInstructionBoxHtml(instructions: string[], title: string, lang: Lang,
   const lines = instructions
     .map((ins, i) => `<p style="margin:3px 0"><strong>${num(i)}.</strong> ${escapeQpHtml(ins)}</p>`)
     .join('');
-  return `<table style="margin:6px 0"><tbody><tr><td>`
+  return `<table style="margin:6px 0"><colgroup><col /></colgroup><tbody><tr><td>`
     + `<p style="margin:3px 0;text-align:center"><span style="font-size:${hSize}"><strong><u>${escapeQpHtml(title)}</u></strong></span></p>`
     + `${lines}</td></tr></tbody></table>`;
 }
 
-/** প্রশ্নপত্রের প্রশ্ন-সারি — ডান-নম্বর-কলাম প্রথায় এক টেবিলে: মূল-প্রশ্ন + উপ-প্রশ্ন, মান ডান প্রান্তে */
+/** প্রশ্নপত্রের প্রশ্ন-সারি — ডান-নম্বর-কলাম প্রথায় এক টেবিলে: মূল-প্রশ্ন + উপ-প্রশ্ন, মান ডান প্রান্তে।
+ * colgroup + colwidth স্পষ্ট — নইলে প্রিভিউ (`table-layout: fixed`) ও এডিটর (ProseMirror
+ * সমান-ভাগ) দুটোতেই লেখা অর্ধেক স্তম্ভে চাপা পড়ে মাঝখানে বিশাল ফাঁক থেকে যেত। */
 function qpMarksRowTable(rows: Array<{ body: string; marks: string; indent?: boolean }>, marksW: number): string | null {
   const trs = rows
     .map(({ body, marks, indent }) => {
       const pad = indent ? ';padding-left:1.8em' : '';
       return `<tr>${qpTdFree(`<p style="margin:2px 0${pad}">${body}</p>`)}`
-        + `<td style="border:none;padding:1px 2px;width:${marksW}px;text-align:right;vertical-align:top"><p style="margin:2px 0"><strong>${escapeQpHtml(marks)}</strong></p></td></tr>`;
+        + `<td colwidth="${marksW}" style="border:none;padding:1px 2px;width:${marksW}px;vertical-align:top" data-border="none"><p style="margin:2px 0;text-align:right"><strong>${escapeQpHtml(marks)}</strong></p></td></tr>`;
     })
     .join('');
-  return `<table style="margin:5px 0 3px"><tbody>${trs}</tbody></table>`;
+  return `<table style="margin:5px 0 3px">${qpColgroup([null, marksW])}<tbody>${trs}</tbody></table>`;
 }
 
 /** প্রশ্ন-নম্বরের ধরন — ১। (দণ্ড — আসল-পত্র প্রথা) / ১. / (১) / ১) */
@@ -1535,13 +1601,19 @@ function qpMarksRaw(marks: string, style: QpMarksStyle, word: string): string {
   return escapeQpHtml(marks);
 }
 
-/** উপ-প্রশ্ন — শুরুর (ক)/(i)-লেবেল গাঢ় — সৃজনশীল-ধাঁচ পরিষ্কার বোঝা যায় */
+/** উপ-প্রশ্ন — শুরুর (ক)/(i)-লেবেল গাঢ় — সৃজনশীল-ধাঁচ পরিষ্কার বোঝা যায়।
+ * blockquote-এর বদলে padding-left প্যারা: এডিটরে generic blockquote-স্টাইল (বাঁ-রেখা + ইটালিক)
+ * প্রয়োগ হত — প্রিভিউ/প্রিন্টের সাথে অমিল + সম্পাদনায় বিরক্তিকর। indentLeft (padding-left)
+ * TipTap-এ AdvancedTypography global attribute — সব জায়গায় হুবহু এক দেখায়। */
 function qpSubHtml(sub: QpSubQ, sty: string): string {
   const sm = sub.marks ? ` [${escapeQpHtml(sub.marks)}]` : '';
   const body = mathRichToHtml(sub.text);
   const lm = body.match(/^((?:\([^)<]{1,8}\))|(?:[কখগঘঙiIvVxX]{1,4}[).):।]))\s*([\s\S]*)$/);
   const inner = lm && lm[2] ? `<strong>${lm[1]}</strong> ${lm[2]}${sm}` : `${body}${sm}`;
-  return `<blockquote${sty}><p>${inner}</p></blockquote>`;
+  const styleAttr = sty
+    ? sty.replace('style="', 'style="padding-left:1.5em;')
+    : ' style="padding-left:1.5em"';
+  return `<p${styleAttr}>${inner}</p>`;
 }
 
 /** MCQ-অপশনের সাজ — এক লাইনে / ২×২ গ্রিড (আসল-পত্র প্রথা) / তালিকায় — লেবেল (ক)-বন্ধনীতে */
@@ -1563,11 +1635,11 @@ function qpOptionsHtml(q: QpQuestion, layout: QpLayout, sty: string): string {
   return `<p${sty}>${q.options.map(one).join('&nbsp;&nbsp;&nbsp;&nbsp;')}</p>`;
 }
 
-/** মিলকরণ-প্রশ্নের স্তম্ভ-টেবিল — বাঁ/ডান দুই স্তম্ভ, জিরোক্স-বান্ধব সীমারেখা */
+/** মিলকরণ-প্রশ্নের স্তম্ভ-টেবিল — বাঁ/ডান দুই স্তম্ভ (সমান প্রস্থ — স্পষ্ট colgroup), জিরোক্স-বান্ধব সীমারেখা */
 function qpMatchHtml(q: QpQuestion): string | null {
   if (!q.pairs || q.pairs.length === 0) return null;
   const rows = q.pairs.map((p) => `<tr><td>${mathRichToHtml(p.left)}</td><td>${mathRichToHtml(p.right)}</td></tr>`);
-  return `<table><tbody>${rows.join('')}</tbody></table>`;
+  return `<table><colgroup><col /><col /></colgroup><tbody>${rows.join('')}</tbody></table>`;
 }
 
 /** উত্তরের জায়গা — ডট-লাইন শ্রেণি-পরীক্ষার খাতা-ধাঁচে (কলামে সংক্ষিপ্ত হয়) */
@@ -1618,17 +1690,24 @@ export function paperToEditorHtml(p: QuestionPaper, lang: Lang): string {
   const layout = normalizeQpLayout(p.layout);
   const m = p.meta;
   const L = qpLabels(lang);
-  const compact = f === 'compact';
+  const compact = f === 'compact' || f === 'twocol';
   const board = f === 'board';
   const modern = f === 'modern';
+  const royal = f === 'royal';
+  const twocol = f === 'twocol';
+  const university = f === 'university';
   const adj = p.fontScale === 'sm' ? -2 : p.fontScale === 'lg' ? 2 : 0;
   const subAdj = p.fontScale === 'sm' ? -1 : p.fontScale === 'lg' ? 1 : 0;
-  const hN = (compact ? 16 : 18) + adj;
+  const hN = (compact ? 16 : royal ? 20 : 18) + adj;
   const subN = (compact ? 11 : 12) + subAdj;
   const hSize = `${hN}pt`;
   const subSize = `${subN}pt`;
   const secSize = `${board || modern ? subN + 1 : subN}pt`;
-  const bodySize = p.fontScale === 'sm' ? '10.5pt' : p.fontScale === 'lg' ? '13pt' : '';
+  const bodySize = p.fontScale === 'sm'
+    ? (twocol ? '9.5pt' : '10.5pt')
+    : p.fontScale === 'lg'
+      ? (twocol ? '11.5pt' : '13pt')
+      : twocol ? '10.5pt' : '';
   const sty = (extra = '') => {
     const all = [extra, bodySize ? `font-size:${bodySize}` : ''].filter(Boolean).join(';');
     return all ? ` style="${all}"` : '';
@@ -1658,6 +1737,65 @@ export function paperToEditorHtml(p: QuestionPaper, lang: Lang): string {
     if (m.teacherName?.trim()) {
       parts.push(`<p${center}><span style="font-size:${subSize}"><em>${escapeQpHtml(L.teacher)}: ${escapeQpHtml(m.teacherName.trim())}</em></span></p>`);
     }
+    parts.push('<hr>');
+  } else if (royal) {
+    // অলংকৃত-রাজকীয় হেডার — প্রিমিয়াম প্রতিষ্ঠান-পত্র: ❦ অলংকার + অক্ষর-ফাঁকযুক্ত বড় শিরোনাম →
+    // পরীক্ষা → শ্রেণি·বিষয় → সময়↔পূর্ণমান → নাম-রোল → নির্দেশনা-বক্স (শেডযুক্ত)
+    const orn = '<span style="font-size:' + subSize + '">\u2766</span>';
+    const royalTitle = m.schoolName || m.examTitle;
+    if (royalTitle) {
+      parts.push(`<p${center}><span style="font-size:${hSize};letter-spacing:2px"><strong>${orn} ${escapeQpHtml(royalTitle)} ${orn}</strong></span></p>`);
+    }
+    if (m.schoolName && m.examTitle) parts.push(midLine(m.examTitle, true));
+    const clsSub: string[] = [];
+    if (m.classLabel) clsSub.push(`${L.cls}: ${m.classLabel}`);
+    if (m.subject) clsSub.push(`${L.subject}: ${m.subject}`);
+    if (m.date) clsSub.push(`${L.date}: ${m.date}`);
+    if (clsSub.length > 0) parts.push(`<p${center}>${escapeQpHtml(clsSub.join('   ·   '))}</p>`);
+    const split = qpSplitLineHtml(m, L);
+    if (split) parts.push(split);
+    if (m.studentLine) parts.push(`<p${sty()}>${escapeQpHtml(L.nameRoll)}</p>`);
+    const insBox = qpInstructionBoxHtml(m.instructions, L.instructions, lang, subSize);
+    if (insBox) parts.push(insBox.replace('<table style="margin:6px 0">', '<table style="margin:6px 0;background-color:#f3f4f6">'));
+    parts.push('<hr>');
+  } else if (twocol) {
+    // পত্রিকা-স্তম্ভ হেডার — চাপা ও টাইট: প্রতিষ্ঠান → পরীক্ষা → বিষয়(শ্রেণি) → তথ্য-লাইন → hr
+    if (m.schoolName) parts.push(bigLine(m.schoolName));
+    if (m.examTitle) parts.push(midLine(m.examTitle, true));
+    const headBits: string[] = [];
+    if (m.subject) headBits.push(m.classLabel ? `${m.subject} (${m.classLabel})` : m.subject);
+    if (m.date) headBits.push(`${L.date}: ${m.date}`);
+    if (m.time) headBits.push(`${L.time}: ${m.time}`);
+    if (m.fullMarks) headBits.push(`${L.marks}: ${m.fullMarks}`);
+    if (headBits.length > 0) parts.push(`<p${center}>${escapeQpHtml(headBits.join('   ·   '))}</p>`);
+    parts.push('<hr>');
+  } else if (university) {
+    // বিশ্ববিদ্যালয়-প্রথা হেডার — পরীক্ষা (বড়) → প্রতিষ্ঠান → সীমান্তযুক্ত তথ্য-টেবিল (বিষয়/শ্রেণি/সময়/পূর্ণমান) →
+    // সিলেবাস → নির্দেশনা-বক্স
+    if (m.examTitle) parts.push(bigLine(m.examTitle));
+    else if (m.schoolName) parts.push(bigLine(m.schoolName));
+    if (m.examTitle && m.schoolName) parts.push(midLine(m.schoolName));
+    if (m.subject) parts.push(midLine(m.subject));
+    const infoRows: Array<[string, string, string, string]> = [];
+    if (m.subject || m.subjectCode) infoRows.push([L.subject, m.subject, L.code, m.subjectCode]);
+    if (m.classLabel || m.time) infoRows.push([L.cls, m.classLabel, L.time, m.time]);
+    if (m.fullMarks || m.setCode) infoRows.push([L.marks, m.fullMarks, L.set, m.setCode]);
+    if (infoRows.length > 0) {
+      const rowsHtml = infoRows
+        .map(([k1, v1, k2, v2]) =>
+          `<tr>`
+          + `<td style="width:16%;white-space:nowrap"><p style="margin:2px 0"><strong>${escapeQpHtml(k1)}</strong></p></td>`
+          + `<td style="width:34%"><p style="margin:2px 0">${escapeQpHtml(v1)}</p></td>`
+          + `<td style="width:16%;white-space:nowrap"><p style="margin:2px 0"><strong>${escapeQpHtml(k2)}</strong></p></td>`
+          + `<td style="width:34%"><p style="margin:2px 0">${escapeQpHtml(v2)}</p></td>`
+          + `</tr>`)
+        .join('');
+      parts.push(`<table style="margin:8px 0"><colgroup><col style="width:16%" /><col style="width:34%" /><col style="width:16%" /><col style="width:34%" /></colgroup><tbody>${rowsHtml}</tbody></table>`);
+    }
+    if (m.date) parts.push(`<p${center}><em>${escapeQpHtml(`${L.date}: ${m.date}`)}</em></p>`);
+    if (m.syllabusNote) parts.push(`<p${center}><em>[${escapeQpHtml(m.syllabusNote)}]</em></p>`);
+    const insBox = qpInstructionBoxHtml(m.instructions, L.instructions, lang, subSize);
+    if (insBox) parts.push(insBox);
     parts.push('<hr>');
   } else if (modern) {
     // বোর্ড-MCQ হেডার (ঢাকা-বোর্ড প্রথা): শিরোনাম → বিষয় → "বহুনির্বাচনি অভীক্ষা"
@@ -1712,14 +1850,21 @@ export function paperToEditorHtml(p: QuestionPaper, lang: Lang): string {
   }
 
   // ── বিভাগ ও প্রশ্ন (উন্নত লেআউট-সচেতন) ──
+  // twocol — লুপ-শেষে পুরো বডি একটাই ২-স্তম্ভ ব্লকে মোড়া হয় (পত্রিকা-ধাঁচ)
+  const bodyStart = parts.length;
   let firstSection = true;
   for (const sec of p.sections) {
     if (sec.title) {
       if ((board || modern) && !firstSection) parts.push('<hr>');
       const t = escapeQpHtml(sec.title);
-      if (layout.sectionStyle === 'box') {
+      if (royal) {
+        // অলংকৃত — শেডযুক্ত কেন্দ্রীয় বিভাগ-ব্যান্ড (shading attr — এডিটর-সমর্থিত)
+        parts.push(`<p${sty('text-align:center;background-color:#eef1f5;margin:8px 0 4px')}><span style="font-size:${secSize};letter-spacing:1px"><strong>\u2766 ${t} \u2766</strong></span></p>`);
+      } else if (university) {
+        parts.push(`<p${sty('text-align:left')}><span style="font-size:${secSize}"><strong><u>${t}</u></strong></span></p>`);
+      } else if (layout.sectionStyle === 'box') {
         // বাক্সে বিভাগ-শিরোনাম — স্কিমা-সাপোর্টেড এককোষ টেবিল
-        parts.push(`<table><tbody><tr><td><p${sty('text-align:center')}><span style="font-size:${secSize}"><strong>${t}</strong></span></p></td></tr></tbody></table>`);
+        parts.push(`<table><colgroup><col /></colgroup><tbody><tr><td><p${sty('text-align:center')}><span style="font-size:${secSize}"><strong>${t}</strong></span></p></td></tr></tbody></table>`);
       } else if (layout.sectionStyle === 'left') {
         parts.push(`<p${sty('text-align:left')}><span style="font-size:${secSize}"><strong><u>${t}</u></strong></span></p>`);
       } else {
@@ -1729,7 +1874,7 @@ export function paperToEditorHtml(p: QuestionPaper, lang: Lang): string {
     firstSection = false;
     if (sec.note) parts.push(`<p${center}><em>${escapeQpHtml(sec.note)}</em></p>`);
 
-    const colCount = qpSectionColumns(sec, layout);
+    const colCount = twocol ? 2 : qpSectionColumns(sec, layout);
     // ডান-নম্বর-কলাম — শুধু এক-কলাম বিভাগে; মাল্টি-কলাম MCQ-তে inline [২]-ই বাস্তবসম্মত
     const marksRight = layout.marksStyle === 'right' && colCount === 1;
     const blocks = sec.questions.map((q) => {
@@ -1773,17 +1918,26 @@ export function paperToEditorHtml(p: QuestionPaper, lang: Lang): string {
       return bits.join('');
     });
 
-    if (colCount > 1) {
+    if (colCount > 1 && !twocol) {
       // বাংলাদেশ-প্রথার ২/৩ কলাম — এডিটরের নিজস্ব doc-columns নোড (সম্পূর্ণ পাইপলাইন-সমর্থিত)
       // কলামের মাঝে রেখা — বোর্ড-স্টাইল MCQ-পত্রের চেনা ভাব
       // ইনলাইন column-count স্টাইল অপরিহার্য — এডিটরে TipTap renderHTML স্টাইল বসায়,
       // কিন্তু ডায়ালগ-প্রিভিউ ও স্বয়ংসম্পূর্ণ প্রিন্ট-ফাইলে কাঁচা HTML-ই দেখায়
+      // (twocol বাদ — ওর নিজস্ব এক-বডি র‍্যাপার আছে; নইলে columns-এর ভেতরে columns নেস্ট হয়)
       parts.push(
         `<div class="doc-columns" data-count="${colCount}" data-gap="26" data-rule="1" data-rule-style="solid" style="${columnsStyleText({ count: colCount, gap: 26, rule: true, fill: 'balance' })}">${blocks.join('')}</div>`,
       );
     } else {
       parts.push(...blocks);
     }
+  }
+
+  // twocol — পুরো বডি একটাই ২-স্তম্ভ পত্রিকা-ব্লকে (শিরোনাম ভাগ জুড়ে, বিভাগগুলো স্তম্ভে স্রোয়)
+  if (twocol) {
+    const bodyHtml = parts.splice(bodyStart).join('');
+    parts.push(
+      `<div class="doc-columns" data-count="2" data-gap="20" data-rule="1" data-rule-style="solid" style="${columnsStyleText({ count: 2, gap: 20, rule: true, fill: 'balance' })}">${bodyHtml}</div>`,
+    );
   }
 
   if (sug) {
@@ -1803,9 +1957,12 @@ export function paperToEditorHtml(p: QuestionPaper, lang: Lang): string {
  */
 export function paperToStandaloneHtml(p: QuestionPaper, lang: Lang): string {
   const body = paperToEditorHtml(p, lang);
-  // বোর্ড-প্রথা (MCQ ও সৃজনশীল) — আসল পত্রের মতো পাতার ফ্রেম
+  // বোর্ড-প্রথা (MCQ ও সৃজনশীল) — আসল পত্রের মতো পাতার ফ্রেম;
+  // বিশ্ববিদ্যালয় — আনুষ্ঠানিক এক-রেখা ফ্রেম; অলংকৃত — ডাবল-রুল অলংকৃত ফ্রেম
   const resolvedF = resolveQpFormat(p);
-  const board = resolvedF === 'board' || resolvedF === 'modern';
+  const board = resolvedF === 'board' || resolvedF === 'modern' || resolvedF === 'university';
+  const royal = resolvedF === 'royal';
+  const frameBorder = royal ? '4px double #111' : '1.7px solid #111';
   const layout = normalizeQpLayout(p.layout);
   const size = QP_PAGE_SIZES[layout.pageSize] ?? QP_PAGE_SIZES.a4;
   const scale = p.fontScale === 'sm' ? '11pt' : p.fontScale === 'lg' ? '13.5pt' : '12pt';
@@ -1826,7 +1983,7 @@ export function paperToStandaloneHtml(p: QuestionPaper, lang: Lang): string {
   :root { color-scheme: light; }
   * { box-sizing: border-box; }
   body { margin: 0; background: #6b7280; font-family: ${lang === 'hi' ? "'Noto Serif Devanagari'" : "'Tiro Bangla','Noto Serif Bengali'"}, serif; }
-  ${board ? `.qp-frame { max-width: ${size.wMm}mm; margin: 24px auto 40px; background: #fff; border: 1.7px solid #111; padding: 4mm; box-shadow: 0 8px 30px rgba(0,0,0,.35); }` : ''}
+  ${board ? `.qp-frame { max-width: ${size.wMm}mm; margin: 24px auto 40px; background: #fff; border: ${frameBorder}; padding: 4mm; box-shadow: 0 8px 30px rgba(0,0,0,.35); }` : ''}
   .qp-page { max-width: ${size.wMm}mm; margin: 24px auto; background: #fff; padding: 18mm 16mm; box-shadow: 0 8px 30px rgba(0,0,0,.35); font-size: ${scale}; line-height: 1.6; color: #111; }
   ${board ? '.qp-frame .qp-page { margin: 0 auto; max-width: none; box-shadow: none; padding: 12mm 10mm; border: 1px solid #111; }' : ''}
   .qp-page hr { border: none; border-top: 1.6px solid #111; margin: 10px 0 12px; }

@@ -68,21 +68,23 @@ export const MARGIN_PRESETS: Array<{ id: string; name: string; margins: Omit<Mar
 export const PAGE_BORDER_WIDTH_PX: Record<PageBorderWidth, number> = { thin: 1, medium: 2, thick: 4 };
 
 /** কার্যকর বর্ডার লাইন স্টাইল — পুরনো ডকুমেন্টে pageBorderStyle না থাকলে pageBorder কাইন্ড থেকে ডেরাইভ */
-export function effectivePageBorderStyle(s: DocumentSettings): PageBorderStyle {
+export function effectivePageBorderStyle(s: { pageBorder?: DocumentSettings['pageBorder']; pageBorderStyle?: PageBorderStyle }): PageBorderStyle {
   return s.pageBorderStyle ?? (s.pageBorder === 'double' ? 'double' : 'solid');
 }
 
 /** কার্যকর বর্ডার প্রস্থ — পুরনো ডকুমেন্টে pageBorderWidth না থাকলে pageBorder কাইন্ড থেকে ডেরাইভ */
-export function effectivePageBorderWidth(s: DocumentSettings): PageBorderWidth {
+export function effectivePageBorderWidth(s: { pageBorder?: DocumentSettings['pageBorder']; pageBorderWidth?: PageBorderWidth }): PageBorderWidth {
   return s.pageBorderWidth ?? (s.pageBorder === 'double' ? 'thick' : 'thin');
 }
 
 /**
  * পেজ কনটেন্ট বক্সের বর্ডার CSS — স্ক্রিন ও প্রিন্ট একই ইনলাইন স্টাইল ব্যবহার করে,
  * তাই কনফিগার করা রং/স্টাইল/প্রস্থ প্রিন্টেও ঠিকভাবে আসে।
+ * সেটিংস-আকৃতির যেকোনো বস্তু নেয় — গ্লোবাল DocumentSettings বা পাতার কার্যকর রূপ
+ * (page-layout.ts effectivePageStyle) — ফলে পাতাভেদে আলাদা বর্ডারও এক ফাংশনেই চলে।
  */
-export function pageBorderVisual(s: DocumentSettings): { border?: string; boxShadow?: string } {
-  if (s.pageBorder === 'none') return {};
+export function pageBorderVisual(s: { pageBorder?: DocumentSettings['pageBorder']; pageBorderColor?: string; pageBorderStyle?: PageBorderStyle; pageBorderWidth?: PageBorderWidth }): { border?: string; boxShadow?: string } {
+  if (!s.pageBorder || s.pageBorder === 'none') return {};
   const color = s.pageBorderColor || '#1e293b';
   if (s.pageBorder === 'ornamental') {
     return { border: `2px solid ${color}`, boxShadow: `inset 0 0 0 3px #fff, inset 0 0 0 4px ${color}` };

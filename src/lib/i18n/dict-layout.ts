@@ -42,6 +42,9 @@ export const dictLayout: Dict = {
   'lay.scope.clearedType': { bn: '{n}টি পাতার কাস্টম টাইপোগ্রাফি রিসেট হলো — এখন সব পাতা নতুন মানে চলছে', hi: '{n} पृष्ठों की कस्टम टाइपोग्राफ़ी रीसेट हुई — अब सभी पृष्ठ नए मान पर हैं', en: 'Custom typography on {n} page(s) was reset — all pages now follow the new value' },
   'lay.toast.pageMarginReset': { bn: 'এই পাতার মার্জিন ডকুমেন্ট-ডিফল্টে ফিরেছে', hi: 'इस पृष्ठ का मार्जिन दस्तावेज़ डिफ़ॉल्ट पर लौटा', en: "This page's margins reverted to the document default" },
   'lay.toast.pageTypeReset': { bn: 'এই পাতার টাইপোগ্রাফি ডকুমেন্ট-ডিফল্টে ফিরেছে', hi: 'इस पृष्ठ की टाइपोग्राफ़ी दस्तावेज़ डिफ़ॉल्ट पर लौटी', en: "This page's typography reverted to the document default" },
+  'lay.scope.clearedStyle': { bn: '{n}টি পাতার কাস্টম রূপ রিসেট হলো — এখন সব পাতা নতুন মানে চলছে', hi: '{n} पृष्ठों का कस्टम रूप रीसेट हुआ — अब सभी पृष्ठ नए मान पर हैं', en: 'Custom look on {n} page(s) was reset — all pages now follow the new value' },
+  'lay.toast.pageStyleReset': { bn: 'এই পাতার রং/বর্ডার ডকুমেন্ট-ডিফল্টে ফিরেছে', hi: 'इस पृष्ठ का रंग/बॉर्डर दस्तावेज़ डिफ़ॉल्ट पर लौटा', en: "This page's colour/border reverted to the document default" },
+  'lay.toast.pageWmReset': { bn: 'এই পাতার পানির ছাপ ডকুমেন্ট-ডিফল্টে ফিরেছে', hi: 'इस पृष्ठ का वॉटरमार्क दस्तावेज़ डिफ़ॉल्ट पर लौटा', en: "This page's watermark reverted to the document default" },
 
   // ─── কাগজের রং ───
   'lay.color.white': { bn: 'সাদা', hi: 'सफ़ेद', en: 'White' },

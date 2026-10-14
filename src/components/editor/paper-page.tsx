@@ -8,6 +8,7 @@ import { memo } from 'react';
 import type { ReactNode } from 'react';
 import type { DocumentSettings, PageData } from '@/lib/types';
 import { getPageDimensionsMm, mmToPx, pageBorderVisual } from '@/lib/paper';
+import { effectivePageStyle, effectivePageTypography } from '@/lib/page-layout';
 import { PageFooter, PageHeader, PageWatermark, pageFontStyle, pagePaddingStyle } from './page-chrome';
 import { CoverView } from './cover-view';
 import { cn } from '@/lib/utils';
@@ -44,15 +45,19 @@ export const PaperPage = memo(
   const height = mmToPx(heightMm);
 
   const isCover = page.kind === 'cover';
+  // পাতার কার্যকর রূপ — কাগজের রং/বর্ডার/ছাপ পাতার নিজস্ব styleOverride থাকলে সেটাই,
+  // নইলে গ্লোবাল (স্ট্রিক্ট পাতা-স্কোপ: এক পাতার বদল অন্য পাতায় ছড়ায় না)
+  const st = effectivePageStyle(page, settings);
   const paperClass =
-    settings.paperColor === 'cream'
+    st.paperColor === 'cream'
       ? 'paper-cream'
-      : settings.paperColor === 'dark'
+      : st.paperColor === 'dark'
         ? 'paper-dark'
         : 'paper-white';
 
-  // বর্ডার রং/স্টাইল/প্রস্থ সেটিংস থেকে আসে — একই ইনলাইন স্টাইল প্রিন্টেও প্রযোজ্য হয়
-  const borderStyle = pageBorderVisual(settings);
+  // বর্ডার রং/স্টাইল/প্রস্থ পাতার কার্যকর রূপ থেকে আসে — একই ইনলাইন স্টাইল প্রিন্টেও প্রযোজ্য হয়
+  const borderStyle = pageBorderVisual(st);
+  const typoFont = effectivePageTypography(page, settings).defaultFont;
 
   return (
     <div
@@ -65,7 +70,7 @@ export const PaperPage = memo(
     >
       <div className="paper-inner" style={{ padding: pagePaddingStyle(page, index, settings) }}>
         {/* ওয়াটারমার্ক লেয়ার — কনটেন্টের নিচে, প্রিন্টেও ছাপা হয় (খসড়া/নমুনা কপি) */}
-        <PageWatermark settings={settings} />
+        <PageWatermark wm={st.watermark} font={typoFont} />
         <PageHeader
           index={index}
           settings={settings}

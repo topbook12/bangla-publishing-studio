@@ -17,6 +17,7 @@
 import { memo, useEffect, useRef } from 'react';
 import { useEditorStore } from '@/lib/store';
 import { getPageDimensionsMm, mmToPx, pageBorderVisual } from '@/lib/paper';
+import { effectivePageStyle, effectivePageTypography } from '@/lib/page-layout';
 import { useT, useFmtNum } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import type { DocumentSettings, PageData } from '@/lib/types';
@@ -58,12 +59,15 @@ const PageThumb = memo(
     const viewH = Math.round(pageH * scale);
 
     const isCover = page.kind === 'cover';
+    // পাতার কার্যকর রূপ — পাতার নিজস্ব styleOverride-সচেতন (স্ক্রিনের সাথে হুবহু মিল)
+    const st = effectivePageStyle(page, settings);
     const paperClass =
-      settings.paperColor === 'cream'
+      st.paperColor === 'cream'
         ? 'paper-cream'
-        : settings.paperColor === 'dark'
+        : st.paperColor === 'dark'
           ? 'paper-dark'
           : 'paper-white';
+    const typoFont = effectivePageTypography(page, settings).defaultFont;
 
     return (
       <button
@@ -90,7 +94,7 @@ const PageThumb = memo(
             style={{ width: pageW, height: pageH, transform: `scale(${scale})` }}
           >
             <span className="paper-inner" style={{ padding: pagePaddingStyle(page, index, settings) }}>
-              <PageWatermark settings={settings} />
+              <PageWatermark wm={st.watermark} font={typoFont} />
               <PageHeader
                 index={index}
                 settings={settings}
@@ -99,7 +103,7 @@ const PageThumb = memo(
                 pageId={page.id}
                 headerOverride={page.headerOverride}
               />
-              <span className="page-content" style={pageBorderVisual(settings)}>
+              <span className="page-content" style={pageBorderVisual(st)}>
                 {isCover && page.coverData ? (
                   <CoverView cover={page.coverData} />
                 ) : (

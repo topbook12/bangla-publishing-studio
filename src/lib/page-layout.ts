@@ -8,7 +8,7 @@
  * আমদানি করা যায়। page-chrome.tsx এগুলো রি-এক্সপোর্ট করে।
  */
 
-import type { DocumentSettings, Margins, PageData, PageTypographyOverride } from './types';
+import type { DocumentSettings, Margins, PageData, PageStyleOverride, PageTypographyOverride } from './types';
 
 /**
  * পাতার কার্যকর মার্জিন — পাতার নিজস্ব override থাকলে সেটাই, নইলে গ্লোবাল।
@@ -46,4 +46,42 @@ export function settingsWithPageTypography(page: PageData | null | undefined, se
     lineHeight: t.lineHeight,
     paragraphSpacing: t.paragraphSpacing,
   };
+}
+
+/**
+ * পাতার কার্যকর রূপ — কাগজের রং, বর্ডার (কাইন্ড/স্টাইল/প্রস্থ/রং) ও পানির ছাপ।
+ * পাতার নিজস্ব styleOverride গ্লোবাল ডিফল্টের উপরে মার্জ হয় — স্ক্রিন, থাম্বনেইল,
+ * রুলার ও সব এক্সপোর্ট এই এক বেইজ থেকেই পড়ে, তাই পাতাভেদে আলাদা রূপও সবখানে হুবহু এক।
+ * (pageBorderStyle/pageBorderWidth পুরনো ডকুমেন্টে অনুপস্থিত হতে পারে — pageBorder কাইন্ড
+ * থেকে paper.ts-এর effectivePageBorderStyle/Width ডেরাইভ করে।)
+ */
+export function effectivePageStyle(page: PageData | null | undefined, settings: DocumentSettings): PageStyleOverride {
+  const o = page?.styleOverride;
+  return {
+    paperColor: o?.paperColor ?? settings.paperColor,
+    pageBorder: o?.pageBorder ?? settings.pageBorder,
+    pageBorderStyle: o?.pageBorderStyle ?? settings.pageBorderStyle,
+    pageBorderWidth: o?.pageBorderWidth ?? settings.pageBorderWidth,
+    pageBorderColor: o?.pageBorderColor ?? settings.pageBorderColor,
+    watermark: o?.watermark ?? settings.watermark,
+  };
+}
+
+/**
+ * পাতার রূপ-override-সহ সেটিংস ক্লোন — pageBorderVisual()-এর মতো সেটিংস-আকৃতির
+ * ভোক্তাদের কাছে পাতার নিজস্ব রূপ পাঠাতে (এক্সপোর্ট/প্রিন্ট)।
+ */
+export function settingsWithPageStyle(page: PageData | null | undefined, settings: DocumentSettings): DocumentSettings {
+  const st = effectivePageStyle(page, settings);
+  // কার্যকর রূপের প্রতিটি ফিল্ডই গ্লোবাল-ডিফল্ট ফলব্যাকসহ আসে — রানটাইমে অনুপস্থিত হয় না;
+  // টাইপ-দিকে শুধু DocumentSettings-এর প্রয়োজনীয়তা মেলাতে cast
+  return {
+    ...settings,
+    paperColor: st.paperColor,
+    pageBorder: st.pageBorder,
+    pageBorderStyle: st.pageBorderStyle,
+    pageBorderWidth: st.pageBorderWidth,
+    pageBorderColor: st.pageBorderColor,
+    watermark: st.watermark,
+  } as DocumentSettings;
 }

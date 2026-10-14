@@ -14,8 +14,8 @@
  *  - প্রিন্টে রং হুবহু থাকে (print-color-adjust: exact)
  */
 
-import type { DocumentSettings, HeaderFooterSettings, PageData, PageNumberSettings } from './types';
-import { effectivePageMargins, effectivePageTypography } from './page-layout';
+import type { DocumentSettings, HeaderFooterSettings, PageData, PageNumberSettings, WatermarkSettings } from './types';
+import { effectivePageMargins, effectivePageStyle, effectivePageTypography } from './page-layout';
 import { getPaperPreset, pageBorderVisual } from './paper';
 import { parseMcqData, docBoxStyleText, columnsStyleText, parseColumnsAttrs, type DocBoxAttrs, type DocBoxVariant } from './nodes-html';
 import { healFigureSrcs } from './vector-catalog';
@@ -111,7 +111,7 @@ body { margin: 0; background: #e2e8f0; font-family: 'Hind Siliguri', 'Noto Sans 
 .paper-white { background: #ffffff; color: #0f172a; }
 .paper-cream { background: #faf3e0; color: #33261a; }
 .paper-dark { background: #1c2a3f; color: #e2e8f0; }
-.paper-inner { display: flex; flex-direction: column; height: 100%; }
+.paper-inner { display: flex; flex-direction: column; height: 100%; position: relative; }
 /* অ্যাপের .page-content-এর সাথে হুবহু এক প্যাডিং — নইলে লাইন-র‍্যাপ বদলে যায় */
 .page-content { flex: 1; min-height: 0; padding: 10px 14px; overflow: hidden; border-radius: 2px; }
 .page-content-text { height: 100%; counter-reset: bwp-footnote; }
@@ -516,10 +516,11 @@ export function buildStandaloneHtml(title: string, settings: DocumentSettings, p
   const h = portrait ? size.h : size.w;
 
   const pageHtmls = pages.map((page, index) => {
-    // পাতার কার্যকর মার্জিন/টাইপোগ্রাফি — স্ক্রিনের মতোই পাতার নিজস্ব override-সচেতন
+    // পাতার কার্যকর মার্জিন/টাইপোগ্রাফি/রূপ — স্ক্রিনের মতোই পাতার নিজস্ব override-সচেতন
     // (lib/page-layout.ts-এর একই বেইজ — এক্সপোর্ট স্ক্রিনের হুবহু প্রতিফলন)
     const m = effectivePageMargins(page, settings);
     const typo = effectivePageTypography(page, settings);
+    const st = effectivePageStyle(page, settings);
     // gutter side — pagenum.ts gutterSide-এর সাথে মিল রেখে (startAt-সচেতন প্যারিটি)
     const startAt = settings.pageNumber.startAt;
     const side = settings.pageNumber.oddEven && (startAt + index) % 2 === 0 ? 'right' : 'left';
@@ -527,18 +528,25 @@ export function buildStandaloneHtml(title: string, settings: DocumentSettings, p
     const rightM = side === 'right' ? m.right + m.gutter : m.right;
     const padding = `${m.top}in ${rightM}in ${m.bottom}in ${leftM}in`;
 
-    // পেজ বর্ডার — অ্যাপের মতো একই কনফিগ (রং/স্টাইল/প্রস্থ) pageBorderVisual থেকে
-    const bv = pageBorderVisual(settings);
+    // পেজ বর্ডার — পাতার কার্যকর রূপ থেকে (রং/স্টাইল/প্রস্থ)
+    const bv = pageBorderVisual(st);
     const borderCss = `${bv.border ? `border:${bv.border};` : ''}${bv.boxShadow ? `box-shadow:${bv.boxShadow};` : ''}`;
 
     const { headerHtml, footerHtml } = chromeHtml(page, index, settings);
+
+    // পানির ছাপ — পাতার কার্যকর ছাপ (PageWatermark-এর হুবহু প্রতিরূপ)
+    const wm = st.watermark as WatermarkSettings | undefined;
+    const wmHtml = wm?.enabled && (wm.text ?? '').trim()
+      ? `<div style="position:absolute;inset:0;z-index:0;display:flex;align-items:center;justify-content:center;pointer-events:none;user-select:none;transform:rotate(${Math.min(90, Math.max(-90, wm.angle))}deg);color:${wm.color};opacity:${Math.min(0.35, Math.max(0.04, wm.opacity))};line-height:1.2;font-size:${Math.min(120, Math.max(24, wm.fontSize))}pt;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact"><span style="max-width:90%;text-align:center;overflow-wrap:break-word">${escapeHtml(wm.text.trim())}</span></div>`
+      : '';
 
     const contentInner = page.kind === 'cover' && page.coverData
       ? coverHtml(page.coverData, settings)
       : `<div class="page-content-text" style="font-family:'${typo.defaultFont}',sans-serif;font-size:${typo.defaultFontSize}pt;line-height:${typo.lineHeight};--p-gap:${typo.paragraphSpacing}px">${expandHtml(healFigureSrcs(page.html))}</div>`;
 
-    return `<div class="page paper-${settings.paperColor}" style="width:${w}mm;height:${h}mm">
+    return `<div class="page paper-${st.paperColor}" style="width:${w}mm;height:${h}mm">
       <div class="paper-inner" style="padding:${padding}">
+        ${wmHtml}
         ${headerHtml}
         <div class="page-content" style="${borderCss}">${contentInner}</div>
         ${footerHtml}

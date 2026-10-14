@@ -62,11 +62,11 @@ interface EditorActions {
   replacePageHtml: (pageId: string, html: string) => void;
   /**
    * সব পাতার নিজস্ব layout-override মুছে ফেলা — Layout ট্যাবে "সব পাতায়" স্কোপে
-   * মার্জিন/টাইপোগ্রাফি বদলালে ডাকা হয়, নইলে কাস্টম পাতাগুলো পুরনো মানে আটকে থাকত।
-   * kind: 'margins' → marginsOverride, 'type' → typeOverride ফিল্ড পরিষ্কার হয়।
+   * মার্জিন/টাইপোগ্রাফি/রূপ বদলালে ডাকা হয়, নইলে কাস্টম পাতাগুলো পুরনো মানে আটকে থাকত।
+   * kind: 'margins' → marginsOverride, 'type' → typeOverride, 'style' → styleOverride ফিল্ড পরিষ্কার হয়।
    * রিটার্ন: যত পাতার override আসলেই ছিল (টোস্টে জানানোর জন্য)।
    */
-  clearPageOverrides: (kind: 'margins' | 'type') => number;
+  clearPageOverrides: (kind: 'margins' | 'type' | 'style') => number;
   splitPageAt: (pageId: string, keptHtml: string, overflowHtml: string) => void;
   flowOverflow: (pageId: string, keptHtml: string, overflowHtml: string) => void;
 
@@ -466,7 +466,7 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
   },
 
   clearPageOverrides: (kind) => {
-    const key = kind === 'margins' ? 'marginsOverride' : 'typeOverride';
+    const key = kind === 'margins' ? 'marginsOverride' : kind === 'type' ? 'typeOverride' : 'styleOverride';
     let cleared = 0;
     const pages = get().pages.map((p) => {
       if (!p[key]) return p;
@@ -498,7 +498,9 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
     const src = pages[idx];
     pages[idx] = { ...src, html: keptHtml || '<p></p>' };
     // স্প্লিট থেকে সৃষ্ট ধারাবাহিক পাতা — সোর্স পাতার chrome সেটিং বহাল থাকে
-    // (না হলে অধ্যায়ের শুরুর noChrome পাতা ভাঙলে হঠাৎ হেডার/ফুটার চলে আসে)
+    // (না হলে অধ্যায়ের শুরুর noChrome পাতা ভাঙলে হঠাৎ হেডার/ফুটার চলে আসে)।
+    // পাতার নিজস্ব মার্জিন/টাইপোগ্রাফি/রূপ-ওভাররাইডও উত্তরাধিকারসূত্রে পায় —
+    // নইলে কাস্টম-মার্জিন পাতা ভাঙলে ধারাবাহিক অংশ হঠাৎ গ্লোবাল মার্জিনে চলে যেত।
     const newPage: PageData = {
       id: newId('pg'),
       kind: 'normal',
@@ -506,6 +508,9 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
       noChrome: src?.noChrome ?? false,
       headerOverride: src?.headerOverride ?? null,
       footerOverride: src?.footerOverride ?? null,
+      marginsOverride: src?.marginsOverride ?? null,
+      typeOverride: src?.typeOverride ?? null,
+      styleOverride: src?.styleOverride ?? null,
     };
     pages.splice(idx + 1, 0, newPage);
     set({ pages });
@@ -528,6 +533,7 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
       pages[nextIdx] = { ...next, html: overflowHtml + next.html };
     } else {
       // নতুন ধারাবাহিক পাতা — সোর্সের chrome সেটিং উত্তরাধিকারসূত্রে পায়
+      // (পাতার নিজস্ব মার্জিন/টাইপো/রূপ-ওভাররাইডও — ধারাবাহিক পাতায় একই রূপ)
       const src = pages[idx];
       const newPage: PageData = {
         id: newId('pg'),
@@ -536,6 +542,9 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
         noChrome: src?.noChrome ?? false,
         headerOverride: src?.headerOverride ?? null,
         footerOverride: src?.footerOverride ?? null,
+        marginsOverride: src?.marginsOverride ?? null,
+        typeOverride: src?.typeOverride ?? null,
+        styleOverride: src?.styleOverride ?? null,
       };
       pages.splice(nextIdx, 0, newPage);
     }

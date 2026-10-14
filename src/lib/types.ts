@@ -135,6 +135,20 @@ export interface PageTypographyOverride {
   paragraphSpacing?: number;
 }
 
+/**
+ * পাতার নিজস্ব রূপ-ওভাররাইড (আংশিক) — কাগজের রং, বর্ডার ও পানির ছাপ।
+ * Layout ট্যাবে "এই পাতায়" স্কোপে বদলালে কেবল এই পাতায় বসে — অন্য পাতা
+ * গ্লোবাল ডিফল্ট মানে চলে (স্ট্রিক্ট পাতা-স্কোপ নিয়ম)।
+ */
+export interface PageStyleOverride {
+  paperColor?: PaperColor;
+  pageBorder?: DocumentSettings['pageBorder'];
+  pageBorderStyle?: PageBorderStyle;
+  pageBorderWidth?: PageBorderWidth;
+  pageBorderColor?: string;
+  watermark?: WatermarkSettings;
+}
+
 // ─── পৃষ্ঠা ও প্রজেক্ট ───
 
 export type PageKind = 'normal' | 'cover';
@@ -169,6 +183,11 @@ export interface PageData {
   marginsOverride?: Margins | null;
   /** এই পাতার নিজস্ব টাইপোগ্রাফি (ফন্ট/সাইজ/লাইন-হাইট/প্যারা-ফাঁক) — null/অনুপস্থিত হলে গ্লোবাল */
   typeOverride?: PageTypographyOverride | null;
+  /**
+   * এই পাতার নিজস্ব রূপ (কাগজের রং/বর্ডার/ছাপ) — null/অনুপস্থিত হলে গ্লোবাল।
+   * Layout ট্যাবে "এই পাতায়" স্কোপে বদলালে কেবল এখানেই বসে।
+   */
+  styleOverride?: PageStyleOverride | null;
   /**
    * টেমপ্লেট-ডিজাইন লক — অটো-ফ্লো এই পাতাকে ভাঙবে/উপরে টানবে না (কভারের মতোই
    * পূর্ণ-পাতার নকশা)। ব্যবহারকারী প্রথম নিজে কিছু সম্পাদনা করলেই লক খুলে যায়।

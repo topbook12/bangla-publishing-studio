@@ -12,7 +12,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import type { DocumentSettings, HeaderFooterSettings, PageData } from '@/lib/types';
+import type { DocumentSettings, HeaderFooterSettings, PageData, WatermarkSettings } from '@/lib/types';
 import { effectivePageMargins, effectivePageTypography } from '@/lib/page-layout';
 import { displayPageNumber, gutterSide, isEvenPage } from '@/lib/pagenum';
 import { fontStackOf } from '@/lib/paper';
@@ -376,10 +376,10 @@ export function PageFooter({ index, settings, pageKind, noChrome, pageId, footer
 }
 
 /**
- * কার্যকর মার্জিন/টাইপোগ্রাফির একমাত্র বেইজ lib/page-layout.ts-এ — এখানে রি-এক্সপোর্ট
+ * কার্যকর মার্জিন/টাইপোগ্রাফি/রূপের একমাত্র বেইজ lib/page-layout.ts-এ — এখানে রি-এক্সপোর্ট
  * (কম্পোনেন্ট-দিকের পুরনো আমদানি অক্ষত থাকে; এক্সপোর্ট-দিক lib থেকে সরাসরি নেয়)।
  */
-export { effectivePageMargins, effectivePageTypography } from '@/lib/page-layout';
+export { effectivePageMargins, effectivePageStyle, effectivePageTypography } from '@/lib/page-layout';
 
 /** পৃষ্ঠার মার্জিন স্টাইল (gutter সহ) — পাতার নিজস্ব মার্জিন override-সচেতন */
 export function pagePaddingStyle(page: PageData, index: number, settings: DocumentSettings): string {
@@ -411,10 +411,11 @@ export function pageFontStyle(page: PageData | null | undefined, settings: Docum
  *   pointer-events:none — লেখা সিলেকশন/ক্লিকে বাধা দেয় না। প্রিন্ট ও ফরমা ক্লোনেও
  *   ছাপা হয় (print-color-adjust: exact ইনলাইনে দেওয়া; কোনো .no-print রুল এটিকে লুকায় না)।
  *
- * পুরনো ডকুমেন্টে settings.watermark অনুপস্থিত থাকতে পারে — তাই `?.` গার্ড বাধ্যতামূলক।
+ * ★ পাতা-স্কোপ: `wm` প্রপ পাতার কার্যকর ছাপ (styleOverride.watermark বা গ্লোবাল) —
+ *   নইলে settings.watermark — ফলে কেবল এক পাতায় ছাপ দেওয়াও চলে।
+ *   পুরনো ডকুমেন্টে watermark অনুপস্থিত থাকতে পারে — তাই `?.` গার্ড বাধ্যতামূলক।
  */
-export function PageWatermark({ settings }: { settings: DocumentSettings }): ReactNode {
-  const wm = settings.watermark;
+export function PageWatermark({ wm, font }: { wm?: WatermarkSettings | null; font?: string }): ReactNode {
   if (!wm?.enabled) return null;
   const text = (wm.text ?? '').trim();
   if (!text) return null;
@@ -441,7 +442,7 @@ export function PageWatermark({ settings }: { settings: DocumentSettings }): Rea
         lineHeight: 1.2,
         fontSize: `${fontSize}pt`,
         // পাতার ডিফল্ট ফন্টেই ছাপ — বইয়ের টাইপোগ্রাফির সাথে সামঞ্জস্য
-        fontFamily: fontStackOf(settings.defaultFont),
+        fontFamily: fontStackOf(font ?? 'Noto Serif Bengali'),
         fontWeight: 700,
         // খসড়া কপিতেও ছাপ হওয়া বাধ্যতামূলক — ব্রাউজার রঙ বাদ দিলে স্বচ্ছ হয়ে যেত
         WebkitPrintColorAdjust: 'exact',

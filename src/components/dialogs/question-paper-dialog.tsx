@@ -17,7 +17,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  BookPlus, CalendarDays, Camera, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, CircleAlert,
+  BookPlus, CalendarDays, Camera, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, CircleAlert, Eraser,
   Download, FileQuestion, History, Loader2, PenLine, Printer, RefreshCw, SlidersHorizontal, Sparkles,
   Trash2, Wand2, X, Zap, ZoomIn, ZoomOut, Image as ImageIcon,
 } from 'lucide-react';
@@ -35,14 +35,14 @@ import type { PreparedImage } from '@/lib/ai-client';
 import { useEditorStore } from '@/lib/store';
 import {
   QP_SCHOOL_KEY, QP_REPAIR_NOTE, QP_STRUCTURE_SYSTEM, QP_SUGGESTION_SYSTEM, QP_TRANSCRIBE_SYSTEM, QP_VERIFY_SYSTEM,
-  QP_DEFAULT_LAYOUT, defaultQpMeta, extractQpJson, extractTranscriptText, loadQpHistory, normalizeQpJson,
+  QP_DEFAULT_LAYOUT, cleanRawQpText, defaultQpMeta, extractQpJson, extractTranscriptText, loadQpHistory, normalizeQpJson,
   normalizeQpLayout, paperToEditorHtml, paperToStandaloneHtml, parseLocaleInt, parseQuestionText,
   pushQpHistory, qpPageSizePx, qpPreambleMeta, qpSampleText, removeQpHistoryItem, resolveQpFormat,
   shufflePaper, sumQpMarks,
 } from '@/lib/question-paper';
 import type { QpDocType, QpFontScale, QpFormat, QpHistoryItem, QpLayout, QpMeta, QuestionPaper } from '@/lib/question-paper';
 import { runCommand } from '@/components/ribbon/ribbon-shell';
-import { useLangStore, useT, useFmtNum } from '@/lib/i18n';
+import { tFmt, useLangStore, useT, useFmtNum } from '@/lib/i18n';
 import { formatDateLong } from '@/lib/i18n/core';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -70,6 +70,9 @@ const FORMATS: Array<{ id: QpFormat; label: string; desc: string }> = [
   { id: 'classic', label: 'qp.format.classic', desc: 'qp.format.classic.desc' },
   { id: 'modern', label: 'qp.format.modern', desc: 'qp.format.modern.desc' },
   { id: 'compact', label: 'qp.format.compact', desc: 'qp.format.compact.desc' },
+  { id: 'royal', label: 'qp.format.royal', desc: 'qp.format.royal.desc' },
+  { id: 'twocol', label: 'qp.format.twocol', desc: 'qp.format.twocol.desc' },
+  { id: 'university', label: 'qp.format.university', desc: 'qp.format.university.desc' },
 ];
 
 const FONT_SCALES: Array<{ id: QpFontScale; key: string }> = [
@@ -202,6 +205,47 @@ function FormatVis({ id }: { id: QpFormat }) {
       </>
     );
   }
+  if (id === 'royal') {
+    // অলংকৃত রাজকীয় — ❦-অলংকৃত শিরোনাম + শেডযুক্ত বিভাগ-ব্যান্ড + নির্দেশনা-বক্স
+    return (
+      <>
+        <span className="qp-vis-row" style={{ justifyContent: 'center', gap: 2 }}>
+          <span className="qp-vis-orn">❦</span>{bar('44%')}<span className="qp-vis-orn">❦</span>
+        </span>
+        {bar('30%', true)}
+        <span className="qp-vis-rule" />
+        <span className="qp-vis-band">{bar('52%', true)}</span>
+        <span className="qp-vis-row">{bar('66%')}<span className="qp-vis-bar" style={{ width: '10%', marginLeft: 'auto' }} /></span>
+        <span className="qp-vis-row">{bar('58%')}<span className="qp-vis-bar" style={{ width: '10%', marginLeft: 'auto' }} /></span>
+      </>
+    );
+  }
+  if (id === 'twocol') {
+    // পত্রিকা স্তম্ভ — চাপা শিরোনাম + মাঝে রেখা দুই স্তম্ভ লেখা
+    return (
+      <>
+        {bar('40%', true)}{bar('56%', true)}
+        <span className="qp-vis-rule" />
+        <span className="qp-vis-row">{bar('44%')}<span style={{ width: '8%' }} />{bar('44%')}</span>
+        <span className="qp-vis-row">{bar('40%')}<span style={{ width: '12%' }} />{bar('40%')}</span>
+        <span className="qp-vis-row">{bar('42%')}<span style={{ width: '10%' }} />{bar('42%')}</span>
+      </>
+    );
+  }
+  if (id === 'university') {
+    // বিশ্ববিদ্যালয় — বড় শিরোনাম + তথ্য-টেবিল (৪ ঘর) + বাঁ-সারিত বিভাগ
+    return (
+      <>
+        {bar('52%', true)}
+        <span className="qp-vis-grid">
+          <span className="qp-vis-cell" style={{ width: '22%' }} /><span className="qp-vis-cell" style={{ width: '28%' }} />
+          <span className="qp-vis-cell" style={{ width: '22%' }} /><span className="qp-vis-cell" style={{ width: '28%' }} />
+        </span>
+        <span className="qp-vis-row">{bar('34%')}<span style={{ flex: 1 }} /></span>
+        {bar('70%')}{bar('62%')}
+      </>
+    );
+  }
   return <>{bar('26%')}{bar('78%')}{bar('78%')}{bar('70%')}{bar('78%')}{bar('52%')}</>;
 }
 
@@ -251,6 +295,8 @@ export function QuestionPaperDialog() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const sheetRef = useRef<HTMLDivElement | null>(null);
   const previewWrapRef = useRef<HTMLDivElement | null>(null);
+  /** কাঁচা-লেখা বাক্স — প্রতিলিপি শেষে সরাসরি এখানে ফোকাস যায় (সম্পাদনা-প্রথম অভিজ্ঞতা) */
+  const rawRef = useRef<HTMLTextAreaElement | null>(null);
   const [sheetH, setSheetH] = useState(0);
   const [fitScale, setFitScale] = useState(0.62);
 
@@ -341,10 +387,31 @@ export function QuestionPaperDialog() {
     const verified = ver.ok && ver.text ? extractTranscriptText(ver.text) : null;
     const text = verified && verified.trim().length >= 4 ? verified : draft;
 
-    setRawText((prev) => (prev.trim() ? `${prev}\n${text}` : text));
+    // প্রতিলিপিতে হাতের-লেখার separator/পাতার নম্বর জাতীয় আবর্জনা থাকে — বসানোর আগেই ছাঁটাই,
+    // যেন ফরমেটিংয়ে মাঝখানে ফাঁক/আবর্জনা-রেখা না আসে (ব্যবহারকারীর মূল অভিযোগ)
+    const cleaned = cleanRawQpText(text);
+    setRawText((prev) => (prev.trim() ? `${prev}\n${cleaned.text}` : cleaned.text));
     setIsDemo(!!res.demo);
     setPhase('idle');
-    toast.success(tt('qp.transcribe.done'));
+    if (cleaned.removed > 0) toast.success(tFmt('qp.clean.removed', { n: fmtNum(cleaned.removed) }));
+    else toast.success(tt('qp.transcribe.done'));
+    // সম্পাদনার জন্য সরাসরি লেখা-বাক্সে ফোকাস — "পরবর্তীতে এডিট করব" স্বপ্নটা এখানেই পূরণ হয়
+    window.setTimeout(() => {
+      rawRef.current?.focus();
+      rawRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 120);
+  };
+
+  /** "লেখা পরিষ্কার" বাটন — টাইপ/পেস্ট/প্রতিলিপি যা-ই হোক, আবর্জনা-রেখা এক ক্লিকে ছাঁটাই */
+  const cleanText = () => {
+    if (!rawText.trim()) return;
+    const { text, removed } = cleanRawQpText(rawText);
+    if (text === rawText) {
+      toast.info(tt('qp.clean.done'));
+      return;
+    }
+    setRawText(text);
+    toast.success(removed > 0 ? tFmt('qp.clean.removed', { n: fmtNum(removed) }) : tt('qp.clean.done'));
   };
 
   // Ctrl+V পেস্ট — ইনপুট ধাপে ছবি সরাসরি বসে
@@ -688,6 +755,11 @@ export function QuestionPaperDialog() {
               <Sparkles size={12} aria-hidden="true" /> {tt('qp.sample')}
             </Button>
             {rawText ? (
+              <Button size="sm" variant="ghost" className="h-7 gap-1 text-xs" onClick={cleanText} title={tt('qp.clean')}>
+                <Eraser size={12} aria-hidden="true" /> {tt('qp.clean')}
+              </Button>
+            ) : null}
+            {rawText ? (
               <Button size="sm" variant="ghost" className="h-7 gap-1 text-xs text-red-600 hover:text-red-700" onClick={() => { setRawText(''); setImage(null); }}>
                 <Trash2 size={12} aria-hidden="true" /> {tt('qp.clear')}
               </Button>
@@ -695,6 +767,7 @@ export function QuestionPaperDialog() {
           </div>
         </div>
         <Textarea
+          ref={rawRef}
           value={rawText}
           onChange={(e) => setRawText(e.target.value)}
           placeholder={tt(docType === 'suggestion' ? 'qp.raw.ph.sug' : 'qp.raw.ph')}
@@ -703,7 +776,7 @@ export function QuestionPaperDialog() {
         />
         <p className="qp-hint">{tt(docType === 'suggestion' ? 'qp.raw.hint.sug' : 'qp.raw.hint')}</p>
         {mode === 'photo' && image && rawText.trim() ? (
-          <p className="qp-hint qp-check-hint">{tt('qp.raw.check')}</p>
+          <p className="qp-hint qp-check-hint">{tt('qp.transcribe.editHint')}</p>
         ) : null}
       </div>
 

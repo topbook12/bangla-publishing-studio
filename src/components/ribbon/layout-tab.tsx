@@ -25,7 +25,7 @@ import { getEditor } from '@/lib/editor-registry';
 import {
   availableHeightOfEditor, fillFromNextPage, removeEmptyPages, smartFlowWholeBook,
 } from '@/components/editor/page-ops';
-import { effectivePageMargins, effectivePageTypography } from '@/components/editor/page-chrome';
+import { effectivePageMargins, effectivePageStyle, effectivePageTypography } from '@/components/editor/page-chrome';
 import { toast } from 'sonner';
 import {
   effectivePageBorderStyle, effectivePageBorderWidth, FONT_OPTIONS, fontStackOf, MARGIN_PRESETS,
@@ -39,7 +39,7 @@ import {
   type ColumnsRuleStyle,
 } from '@/lib/nodes-html';
 import { tFmt, useFmtNum, useLangStore, useT } from '@/lib/i18n';
-import type { DocumentSettings, Margins, PageBorderStyle, PageBorderWidth, PageData, PageTypographyOverride, PaperColor, WatermarkSettings } from '@/lib/types';
+import type { DocumentSettings, Margins, PageBorderStyle, PageBorderWidth, PageData, PageStyleOverride, PageTypographyOverride, PaperColor, WatermarkSettings } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -251,6 +251,66 @@ export function LayoutTab() {
         lineHeight: settings.lineHeight,
         paragraphSpacing: settings.paragraphSpacing,
       };
+  // পাতার কার্যকর রূপ (কাগজের রং/বর্ডার/ছাপ) — স্কোপ-সচেতন; প্রতি গ্রুপের নিজস্ব কাস্টম-ব্যাজ এখান থেকেই
+  const effStyle = effectivePageStyle(perPage && activePage ? activePage : null, settings);
+  const hasPageStyleCustom = Boolean(
+    perPage && activePage?.styleOverride && (
+      activePage.styleOverride.paperColor != null ||
+      activePage.styleOverride.pageBorder != null ||
+      activePage.styleOverride.pageBorderStyle != null ||
+      activePage.styleOverride.pageBorderWidth != null ||
+      activePage.styleOverride.pageBorderColor != null
+    ),
+  );
+  const hasPageWmCustom = Boolean(perPage && activePage?.styleOverride?.watermark);
+
+  /**
+   * রূপ লেখা — স্কোপ অনুযায়ী:
+   *  · "এই পাতায়" → কেবল সক্রিয় পাতার styleOverride (গ্লোবাল অক্ষত; watermark নেস্টেড মার্জ)
+   *  · "সব পাতায়" → গ্লোবাল ডিফল্ট + সব পাতার কাস্টম রূপ রিসেট (নইলে কাস্টম পাতাগুলো
+   *    পুরনো মানে আটকে "সব পাতায় বসল না" অভিযোগ ফিরে আসত)
+   */
+  const applyStyle = (patch: Partial<PageStyleOverride>) => {
+    if (perPage && activePage) {
+      const base = activePage.styleOverride ?? {};
+      const next: PageStyleOverride = { ...base, ...patch };
+      if (patch.watermark) {
+        next.watermark = { ...(base.watermark ?? effStyle.watermark), ...patch.watermark };
+      }
+      useEditorStore.getState().updatePage(activePage.id, { styleOverride: next });
+      return;
+    }
+    if (scope === 'page' && !activePage) toast.info(tt('lay.scope.noPage'));
+    const global: Partial<DocumentSettings> = { ...patch };
+    if (patch.watermark) {
+      global.watermark = { ...(settings.watermark ?? WATERMARK_DEFAULTS), ...patch.watermark };
+    }
+    update(global);
+    if (scope === 'all') {
+      const n = useEditorStore.getState().clearPageOverrides('style');
+      if (n > 0) toast.info(tFmt('lay.scope.clearedStyle', { n: fnum(n) }));
+    }
+  };
+
+  // কাস্টম ব্যাজে ক্লিক — এই পাতার কাস্টম রূপ মুছে ডকুমেন্ট-ডিফল্টে ফেরা (গ্রুপ-ভিত্তিক)
+  const resetPagePaperStyle = () => {
+    if (!activePage?.styleOverride) return;
+    const rest = { ...activePage.styleOverride };
+    delete rest.paperColor;
+    delete rest.pageBorder;
+    delete rest.pageBorderStyle;
+    delete rest.pageBorderWidth;
+    delete rest.pageBorderColor;
+    useEditorStore.getState().updatePage(activePage.id, { styleOverride: Object.keys(rest).length ? rest : null });
+    toast.success(tt('lay.toast.pageStyleReset'));
+  };
+  const resetPageWatermark = () => {
+    if (!activePage?.styleOverride?.watermark) return;
+    const rest = { ...activePage.styleOverride };
+    delete rest.watermark;
+    useEditorStore.getState().updatePage(activePage.id, { styleOverride: Object.keys(rest).length ? rest : null });
+    toast.success(tt('lay.toast.pageWmReset'));
+  };
 
   /**
    * মার্জিন লেখা — স্কোপ অনুযায়ী:
@@ -341,9 +401,9 @@ export function LayoutTab() {
   const [gapDraft, setGapDraft] = useState<number | null>(null);
   const gapShown = gapDraft ?? colGap;
 
-  // পুরনো ডকুমেন্টে pageBorderStyle/pageBorderWidth না থাকলে pageBorder কাইন্ড থেকে ডেরাইভ
-  const borderStyle = effectivePageBorderStyle(settings);
-  const borderWidth = effectivePageBorderWidth(settings);
+  // পুরনো ডকুমেন্টে pageBorderStyle/pageBorderWidth না থাকলে pageBorder কাইন্ড থেকে ডেরাইভ — পাতার কার্যকর রূপ থেকে
+  const borderStyle = effectivePageBorderStyle(effStyle);
+  const borderWidth = effectivePageBorderWidth(effStyle);
 
   // ── কনটেন্ট ফ্লো: নিচের পাতার লেখা/ছবি ফাঁকা জায়গায় তোলা ──
   const fillFromNext = () => {
@@ -385,11 +445,10 @@ export function LayoutTab() {
     else toast.info(tt('lay.toast.noneFound'));
   };
 
-  // ── পানির ছাপ: পুরনো ডকুমেন্টে settings.watermark অনুপস্থিত হতে পারে — ডিফল্ট ধরে নেই ──
-  const wm: WatermarkSettings = settings.watermark ?? WATERMARK_DEFAULTS;
-  // mergeSettings নেস্টেড অবজেক্ট ডিপ-মার্জ করে, তবু পুরো অবজেক্ট লিখি —
-  // ফলে পুরনো ডকুমেন্টে প্রথম বদলের সাথেই সম্পূর্ণ watermark ফিল্ড তৈরি হয়ে যায়
-  const setWm = (patch: Partial<WatermarkSettings>) => update({ watermark: { ...wm, ...patch } });
+  // ── পানির ছাপ: পাতার কার্যকর ছাপ (styleOverride.watermark বা গ্লোবাল); পুরনো ডকুমেন্টে অনুপস্থিত হলে ডিফল্ট —
+  // mergeSettings নেস্টেড অবজেক্ট ডিপ-মার্জ করে, তবু পুরো অবজেক্ট লিখি — ফলে পুরনো ডকুমেন্টে প্রথম বদলের সাথেই সম্পূর্ণ ফিল্ড তৈরি হয়
+  const wm: WatermarkSettings = effStyle.watermark ?? WATERMARK_DEFAULTS;
+  const setWm = (patch: Partial<WatermarkSettings>) => applyStyle({ watermark: { ...wm, ...patch } });
   const toggleWatermark = () => {
     if (wm.enabled) {
       setWm({ enabled: false });
@@ -510,6 +569,12 @@ export function LayoutTab() {
       <RibbonDivider />
       <RibbonGroup label={tt('lay.group.paperBorder')} accent="paper & border">
         <div className="flex flex-col gap-1.5">
+          <ScopePicker
+            scope={scope}
+            onScope={setScope}
+            custom={hasPageStyleCustom}
+            onReset={resetPagePaperStyle}
+          />
           <div className="flex gap-1">
             {PAPER_COLORS.map((c) => (
               <button
@@ -517,10 +582,10 @@ export function LayoutTab() {
                 type="button"
                 title={tt(c.k, c.name)}
                 aria-label={tt(c.k, c.name)}
-                onClick={() => update({ paperColor: c.id })}
+                onClick={() => applyStyle({ paperColor: c.id })}
                 className={cn(
                   'h-7 w-7 rounded-full border-2 transition',
-                  settings.paperColor === c.id ? 'border-primary scale-110' : 'border-border',
+                  effStyle.paperColor === c.id ? 'border-primary scale-110' : 'border-border',
                 )}
                 style={{ backgroundColor: c.bg }}
               />
@@ -529,16 +594,16 @@ export function LayoutTab() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button type="button" className="ribbon-select w-40">
-                <SwatchBook size={13} /> {tt('lay.border.label')} {
-                  settings.pageBorder === 'none' ? tt('lay.border.none') : settings.pageBorder === 'thin' ? tt('lay.border.thin') : settings.pageBorder === 'double' ? tt('lay.border.double') : tt('lay.border.ornamental')
-                } <span aria-hidden="true">▾</span>
+                  <span className="flex items-center gap-1.5"><SwatchBook size={13} /> {tt('lay.border.label')} {
+                  effStyle.pageBorder === 'none' ? tt('lay.border.none') : effStyle.pageBorder === 'thin' ? tt('lay.border.thin') : effStyle.pageBorder === 'double' ? tt('lay.border.double') : tt('lay.border.ornamental')
+                } <span aria-hidden="true">▾</span></span>
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
-              <DropdownMenuItem onClick={() => update({ pageBorder: 'none' })}>{tt('lay.border.none')}</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => update({ pageBorder: 'thin', pageBorderStyle: 'solid', pageBorderWidth: 'thin' })}>{tt('lay.border.thinline')}</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => update({ pageBorder: 'double', pageBorderStyle: 'double', pageBorderWidth: 'thick' })}>{tt('lay.border.doublebook')}</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => update({ pageBorder: 'ornamental' })}>{tt('lay.border.ornframe')}</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => applyStyle({ pageBorder: 'none' })}>{tt('lay.border.none')}</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => applyStyle({ pageBorder: 'thin', pageBorderStyle: 'solid', pageBorderWidth: 'thin' })}>{tt('lay.border.thinline')}</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => applyStyle({ pageBorder: 'double', pageBorderStyle: 'double', pageBorderWidth: 'thick' })}>{tt('lay.border.doublebook')}</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => applyStyle({ pageBorder: 'ornamental' })}>{tt('lay.border.ornframe')}</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           <div className="flex gap-1">
@@ -550,7 +615,7 @@ export function LayoutTab() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
                 {(['solid', 'double', 'dashed'] as PageBorderStyle[]).map((st) => (
-                  <DropdownMenuItem key={st} onClick={() => update({ pageBorderStyle: st })}>
+                  <DropdownMenuItem key={st} onClick={() => applyStyle({ pageBorderStyle: st })}>
                     <span className={cn(borderStyle === st && 'font-bold')}>{tt(BORDER_STYLE_LABELS[st])}</span>
                   </DropdownMenuItem>
                 ))}
@@ -564,7 +629,7 @@ export function LayoutTab() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
                 {(['thin', 'medium', 'thick'] as PageBorderWidth[]).map((w) => (
-                  <DropdownMenuItem key={w} onClick={() => update({ pageBorderWidth: w })}>
+                  <DropdownMenuItem key={w} onClick={() => applyStyle({ pageBorderWidth: w })}>
                     <span className={cn(borderWidth === w && 'font-bold')}>{tt(BORDER_WIDTH_LABELS[w])} — {fnum(PAGE_BORDER_WIDTH_PX[w])}px</span>
                   </DropdownMenuItem>
                 ))}
@@ -579,10 +644,10 @@ export function LayoutTab() {
                 type="button"
                 title={`${tt(c.k, c.name)} (${c.hex})`}
                 aria-label={tt('lay.line.colorAria').split('{name}').join(tt(c.k, c.name))}
-                onClick={() => update({ pageBorderColor: c.hex })}
+                onClick={() => applyStyle({ pageBorderColor: c.hex })}
                 className={cn(
                   'h-5 w-5 rounded-full border-2 transition',
-                  settings.pageBorderColor === c.hex ? 'border-foreground scale-110' : 'border-transparent',
+                  effStyle.pageBorderColor === c.hex ? 'border-foreground scale-110' : 'border-transparent',
                 )}
                 style={{ backgroundColor: c.hex }}
               />
@@ -592,8 +657,8 @@ export function LayoutTab() {
               aria-label={tt('lay.color.customBorderAria')}
               title={tt('lay.color.custom')}
               className="h-5 w-7 cursor-pointer rounded border border-border bg-transparent p-0"
-              value={/^#[0-9a-fA-F]{6}$/.test(settings.pageBorderColor) ? settings.pageBorderColor : '#1e293b'}
-              onChange={(e) => update({ pageBorderColor: e.target.value })}
+              value={/^#[0-9a-fA-F]{6}$/.test(effStyle.pageBorderColor ?? '') ? effStyle.pageBorderColor : '#1e293b'}
+              onChange={(e) => applyStyle({ pageBorderColor: e.target.value })}
             />
           </div>
         </div>
@@ -790,6 +855,12 @@ export function LayoutTab() {
       <RibbonDivider />
       <RibbonGroup label={tt('lay.group.watermark')} accent="indigo">
         <div className="flex flex-col gap-1">
+          <ScopePicker
+            scope={scope}
+            onScope={setScope}
+            custom={hasPageWmCustom}
+            onReset={resetPageWatermark}
+          />
           <RibbonButton
             icon={Droplet}
             label={tt('lay.wm.label')}

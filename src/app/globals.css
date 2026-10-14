@@ -4137,7 +4137,7 @@ html.dark .qp-doctype-vis { background: oklch(0.27 0.01 260); border-color: rgb(
 /* নকশা কার্ড */
 .qp-formats {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 8px;
 }
 @media (max-width: 860px) { .qp-formats { grid-template-columns: repeat(3, 1fr); } }
@@ -4216,6 +4216,40 @@ html.dark .qp-format-vis { background: oklch(0.27 0.01 260); border-color: rgb(2
   border-radius: 3px;
 }
 .qp-format-vis .qp-vis-box .qp-vis-row { gap: 4px; }
+
+/* অলংকৃত-রাজকীয় কার্ডের মিনি-ভাব — ❦ অলংকার + শেডযুক্ত বিভাগ-ব্যান্ড */
+.qp-vis-orn {
+  font-size: 8px;
+  line-height: 1;
+  color: color-mix(in oklab, var(--foreground) 65%, transparent);
+  flex-shrink: 0;
+}
+.qp-vis-band {
+  display: flex;
+  justify-content: center;
+  margin: 3px 0;
+  padding: 2px 0;
+  border-radius: 2px;
+  background: color-mix(in oklab, var(--foreground) 14%, transparent);
+}
+/* বিশ্ববিদ্যালয় কার্ডের তথ্য-টেবিল মিনি-ভাব — ৪ ঘরের গ্রিড */
+.qp-vis-grid {
+  display: grid;
+  grid-template-columns: 22% 28% 22% 28%;
+  gap: 0;
+  margin: 3px 0;
+  border: 1px solid color-mix(in oklab, var(--foreground) 45%, transparent);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.qp-vis-cell {
+  display: block;
+  height: 7px;
+  border-right: 1px solid color-mix(in oklab, var(--foreground) 35%, transparent);
+  border-bottom: 1px solid color-mix(in oklab, var(--foreground) 35%, transparent);
+}
+.qp-vis-cell:nth-child(4n) { border-right: none; }
+.qp-vis-cell:nth-child(n+5) { border-bottom: none; }
 
 /* স্ট্যাট বার */
 .qp-stats {
