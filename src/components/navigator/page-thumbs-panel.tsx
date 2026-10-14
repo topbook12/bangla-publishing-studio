@@ -150,6 +150,7 @@ export function PageThumbsPanel() {
 
   // অ্যাকটিভ পাতা বদলালে (অন্য কোথাও ক্লিক/কীবোর্ডে) সংশ্লিষ্ট থাম্বনেইল দৃশ্যমানে আনা
   useEffect(() => {
+    if (!activePageId) return;
     const el = thumbRegistry.get(activePageId);
     el?.scrollIntoView({ block: 'nearest' });
   }, [activePageId]);

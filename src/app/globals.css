@@ -4305,6 +4305,29 @@ html.dark .qp-format-vis { background: oklch(0.27 0.01 260); border-color: rgb(2
 .qp-shuffle-label strong { font-size: 12.5px; color: var(--foreground); }
 .qp-shuffle-desc { font-size: 10.5px; line-height: 1.5; color: var(--muted-foreground); }
 
+/* উন্নত সাজ-অপশন প্যানেল — কলাম/পাতার মাপ/নম্বর-মান-বিভাগ-শৈলী */
+.qp-adv-toggle {
+  display: inline-flex; align-items: center; gap: 6px; align-self: flex-start;
+  font: inherit; font-size: 12px; font-weight: 600;
+  padding: 6px 12px; border: 1px dashed var(--border); border-radius: 9px;
+  background: color-mix(in oklab, var(--muted) 30%, transparent);
+  color: var(--muted-foreground); cursor: pointer;
+  transition: color .15s, border-color .15s, background .15s;
+}
+.qp-adv-toggle:hover { color: var(--foreground); border-color: color-mix(in oklab, var(--foreground) 35%, var(--border)); }
+.qp-adv {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 16px;
+  padding: 12px 13px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: color-mix(in oklab, var(--muted) 42%, transparent);
+}
+@media (max-width: 560px) { .qp-adv { grid-template-columns: 1fr; } }
+.qp-adv-block { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.qp-adv-block .qp-scale { flex-wrap: wrap; align-self: flex-start; }
+
 /* ধাপ ১: সাম্প্রতিক প্রশ্নপত্র */
 .qp-hist { display: flex; flex-direction: column; gap: 6px; }
 .qp-hist-title {

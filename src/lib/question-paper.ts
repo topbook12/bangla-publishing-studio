@@ -19,6 +19,7 @@
 
 import { toBanglaNumber, toDevanagariNumber, toEnglishDigits } from './bangla';
 import type { Lang } from './i18n/core';
+import { columnsStyleText } from './nodes-html';
 
 // ─── টাইপ ───
 
@@ -26,6 +27,97 @@ export type QpFormat = 'auto' | 'classic' | 'modern' | 'compact' | 'board';
 export type QpResolvedFormat = 'classic' | 'modern' | 'compact' | 'board';
 /** টাইপোগ্রাফি স্কেল — ছোট / মাঝারি / বড় */
 export type QpFontScale = 'sm' | 'md' | 'lg';
+
+// ─── উন্নত লেআউট-সিস্টেম (শিক্ষকের সাজানোর পূর্ণ নিয়ন্ত্রণ) ───
+
+/** কলাম — স্বয়ংক্রিয় (MCQ-বিভাগে ২) বা নির্দিষ্ট ১/২/৩; বাংলাদেশে নৈর্ব্যক্তিকে ২-৩ কলাম প্রথা */
+export type QpColumns = 'auto' | '1' | '2' | '3';
+/** পাতার মাপ — A4 / Letter / Legal / A5 (শ্রেণি-পরীক্ষা) */
+export type QpPageSize = 'a4' | 'letter' | 'legal' | 'a5';
+/** প্রশ্ন-নম্বরের ধরন — ১. / (১) / ১) */
+export type QpNumStyle = 'dot' | 'paren' | 'dash';
+/** নম্বর-মানের ধরন — [২] / (২) / ২ নম্বর */
+export type QpMarksStyle = 'bracket' | 'paren' | 'word';
+/** বিভাগ-শিরোনামের ধরন — মাঝে / বাক্সে / বাঁয়ে-রেখাযুক্ত */
+export type QpSectionStyle = 'center' | 'box' | 'left';
+/** MCQ-অপশনের সাজ — এক লাইনে / ২ সারিতে / তালিকায় */
+export type QpMcqLayout = 'inline' | 'grid' | 'list';
+/** উত্তরের জায়গা — প্রশ্নের নিচে ডট-লাইন (শ্রেণি-পরীক্ষার খাতা-ধাঁচ) */
+export type QpAnswerSpace = 'none' | 'sm' | 'md' | 'lg';
+/** প্রশ্নের ধরন — সংক্ষিপ্ত / MCQ / সৃজনশীল / মিলকরণ / সত্য-মিথ্যা / শূন্যস্থান */
+export type QpQKind = 'short' | 'mcq' | 'creative' | 'match' | 'tf' | 'blank';
+
+export interface QpPair {
+  /** বাঁ-স্তম্ভের জিনিস (সাধারণত নম্বরযুক্ত) */
+  left: string;
+  /** ডান-স্তম্ভের মিল (সাধারণত ক/খ/গ অক্ষরযুক্ত) */
+  right: string;
+}
+
+/** উন্নত সাজের সব অপশন এক বান্ডিলে — হিস্ট্রি/প্রিভিউ/রেন্ডার সবাই এক বস্তু বহন করে */
+export interface QpLayout {
+  columns: QpColumns;
+  pageSize: QpPageSize;
+  numStyle: QpNumStyle;
+  marksStyle: QpMarksStyle;
+  sectionStyle: QpSectionStyle;
+  mcqLayout: QpMcqLayout;
+  answerSpace: QpAnswerSpace;
+}
+
+export const QP_DEFAULT_LAYOUT: QpLayout = {
+  columns: 'auto',
+  pageSize: 'a4',
+  numStyle: 'dot',
+  marksStyle: 'bracket',
+  sectionStyle: 'center',
+  mcqLayout: 'inline',
+  answerSpace: 'none',
+};
+
+const QP_LAYOUT_ALLOWED = {
+  columns: ['auto', '1', '2', '3'],
+  pageSize: ['a4', 'letter', 'legal', 'a5'],
+  numStyle: ['dot', 'paren', 'dash'],
+  marksStyle: ['bracket', 'paren', 'word'],
+  sectionStyle: ['center', 'box', 'left'],
+  mcqLayout: ['inline', 'grid', 'list'],
+  answerSpace: ['none', 'sm', 'md', 'lg'],
+} as const;
+
+/** সংরক্ষিত/বহিরাগত মান থেকে নিরাপদ QpLayout — অজানা মান পেলে ডিফল্টে ফেরে */
+export function normalizeQpLayout(v: unknown): QpLayout {
+  const o = (v && typeof v === 'object' ? v : {}) as Record<string, unknown>;
+  const pick = <K extends keyof typeof QP_LAYOUT_ALLOWED>(key: K): QpLayout[K] => {
+    const allowed = QP_LAYOUT_ALLOWED[key] as readonly string[];
+    const val = o[key];
+    return (allowed.includes(val as string) ? val : QP_DEFAULT_LAYOUT[key]) as QpLayout[K];
+  };
+  return {
+    columns: pick('columns'),
+    pageSize: pick('pageSize'),
+    numStyle: pick('numStyle'),
+    marksStyle: pick('marksStyle'),
+    sectionStyle: pick('sectionStyle'),
+    mcqLayout: pick('mcqLayout'),
+    answerSpace: pick('answerSpace'),
+  };
+}
+
+/** পাতার মাপ (মিমি) — ডায়ালগ-প্রিভিউ ও স্বয়ংসম্পূর্ণ প্রিন্ট-ফাইল দুটোতেই ব্যবহৃত */
+export const QP_PAGE_SIZES: Record<QpPageSize, { wMm: number; hMm: number }> = {
+  a4: { wMm: 210, hMm: 297 },
+  letter: { wMm: 216, hMm: 279 },
+  legal: { wMm: 216, hMm: 356 },
+  a5: { wMm: 148, hMm: 210 },
+};
+
+/** মিমি → ৯৬dpi পিক্সেল (প্রিভিউ-শীটের প্রস্থ/উচ্চতা) */
+export function qpPageSizePx(pageSize: QpPageSize): { w: number; h: number } {
+  const s = QP_PAGE_SIZES[pageSize] ?? QP_PAGE_SIZES.a4;
+  const px = (mm: number) => Math.round((mm * 96) / 25.4);
+  return { w: px(s.wMm), h: px(s.hMm) };
+}
 
 export interface QpOption {
   /** 'ক' | 'খ' | 'A' | 'B' … */
@@ -44,6 +136,10 @@ export interface QpQuestion {
   marks: string;
   options: QpOption[];
   subs: QpSubQ[];
+  /** প্রশ্নের ধরন — AI/পার্সার শনাক্ত করে; অনুপস্থিত হলে 'short' ধরা হয় */
+  kind?: QpQKind;
+  /** মিলকরণ-প্রশ্নের জোড়া (kind === 'match' হলে) */
+  pairs?: QpPair[];
 }
 
 export interface QpSection {
@@ -71,6 +167,8 @@ export interface QuestionPaper {
   format: QpFormat;
   /** লেখার আকার — স্ম/মধ্য/বড় (অনুপস্থিত = মাঝারি) */
   fontScale?: QpFontScale;
+  /** উন্নত লেআউট — অনুপস্থিত হলে ডিফল্ট */
+  layout?: QpLayout;
 }
 
 // ─── সাম্প্রতিক প্রশ্নপত্র (localStorage ইতিহাস) ───
@@ -81,6 +179,8 @@ export interface QpHistoryItem {
   meta: QpMeta;
   format: QpFormat;
   fontScale: QpFontScale;
+  /** উন্নত লেআউট — পুরনো এন্ট্রিতে অনুপস্থিত হতে পারে */
+  layout?: QpLayout;
   /** v2 — প্রিভিউ-চিপে দেখানোর হিসাব */
   counts?: { sections: number; questions: number; marks: number };
 }
@@ -325,8 +425,10 @@ Return ONLY valid JSON — no markdown fences, no commentary. Shape exactly:
           "number": string,   // "১" / "1" — numerals of the paper's language
           "text": string,     // full question text; math stays in $...$ LaTeX
           "marks": string,    // "২" / "2" — "" if unknown
+          "kind": "short"|"mcq"|"creative"|"match"|"tf"|"blank",
           "options": [ { "label": "ক", "text": "…" } ],   // [] when not MCQ
-          "subs": [ { "text": "(ক) …", "marks": "১" } ]   // [] when no sub-questions
+          "subs": [ { "text": "(ক) …", "marks": "১" } ],   // [] when no sub-questions
+          "pairs": [ { "left": "…", "right": "…" } ]        // ONLY for "match"
         }
       ]
     }
@@ -345,6 +447,13 @@ Rules:
 - MATH: expressions remain in $...$ LaTeX ($\frac{3}{4}$, $x^2$, $\sqrt{50}$) with ASCII digits inside math.
 - MCQ: 4 options with ক/খ/গ/ঘ labels (Bengali) or A/B/C/D (Latin-script papers).
 - SUB-QUESTIONS: keep "(ক)" "(i)" style prefixes inside sub text.
+- KIND (set on every question; "short" when unsure):
+  · "mcq" — multiple-choice question with options; also "choose the correct answer" style.
+  · "creative" — সৃজনশীল/structured essay style: ONE stimulus or stem in "text" + the four parts (ক) জ্ঞানমূলক, (খ) অনুধাবন, (গ) প্রয়োগ, (ঘ) উচ্চতর দক্ষতা (or a/b/c/d) in "subs" with their marks.
+  · "match" — মিলকরণ/স্তম্ভ মেলানো (match the columns): the instruction goes in "text", and EACH column-A item ↔ column-B item goes into "pairs" ({"left": "১. ঢাকা", "right": "ক. কক্সবাজার"}) keeping the source's own prefixes. Do NOT put the items in "subs".
+  · "tf" — সত্য/মিথ্যা (True/False) statements.
+  · "blank" — শূন্যস্থান/ফাঁকা ঘর (fill-in-the-blanks); keep every ____ blank in the text.
+  · "short" — everything else.
 
 OUTPUT: Return ONLY a single valid JSON object — no markdown fences, no commentary before or after. Inside every JSON string, escape line breaks as \\n — never put raw line breaks inside a JSON string.`;
 
@@ -684,6 +793,55 @@ function parseQuestionString(s: string): { number: string; text: string; marks: 
   return { number, text, marks };
 }
 
+const QP_KINDS: readonly QpQKind[] = ['short', 'mcq', 'creative', 'match', 'tf', 'blank'];
+
+function coerceQpKind(v: unknown): QpQKind | null {
+  const s = (typeof v === 'string' ? v : '').trim().toLowerCase();
+  if (!s) return null;
+  if ((QP_KINDS as readonly string[]).includes(s)) return s as QpQKind;
+  if (/^multiple.?choice|objective$/.test(s)) return 'mcq';
+  if (/^creative|srijonshil|structured$/.test(s)) return 'creative';
+  if (/^match|matching|column.?match|sumel|মিলকরণ$/.test(s)) return 'match';
+  if (/^true.?false|boolean$/.test(s)) return 'tf';
+  if (/^blank|fill.?in.?the.?blank|gap$/.test(s)) return 'blank';
+  return null;
+}
+
+/** মডেল/পার্সারের জোড়া-অবজেক্ট → QpPair[] — স্ট্রিং "ঢাকা → কক্সবাজার" রূপও চলে */
+function coerceQpPairs(v: unknown): QpPair[] | undefined {
+  const pairs: QpPair[] = [];
+  for (const pr of asArr(v)) {
+    if (typeof pr === 'string') {
+      const parts = pr.split(/\s*(?:→|->|=>|—|–|\||;|\s{3,})\s*/);
+      if (parts.length >= 2 && parts[0].trim() && parts[1].trim()) {
+        pairs.push({ left: parts[0].trim(), right: parts.slice(1).join(' ').trim() });
+      } else if (pr.trim()) {
+        pairs.push({ left: pr.trim(), right: '' });
+      }
+    } else if (pr && typeof pr === 'object') {
+      const pb = pr as Record<string, unknown>;
+      const left = firstStr(pb, ['left', 'a', 'first', 'columnA', 'column_a', 'item', 'source']);
+      const right = firstStr(pb, ['right', 'b', 'second', 'columnB', 'column_b', 'match', 'target']);
+      if (left || right) pairs.push({ left, right });
+    }
+  }
+  return pairs.length > 0 ? pairs : undefined;
+}
+
+/**
+ * অফলাইন পার্সারের জন্য হালকা ধরন-শনাক্তকরণ — প্রশ্নের লেখা থেকেই বাংলাদেশ-প্রথার
+ * ধরনগুলো চেনা যায় (মিলকরণ/সত্য-মিথ্যা/শূন্যস্থান/সৃজনশীল/MCQ)।
+ */
+export function qpDetectKind(text: string, options: QpOption[], subs: QpSubQ[]): QpQKind {
+  // মিলকরণ আগে — মিলকরণ-প্রশ্নের স্তম্ভ-জিনিসও ক/খ অপশন-রূপে পার্স হয়, তাই options-আগে নয়
+  if (/মিলকরণ|স্তম্ভ\s*(?:মিল|মেলানো)|মেলাও|सुमेलन|स्तंभ\s*मिलान|match(?:ing)?\s*(?:the\s+)?(?:columns?|lists?)/i.test(text)) return 'match';
+  if (options.length > 0) return 'mcq';
+  if (/সত্য\s*(?:না|অথবা|কি|কিন্তু|—|-)?\s*মিথ্যা|सत्य\s*(?:या|अथवा)?\s*असत्य|true\s*\/\s*false/i.test(text)) return 'tf';
+  if (/শূন্যস্থান|ফাঁকা\s*ঘর|रिक्त\s*स्थान|fill\s*in\s*the\s*blank/i.test(text) || /_{3,}/.test(text)) return 'blank';
+  if (subs.length >= 3) return 'creative';
+  return 'short';
+}
+
 /**
  * AI-এর সম্ভাব্য-ভাঙা JSON-কে নিরাপদ QuestionPaper-এ রূপান্তর — সর্বোচ্চ সহনশীল:
  * নেস্ট-আবরণ ({paper|data|result:{…}}), সমতল questions, স্ট্রিং-প্রশ্ন/অপশন,
@@ -755,12 +913,16 @@ export function normalizeQpJson(data: unknown, meta: QpMeta, format: QpFormat): 
           if (stext) subs.push({ text: stext, marks: firstStr(sb2, ['marks', 'mark', 'value', 'points']) });
         }
       }
+      const kind = coerceQpKind(q.kind ?? q.type ?? q.questionType) ?? (options.length > 0 ? 'mcq' : 'short');
+      const pairs = kind === 'match' ? coerceQpPairs(q.pairs ?? q.matches ?? q.match ?? q.columns) : undefined;
       questions.push({
         number: firstStr(q, ['number', 'no', 'num', 'qno', 'serial']),
         text,
         marks: firstStr(q, ['marks', 'mark', 'value', 'points', 'nombor']),
         options,
         subs,
+        kind,
+        pairs,
       });
     }
     sections.push({
@@ -874,6 +1036,43 @@ export function shufflePaper(p: QuestionPaper): QuestionPaper {
 
 // ─── ফলব্যাক: AI ছাড়া লাইন-পার্সার ───
 
+/** ধারাবাহিক অপশন-লেবেল ক্রম — ক,খ,গ,ঘ / a,b,c,d / क,ख,ग,घ (মিথ্যা-বিভাজন আটকায়) */
+const QP_OPT_SEQS: string[][] = [
+  ['ক', 'খ', 'গ', 'ঘ', 'ঙ'],
+  ['a', 'b', 'c', 'd', 'e'],
+  ['A', 'B', 'C', 'D', 'E'],
+  ['क', 'ख', 'ग', 'घ'],
+];
+
+/**
+ * এক লাইনে একাধিক MCQ-অপশন ভাঙা — "ক) চট্রগ্রাম খ) ঢাকা গ) খুলনা ঘ) রাজশাহী" →
+ * ৪টি আলাদা অপশন। বাংলাদেশের শিক্ষকরা অপশন এক লাইনেই লেখেন। ভুল-ভাঙা আটকাতে
+ * লেবেলগুলোকে অবশ্যই ধারাবাহিক ক্রমে (ক→খ→গ→ঘ) থাকতে হয়।
+ */
+function splitInlineOptions(line: string): QpOption[] | null {
+  const marker = /(?:^|(?<=\s))([কখগঘঙa-eA-Eकखगघ])\s*[.):।ঃ]\s*/g;
+  const hits: Array<{ label: string; start: number; end: number }> = [];
+  let m: RegExpExecArray | null;
+  while ((m = marker.exec(line))) {
+    hits.push({ label: m[1], start: m.index, end: m.index + m[0].length });
+    if (hits.length > 6) break;
+  }
+  if (hits.length < 2) return null;
+  const seq = QP_OPT_SEQS.find((s) => s.includes(hits[0].label));
+  if (!seq) return null;
+  const offset = seq.indexOf(hits[0].label);
+  for (let i = 0; i < hits.length; i++) {
+    if (seq[offset + i] !== hits[i].label) return null; // ক্রম ভাঙা — অপশন নয়
+  }
+  const opts: QpOption[] = [];
+  for (let i = 0; i < hits.length; i++) {
+    const text = line.slice(hits[i].end, i + 1 < hits.length ? hits[i + 1].start : undefined).trim();
+    if (!text) return null;
+    opts.push({ label: hits[i].label, text });
+  }
+  return opts;
+}
+
 /** লাইনের শেষে বন্ধনীতে নম্বর-মান [২] (3) [মান: ২] [Marks: 2] — খুঁজে আলাদা করে */
 function splitTrailingMarks(s: string): { text: string; marks: string } {
   const m = s.match(
@@ -939,10 +1138,13 @@ export function parseQuestionText(raw: string, meta: QpMeta, format: QpFormat, l
         continue;
       }
     }
-    // MCQ অপশন: "ক)" / "a." / "ক।" / "क)" (শুধু প্রশ্নের ভেতরে)
+    // MCQ অপশন: "ক)" / "a." / "ক।" / "क)" (শুধু প্রশ্নের ভেতরে) —
+    // এক লাইনে একাধিক অপশনও ("ক) ঢাকা খ) চট্রগ্রাম …") ভেঙে নেয়
     const om = line.match(/^([কখগঘঙa-dA-Dकखगघ])\s*[.):।ঃ-]\s*(.+)$/);
     if (om && q) {
-      q.options.push({ label: om[1], text: om[2].trim() });
+      const inline = splitInlineOptions(line);
+      if (inline && inline.length >= 2) q.options.push(...inline);
+      else q.options.push({ label: om[1], text: om[2].trim() });
       continue;
     }
     // উপ-প্রশ্ন: "(ক)" / "(i)" / "i." / "(क)"
@@ -990,6 +1192,22 @@ export function parseQuestionText(raw: string, meta: QpMeta, format: QpFormat, l
     if (valid.length === 0) return null;
   }
 
+  // প্রশ্নের ধরন শনাক্ত — বাংলাদেশ-প্রথার ধরনগুলো (MCQ/সৃজনশীল/মিলকরণ/সত্য-মিথ্যা/শূন্যস্থান)
+  // অফলাইনেও চেনা যায়, ফলে AI ছাড়া সাজালেও সঠিক রেন্ডারিং মেলে
+  for (const sec of valid) {
+    const secCreative = /সৃজনশীল|सृजनात्मक|creative/i.test(sec.title);
+    for (const q of sec.questions) {
+      q.kind = secCreative && q.subs.length > 0 ? 'creative' : qpDetectKind(q.text, q.options, q.subs);
+      if (q.kind === 'match') {
+        // অফলাইন-শনাক্ত মিলকরণ: স্তম্ভ-জিনিস অপশন/উপ-প্রশ্নের লেখায় থাকে — সেগুলোই জোড়া
+        const items = q.options.length > 0
+          ? q.options.map((o) => (o.label ? `${o.label}. ${o.text}` : o.text))
+          : q.subs.map((s) => s.text);
+        q.pairs = coerceQpPairs(items);
+      }
+    }
+  }
+
   // বিভাগ-নোটে "প্রতিটি ২ নম্বর" জাতীয় উল্লেখ থাকলে সেই মান সে বিভাগের যেসব
   // প্রশ্নে নম্বর-মান নেই সবগুলোতে বসে (উৎসেই লেখা — নতুন করে বানানো নয়)
   // ইংরেজি নিয়ম উল্টো: "3 marks each" — সংখ্যা আগে
@@ -1021,6 +1239,7 @@ export function parseQuestionText(raw: string, meta: QpMeta, format: QpFormat, l
 interface QpLabels {
   cls: string; subject: string; date: string; time: string; marks: string;
   instructions: string; nameRoll: string; end: string;
+  markWord: string; trueFalse: string;
 }
 
 function qpLabels(lang: Lang): QpLabels {
@@ -1028,21 +1247,93 @@ function qpLabels(lang: Lang): QpLabels {
     return {
       cls: 'कक्षा', subject: 'विषय', date: 'दिनांक', time: 'समय', marks: 'पूर्णांक',
       instructions: 'निर्देश', nameRoll: 'छात्र का नाम: ____________________  रोल नं.: ________',
-      end: 'समाप्त',
+      end: 'समाप्त', markWord: 'अंक', trueFalse: 'सत्य / असत्य',
     };
   }
   if (lang === 'en') {
     return {
       cls: 'Class', subject: 'Subject', date: 'Date', time: 'Time', marks: 'Full Marks',
       instructions: 'Instructions', nameRoll: 'Student Name: ____________________  Roll No.: ________',
-      end: 'End',
+      end: 'End', markWord: 'marks', trueFalse: 'True / False',
     };
   }
   return {
     cls: 'শ্রেণি', subject: 'বিষয়', date: 'তারিখ', time: 'সময়', marks: 'পূর্ণমান',
     instructions: 'নির্দেশনা', nameRoll: 'শিক্ষার্থীর নাম: ____________________  রোল নং: ________',
-    end: 'শেষ',
+    end: 'শেষ', markWord: 'নম্বর', trueFalse: 'সত্য / মিথ্যা',
   };
+}
+
+/** প্রশ্ন-নম্বরের ধরন — ১. / (১) / ১) */
+function qpNumHtml(num: string, style: QpNumStyle): string {
+  const n = escapeQpHtml(num);
+  if (!n) return '';
+  if (style === 'paren') return `(${n})`;
+  if (style === 'dash') return `${n})`;
+  return `${n}.`;
+}
+
+/** নম্বর-মানের ধরন — [২] / (২) / ২ নম্বর */
+function qpMarksHtml(marks: string, style: QpMarksStyle, word: string): string {
+  const m = escapeQpHtml(marks);
+  if (!m) return '';
+  if (style === 'paren') return ` <strong>(${m})</strong>`;
+  if (style === 'word') return ` <strong>${m} ${escapeQpHtml(word)}</strong>`;
+  return ` <strong>[${m}]</strong>`;
+}
+
+/** উপ-প্রশ্ন — শুরুর (ক)/(i)-লেবেল গাঢ় — সৃজনশীল-ধাঁচ পরিষ্কার বোঝা যায় */
+function qpSubHtml(sub: QpSubQ, sty: string): string {
+  const sm = sub.marks ? ` [${escapeQpHtml(sub.marks)}]` : '';
+  const body = mathRichToHtml(sub.text);
+  const lm = body.match(/^((?:\([^)<]{1,8}\))|(?:[কখগঘঙiIvVxX]{1,4}[).):।]))\s*([\s\S]*)$/);
+  const inner = lm && lm[2] ? `<strong>${lm[1]}</strong> ${lm[2]}${sm}` : `${body}${sm}`;
+  return `<blockquote${sty}><p>${inner}</p></blockquote>`;
+}
+
+/** MCQ-অপশনের সাজ — এক লাইনে / ২ সারিতে (২×২) / তালিকায় */
+function qpOptionsHtml(q: QpQuestion, layout: QpLayout, sty: string): string {
+  if (q.options.length === 0) return '';
+  const one = (o: QpOption) => `<strong>${escapeQpHtml(o.label)})</strong> ${mathRichToHtml(o.text)}`;
+  if (layout.mcqLayout === 'list') {
+    return `<ul${sty}>${q.options.map((o) => `<li>${one(o)}</li>`).join('')}</ul>`;
+  }
+  if (layout.mcqLayout === 'grid') {
+    const rows: string[] = [];
+    for (let i = 0; i < q.options.length; i += 2) {
+      rows.push(`<p${sty}>${q.options.slice(i, i + 2).map(one).join('&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;')}</p>`);
+    }
+    return rows.join('');
+  }
+  return `<p${sty}>${q.options.map(one).join('&nbsp;&nbsp;&nbsp;&nbsp;')}</p>`;
+}
+
+/** মিলকরণ-প্রশ্নের স্তম্ভ-টেবিল — বাঁ/ডান দুই স্তম্ভ, জিরোক্স-বান্ধব সীমারেখা */
+function qpMatchHtml(q: QpQuestion): string | null {
+  if (!q.pairs || q.pairs.length === 0) return null;
+  const rows = q.pairs.map((p) => `<tr><td>${mathRichToHtml(p.left)}</td><td>${mathRichToHtml(p.right)}</td></tr>`);
+  return `<table><tbody>${rows.join('')}</tbody></table>`;
+}
+
+/** উত্তরের জায়গা — ডট-লাইন শ্রেণি-পরীক্ষার খাতা-ধাঁচে (কলামে সংক্ষিপ্ত হয়) */
+function qpAnswerSpaceHtml(space: QpAnswerSpace, colCount: number): string {
+  if (space === 'none') return '';
+  const lines = space === 'sm' ? 2 : space === 'md' ? 4 : 6;
+  const line = '_'.repeat(colCount > 1 ? 24 : 48);
+  return Array.from({ length: lines }, () => `<p>${line}</p>`).join('');
+}
+
+/**
+ * বিভাগের কলাম-সংখ্যা — 'auto' হলে বাংলাদেশ-প্রথা অনুযায়ী: MCQ/নৈর্ব্যক্তিক/সত্য-মিথ্যা
+ * /শূন্যস্থান-বিভাগে ২ কলাম, সৃজনশীল/রচনাধর্মী বিভাগে ১ কলাম।
+ */
+export function qpSectionColumns(sec: QpSection, layout: QpLayout): 1 | 2 | 3 {
+  if (layout.columns !== 'auto') return (Number(layout.columns) || 1) as 1 | 2 | 3;
+  const colFriendly = (q: QpQuestion) => {
+    const k = q.kind ?? (q.options.length > 0 ? 'mcq' : 'short');
+    return (k === 'mcq' || k === 'tf' || k === 'blank') && q.subs.length === 0 && !(q.pairs && q.pairs.length > 0);
+  };
+  return sec.questions.length > 1 && sec.questions.every(colFriendly) ? 2 : 1;
 }
 
 /** হেডার-তথ্য লাইন: "শ্রেণি: ষষ্ঠ · বিষয়: গণিত · সময়: … · পূর্ণমান: ৭০" */
@@ -1094,11 +1385,12 @@ function boardHeaderHtml(m: QpMeta, _lang: Lang, L: QpLabels, hSize: string, sub
 /**
  * প্রশ্নপত্র → এডিটরে সন্নিবেশযোগ্য HTML।
  * শুধুমাত্র স্কিমা-সাপোর্টেড মার্কআপ: p/strong/em/u/hr/ul/li/blockquote/h3/table
- * + text-align/font-size ইনলাইন স্টাইল + <sup>/<sub>। প্রিভিউও একই HTML দেখায় —
- * তাই যা দেখা যায়, ঠিক তাই বসে।
+ * + text-align/font-size ইনলাইন স্টাইল + <sup>/<sub> + doc-columns মাল্টি-কলাম মোড়ক।
+ * প্রিভিউও একই HTML দেখায় — তাই যা দেখা যায়, ঠিক তাই বসে।
  */
 export function paperToEditorHtml(p: QuestionPaper, lang: Lang): string {
   const f = resolveQpFormat(p);
+  const layout = normalizeQpLayout(p.layout);
   const m = p.meta;
   const L = qpLabels(lang);
   const compact = f === 'compact';
@@ -1143,29 +1435,52 @@ export function paperToEditorHtml(p: QuestionPaper, lang: Lang): string {
     );
   }
 
-  // ── বিভাগ ও প্রশ্ন ──
+  // ── বিভাগ ও প্রশ্ন (উন্নত লেআউট-সচেতন) ──
   let firstSection = true;
   for (const sec of p.sections) {
     if (sec.title) {
       if (board && !firstSection) parts.push('<hr>');
-      parts.push(`<p${center}><span style="font-size:${secSize}"><strong>${escapeQpHtml(sec.title)}</strong></span></p>`);
+      const t = escapeQpHtml(sec.title);
+      if (layout.sectionStyle === 'box') {
+        // বাক্সে বিভাগ-শিরোনাম — স্কিমা-সাপোর্টেড এককোষ টেবিল
+        parts.push(`<table><tbody><tr><td><p${sty('text-align:center')}><span style="font-size:${secSize}"><strong>${t}</strong></span></p></td></tr></tbody></table>`);
+      } else if (layout.sectionStyle === 'left') {
+        parts.push(`<p${sty('text-align:left')}><span style="font-size:${secSize}"><strong><u>${t}</u></strong></span></p>`);
+      } else {
+        parts.push(`<p${center}><span style="font-size:${secSize}"><strong>${t}</strong></span></p>`);
+      }
     }
     firstSection = false;
     if (sec.note) parts.push(`<p${center}><em>${escapeQpHtml(sec.note)}</em></p>`);
-    for (const q of sec.questions) {
-      const marks = q.marks ? ` <strong>[${escapeQpHtml(q.marks)}]</strong>` : '';
-      parts.push(`<p${sty()}><strong>${escapeQpHtml(q.number)}.</strong> ${mathRichToHtml(q.text)}${marks}</p>`);
-      for (const sub of q.subs) {
-        const sm = sub.marks ? ` [${escapeQpHtml(sub.marks)}]` : '';
-        parts.push(`<blockquote${sty()}><p>${mathRichToHtml(sub.text)}${sm}</p></blockquote>`);
+
+    const colCount = qpSectionColumns(sec, layout);
+    const blocks = sec.questions.map((q) => {
+      const bits: string[] = [];
+      const num = qpNumHtml(q.number, layout.numStyle);
+      const marks = qpMarksHtml(q.marks, layout.marksStyle, L.markWord);
+      bits.push(`<p${sty()}><strong>${num}</strong> ${mathRichToHtml(q.text)}${marks}</p>`);
+      // সত্য-মিথ্যা — উত্তর-স্থিরক লেখা না থাকলে যোগ হয়
+      if (q.kind === 'tf' && !/সত্য|মিথ্যা|सत्य|असत्य|true|false/i.test(q.text)) {
+        bits.push(`<p${sty('text-align:left')}><em>(${escapeQpHtml(L.trueFalse)})</em></p>`);
       }
-      if (q.options.length > 0) {
-        parts.push(
-          `<p${sty()}>${q.options
-            .map((o) => `<strong>${escapeQpHtml(o.label)})</strong> ${mathRichToHtml(o.text)}`)
-            .join('&nbsp;&nbsp;&nbsp;&nbsp;')}</p>`,
-        );
-      }
+      const matchTable = qpMatchHtml(q);
+      if (matchTable) bits.push(matchTable);
+      for (const sub of q.subs) bits.push(qpSubHtml(sub, sty()));
+      bits.push(qpOptionsHtml(q, layout, sty()));
+      bits.push(qpAnswerSpaceHtml(layout.answerSpace, colCount));
+      return bits.join('');
+    });
+
+    if (colCount > 1) {
+      // বাংলাদেশ-প্রথার ২/৩ কলাম — এডিটরের নিজস্ব doc-columns নোড (সম্পূর্ণ পাইপলাইন-সমর্থিত)
+      // কলামের মাঝে রেখা — বোর্ড-স্টাইল MCQ-পত্রের চেনা ভাব
+      // ইনলাইন column-count স্টাইল অপরিহার্য — এডিটরে TipTap renderHTML স্টাইল বসায়,
+      // কিন্তু ডায়ালগ-প্রিভিউ ও স্বয়ংসম্পূর্ণ প্রিন্ট-ফাইলে কাঁচা HTML-ই দেখায়
+      parts.push(
+        `<div class="doc-columns" data-count="${colCount}" data-gap="26" data-rule="1" data-rule-style="solid" style="${columnsStyleText({ count: colCount, gap: 26, rule: true, fill: 'balance' })}">${blocks.join('')}</div>`,
+      );
+    } else {
+      parts.push(...blocks);
     }
   }
 
@@ -1174,13 +1489,15 @@ export function paperToEditorHtml(p: QuestionPaper, lang: Lang): string {
 }
 
 /**
- * স্বয়ংসম্পূর্ণ প্রিন্ট-রেডি HTML ফাইল (ডাউনলোড) — A4 @page, বাংলা ওয়েব-ফন্ট,
- * বোর্ড-স্টাইলে ডাবল-রুল পাতার ফ্রেম, প্রিন্ট বাটনসহ। শিক্ষক ব্রাউজারে খুলেই
- * সরাসরি প্রিন্ট/সেভ-করতে পারে।
+ * স্বয়ংসম্পূর্ণ প্রিন্ট-রেডি HTML ফাইল (ডাউনলোড) — শিক্ষকের বাছা পাতার মাপে @page,
+ * বাংলা ওয়েব-ফন্ট, বোর্ড-স্টাইলে ডাবল-রুল পাতার ফ্রেম, মাল্টি-কলাম সমর্থনসহ,
+ * প্রিন্ট বাটনসহ। শিক্ষক ব্রাউজারে খুলেই সরাসরি প্রিন্ট/সেভ-করতে পারে।
  */
 export function paperToStandaloneHtml(p: QuestionPaper, lang: Lang): string {
   const body = paperToEditorHtml(p, lang);
   const board = resolveQpFormat(p) === 'board';
+  const layout = normalizeQpLayout(p.layout);
+  const size = QP_PAGE_SIZES[layout.pageSize] ?? QP_PAGE_SIZES.a4;
   const scale = p.fontScale === 'sm' ? '11pt' : p.fontScale === 'lg' ? '13.5pt' : '12pt';
   const title = [p.meta.schoolName, p.meta.examTitle, p.meta.subject].filter(Boolean).join(' — ') || 'Question Paper';
   const fontLink =
@@ -1198,8 +1515,8 @@ export function paperToStandaloneHtml(p: QuestionPaper, lang: Lang): string {
   :root { color-scheme: light; }
   * { box-sizing: border-box; }
   body { margin: 0; background: #6b7280; font-family: ${lang === 'hi' ? "'Noto Serif Devanagari'" : "'Tiro Bangla','Noto Serif Bengali'"}, serif; }
-  ${board ? '.qp-frame { max-width: 210mm; margin: 24px auto 40px; background: #fff; border: 1.7px solid #111; padding: 4mm; box-shadow: 0 8px 30px rgba(0,0,0,.35); }' : ''}
-  .qp-page { max-width: 210mm; margin: 24px auto; background: #fff; padding: 18mm 16mm; box-shadow: 0 8px 30px rgba(0,0,0,.35); font-size: ${scale}; line-height: 1.6; color: #111; }
+  ${board ? `.qp-frame { max-width: ${size.wMm}mm; margin: 24px auto 40px; background: #fff; border: 1.7px solid #111; padding: 4mm; box-shadow: 0 8px 30px rgba(0,0,0,.35); }` : ''}
+  .qp-page { max-width: ${size.wMm}mm; margin: 24px auto; background: #fff; padding: 18mm 16mm; box-shadow: 0 8px 30px rgba(0,0,0,.35); font-size: ${scale}; line-height: 1.6; color: #111; }
   ${board ? '.qp-frame .qp-page { margin: 0 auto; max-width: none; box-shadow: none; padding: 12mm 10mm; border: 1px solid #111; }' : ''}
   .qp-page hr { border: none; border-top: 1.6px solid #111; margin: 10px 0 12px; }
   .qp-page blockquote { margin: 2px 0 2px 26px; padding: 0; border: none; }
@@ -1208,6 +1525,11 @@ export function paperToStandaloneHtml(p: QuestionPaper, lang: Lang): string {
   .qp-page table { border-collapse: collapse; width: 100%; table-layout: fixed; margin: 10px 0 12px; }
   .qp-page td { border: 1.3px solid #111; padding: 6px 12px; vertical-align: top; }
   .qp-page td p { margin: 3px 0; }
+  /* মাল্টি-কলাম বিভাগ — ইনলাইন column-count স্টাইলেই চলে; ভাঙন-রোধ ও মার্জিন-শুদ্ধি */
+  .doc-columns > *:first-child { margin-top: 0; }
+  .doc-columns > *:last-child { margin-bottom: 0; }
+  .doc-columns > p { orphans: 2; widows: 2; break-inside: avoid; }
+  .doc-columns > ul { orphans: 2; widows: 2; }
   .qp-printbar { position: fixed; top: 12px; right: 12px; display: flex; gap: 8px; }
   .qp-printbar button { font: inherit; font-size: 14px; padding: 8px 16px; border-radius: 8px; border: none; background: #111; color: #fff; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.3); }
   @media print {
@@ -1216,7 +1538,7 @@ export function paperToStandaloneHtml(p: QuestionPaper, lang: Lang): string {
     ${board ? '.qp-page { padding: 8mm 9mm; }' : '.qp-page { padding: 0; }'}
     .qp-printbar { display: none; }
   }
-  @page { size: A4; margin: ${board ? '9mm' : '14mm 12mm'}; }
+  @page { size: ${size.wMm}mm ${size.hMm}mm; margin: ${board ? '9mm' : '14mm 12mm'}; }
 </style>
 </head>
 <body>
@@ -1236,37 +1558,55 @@ export function qpSampleText(lang: Lang): string {
     return `वार्षिक परीक्षा — गणित
 कक्षा ६
 
-खण्ड – क [प्रत्येक २ अंक]
-१. $\\frac{3}{4}$ और $\\frac{5}{6}$ का योगफल निकालें। [२]
-२. $x^2 - 9$ के गुणनखंड लिखें। [२]
-३. सरल करें: $\\sqrt{144} + \\sqrt{25}$ [२]
+खण्ड – क [प्रत्येक १ अंक]
+१. बांग्लादेश की राजधानी कौन-सी है? [१]
+क) चटगाँव ख) ढाका ग) खुलना घ) राजशाही
+२. $15 \\times 4$ कितना होगा? [१]
+क) ६० ख) ५५ ग) १९ घ) ४
 
-खण्ड – ख [प्रत्येक ५ अंक]
-৪. एक आयत की लंबाई उसकी चौड़ाई से ३ सेमी अधिक है। यदि परिमाप ३६ सेमी हो, तो आयत की भुजाएँ निकालें। [५]
-५. $2x + 5 = 17$ समीकरण हल करें और $x$ का मान जाँचें। [५]`;
+खण्ड – ख [प्रत्येक २ अंक]
+३. $\\frac{3}{4}$ और $\\frac{5}{6}$ का योगफल निकालें। [२]
+४. $x^2 - 9$ के गुणनखंड लिखें। [२]
+५. सरल करें: $\\sqrt{144} + \\sqrt{25}$ [२]
+
+खण्ड – ग [प्रत्येक ५ अंक]
+६. एक आयत की लंबाई उसकी चौड़ाई से ३ सेमी अधिक है। यदि परिमाप ३६ सेमी हो, तो आयत की भुजाएँ निकालें। [५]
+७. $2x + 5 = 17$ समीकरण हल करें और $x$ का मान जाँचें। [५]`;
   }
   if (lang === 'en') {
     return `Annual Examination — Mathematics
 Class 6
 
-Section A [2 marks each]
-1. Find the sum of $\\frac{3}{4}$ and $\\frac{5}{6}$. [2]
-2. Factorise: $x^2 - 9$ [2]
-3. Simplify: $\\sqrt{144} + \\sqrt{25}$ [2]
+Section A [1 mark each]
+1. What is the capital of Bangladesh? [1]
+a) Chattogram b) Dhaka c) Khulna d) Rajshahi
+2. What is $15 \\times 4$? [1]
+a) 60 b) 55 c) 19 d) 4
 
-Section B [5 marks each]
-4. The length of a rectangle is 3 cm more than its width. If the perimeter is 36 cm, find the sides. [5]
-5. Solve $2x + 5 = 17$ and verify the value of $x$. [5]`;
+Section B [2 marks each]
+3. Find the sum of $\\frac{3}{4}$ and $\\frac{5}{6}$. [2]
+4. Factorise: $x^2 - 9$ [2]
+5. Simplify: $\\sqrt{144} + \\sqrt{25}$ [2]
+
+Section C [5 marks each]
+6. The length of a rectangle is 3 cm more than its width. If the perimeter is 36 cm, find the sides. [5]
+7. Solve $2x + 5 = 17$ and verify the value of $x$. [5]`;
   }
   return `বার্ষিক পরীক্ষা — গণিত
 ষষ্ঠ শ্রেণি
 
-বিভাগ – ক [প্রতিটি ২ নম্বর]
-১. $\\frac{3}{4}$ এবং $\\frac{5}{6}$ এর যোগফল নির্ণয় কর। [২]
-২. উৎপাদকে বিশ্লেষণ কর: $x^2 - 9$ [২]
-৩. সরল কর: $\\sqrt{144} + \\sqrt{25}$ [২]
+বিভাগ – ক [প্রত্যেকটির মান ১]
+১. বাংলাদেশের রাজধানীর নাম কী? [১]
+ক) চট্রগ্রাম খ) ঢাকা গ) খুলনা ঘ) রাজশাহী
+২. $15 \\times 4$ কত? [১]
+ক) ৬০ খ) ৫৫ গ) ১৯ ঘ) ৪
 
-বিভাগ – খ [প্রতিটি ৫ নম্বর]
-৪. একটি আয়তাকার ঘরের দৈর্ঘ্য প্রস্থের চেয়ে ৩ মিটার বেশি। পরিসীমা ৩৬ মিটার হলে ঘরটির দৈর্ঘ্য ও প্রস্থ নির্ণয় কর। [৫]
-৫. $2x + 5 = 17$ সমীকরণটি সমাধান কর এবং $x$ এর মান যাচাই কর। [৫]`;
+বিভাগ – খ [প্রতিটি ২ নম্বর]
+৩. $\\frac{3}{4}$ এবং $\\frac{5}{6}$ এর যোগফল নির্ণয় কর। [২]
+৪. উৎপাদকে বিশ্লেষণ কর: $x^2 - 9$ [২]
+৫. সরল কর: $\\sqrt{144} + \\sqrt{25}$ [২]
+
+বিভাগ – গ [প্রতিটি ৫ নম্বর]
+৬. একটি আয়তাকার ঘরের দৈর্ঘ্য প্রস্থের চেয়ে ৩ মিটার বেশি। পরিসীমা ৩৬ মিটার হলে ঘরটির দৈর্ঘ্য ও প্রস্থ নির্ণয় কর। [৫]
+৭. $2x + 5 = 17$ সমীকরণটি সমাধান কর এবং $x$ এর মান যাচাই কর। [৫]`;
 }

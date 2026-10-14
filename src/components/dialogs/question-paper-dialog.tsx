@@ -17,8 +17,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  BookPlus, CalendarDays, Camera, Check, ChevronLeft, ChevronRight, CircleAlert,
-  Download, FileQuestion, History, Loader2, PenLine, Printer, RefreshCw, Sparkles,
+  BookPlus, CalendarDays, Camera, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, CircleAlert,
+  Download, FileQuestion, History, Loader2, PenLine, Printer, RefreshCw, SlidersHorizontal, Sparkles,
   Trash2, Wand2, X, Zap, ZoomIn, ZoomOut, Image as ImageIcon,
 } from 'lucide-react';
 import {
@@ -35,11 +35,12 @@ import type { PreparedImage } from '@/lib/ai-client';
 import { useEditorStore } from '@/lib/store';
 import {
   QP_SCHOOL_KEY, QP_REPAIR_NOTE, QP_STRUCTURE_SYSTEM, QP_TRANSCRIBE_SYSTEM, QP_VERIFY_SYSTEM,
-  defaultQpMeta, extractQpJson, extractTranscriptText, loadQpHistory, normalizeQpJson,
-  paperToEditorHtml, paperToStandaloneHtml, parseLocaleInt, parseQuestionText, pushQpHistory,
-  qpPreambleMeta, qpSampleText, removeQpHistoryItem, resolveQpFormat, shufflePaper, sumQpMarks,
+  QP_DEFAULT_LAYOUT, defaultQpMeta, extractQpJson, extractTranscriptText, loadQpHistory, normalizeQpJson,
+  normalizeQpLayout, paperToEditorHtml, paperToStandaloneHtml, parseLocaleInt, parseQuestionText,
+  pushQpHistory, qpPageSizePx, qpPreambleMeta, qpSampleText, removeQpHistoryItem, resolveQpFormat,
+  shufflePaper, sumQpMarks,
 } from '@/lib/question-paper';
-import type { QpFontScale, QpFormat, QpHistoryItem, QpMeta, QuestionPaper } from '@/lib/question-paper';
+import type { QpFontScale, QpFormat, QpHistoryItem, QpLayout, QpMeta, QuestionPaper } from '@/lib/question-paper';
 import { runCommand } from '@/components/ribbon/ribbon-shell';
 import { useLangStore, useT, useFmtNum } from '@/lib/i18n';
 import { formatDateLong } from '@/lib/i18n/core';
@@ -69,6 +70,55 @@ const FONT_SCALES: Array<{ id: QpFontScale; key: string }> = [
   { id: 'sm', key: 'qp.typo.sm' },
   { id: 'md', key: 'qp.typo.md' },
   { id: 'lg', key: 'qp.typo.lg' },
+];
+
+/** উন্নত সাজের অপশন-গ্রুপ — বাংলাদেশ-প্রথা অনুযায়ী কলাম, পাতার মাপ, নম্বর/মান-শৈলী */
+const ADV_GROUPS: Array<{ id: keyof QpLayout; label: string; opts: Array<{ v: string; key: string }> }> = [
+  {
+    id: 'columns', label: 'qp.layout.cols',
+    opts: [
+      { v: 'auto', key: 'qp.cols.auto' }, { v: '1', key: 'qp.cols.one' },
+      { v: '2', key: 'qp.cols.two' }, { v: '3', key: 'qp.cols.three' },
+    ],
+  },
+  {
+    id: 'pageSize', label: 'qp.layout.page',
+    opts: [
+      { v: 'a4', key: 'qp.page.a4' }, { v: 'letter', key: 'qp.page.letter' },
+      { v: 'legal', key: 'qp.page.legal' }, { v: 'a5', key: 'qp.page.a5' },
+    ],
+  },
+  {
+    id: 'numStyle', label: 'qp.layout.num',
+    opts: [
+      { v: 'dot', key: 'qp.num.dot' }, { v: 'paren', key: 'qp.num.paren' }, { v: 'dash', key: 'qp.num.dash' },
+    ],
+  },
+  {
+    id: 'marksStyle', label: 'qp.layout.marks',
+    opts: [
+      { v: 'bracket', key: 'qp.marks.bracket' }, { v: 'paren', key: 'qp.marks.paren' }, { v: 'word', key: 'qp.marks.word' },
+    ],
+  },
+  {
+    id: 'sectionStyle', label: 'qp.layout.sec',
+    opts: [
+      { v: 'center', key: 'qp.sec.center' }, { v: 'box', key: 'qp.sec.box' }, { v: 'left', key: 'qp.sec.left' },
+    ],
+  },
+  {
+    id: 'mcqLayout', label: 'qp.layout.mcq',
+    opts: [
+      { v: 'inline', key: 'qp.mcq.inline' }, { v: 'grid', key: 'qp.mcq.grid' }, { v: 'list', key: 'qp.mcq.list' },
+    ],
+  },
+  {
+    id: 'answerSpace', label: 'qp.layout.space',
+    opts: [
+      { v: 'none', key: 'qp.space.none' }, { v: 'sm', key: 'qp.space.sm' },
+      { v: 'md', key: 'qp.space.md' }, { v: 'lg', key: 'qp.space.lg' },
+    ],
+  },
 ];
 
 /** নকশা-কার্ডের ভেতরের মিনি-প্রিভিউ (গ্রে বার) */
@@ -128,6 +178,9 @@ export function QuestionPaperDialog() {
   const [format, setFormat] = useState<QpFormat>('auto');
   const [fontScale, setFontScale] = useState<QpFontScale>('md');
   const [shuffle, setShuffle] = useState(false);
+  // উন্নত সাজ — কলাম/পাতার মাপ/নম্বর-মান-বিভাগ/MCQ-শৈলী/উত্তরের জায়গা
+  const [layout, setLayout] = useState<QpLayout>(QP_DEFAULT_LAYOUT);
+  const [showAdv, setShowAdv] = useState(false);
   // সাম্প্রতিক প্রশ্নপত্র — ডায়ালগ খোলা অবস্থায় localStorage থেকে derive;
   // তালিকা বদলালে (push/remove) histVersion বাড়ে → নতুন করে পড়ে
   const [histVersion, setHistVersion] = useState(0);
@@ -145,7 +198,7 @@ export function QuestionPaperDialog() {
   const [sheetH, setSheetH] = useState(0);
   const [fitScale, setFitScale] = useState(0.62);
 
-  const busy = phase === 'transcribing' || phase === 'generating';
+  const busy = phase === 'transcribing' || phase === 'verifying' || phase === 'generating';
 
   // স্কুলের নাম পরের বারের জন্য মনে রাখা
   useEffect(() => {
@@ -163,17 +216,20 @@ export function QuestionPaperDialog() {
     return () => ro.disconnect();
   }, [paper, step]);
 
-  // প্রিভিউ কনটেইনারের প্রস্থ → ফিট-স্কেল
+  // প্রিভিউ কনটেইনারের প্রস্থ → ফিট-স্কেল (পাতার মাপ অনুযায়ী)
+  const pageSize = normalizeQpLayout(paper?.layout).pageSize;
+  const pageW = qpPageSizePx(pageSize).w;
+  const pageH = qpPageSizePx(pageSize).h;
   useEffect(() => {
     if (step !== 4 || !previewWrapRef.current) return;
     const el = previewWrapRef.current;
     const ro = new ResizeObserver(() => {
       const w = el.clientWidth - 32;
-      setFitScale(Math.max(0.3, Math.min(1, w / 794)));
+      setFitScale(Math.max(0.3, Math.min(1, w / pageW)));
     });
     ro.observe(el);
     return () => ro.disconnect();
-  }, [step]);
+  }, [step, pageW]);
 
   const acceptFile = useCallback(async (file: File) => {
     if (!file.type.startsWith('image/')) return;
@@ -268,7 +324,7 @@ export function QuestionPaperDialog() {
     const finish = (result: QuestionPaper, demo: boolean) => {
       // সেট বৈচিত্র্য চালু থাকলে প্রশ্নের ক্রম এলোমেলো + নতুন ধারাবাহিক নম্বর
       const final = shuffle ? shufflePaper(result) : result;
-      setPaper({ ...final, fontScale });
+      setPaper({ ...final, fontScale, layout });
       setIsDemo(demo);
       setPhase('done');
       setStep(4);
@@ -280,6 +336,7 @@ export function QuestionPaperDialog() {
         meta: effMeta,
         format,
         fontScale,
+        layout,
         counts: {
           sections: final.sections.length,
           questions: final.sections.reduce((n, s) => n + s.questions.length, 0),
@@ -400,6 +457,7 @@ export function QuestionPaperDialog() {
     setMeta((prev) => ({ ...(prev ?? defaultQpMeta(lang)), ...h.meta }));
     setFormat(h.format);
     setFontScale(h.fontScale);
+    setLayout(normalizeQpLayout(h.layout));
     setImage(null);
     setPhase('idle');
     setError(null);
@@ -450,7 +508,7 @@ export function QuestionPaperDialog() {
   }, [paper]);
   const marksMismatch = totals?.want != null && totals.want !== totals.got;
 
-  const pages = Math.max(1, Math.ceil((sheetH || 1123) / 1123));
+  const pages = Math.max(1, Math.ceil((sheetH || pageH) / pageH));
   const effScale = Math.max(0.25, Math.min(1.4, fitScale * zoomMult));
 
   const patchMeta = (patch: Partial<QpMeta>) => setMeta((prev) => (prev ? { ...prev, ...patch } : prev));
@@ -715,6 +773,40 @@ export function QuestionPaperDialog() {
         </div>
       </div>
 
+      {/* উন্নত সাজ-অপশন — বাংলাদেশ-প্রথা: ২/৩ কলাম, পাতার মাপ, নম্বর/মান/বিভাগ-শৈলী */}
+      <button
+        type="button" className="qp-adv-toggle" onClick={() => setShowAdv((v) => !v)}
+        aria-expanded={showAdv}
+      >
+        <SlidersHorizontal size={14} aria-hidden="true" />
+        <span>{tt(showAdv ? 'qp.layout.hide' : 'qp.layout.adv')}</span>
+        {showAdv ? <ChevronUp size={14} aria-hidden="true" /> : <ChevronDown size={14} aria-hidden="true" />}
+      </button>
+      {showAdv ? (
+        <div className="qp-adv">
+          {ADV_GROUPS.map((g) => (
+            <div key={g.id} className="qp-adv-block">
+              <span className="ai-field-label">{tt(g.label)}</span>
+              <div className="qp-scale" role="group" aria-label={tt(g.label)}>
+                {g.opts.map((o) => {
+                  const on = String(layout[g.id]) === o.v;
+                  return (
+                    <button
+                      key={o.v} type="button" aria-pressed={on}
+                      className={cn('qp-scale-btn', on && 'qp-scale-on')}
+                      onClick={() => setLayout((prev) => ({ ...prev, [g.id]: o.v }) as QpLayout)}
+                      disabled={busy}
+                    >
+                      {tt(o.key)}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
       {!configured ? (
         <div className="ai-setup" role="note">
           <p className="ai-setup-title"><Sparkles size={14} aria-hidden="true" /> {tt('ai.setup.title')}</p>
@@ -774,14 +866,19 @@ export function QuestionPaperDialog() {
           className="qp-preview-spacer"
           style={{
             height: sheetH ? sheetH * effScale : undefined,
-            width: 794 * effScale,
+            width: pageW * effScale,
             maxWidth: '100%',
           }}
         >
           <div
             ref={sheetRef}
             className="qp-sheet"
-            style={{ transform: `scale(${effScale})`, transformOrigin: 'top left' }}
+            style={{
+              transform: `scale(${effScale})`,
+              transformOrigin: 'top left',
+              width: pageW,
+              minHeight: pageH,
+            }}
             dangerouslySetInnerHTML={{ __html: previewHtml }}
           />
           {/* পাতা-বিভাজক নির্দেশক — কোথায় আসল পাতা ভাঙবে তার আন্দাজ */}
@@ -789,7 +886,7 @@ export function QuestionPaperDialog() {
             <span
               key={i}
               className="qp-page-guide"
-              style={{ top: 1123 * effScale * (i + 1) }}
+              style={{ top: pageH * effScale * (i + 1) }}
               data-page={`${tt('qp.guide.page')} ${fmtNum(i + 2)}`}
               aria-hidden="true"
             />
