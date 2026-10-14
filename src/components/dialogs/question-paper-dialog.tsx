@@ -34,13 +34,13 @@ import { callAi, prepareImageFile } from '@/lib/ai-client';
 import type { PreparedImage } from '@/lib/ai-client';
 import { useEditorStore } from '@/lib/store';
 import {
-  QP_SCHOOL_KEY, QP_REPAIR_NOTE, QP_STRUCTURE_SYSTEM, QP_TRANSCRIBE_SYSTEM, QP_VERIFY_SYSTEM,
+  QP_SCHOOL_KEY, QP_REPAIR_NOTE, QP_STRUCTURE_SYSTEM, QP_SUGGESTION_SYSTEM, QP_TRANSCRIBE_SYSTEM, QP_VERIFY_SYSTEM,
   QP_DEFAULT_LAYOUT, defaultQpMeta, extractQpJson, extractTranscriptText, loadQpHistory, normalizeQpJson,
   normalizeQpLayout, paperToEditorHtml, paperToStandaloneHtml, parseLocaleInt, parseQuestionText,
   pushQpHistory, qpPageSizePx, qpPreambleMeta, qpSampleText, removeQpHistoryItem, resolveQpFormat,
   shufflePaper, sumQpMarks,
 } from '@/lib/question-paper';
-import type { QpFontScale, QpFormat, QpHistoryItem, QpLayout, QpMeta, QuestionPaper } from '@/lib/question-paper';
+import type { QpDocType, QpFontScale, QpFormat, QpHistoryItem, QpLayout, QpMeta, QuestionPaper } from '@/lib/question-paper';
 import { runCommand } from '@/components/ribbon/ribbon-shell';
 import { useLangStore, useT, useFmtNum } from '@/lib/i18n';
 import { formatDateLong } from '@/lib/i18n/core';
@@ -56,6 +56,12 @@ const STEPS: Array<{ id: Step; key: string }> = [
   { id: 2, key: 'qp.step.details' },
   { id: 3, key: 'qp.step.format' },
   { id: 4, key: 'qp.step.preview' },
+];
+
+/** ডকুমেন্ট-ধরন — শিক্ষক বাছেন: পরীক্ষার প্রশ্নপত্র নাকি ছাত্রদের সাজেশন শিট */
+const DOC_TYPES: Array<{ id: QpDocType; label: string; desc: string }> = [
+  { id: 'question', label: 'qp.docType.question', desc: 'qp.docType.question.desc' },
+  { id: 'suggestion', label: 'qp.docType.suggestion', desc: 'qp.docType.suggestion.desc' },
 ];
 
 const FORMATS: Array<{ id: QpFormat; label: string; desc: string }> = [
@@ -121,6 +127,28 @@ const ADV_GROUPS: Array<{ id: keyof QpLayout; label: string; opts: Array<{ v: st
   },
 ];
 
+/** ডকুমেন্ট-ধরন কার্ডের ভেতরের মিনি-প্রিভিউ — প্রশ্নপত্র হেডার নাকি ★-চিহ্নিত তালিকা */
+function DocTypeVis({ id }: { id: QpDocType }) {
+  const bar = (w: string, center = false) => (
+    <span
+      className="qp-vis-bar"
+      style={{ width: w, marginLeft: center ? 'auto' : 0, marginRight: center ? 'auto' : 0 }}
+    />
+  );
+  if (id === 'suggestion') {
+    return (
+      <>
+        {bar('58%', true)}{bar('44%', true)}
+        <span className="qp-vis-rule" />
+        <span className="qp-vis-row"><span className="qp-vis-star">★</span><span className="qp-vis-bar" style={{ width: '70%' }} /></span>
+        <span className="qp-vis-row"><span className="qp-vis-star">★★</span><span className="qp-vis-bar" style={{ width: '58%' }} /></span>
+        <span className="qp-vis-row"><span className="qp-vis-bar" style={{ width: '64%', marginLeft: 'auto' }} /></span>
+      </>
+    );
+  }
+  return <>{bar('44%', true)}{bar('58%', true)}<span className="qp-vis-rule" />{bar('72%')}{bar('64%')}{bar('70%')}</>;
+}
+
 /** নকশা-কার্ডের ভেতরের মিনি-প্রিভিউ (গ্রে বার) */
 function FormatVis({ id }: { id: QpFormat }) {
   const bar = (w: string, center = false) => (
@@ -162,6 +190,8 @@ export function QuestionPaperDialog() {
 
   const [step, setStep] = useState<Step>(1);
   const [mode, setMode] = useState<'photo' | 'text'>('text');
+  // ডকুমেন্ট-ধরন — প্রশ্নপত্র নাকি সাজেশন শিট (সাজেশনে আলাদা নকশা, ★-গুরুত্ব, শিক্ষক-স্বাক্ষর)
+  const [docType, setDocType] = useState<QpDocType>('question');
   const [image, setImage] = useState<PreparedImage | null>(null);
   const [rawText, setRawText] = useState('');
   // ভাষা-অনুযায়ী ডিফল্ট মেটা + মনে-রাখা স্কুলের নাম — প্রথম রেন্ডারেই (lazy init)
@@ -324,7 +354,7 @@ export function QuestionPaperDialog() {
     const finish = (result: QuestionPaper, demo: boolean) => {
       // সেট বৈচিত্র্য চালু থাকলে প্রশ্নের ক্রম এলোমেলো + নতুন ধারাবাহিক নম্বর
       const final = shuffle ? shufflePaper(result) : result;
-      setPaper({ ...final, fontScale, layout });
+      setPaper({ ...final, fontScale, layout, docType });
       setIsDemo(demo);
       setPhase('done');
       setStep(4);
@@ -337,6 +367,7 @@ export function QuestionPaperDialog() {
         format,
         fontScale,
         layout,
+        docType,
         counts: {
           sections: final.sections.length,
           questions: final.sections.reduce((n, s) => n + s.questions.length, 0),
@@ -363,14 +394,15 @@ export function QuestionPaperDialog() {
         'RAW QUESTION TEXT:',
         rawText.trim().slice(0, 20000),
         '',
-        'Structure this into the final question paper JSON now.',
+        'Structure this into the final ' + (docType === 'suggestion' ? 'suggestion sheet' : 'question paper') + ' JSON now.',
       ].join('\n');
 
-      const res = await callAi({ prompt, system: QP_STRUCTURE_SYSTEM });
+      const system = docType === 'suggestion' ? QP_SUGGESTION_SYSTEM : QP_STRUCTURE_SYSTEM;
+      const res = await callAi({ prompt, system });
       // প্রথম উত্তর ভাঙা JSON হলে একবার মেরামত-পুনরায় — মডেল প্রায়ই দ্বিতীয়বার ঠিক করে
       let data = res.ok && res.text ? extractQpJson<unknown>(res.text) : null;
       if (res.ok && res.text && !data) {
-        const retry = await callAi({ prompt: `${prompt}\n\n${QP_REPAIR_NOTE}`, system: QP_STRUCTURE_SYSTEM });
+        const retry = await callAi({ prompt: `${prompt}\n\n${QP_REPAIR_NOTE}`, system });
         if (retry.ok && retry.text) data = extractQpJson<unknown>(retry.text);
       }
       const result = data ? normalizeQpJson(data, effMeta, format) : null;
@@ -410,7 +442,7 @@ export function QuestionPaperDialog() {
       ed.chain().focus().insertContentAt(ed.state.doc.content.size, html).run();
     });
     if (ok) {
-      toast.success(tt('qp.toast.inserted'));
+      toast.success(tt(docType === 'suggestion' ? 'qp.toast.inserted.sug' : 'qp.toast.inserted'));
       close();
     }
   };
@@ -458,6 +490,7 @@ export function QuestionPaperDialog() {
     setFormat(h.format);
     setFontScale(h.fontScale);
     setLayout(normalizeQpLayout(h.layout));
+    setDocType(h.docType ?? 'question');
     setImage(null);
     setPhase('idle');
     setError(null);
@@ -490,13 +523,14 @@ export function QuestionPaperDialog() {
   const previewHtml = useMemo(() => (paper ? paperToEditorHtml(paper, lang) : ''), [paper, lang]);
   const resolved = useMemo(() => (paper ? resolveQpFormat(paper) : 'classic'), [paper]);
   const stats = useMemo(() => {
-    if (!paper) return { q: 0, sec: 0, mcq: 0 };
-    let q = 0, mcq = 0;
+    if (!paper) return { q: 0, sec: 0, mcq: 0, star: 0 };
+    let q = 0, mcq = 0, star = 0;
     for (const s of paper.sections) {
       q += s.questions.length;
       mcq += s.questions.filter((x) => x.options.length > 0).length;
+      star += s.questions.filter((x) => x.importance).length;
     }
-    return { q, sec: paper.sections.length, mcq };
+    return { q, sec: paper.sections.length, mcq, star };
   }, [paper]);
   // প্রো-যাচাই: প্রশ্নের মোট নম্বর বনাম ফর্মের পূর্ণমান
   const totals = useMemo(() => {
@@ -516,6 +550,24 @@ export function QuestionPaperDialog() {
   // ── ধাপ ১: ইনপুট ──
   const stepInput = (
     <section aria-label={tt('qp.step.input')} className="flex flex-col gap-3">
+      <div>
+        <p className="ai-field-label mb-1.5">{tt('qp.docType.title')}</p>
+        <div className="qp-doctypes" role="radiogroup" aria-label={tt('qp.docType.title')}>
+          {DOC_TYPES.map((dt) => (
+            <button
+              key={dt.id} type="button" role="radio" aria-checked={docType === dt.id}
+              className={cn('qp-doctype', docType === dt.id && 'qp-doctype-on')}
+              onClick={() => setDocType(dt.id)}
+              disabled={busy}
+            >
+              <span className="qp-doctype-vis"><DocTypeVis id={dt.id} /></span>
+              <strong>{tt(dt.label)}</strong>
+              <span className="qp-doctype-desc">{tt(dt.desc)}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="qp-modes" role="radiogroup" aria-label={tt('qp.step.input')}>
         <button
           type="button" role="radio" aria-checked={mode === 'photo'}
@@ -598,9 +650,9 @@ export function QuestionPaperDialog() {
 
       <div>
         <div className="mb-1.5 flex items-center justify-between gap-2">
-          <span className="ai-field-label">{tt('qp.raw.label')}</span>
+          <span className="ai-field-label">{tt(docType === 'suggestion' ? 'qp.raw.label.sug' : 'qp.raw.label')}</span>
           <div className="flex gap-1">
-            <Button size="sm" variant="ghost" className="h-7 gap-1 text-xs" onClick={() => setRawText(qpSampleText(lang))}>
+            <Button size="sm" variant="ghost" className="h-7 gap-1 text-xs" onClick={() => setRawText(qpSampleText(lang, docType))}>
               <Sparkles size={12} aria-hidden="true" /> {tt('qp.sample')}
             </Button>
             {rawText ? (
@@ -613,11 +665,11 @@ export function QuestionPaperDialog() {
         <Textarea
           value={rawText}
           onChange={(e) => setRawText(e.target.value)}
-          placeholder={tt('qp.raw.ph')}
+          placeholder={tt(docType === 'suggestion' ? 'qp.raw.ph.sug' : 'qp.raw.ph')}
           className="qp-raw min-h-[150px]"
           disabled={busy}
         />
-        <p className="qp-hint">{tt('qp.raw.hint')}</p>
+        <p className="qp-hint">{tt(docType === 'suggestion' ? 'qp.raw.hint.sug' : 'qp.raw.hint')}</p>
         {mode === 'photo' && image && rawText.trim() ? (
           <p className="qp-hint qp-check-hint">{tt('qp.raw.check')}</p>
         ) : null}
@@ -714,10 +766,22 @@ export function QuestionPaperDialog() {
           disabled={busy}
         />
       </label>
-      <div className="qp-field qp-field-full qp-switch-row">
-        <span>{tt('qp.meta.studentLine')}</span>
-        <Switch checked={meta.studentLine} onCheckedChange={(v) => patchMeta({ studentLine: v })} disabled={busy} />
-      </div>
+      {docType === 'suggestion' ? (
+        <label className="qp-field qp-field-full">
+          <span>{tt('qp.meta.teacher')}</span>
+          <Input
+            value={meta.teacherName ?? ''}
+            onChange={(e) => patchMeta({ teacherName: e.target.value })}
+            disabled={busy}
+          />
+        </label>
+      ) : null}
+      {docType !== 'suggestion' ? (
+        <div className="qp-field qp-field-full qp-switch-row">
+          <span>{tt('qp.meta.studentLine')}</span>
+          <Switch checked={meta.studentLine} onCheckedChange={(v) => patchMeta({ studentLine: v })} disabled={busy} />
+        </div>
+      ) : null}
       <div className="qp-nav-row">
         <Button variant="outline" onClick={() => setStep(1)} disabled={busy}>
           <ChevronLeft size={14} aria-hidden="true" /> {tt('qp.back')}
@@ -828,7 +892,7 @@ export function QuestionPaperDialog() {
           <Button onClick={() => void generate(true)} disabled={busy}>
             {phase === 'generating'
               ? <><Loader2 size={14} className="animate-spin" aria-hidden="true" /> {tt('qp.generating')}</>
-              : <><Wand2 size={14} aria-hidden="true" /> {tt('qp.generate')}</>}
+              : <><Wand2 size={14} aria-hidden="true" /> {tt(docType === 'suggestion' ? 'qp.generate.sug' : 'qp.generate')}</>}
           </Button>
         </div>
       </div>
@@ -837,11 +901,12 @@ export function QuestionPaperDialog() {
 
   // ── ধাপ ৪: প্রিভিউ ──
   const stepPreview = paper ? (
-    <section aria-label={tt('qp.preview.title')} className="flex flex-col gap-2">
+    <section aria-label={tt(docType === 'suggestion' ? 'qp.preview.title.sug' : 'qp.preview.title')} className="flex flex-col gap-2">
       <div className="qp-stats" role="status">
         <span className="qp-stat"><strong>{fmtNum(stats.sec)}</strong> {tt('qp.count.sec')}</span>
         <span className="qp-stat"><strong>{fmtNum(stats.q)}</strong> {tt('qp.count.q')}</span>
         {stats.mcq > 0 ? <span className="qp-stat"><strong>{fmtNum(stats.mcq)}</strong> {tt('qp.count.mcq')}</span> : null}
+        {stats.star > 0 ? <span className="qp-stat"><strong>{fmtNum(stats.star)}</strong> {tt('qp.count.star')}</span> : null}
         {totals ? (
           <span
             className={cn('qp-stat', marksMismatch && 'qp-stat-warn')}
@@ -980,7 +1045,7 @@ export function QuestionPaperDialog() {
             <div className="qp-progress-card">
               <Loader2 size={22} className="qp-progress-spin" aria-hidden="true" />
               <p className="qp-progress-title">
-                {phase === 'transcribing' ? tt('qp.busy.read') : phase === 'verifying' ? tt('qp.busy.verify') : tt('qp.busy.analyze')}
+                {phase === 'transcribing' ? tt('qp.busy.read') : phase === 'verifying' ? tt('qp.busy.verify') : tt(docType === 'suggestion' ? 'qp.busy.analyze.sug' : 'qp.busy.analyze')}
               </p>
               <p className="qp-progress-wait">{tt('qp.busy.wait')}</p>
               <span className="ai-progress" aria-hidden="true"><span /></span>

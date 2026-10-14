@@ -47,6 +47,11 @@ export type QpAnswerSpace = 'none' | 'sm' | 'md' | 'lg';
 /** প্রশ্নের ধরন — সংক্ষিপ্ত / MCQ / সৃজনশীল / মিলকরণ / সত্য-মিথ্যা / শূন্যস্থান */
 export type QpQKind = 'short' | 'mcq' | 'creative' | 'match' | 'tf' | 'blank';
 
+/** ডকুমেন্ট-ধরন — পরীক্ষার প্রশ্নপত্র নাকি শিক্ষকের সাজেশন শিট */
+export type QpDocType = 'question' | 'suggestion';
+/** প্রশ্নের গুরুত্ব — সাজেশন-শিটে ★ (১) / ★★ (২); অনুপস্থিত = সাধারণ */
+export type QpImportance = 1 | 2;
+
 export interface QpPair {
   /** বাঁ-স্তম্ভের জিনিস (সাধারণত নম্বরযুক্ত) */
   left: string;
@@ -140,6 +145,8 @@ export interface QpQuestion {
   kind?: QpQKind;
   /** মিলকরণ-প্রশ্নের জোড়া (kind === 'match' হলে) */
   pairs?: QpPair[];
+  /** সাজেশন-শিটের গুরুত্ব — ১ = ★ গুরুত্বপূর্ণ, ২ = ★★ অতি গুরুত্বপূর্ণ */
+  importance?: QpImportance;
 }
 
 export interface QpSection {
@@ -159,6 +166,8 @@ export interface QpMeta {
   instructions: string[];
   /** শিক্ষার্থীর নাম/রোল ঘর থাকবে কি না */
   studentLine: boolean;
+  /** সাজেশন-শিটের শিক্ষকের নাম (ঐচ্ছিক) */
+  teacherName?: string;
 }
 
 export interface QuestionPaper {
@@ -169,6 +178,10 @@ export interface QuestionPaper {
   fontScale?: QpFontScale;
   /** উন্নত লেআউট — অনুপস্থিত হলে ডিফল্ট */
   layout?: QpLayout;
+  /** ডকুমেন্ট-ধরন — অনুপস্থিত হলে 'question' (প্রশ্নপত্র) */
+  docType?: QpDocType;
+  /** সাজেশন-শিটের শেষ-পরামর্শ — অনুপস্থিত হলে ডিফল্ট লেখা বসে */
+  finalNote?: string;
 }
 
 // ─── সাম্প্রতিক প্রশ্নপত্র (localStorage ইতিহাস) ───
@@ -181,6 +194,8 @@ export interface QpHistoryItem {
   fontScale: QpFontScale;
   /** উন্নত লেআউট — পুরনো এন্ট্রিতে অনুপস্থিত হতে পারে */
   layout?: QpLayout;
+  /** ডকুমেন্ট-ধরন — পুরনো এন্ট্রিতে অনুপস্থিত হতে পারে */
+  docType?: QpDocType;
   /** v2 — প্রিভিউ-চিপে দেখানোর হিসাব */
   counts?: { sections: number; questions: number; marks: number };
 }
@@ -257,6 +272,7 @@ export function defaultQpMeta(lang: Lang): QpMeta {
     fullMarks: d.marks,
     instructions: [...d.instructions],
     studentLine: true,
+    teacherName: '',
   };
 }
 
@@ -456,6 +472,56 @@ Rules:
   · "short" — everything else.
 
 OUTPUT: Return ONLY a single valid JSON object — no markdown fences, no commentary before or after. Inside every JSON string, escape line breaks as \\n — never put raw line breaks inside a JSON string.`;
+
+/** সাজেশন-শিট গঠন-প্রম্পট — পরীক্ষার প্রশ্নপত্র নয়, অধ্যায়-ভিত্তিক গুরুত্বপূর্ণ-প্রশ্নের তালিকা (★ চিহ্নসহ) */
+export const QP_SUGGESTION_SYSTEM = `You are the suggestion-sheet composition engine of "Bangla Publishing Studio" — an expert school teacher that turns rough notes into a perfectly organized STUDENT SUGGESTION SHEET (সাজেশন) — the sheet teachers hand to students before an exam listing the most important questions, chapter by chapter, with the most likely questions starred.
+
+You receive a HEADER block (teacher's details) and RAW QUESTION TEXT (typed or transcribed from handwriting). Organize it into a suggestion sheet:
+
+Return ONLY valid JSON — no markdown fences, no commentary. Shape exactly:
+{
+  "schoolName": string,       // school/coaching name ONLY if stated in RAW text and missing from HEADER
+  "examTitle": string,        // e.g. "বার্ষিক পরীক্ষা — ২০২৫" ("" if unknown)
+  "subject": string,          // "" if unknown
+  "classLabel": string,       // "" if unknown
+  "date": string,
+  "time": string,             // usually "" — suggestion sheets rarely state duration
+  "fullMarks": string,        // usually ""
+  "instructions": string[],   // 2–4 short ADVICE lines for students, e.g. "যে প্রশ্নগুলো ★ চিহ্নিত সেগুলো আগে অনুশীলন করবে"
+  "finalNote": string,        // one closing advice line, e.g. "পরীক্ষার আগে ★★ চিহ্নিত প্রশ্নগুলো অবশ্যই অনুশীলন করবে।" ("" if none)
+  "sections": [
+    {
+      "title": string,        // chapter/topic groups: "অধ্যায় ১ — ভগ্নাংশ"; or question-type groups: "বহুনির্বাচনি প্রশ্ন"
+      "note": string,         // e.g. "৯টির মধ্যে ৫টি আসার সম্ভাবনা" ("" if none)
+      "questions": [
+        {
+          "number": string,   // "১" / "1" — numerals of the paper's language
+          "text": string,     // full question text; math stays in $...$ LaTeX
+          "marks": string,    // usually "" for suggestions
+          "importance": 0,    // 0 = normal, 1 = important (★), 2 = very important (★★)
+          "kind": "short"|"mcq"|"creative"|"match"|"tf"|"blank",
+          "options": [ { "label": "ক", "text": "…" } ],
+          "subs": [ { "text": "(ক) …", "marks": "১" } ],
+          "pairs": [ { "left": "…", "right": "…" } ]
+        }
+      ]
+    }
+  ]
+}
+
+Rules:
+- LANGUAGE MIRROR: everything in the SAME language and numeral system as the RAW text (default Bengali). NEVER translate.
+- ORGANIZE BY CHAPTER/TOPIC when the source mentions chapters (অধ্যায়/अध्याय/chapter) — one section per chapter in source order; otherwise group by question type (বহুনির্বাচনি / সৃজনশীল / সংক্ষিপ্ত).
+- IMPORTANCE from the SOURCE ONLY: a star mark beside a question → 1; double star → 2; words like "গুরুত্বপূর্ণ"/"জরুরি"/"important" beside a question → 1; "অতি গুরুত্বপূর্ণ"/"must"/"sure" → 2. If the source marks a WHOLE chapter or section as important, set that importance on every question of it. Never invent importance.
+- FIDELITY: keep EVERY question from the source. NEVER invent, drop or merge questions. Light grammar/spacing polish only.
+- NUMBERING: sequential per section, in the source's numeral system.
+- HEADER FIDELITY: use the HEADER block values exactly when provided; otherwise infer from the RAW text; otherwise "" — never invent a school name.
+- MATH: expressions remain in $...$ LaTeX with ASCII digits inside math.
+- MCQ: 4 options with ক/খ/গ/ঘ labels (Bengali) or A/B/C/D (Latin-script papers).
+- SUB-QUESTIONS: keep "(ক)" "(i)" prefixes in sub text.
+- instructions/finalNote must be ADVICE for the student — NEVER header data (time/marks/school) and never a repetition of section notes.
+
+OUTPUT: Return ONLY a single valid JSON object — no markdown fences, no commentary before or after. Inside every JSON string, escape line breaks as \\n.`;
 
 /** প্রতিলিপি দ্বিতীয় পাস — নিজের পড়া ছবির সাথে মিলিয়ে শুদ্ধ করা */
 export const QP_VERIFY_SYSTEM = `You are the verification engine of "Bangla Publishing Studio" — the second pair of eyes that proofreads a transcription of a handwritten/printed question-paper photo against the original image.
@@ -807,6 +873,21 @@ function coerceQpKind(v: unknown): QpQKind | null {
   return null;
 }
 
+/** মডেল/পার্সারের গুরুত্ব-মান → ১/২ — সংখ্যা, তারকা ("★★") বা লেখা ("important") সব চলে */
+function coerceQpImportance(v: unknown): QpImportance | undefined {
+  if (typeof v === 'string') {
+    const s = v.trim();
+    const starCount = (s.match(/[★☆✦✶✸]/g) ?? []).length;
+    if (starCount >= 2) return 2;
+    if (starCount === 1) return 1;
+    if (/most|high|অতি|अति/i.test(s)) return 2;
+    if (/important|গুরুত্ব|जरूरी|महत्व|জরুর/i.test(s)) return 1;
+    v = parseLocaleInt(s);
+  }
+  const n = typeof v === 'number' ? v : 0;
+  return n >= 2 ? 2 : n === 1 ? 1 : undefined;
+}
+
 /** মডেল/পার্সারের জোড়া-অবজেক্ট → QpPair[] — স্ট্রিং "ঢাকা → কক্সবাজার" রূপও চলে */
 function coerceQpPairs(v: unknown): QpPair[] | undefined {
   const pairs: QpPair[] = [];
@@ -915,6 +996,7 @@ export function normalizeQpJson(data: unknown, meta: QpMeta, format: QpFormat): 
       }
       const kind = coerceQpKind(q.kind ?? q.type ?? q.questionType) ?? (options.length > 0 ? 'mcq' : 'short');
       const pairs = kind === 'match' ? coerceQpPairs(q.pairs ?? q.matches ?? q.match ?? q.columns) : undefined;
+      const importance = coerceQpImportance(q.importance ?? q.star ?? q.stars ?? q.priority);
       questions.push({
         number: firstStr(q, ['number', 'no', 'num', 'qno', 'serial']),
         text,
@@ -923,6 +1005,7 @@ export function normalizeQpJson(data: unknown, meta: QpMeta, format: QpFormat): 
         subs,
         kind,
         pairs,
+        ...(importance ? { importance } : {}),
       });
     }
     sections.push({
@@ -941,6 +1024,7 @@ export function normalizeQpJson(data: unknown, meta: QpMeta, format: QpFormat): 
     return firstStr(d, keys);
   };
   const aiInstructions = cleanQpInstructions(asArr(d.instructions));
+  const finalNote = firstStr(d, ['finalNote', 'final_note', 'closingNote', 'closing_note']);
   return {
     meta: {
       ...meta,
@@ -955,6 +1039,7 @@ export function normalizeQpJson(data: unknown, meta: QpMeta, format: QpFormat): 
     },
     sections: valid,
     format,
+    ...(finalNote ? { finalNote } : {}),
   };
 }
 
@@ -1099,13 +1184,25 @@ export function parseQuestionText(raw: string, meta: QpMeta, format: QpFormat, l
   let qNo = 0;
 
   for (const rawLine of lines) {
-    const line = rawLine.replace(/\s+$/, '').trim();
+    let line = rawLine.replace(/\s+$/, '').trim();
+    if (!line) continue;
+    // সাজেশন-তারকা — লাইনের শুরুর ★/✦ চিহ্ন প্রশ্নের গুরুত্ব (★ = ১, ★★ = ২);
+    // একক * তারকাও চলে (শিক্ষকেরা টাইপে * ব্যবহার করেন) — শুধু ফাঁকা/সংখ্যার আগে হলে
+    let stars = 0;
+    const starM = line.match(/^(?:[★☆✦✶✸]\s*){1,3}/);
+    if (starM) {
+      stars = (starM[0].match(/[★☆✦✶✸]/g) ?? []).length;
+      line = line.slice(starM[0].length).trim();
+    } else if (/^\*(?:\s|[\u0966-\u096f\u09e6-\u09ef\d])/.test(line)) {
+      stars = 1;
+      line = line.replace(/^\*\s*/, '').trim();
+    }
     if (!line) continue;
     const en = toEnglishDigits(line);
 
     // বিভাগ/অংশ/खण्ड হেডার — শেষের [প্রতিটি ২ নম্বর] জাতীয় অংশ নোটে চলে যায়
     // দ্রষ্টব্য: JS-এর \b ASCII-শব্দ-সীমা — বাংলা অক্ষরের পরে কাজ করে না, তাই নেগেটিভ লুকঅ্যাহেড
-    if (/^(?:বিভাগ|খণ্ড|অংশ(?!ী|গ্র)|खण्ड|खंड|भाग|section|part)/i.test(line) && line.length < 80) {
+    if (/^(?:বিভাগ|খণ্ড|অংশ(?!ী|গ্র)|खण्ड|खंड|भाग|অধ্যায়|section|part|chapter)/i.test(line) || /^(?:বহুনির্বাচনি|বহুবিকল্প|সৃজনশীল|সংক্ষিপ্ত|রচনাধর্মী|बहুविकल्पीय|सृजनात्मक|multiple)/i.test(line) && /প্রশ্ন|question|प्रश्न/i.test(line) && line.length < 80) {
       const bare = line.replace(/\s*[-–—:=]\s*$/, '').trim();
       const nm = bare.match(/\s*[\[(]([^\[\]()]{2,60})[\])]\s*$/);
       const title = nm ? bare.slice(0, nm.index).trim() : bare;
@@ -1133,6 +1230,7 @@ export function parseQuestionText(raw: string, meta: QpMeta, format: QpFormat, l
           marks,
           options: [],
           subs: [],
+          importance: stars >= 2 ? 2 : stars === 1 ? 1 : undefined,
         };
         cur.questions.push(q);
         continue;
@@ -1173,7 +1271,15 @@ export function parseQuestionText(raw: string, meta: QpMeta, format: QpFormat, l
     if (cand.length > 0) {
       const sec: QpSection = { title: '', note: '', questions: [] };
       for (const l of cand) {
-        const { text, marks } = splitTrailingMarks(l);
+        // শেষ-ভরসায়ও তারকা-গুরুত্ব ধরা হয় — সাজেশন-শিট অফলাইনেও শুদ্ধ
+        let ln = l;
+        let st = 0;
+        const stm = ln.match(/^(?:[\u2605\u2606\u2726\u2736\u2738]\s*){1,3}/);
+        if (stm) {
+          st = (stm[0].match(/[\u2605\u2606\u2726\u2736\u2738]/g) ?? []).length;
+          ln = ln.slice(stm[0].length).trim();
+        }
+        const { text, marks } = splitTrailingMarks(ln);
         if (!text) continue;
         qNo++;
         sec.questions.push({
@@ -1182,6 +1288,7 @@ export function parseQuestionText(raw: string, meta: QpMeta, format: QpFormat, l
           marks,
           options: [],
           subs: [],
+          importance: st >= 2 ? 2 : st === 1 ? 1 : undefined,
         });
       }
       if (sec.questions.length > 0) {
@@ -1223,6 +1330,18 @@ export function parseQuestionText(raw: string, meta: QpMeta, format: QpFormat, l
     for (const q of sec.questions) if (!q.marks) q.marks = markVal;
   }
 
+  // বিভাগ-নোটে "গুরুত্বপূর্ণ/অতি গুরুত্বপূর্ণ" থাকলে গোটা বিভাগের প্রশ্নে সেই গুরুত্ব —
+  // শিক্ষকেরা সাজেশন-শিটে অধ্যায়ের শেষে [গুরুত্বপূর্ণ] লেখেন; উৎসেই লেখা, বানানো নয়
+  for (const sec of valid) {
+    const imp: QpImportance | undefined = /\u0985\u09a4\u09bf\s*\u0997\u09c1\u09b0\u09c1\u09a4\u09cd\u09ac\u09aa\u09c2\u09b0\u09cd\u09a3|very\s+important|most\s+important/i.test(sec.note)
+      ? 2
+      : /\u0997\u09c1\u09b0\u09c1\u09a4\u09cd\u09ac\u09aa\u09c2\u09b0\u09cd\u09a3|\u099c\u09b0\u09c1\u09b0\u09bf|important/i.test(sec.note)
+        ? 1
+        : undefined;
+    if (!imp) continue;
+    for (const q of sec.questions) if (!q.importance) q.importance = imp;
+  }
+
   // প্রথম প্রশ্নের আগের লাইনগুলো নির্দেশনা হিসেবে ধরা হয় (প্রায়ই হয়) —
   // সময়/পূর্ণমান-জাতীয় হেডার-লাইন cleanQpInstructions ছেঁটে ফেলে
   const instructions = cleanQpInstructions(preamble);
@@ -1240,6 +1359,9 @@ interface QpLabels {
   cls: string; subject: string; date: string; time: string; marks: string;
   instructions: string; nameRoll: string; end: string;
   markWord: string; trueFalse: string;
+  /** সাজেশন-শিট */
+  sugTitle: string; teacher: string; signature: string;
+  star1: string; star2: string; finalNoteDefault: string;
 }
 
 function qpLabels(lang: Lang): QpLabels {
@@ -1248,6 +1370,9 @@ function qpLabels(lang: Lang): QpLabels {
       cls: 'कक्षा', subject: 'विषय', date: 'दिनांक', time: 'समय', marks: 'पूर्णांक',
       instructions: 'निर्देश', nameRoll: 'छात्र का नाम: ____________________  रोल नं.: ________',
       end: 'समाप्त', markWord: 'अंक', trueFalse: 'सत्य / असत्य',
+      sugTitle: 'सजेशन', teacher: 'शिक्षक', signature: 'शिक्षक के हस्ताक्षर',
+      star1: 'महत्वपूर्ण', star2: 'अति महत्वपूर्ण',
+      finalNoteDefault: 'परीक्षा से पहले \u2605\u2605 चिह्नित प्रश्न अवश्य हल करें।',
     };
   }
   if (lang === 'en') {
@@ -1255,12 +1380,18 @@ function qpLabels(lang: Lang): QpLabels {
       cls: 'Class', subject: 'Subject', date: 'Date', time: 'Time', marks: 'Full Marks',
       instructions: 'Instructions', nameRoll: 'Student Name: ____________________  Roll No.: ________',
       end: 'End', markWord: 'marks', trueFalse: 'True / False',
+      sugTitle: 'Suggestion', teacher: 'Teacher', signature: "Teacher's signature",
+      star1: 'Important', star2: 'Very important',
+      finalNoteDefault: 'Practise the \u2605\u2605 marked questions before the exam.',
     };
   }
   return {
     cls: 'শ্রেণি', subject: 'বিষয়', date: 'তারিখ', time: 'সময়', marks: 'পূর্ণমান',
     instructions: 'নির্দেশনা', nameRoll: 'শিক্ষার্থীর নাম: ____________________  রোল নং: ________',
     end: 'শেষ', markWord: 'নম্বর', trueFalse: 'সত্য / মিথ্যা',
+    sugTitle: 'সাজেশন', teacher: 'শিক্ষক', signature: 'শিক্ষকের স্বাক্ষর',
+    star1: 'গুরুত্বপূর্ণ', star2: 'অতি গুরুত্বপূর্ণ',
+    finalNoteDefault: 'পরীক্ষার আগে \u2605\u2605 চিহ্নিত প্রশ্নগুলো অবশ্যই অনুশীলন করবে।',
   };
 }
 
@@ -1411,7 +1542,29 @@ export function paperToEditorHtml(p: QuestionPaper, lang: Lang): string {
   const parts: string[] = [];
 
   // ── হেডার ──
-  if (board) {
+  const sug = p.docType === 'suggestion';
+  if (sug) {
+    // সাজেশন-হেডার — প্রতিষ্ঠান → "সাজেশন — বিষয় (শ্রেণি)" → পরীক্ষা → তথ্য-লাইন → শিক্ষক
+    if (m.schoolName) {
+      parts.push(`<p${center}><span style="font-size:${hSize}"><strong>${escapeQpHtml(m.schoolName)}</strong></span></p>`);
+    }
+    const sugTitleLine = m.subject
+      ? (m.classLabel ? `${L.sugTitle} — ${m.subject} (${m.classLabel})` : `${L.sugTitle} — ${m.subject}`)
+      : L.sugTitle;
+    parts.push(`<p${center}><span style="font-size:${hSize}"><strong>${escapeQpHtml(sugTitleLine)}</strong></span></p>`);
+    if (m.examTitle) {
+      parts.push(`<p${center}><span style="font-size:${subSize}"><strong><em>${escapeQpHtml(m.examTitle)}</em></strong></span></p>`);
+    }
+    const sugInfo: string[] = [];
+    if (m.date) sugInfo.push(`${L.date}: ${m.date}`);
+    if (m.time) sugInfo.push(`${L.time}: ${m.time}`);
+    if (m.fullMarks) sugInfo.push(`${L.marks}: ${m.fullMarks}`);
+    if (sugInfo.length > 0) parts.push(`<p${center}>${escapeQpHtml(sugInfo.join('   |   '))}</p>`);
+    if (m.teacherName?.trim()) {
+      parts.push(`<p${center}><span style="font-size:${subSize}"><em>${escapeQpHtml(L.teacher)}: ${escapeQpHtml(m.teacherName.trim())}</em></span></p>`);
+    }
+    parts.push('<hr>');
+  } else if (board) {
     const box = boardHeaderHtml(m, lang, L, hSize, subSize);
     if (box) parts.push(box);
   } else {
@@ -1427,7 +1580,11 @@ export function paperToEditorHtml(p: QuestionPaper, lang: Lang): string {
   }
 
   // ── শিক্ষার্থী ঘর + নির্দেশনা ──
-  if (m.studentLine) parts.push(`<p${sty()}>${escapeQpHtml(L.nameRoll)}</p>`);
+  const hasStars = p.sections.some((s) => s.questions.some((q) => q.importance));
+  if (sug && hasStars) {
+    parts.push(`<p${center}><em><strong>\u2605</strong> ${escapeQpHtml(L.star1)} &nbsp;\u00b7&nbsp; <strong>\u2605\u2605</strong> ${escapeQpHtml(L.star2)}</em></p>`);
+  }
+  if (m.studentLine && !sug) parts.push(`<p${sty()}>${escapeQpHtml(L.nameRoll)}</p>`);
   if (m.instructions.length > 0) {
     parts.push(
       `<p${sty()}><strong>${escapeQpHtml(L.instructions)}:</strong></p>` +
@@ -1458,7 +1615,8 @@ export function paperToEditorHtml(p: QuestionPaper, lang: Lang): string {
       const bits: string[] = [];
       const num = qpNumHtml(q.number, layout.numStyle);
       const marks = qpMarksHtml(q.marks, layout.marksStyle, L.markWord);
-      bits.push(`<p${sty()}><strong>${num}</strong> ${mathRichToHtml(q.text)}${marks}</p>`);
+      const starTxt = q.importance === 2 ? '\u2605\u2605 ' : q.importance === 1 ? '\u2605 ' : '';
+      bits.push(`<p${sty()}><strong>${starTxt}${num}</strong> ${mathRichToHtml(q.text)}${marks}</p>`);
       // সত্য-মিথ্যা — উত্তর-স্থিরক লেখা না থাকলে যোগ হয়
       if (q.kind === 'tf' && !/সত্য|মিথ্যা|सत्य|असत्य|true|false/i.test(q.text)) {
         bits.push(`<p${sty('text-align:left')}><em>(${escapeQpHtml(L.trueFalse)})</em></p>`);
@@ -1484,7 +1642,13 @@ export function paperToEditorHtml(p: QuestionPaper, lang: Lang): string {
     }
   }
 
-  parts.push(`<p${center}>— ${escapeQpHtml(L.end)} —</p>`);
+  if (sug) {
+    const note = (p.finalNote ?? '').trim() || (hasStars ? L.finalNoteDefault : '');
+    if (note) parts.push(`<p${center}><strong>\u2605</strong> <em>${escapeQpHtml(note)}</em></p>`);
+    parts.push(`<p style="text-align:right"><em>${escapeQpHtml(L.signature)}: ____________________</em></p>`);
+  } else {
+    parts.push(`<p${center}>— ${escapeQpHtml(L.end)} —</p>`);
+  }
   return parts.join('');
 }
 
@@ -1499,7 +1663,8 @@ export function paperToStandaloneHtml(p: QuestionPaper, lang: Lang): string {
   const layout = normalizeQpLayout(p.layout);
   const size = QP_PAGE_SIZES[layout.pageSize] ?? QP_PAGE_SIZES.a4;
   const scale = p.fontScale === 'sm' ? '11pt' : p.fontScale === 'lg' ? '13.5pt' : '12pt';
-  const title = [p.meta.schoolName, p.meta.examTitle, p.meta.subject].filter(Boolean).join(' — ') || 'Question Paper';
+  const title = [p.meta.schoolName, p.meta.examTitle, p.meta.subject].filter(Boolean).join(' — ')
+    || (p.docType === 'suggestion' ? 'Suggestion Sheet' : 'Question Paper');
   const fontLink =
     lang === 'hi'
       ? 'https://fonts.googleapis.com/css2?family=Noto+Serif+Devanagari:wght@400;600;700&display=swap'
@@ -1553,7 +1718,61 @@ ${board ? '</div>\n' : ''}</body>
 // ─── নমুনা (ডেমো/ফাস্ট-ট্রাই) ───
 
 /** এক ক্লিকে চেষ্টা করার জন্য নমুনা কাঁচা-লেখা — শিক্ষক সাথে সাথে ফিচার বোঝেন */
-export function qpSampleText(lang: Lang): string {
+export function qpSampleText(lang: Lang, docType: QpDocType = 'question'): string {
+  if (docType === 'suggestion') {
+    if (lang === 'hi') {
+      return `आदर्श कोचिंग सेंटर
+कक्षा ६ गणित सजेशन
+वार्षिक परीक्षा — २०२५
+
+अध्याय १ — प्राकृत संख्या और भिन्न [महत्वपूर्ण]
+\u2605 १. ४/७ और ३/५ का योगफल निकालें।
+\u2605\u2605 २. ३६ और ४८ का ल.स. और म.स. निकालें।
+३. २/३, ४/५ और ७/१० को आरोही क्रम में लिखें।
+
+अध्याय २ — बीजगणित [अति महत्वपूर्ण]
+\u2605\u2605 ४. सरल करें: $3x + 2(x - 5)$
+\u2605 ५. गुणनखंड करें: $x^2 - 16$
+
+बहुविकल्पीय प्रश्न [प्रत्येक १ अंक]
+\u2605 ६. ०.२५ को भिन्न में व्यक्त करने पर होगा —
+क) १/२ ख) १/४ ग) १/३ घ) १/५`;
+    }
+    if (lang === 'en') {
+      return `Model Coaching Centre
+Class 6 Mathematics Suggestion
+Annual Examination — 2025
+
+Chapter 1 — Natural Numbers & Fractions [important]
+\u2605 1. Find the sum of 4/7 and 3/5.
+\u2605\u2605 2. Find the LCM and HCF of 36 and 48.
+3. Arrange 2/3, 4/5 and 7/10 in ascending order.
+
+Chapter 2 — Algebra [very important]
+\u2605\u2605 4. Simplify: $3x + 2(x - 5)$
+\u2605 5. Factorise: $x^2 - 16$
+
+Multiple Choice [1 mark each]
+\u2605 6. 0.25 expressed as a fraction is —
+a) 1/2 b) 1/4 c) 1/3 d) 1/5`;
+    }
+    return `আদর্শ কোচিং সেন্টার
+ষষ্ঠ শ্রেণির গণিত সাজেশন
+বার্ষিক পরীক্ষা — ২০২৫
+
+অধ্যায় ১ — স্বাভাবিক সংখ্যা ও ভগ্নাংশ [গুরুত্বপূর্ণ]
+\u2605 ১. ৪/৭ ও ৩/৫ এর যোগফল নির্ণয় কর।
+\u2605\u2605 ২. ৩৬ ও ৪৮ এর ল.সা.গু ও গ.সা.গু নির্ণয় কর।
+৩. ২/৩, ৪/৫ ও ৭/১০ ক্ষুদ্র থেকে বড় ক্রমে সাজাও।
+
+অধ্যায় ২ — বীজগণিত [অতি গুরুত্বপূর্ণ]
+\u2605\u2605 ৪. সরল কর: $3x + 2(x - 5)$
+\u2605 ৫. উৎপাদকে বিশ্লেষণ কর: $x^2 - 16$
+
+বহুনির্বাচনি প্রশ্ন [প্রতিটির মান ১]
+\u2605 ৬. ০.২৫ কে ভগ্নাংশে প্রকাশ করলে হবে —
+ক) ১/২ খ) ১/৪ গ) ১/৩ ঘ) ১/৫`;
+  }
   if (lang === 'hi') {
     return `वार्षिक परीक्षा — गणित
 कक्षा ६

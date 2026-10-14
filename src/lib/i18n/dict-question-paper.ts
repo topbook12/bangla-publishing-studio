@@ -269,4 +269,48 @@ export const dictQuestionPaper = {
   'qp.space.md': { bn: 'মাঝারি', hi: 'मध्यम', en: 'Medium' },
   'qp.space.lg': { bn: 'বড়', hi: 'बड़ा', en: 'Large' },
 
+  // ── ডকুমেন্ট-ধরন — প্রশ্নপত্র নাকি সাজেশন শিট ──
+  'qp.docType.title': {
+    bn: 'কী বানাতে চান?',
+    hi: 'ক্যা বনানা চাহতে হ্যাঁ?',
+    en: 'What would you like to create?',
+  },
+  'qp.docType.question': { bn: 'প্রশ্নপত্র', hi: 'প্রশ্নপত্র', en: 'Question Paper' },
+  'qp.docType.question.desc': {
+    bn: 'পরীক্ষার পূর্ণ প্রশ্নপত্র — হেডার, বিভাগ, নম্বর-মানসহ',
+    hi: 'পरীক্ষা কা পূরা প্রশ্নপত্র — হেডার, খণ্ড, অঙ্ক সহিত',
+    en: 'Full exam paper — with header, sections and marks',
+  },
+  'qp.docType.suggestion': { bn: 'সাজেশন শিট', hi: 'সজেশন শীট', en: 'Suggestion Sheet' },
+  'qp.docType.suggestion.desc': {
+    bn: 'পরীক্ষার আগের গুরুত্বপূর্ণ প্রশ্ন — অধ্যায়-ভিত্তিক, ★ চিহ্নসহ',
+    hi: 'পরীক্ষা সে পহলে কে মহত্বপূর্ণ প্রশ্ন — অধ্যায়-আধারিত, ★ চিহ্ন সহিত',
+    en: 'Exam-important questions — chapter-wise, with ★ marks',
+  },
+  'qp.raw.label.sug': { bn: 'সাজেশনের কাঁচা লেখা', hi: 'সজেশন কা কচ্চা টেক্সট', en: 'Raw suggestion text' },
+  'qp.raw.hint.sug': {
+    bn: 'প্রতি লাইনে একটি প্রশ্ন — অধ্যায় (অধ্যায় ১), নম্বর, ★/★★ গুরুত্ব, MCQ অপশন বুঝে নেবে',
+    hi: 'প্রতি পংক্তি এক প্রশ্ন — অধ্যায়, নম্বর, ★/★★ মহত্ব, MCQ বিকল্প সমঝ লেগা',
+    en: 'One question per line — chapters, numbers, ★/★★ importance and MCQ options are understood',
+  },
+  'qp.raw.ph.sug': {
+    bn: 'উদাহরণ:\nঅধ্যায় ১ — ভগ্নাংশ [গুরুত্বপূর্ণ]\n★ ১. প্রশ্ন…\n★★ ২. প্রশ্ন…',
+    hi: 'উদাহরণ:\nঅধ্যায় ১ — ভিন্ন [মহত্বপূর্ণ]\n★ ১. প্রশ্ন…\n★★ ২. প্রশ্ন…',
+    en: 'Example:\nChapter 1 — Fractions [important]\n★ 1. Question…\n★★ 2. Question…',
+  },
+  'qp.meta.teacher': { bn: 'শিক্ষকের নাম (ঐচ্ছিক)', hi: 'শিক্ষক কা নাম (বৈকল্পিক)', en: 'Teacher name (optional)' },
+  'qp.generate.sug': { bn: 'সাজেশন বানান', hi: 'সজেশন বনাএঁ', en: 'Generate Suggestion' },
+  'qp.busy.analyze.sug': {
+    bn: 'সাজেশন বিশ্লেষণ ও সাজানো হচ্ছে…',
+    hi: 'সজেশন বিশ্লেষণ ব সজায়া জা রহা হ্যাঁ…',
+    en: 'Analyzing and arranging the suggestion…',
+  },
+  'qp.preview.title.sug': { bn: 'প্রস্তুত সাজেশন শিট', hi: 'তৈয়ার সজেশন শীট', en: 'Ready suggestion sheet' },
+  'qp.toast.inserted.sug': {
+    bn: 'সাজেশন শিট পাতায় বসেছে — দরকারলে সাজিয়ে প্রিন্ট করুন',
+    hi: 'সজেশন শীট পৃষ্ঠে পর আ গেসে — চাহেঁ তো সাজাকর প্রিন্ট করেঁ',
+    en: 'Suggestion sheet inserted — format and print as needed',
+  },
+  'qp.count.star': { bn: '★ চিহ্নিত', hi: '★ চিহ্নিত', en: '★ marked' },
+
 } as const;
