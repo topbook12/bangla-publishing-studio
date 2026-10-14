@@ -34,10 +34,10 @@ export type QpFontScale = 'sm' | 'md' | 'lg';
 export type QpColumns = 'auto' | '1' | '2' | '3';
 /** পাতার মাপ — A4 / Letter / Legal / A5 (শ্রেণি-পরীক্ষা) */
 export type QpPageSize = 'a4' | 'letter' | 'legal' | 'a5';
-/** প্রশ্ন-নম্বরের ধরন — ১. / (১) / ১) */
-export type QpNumStyle = 'dot' | 'paren' | 'dash';
-/** নম্বর-মানের ধরন — [২] / (২) / ২ নম্বর */
-export type QpMarksStyle = 'bracket' | 'paren' | 'word';
+/** প্রশ্ন-নম্বরের ধরন — ১। (দণ্ড) / ১. / (১) / ১) */
+export type QpNumStyle = 'danda' | 'dot' | 'paren' | 'dash';
+/** নম্বর-মানের ধরন — ডান কলাম (আসল-পত্র প্রথা) / [২] / (২) / ২ নম্বর */
+export type QpMarksStyle = 'right' | 'bracket' | 'paren' | 'word';
 /** বিভাগ-শিরোনামের ধরন — মাঝে / বাক্সে / বাঁয়ে-রেখাযুক্ত */
 export type QpSectionStyle = 'center' | 'box' | 'left';
 /** MCQ-অপশনের সাজ — এক লাইনে / ২ সারিতে / তালিকায় */
@@ -73,18 +73,18 @@ export interface QpLayout {
 export const QP_DEFAULT_LAYOUT: QpLayout = {
   columns: 'auto',
   pageSize: 'a4',
-  numStyle: 'dot',
-  marksStyle: 'bracket',
+  numStyle: 'danda',
+  marksStyle: 'right',
   sectionStyle: 'center',
-  mcqLayout: 'inline',
+  mcqLayout: 'grid',
   answerSpace: 'none',
 };
 
 const QP_LAYOUT_ALLOWED = {
   columns: ['auto', '1', '2', '3'],
   pageSize: ['a4', 'letter', 'legal', 'a5'],
-  numStyle: ['dot', 'paren', 'dash'],
-  marksStyle: ['bracket', 'paren', 'word'],
+  numStyle: ['danda', 'dot', 'paren', 'dash'],
+  marksStyle: ['right', 'bracket', 'paren', 'word'],
   sectionStyle: ['center', 'box', 'left'],
   mcqLayout: ['inline', 'grid', 'list'],
   answerSpace: ['none', 'sm', 'md', 'lg'],
@@ -164,6 +164,12 @@ export interface QpMeta {
   time: string;
   fullMarks: string;
   instructions: string[];
+  /** বিষয় কোড — বোর্ড-প্রথার ডিজিট-বক্সে বসে ("১০৯" / "109"); খালি হলে বক্স আঁকা হয় না */
+  subjectCode: string;
+  /** সেট কোড — বোর্ড-MCQ-তে "সেট: খ" বক্স; খালি হলে বাদ */
+  setCode: string;
+  /** সিলেবাস-নোট — বন্ধনী-লাইন "২০২৫ সালের সিলেবাস অনুযায়ী"; খালি হলে বাদ */
+  syllabusNote: string;
   /** শিক্ষার্থীর নাম/রোল ঘর থাকবে কি না */
   studentLine: boolean;
   /** সাজেশন-শিটের শিক্ষকের নাম (ঐচ্ছিক) */
@@ -271,6 +277,9 @@ export function defaultQpMeta(lang: Lang): QpMeta {
     time: d.time,
     fullMarks: d.marks,
     instructions: [...d.instructions],
+    subjectCode: '',
+    setCode: '',
+    syllabusNote: '',
     studentLine: true,
     teacherName: '',
   };
@@ -297,6 +306,18 @@ const QP_EXAM_WORD = /(?:বার্ষিক|অর্ধবার্ষিক
 
 /** "পূর্ণমান ৭০" জাতীয় কোলন-ছাড়া রূপও ধরে */
 const QP_MARKS_BARE = /^(?:পূর্ণমান|পূর্ণ\s*মান|ফুল\s*মার্কস|পুরো\s*নম্বর|पूर्णांक)\s+([\u09e6-\u09ef\u0966-\u096f0-9]{1,4})\s*$/i;
+
+/** "বিষয় কোড: ১০৯" / "Subject code — 109" — বোর্ড-প্রথার ডিজিট-বক্সের তথ্য */
+const QP_CODE_RE = /^(?:বিষয়\s*কোড|सब्जेक्ट\s*कोड|विषय\s*कोड|subject\s*code|code\s*no?)\s*[:：\-–—=]?\s*([\u09e6-\u09ef\u0966-\u096f0-9A-Za-z]{1,6})\s*$/i;
+
+/** "সেট: খ" / "Set — A" — বোর্ড-MCQ-র সেট-বক্স */
+const QP_SET_RE = /^(?:সেট|सेट|set)\s*(?:নং|নম্বর|no\.?)?\s*[:：\-–—=]\s*([\u0980-\u09ff\u0900-\u097fA-Za-z0-9]{1,4})\s*$/i;
+
+/** "[২০২৫ সালের সিলেবাস অনুযায়ী]" / "(2025 Syllabus)" — বন্ধনীতে সিলেবাস-নোট */
+const QP_SYLLABUS_RE = /^[\[(]\s*([^\[\]()]{4,80}?(?:সিলেবাস|সিলেবাশ|syllabus|पाठ्यक्रम)[^\[\]()]{0,40}?)\s*[\])]\s*$/i;
+
+/** হেডার-ডাটা লাইন (কোড/সেট/সিলেবাস) — নির্দেশনার তালিকায় ঢুকবে না */
+const QP_META_LINE = /^(?:বিষয়\s*কোড|सब्जेक्ट\s*कोड|विषय\s*कोड|subject\s*code|code\s*no?|(?:সেট|सेट|set)\s*(?:নং|নম্বর|no\.?)?\s*[:：\-–—=])/i;
 
 /** কী-মান লাইনের মান অংশ — "বিষয়: গণিত" → "গণিত" */
 function afterKeyValue(line: string): string {
@@ -325,6 +346,14 @@ export function qpPreambleMeta(raw: string, meta: QpMeta, lang: Lang): QpMeta {
   let exam: string | null = null;
 
   for (const line of lines) {
+    // বোর্ড-প্রথার বিশেষ হেডার — বিষয় কোড / সেট / সিলেবাস-নোট (কোলন-ছাড়া খণ্ডে ভাঙা যায় না)
+    const cm = line.match(QP_CODE_RE);
+    if (cm) { if (canFill(meta.subjectCode)) patch.subjectCode = cm[1]; continue; }
+    const sm = line.match(QP_SET_RE);
+    if (sm) { if (canFill(meta.setCode)) patch.setCode = sm[1]; continue; }
+    const sym = line.match(QP_SYLLABUS_RE);
+    if (sym) { if (canFill(meta.syllabusNote)) patch.syllabusNote = sym[1].trim(); continue; }
+
     // এক লাইনে একাধিক কী-মান থাকতে পারে — কমা/পাইপে ভেঙে প্রতিটি খণ্ড আলাদা চিনি
     const segments = line.split(/\s*[,|;·]\s*/).map((s) => s.trim()).filter(Boolean);
 
@@ -379,6 +408,8 @@ export function cleanQpInstructions(list: unknown): string[] {
       QP_KEY_PATTERNS.some((kp) => kp.re.test(s)) ||
       /^(?:সময়|पूर्णांक|date|दिनांक)\s*[:：]/i.test(s) ||
       QP_MARKS_BARE.test(s) ||
+      QP_META_LINE.test(s) ||
+      QP_SYLLABUS_RE.test(s) ||
       (QP_SCHOOL_WORD.test(s) && s.length < 70);
     if (isHeader) continue;
     const key = s.toLowerCase();
@@ -411,6 +442,7 @@ LAYOUT RULES (output text shape):
 - Section headers on their own lines: "বিভাগ – ক", "Section A", "খণ্ড: গ" etc.
 - Sub-questions prefixed "(ক)" "(i)" etc. on their own lines.
 - Exam/school header text at the top, exactly as in the image.
+- Subject-code boxes, set codes and bracketed syllabus notes as header lines: "বিষয় কোড: ১০৯", "সেট: খ", "[২০২৫ সালের সিলেবাস অনুযায়ী]".
 - MATH in LaTeX inside $...$ : fractions $\\frac{5}{8}$, powers $x^2$, roots $\\sqrt{25}$, equations $2x + 3 = 7$. Use ASCII digits inside math.
 
 OUTPUT: Return ONLY a valid JSON object — no markdown fences, no commentary. Shape exactly:
@@ -431,6 +463,9 @@ Return ONLY valid JSON — no markdown fences, no commentary. Shape exactly:
   "date": string,             // exam date exactly as written in source ("" if unknown)
   "time": string,             // exam duration exactly as written ("" if unknown)
   "fullMarks": string,        // total marks exactly as written ("" if unknown)
+  "subjectCode": string,      // subject code exactly as written, e.g. "১০৯"/"109" ("" if absent)
+  "setCode": string,          // set code exactly as written, e.g. "ক"/"খ"/"A" ("" if absent)
+  "syllabusNote": string,     // bracketed note WITHOUT brackets, e.g. "২০২৫ সালের সিলেবাস অনুযায়ী" ("" if absent)
   "instructions": string[],   // 2–4 short exam-day directives in the paper's language
   "sections": [
     {
@@ -454,6 +489,7 @@ Return ONLY valid JSON — no markdown fences, no commentary. Shape exactly:
 Rules:
 - LANGUAGE MIRROR: everything in the SAME language and numeral system as the RAW text (default Bengali). NEVER translate.
 - HEADER FIDELITY: use the HEADER block values exactly when provided; otherwise infer from the RAW text; otherwise "" — never invent a school name. Meta fields (schoolName/examTitle/subject/classLabel/date/time/fullMarks) fill ONLY what the HEADER block lacks or leaves empty.
+- BOARD CODE DATA: বিষয় কোড / Subject code → "subjectCode"; সেট / Set → "setCode"; bracketed syllabus/year notes → "syllabusNote" (strip the brackets). Copy them ONLY when written in the source — never invent codes.
 - INSTRUCTIONS MUST BE DIRECTIVES ONLY: "উত্তর পরিষ্কার হস্তাক্ষরে লিখতে হবে", "সব প্রশ্নের উত্তর দিতে হবে" style. NEVER put time/marks/date/subject/school lines into instructions — those are HEADER data, not directives.
 - FIDELITY: keep EVERY question from the source. NEVER invent, drop or merge questions. Light grammar/spacing polish only.
 - NUMBERING: clean sequential numbering within each section; keep the source's numbers when they are already sequential.
@@ -1035,6 +1071,9 @@ export function normalizeQpJson(data: unknown, meta: QpMeta, format: QpFormat): 
       date: fillIfEmpty(meta.date, 'date', 'examDate'),
       time: fillIfEmpty(meta.time, 'time', 'duration', 'examTime'),
       fullMarks: fillIfEmpty(meta.fullMarks, 'fullMarks', 'full_marks', 'totalMarks', 'total_marks'),
+      subjectCode: fillIfEmpty(meta.subjectCode, 'subjectCode', 'subject_code', 'code'),
+      setCode: fillIfEmpty(meta.setCode, 'setCode', 'set_code', 'set'),
+      syllabusNote: fillIfEmpty(meta.syllabusNote, 'syllabusNote', 'syllabus_note', 'syllabus'),
       instructions: aiInstructions.length > 0 ? aiInstructions : meta.instructions,
     },
     sections: valid,
@@ -1047,11 +1086,15 @@ export function normalizeQpJson(data: unknown, meta: QpMeta, format: QpFormat): 
 
 export function resolveQpFormat(p: QuestionPaper): QpResolvedFormat {
   if (p.format !== 'auto') return p.format;
-  const total = p.sections.reduce((n, s) => n + s.questions.length, 0);
-  const hasSubs = p.sections.some((s) => s.questions.some((q) => q.subs.length > 0));
-  const mcq = p.sections.some((s) => s.questions.some((q) => q.options.length > 0));
-  if (total <= 6 && !hasSubs && !mcq) return 'compact';
-  return mcq ? 'modern' : 'classic';
+  const all = p.sections.flatMap((s) => s.questions);
+  const total = all.length;
+  const mcqN = all.filter((q) => q.options.length > 0).length;
+  const subN = all.filter((q) => q.subs.length >= 3).length;
+  if (total <= 6 && mcqN === 0 && subN === 0) return 'compact';
+  // অর্ধেকের বেশি MCQ হলে বোর্ড-MCQ প্রথা; সৃজনশীল (ক/খ/গ/ঘ) থাকলে বোর্ড-সৃজনশীল
+  if (total > 0 && mcqN / total >= 0.5 && subN === 0) return 'modern';
+  if (subN >= 2) return 'board';
+  return 'classic';
 }
 
 // ─── প্রো হিসাব: নম্বর-যোগফল ও সেট বৈচিত্র্য ───
@@ -1359,6 +1402,8 @@ interface QpLabels {
   cls: string; subject: string; date: string; time: string; marks: string;
   instructions: string; nameRoll: string; end: string;
   markWord: string; trueFalse: string;
+  /** বোর্ড-প্রথার হেডার */
+  code: string; set: string; specialNote: string; mcqExam: string; warn: string;
   /** সাজেশন-শিট */
   sugTitle: string; teacher: string; signature: string;
   star1: string; star2: string; finalNoteDefault: string;
@@ -1370,6 +1415,8 @@ function qpLabels(lang: Lang): QpLabels {
       cls: 'कक्षा', subject: 'विषय', date: 'दिनांक', time: 'समय', marks: 'पूर्णांक',
       instructions: 'निर्देश', nameRoll: 'छात्र का नाम: ____________________  रोल नं.: ________',
       end: 'समाप्त', markWord: 'अंक', trueFalse: 'सत्य / असत्य',
+      code: 'विषय कोड', set: 'सेट', specialNote: 'विशेष सूचना',
+      mcqExam: 'बहुविकल्पीय परीक्षण', warn: 'प्रश्नपत्र पर कोई भी निशान न बनाएँ।',
       sugTitle: 'सजेशन', teacher: 'शिक्षक', signature: 'शिक्षक के हस्ताक्षर',
       star1: 'महत्वपूर्ण', star2: 'अति महत्वपूर्ण',
       finalNoteDefault: 'परीक्षा से पहले \u2605\u2605 चिह्नित प्रश्न अवश्य हल करें।',
@@ -1380,6 +1427,8 @@ function qpLabels(lang: Lang): QpLabels {
       cls: 'Class', subject: 'Subject', date: 'Date', time: 'Time', marks: 'Full Marks',
       instructions: 'Instructions', nameRoll: 'Student Name: ____________________  Roll No.: ________',
       end: 'End', markWord: 'marks', trueFalse: 'True / False',
+      code: 'Subject Code', set: 'Set', specialNote: 'Special Instructions',
+      mcqExam: 'Multiple Choice Examination', warn: 'Do not make any mark on the question paper.',
       sugTitle: 'Suggestion', teacher: 'Teacher', signature: "Teacher's signature",
       star1: 'Important', star2: 'Very important',
       finalNoteDefault: 'Practise the \u2605\u2605 marked questions before the exam.',
@@ -1389,28 +1438,101 @@ function qpLabels(lang: Lang): QpLabels {
     cls: 'শ্রেণি', subject: 'বিষয়', date: 'তারিখ', time: 'সময়', marks: 'পূর্ণমান',
     instructions: 'নির্দেশনা', nameRoll: 'শিক্ষার্থীর নাম: ____________________  রোল নং: ________',
     end: 'শেষ', markWord: 'নম্বর', trueFalse: 'সত্য / মিথ্যা',
+    code: 'বিষয় কোড', set: 'সেট', specialNote: 'বিশেষ দ্রষ্টব্য',
+    mcqExam: 'বহুনির্বাচনি অভীক্ষা', warn: 'প্রশ্নপত্রে কোনো প্রকার দাগ/চিহ্ন করা যাবে না।',
     sugTitle: 'সাজেশন', teacher: 'শিক্ষক', signature: 'শিক্ষকের স্বাক্ষর',
     star1: 'গুরুত্বপূর্ণ', star2: 'অতি গুরুত্বপূর্ণ',
     finalNoteDefault: 'পরীক্ষার আগে \u2605\u2605 চিহ্নিত প্রশ্নগুলো অবশ্যই অনুশীলন করবে।',
   };
 }
 
-/** প্রশ্ন-নম্বরের ধরন — ১. / (১) / ১) */
+// ─── আসল-প্রশ্নপত্র হেডার-উপাদান (borderless/বক্স টেবিল — স্কিমা-সাপোর্টেড) ───
+
+/** বর্ডার-ছাড়া সেল — সময়/পূর্ণমান split-line ও নম্বর-কলামের মূল উপাদান */
+function qpTdFree(content: string, extra = ''): string {
+  return `<td${extra ? ` ${extra}` : ''} style="border:none;padding:1px 2px">${content}</td>`;
+}
+
+/** সময় ↔ পূর্ণমান split-line — বাঁযে সময়, ডানে পূর্ণমান (৪টি আসল পত্রেই এই প্রথা) */
+function qpSplitLineHtml(m: QpMeta, L: QpLabels): string | null {
+  const left = m.time ? `${L.time}: ${m.time}` : '';
+  const right = m.fullMarks ? `${L.marks}: ${m.fullMarks}` : '';
+  if (!left && !right) return null;
+  return `<table style="margin:4px 0 2px"><tbody><tr>`
+    + `${qpTdFree(`<p style="text-align:left;margin:2px 0"><strong>${escapeQpHtml(left)}</strong></p>`)}`
+    + `${qpTdFree(`<p style="text-align:right;margin:2px 0"><strong>${escapeQpHtml(right)}</strong></p>`)}`
+    + `</tr></tbody></table>`;
+}
+
+/** বিষয় কোড-ডিজিট-বক্স + সেট-বক্স — বোর্ড-পত্রের সই-চেনা কোণা */
+function qpCodeBoxHtml(m: QpMeta, L: QpLabels): string | null {
+  const digits = (m.subjectCode || '').replace(/\s+/g, '').slice(0, 4);
+  const set = (m.setCode || '').trim().slice(0, 3);
+  if (!digits && !set) return null;
+  const rows: string[] = [];
+  if (digits) {
+    const digitCells = [...digits]
+      .map((d) => `<td style="text-align:center;padding:2px 8px"><p style="margin:2px 0"><strong>${escapeQpHtml(d)}</strong></p></td>`)
+      .join('');
+    rows.push(`<tr>${qpTdFree(`<p style="margin:2px 0"><strong>${escapeQpHtml(L.code)}</strong> :</p>`)}${digitCells}</tr>`);
+  }
+  if (set) {
+    rows.push(
+      `<tr>${qpTdFree(`<p style="margin:2px 0"><strong>${escapeQpHtml(L.set)}</strong> :</p>`)}`
+      + `<td style="text-align:center;padding:2px 10px"><p style="margin:2px 0"><strong>${escapeQpHtml(set)}</strong></p></td></tr>`,
+    );
+  }
+  return `<table style="width:auto;min-width:38%;margin:4px 0"><tbody>${rows.join('')}</tbody></table>`;
+}
+
+/** নির্দেশনা-বক্স — শ্রেণি-পত্রের নির্দেশনা ও বোর্ড-MCQ-র "বিশেষ দ্রষ্টব্য" একই রূপে */
+function qpInstructionBoxHtml(instructions: string[], title: string, lang: Lang, hSize: string): string | null {
+  if (instructions.length === 0) return null;
+  const num = (i: number) => (lang === 'hi' ? toDevanagariNumber(i + 1) : lang === 'en' ? String(i + 1) : toBanglaNumber(i + 1));
+  const lines = instructions
+    .map((ins, i) => `<p style="margin:3px 0"><strong>${num(i)}.</strong> ${escapeQpHtml(ins)}</p>`)
+    .join('');
+  return `<table style="margin:6px 0"><tbody><tr><td>`
+    + `<p style="margin:3px 0;text-align:center"><span style="font-size:${hSize}"><strong><u>${escapeQpHtml(title)}</u></strong></span></p>`
+    + `${lines}</td></tr></tbody></table>`;
+}
+
+/** প্রশ্নপত্রের প্রশ্ন-সারি — ডান-নম্বর-কলাম প্রথায় এক টেবিলে: মূল-প্রশ্ন + উপ-প্রশ্ন, মান ডান প্রান্তে */
+function qpMarksRowTable(rows: Array<{ body: string; marks: string; indent?: boolean }>, marksW: number): string | null {
+  const trs = rows
+    .map(({ body, marks, indent }) => {
+      const pad = indent ? ';padding-left:1.8em' : '';
+      return `<tr>${qpTdFree(`<p style="margin:2px 0${pad}">${body}</p>`)}`
+        + `<td style="border:none;padding:1px 2px;width:${marksW}px;text-align:right;vertical-align:top"><p style="margin:2px 0"><strong>${escapeQpHtml(marks)}</strong></p></td></tr>`;
+    })
+    .join('');
+  return `<table style="margin:5px 0 3px"><tbody>${trs}</tbody></table>`;
+}
+
+/** প্রশ্ন-নম্বরের ধরন — ১। (দণ্ড — আসল-পত্র প্রথা) / ১. / (১) / ১) */
 function qpNumHtml(num: string, style: QpNumStyle): string {
   const n = escapeQpHtml(num);
   if (!n) return '';
+  if (style === 'danda') return `${n}।`;
   if (style === 'paren') return `(${n})`;
   if (style === 'dash') return `${n})`;
   return `${n}.`;
 }
 
-/** নম্বর-মানের ধরন — [২] / (২) / ২ নম্বর */
+/** নম্বর-মানের ধরন — ডান-কলাম (টেবিল-সারিতে, '' ফেরত) / [২] / (২) / ২ নম্বর */
 function qpMarksHtml(marks: string, style: QpMarksStyle, word: string): string {
   const m = escapeQpHtml(marks);
-  if (!m) return '';
+  if (!m || style === 'right') return '';
   if (style === 'paren') return ` <strong>(${m})</strong>`;
   if (style === 'word') return ` <strong>${m} ${escapeQpHtml(word)}</strong>`;
   return ` <strong>[${m}]</strong>`;
+}
+
+/** ডান-কলাম নম্বর-মানের জন্য কাঁচা মান (টেবিল-সারির সেলে বসে) */
+function qpMarksRaw(marks: string, style: QpMarksStyle, word: string): string {
+  if (!marks) return '';
+  if (style === 'word') return `${escapeQpHtml(marks)} ${escapeQpHtml(word)}`;
+  return escapeQpHtml(marks);
 }
 
 /** উপ-প্রশ্ন — শুরুর (ক)/(i)-লেবেল গাঢ় — সৃজনশীল-ধাঁচ পরিষ্কার বোঝা যায় */
@@ -1422,17 +1544,19 @@ function qpSubHtml(sub: QpSubQ, sty: string): string {
   return `<blockquote${sty}><p>${inner}</p></blockquote>`;
 }
 
-/** MCQ-অপশনের সাজ — এক লাইনে / ২ সারিতে (২×২) / তালিকায় */
+/** MCQ-অপশনের সাজ — এক লাইনে / ২×২ গ্রিড (আসল-পত্র প্রথা) / তালিকায় — লেবেল (ক)-বন্ধনীতে */
 function qpOptionsHtml(q: QpQuestion, layout: QpLayout, sty: string): string {
   if (q.options.length === 0) return '';
-  const one = (o: QpOption) => `<strong>${escapeQpHtml(o.label)})</strong> ${mathRichToHtml(o.text)}`;
+  const one = (o: QpOption) => (o.label
+    ? `<strong>(${escapeQpHtml(o.label)})</strong> ${mathRichToHtml(o.text)}`
+    : mathRichToHtml(o.text));
   if (layout.mcqLayout === 'list') {
     return `<ul${sty}>${q.options.map((o) => `<li>${one(o)}</li>`).join('')}</ul>`;
   }
   if (layout.mcqLayout === 'grid') {
     const rows: string[] = [];
     for (let i = 0; i < q.options.length; i += 2) {
-      rows.push(`<p${sty}>${q.options.slice(i, i + 2).map(one).join('&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;')}</p>`);
+      rows.push(`<p${sty}>${q.options.slice(i, i + 2).map(one).join('&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;')}</p>`);
     }
     return rows.join('');
   }
@@ -1480,43 +1604,13 @@ export function qpInfoLine(meta: QpMeta, lang: Lang, sep = '   ·   '): string {
 }
 
 /**
- * বোর্ড-বক্স হেডার — বর্ডারযুক্ত টেবিল (এডিটর স্কিমা-সাপোর্টেড):
- *  ┌───────────────────────────────┐
- *  │      স্কুলের নাম · পরীক্ষা        │
- *  ├──────────────────┬────────────┤
- *  │ বিষয় / শ্রেণি        │ পূর্ণমান / সময় │
- *  └──────────────────┴────────────┘
- * এডিটর/প্রিভিউ/প্রিন্ট পাইপলাইনে টেবিলের ডিফল্ট বর্ডারই বক্স-ভাব দেয়।
- */
-function boardHeaderHtml(m: QpMeta, _lang: Lang, L: QpLabels, hSize: string, subSize: string): string | null {
-  const left: string[] = [];
-  const right: string[] = [];
-  if (m.subject) left.push(`${L.subject}: ${m.subject}`);
-  if (m.classLabel) left.push(`${L.cls}: ${m.classLabel}`);
-  if (m.fullMarks) right.push(`${L.marks}: ${m.fullMarks}`);
-  if (m.time) right.push(`${L.time}: ${m.time}`);
-  if (m.date) right.push(`${L.date}: ${m.date}`);
-  const top: string[] = [];
-  if (m.schoolName) {
-    top.push(`<p style="text-align:center"><span style="font-size:${hSize}"><strong>${escapeQpHtml(m.schoolName)}</strong></span></p>`);
-  }
-  if (m.examTitle) {
-    top.push(`<p style="text-align:center"><span style="font-size:${subSize}"><strong><em>${escapeQpHtml(m.examTitle)}</em></strong></span></p>`);
-  }
-  if (top.length === 0 && left.length === 0 && right.length === 0) return null;
-  const cell = (lines: string[], align: 'left' | 'right') =>
-    `<td>${lines.map((l) => `<p style="text-align:${align}">${escapeQpHtml(l)}</p>`).join('')}</td>`;
-  const topRow = top.length > 0 ? `<tr><td colspan="2">${top.join('')}</td></tr>` : '';
-  const infoRow = left.length > 0 || right.length > 0
-    ? `<tr>${cell(left, 'left')}${cell(right, 'right')}</tr>`
-    : '';
-  return `<table><tbody>${topRow}${infoRow}</tbody></table>`;
-}
-
-/**
- * প্রশ্নপত্র → এডিটরে সন্নিবেশযোগ্য HTML।
+ * প্রশ্নপত্র → এডিটরে সন্নিবেশযোগ্য HTML — আসল-প্রশ্নপত্র প্রথা অনুযায়ী:
+ *  - স্কুল (classic): কেন্দ্রীয় হেডার → সময়↔পূর্ণমান split-line → নির্দেশনা-বক্স
+ *  - বোর্ড MCQ (modern): বহুনির্বাচনি অভীক্ষা → বিষয়-কোড ডিজিট-বক্স + সেট → বিশেষ দ্রষ্টব্য
+ *  - বোর্ড সৃজনশীল (board): কেন্দ্রীয় শিরোনাম → কোড-বক্স → সিলেবাস-নোট
+ *  - দণ্ড-নম্বর "১।", (ক)-অপশন, ডান-নম্বর-কলাম, ২ কলাম MCQ — আসল পত্রের মতোই
  * শুধুমাত্র স্কিমা-সাপোর্টেড মার্কআপ: p/strong/em/u/hr/ul/li/blockquote/h3/table
- * + text-align/font-size ইনলাইন স্টাইল + <sup>/<sub> + doc-columns মাল্টি-কলাম মোড়ক।
+ * (borderless সেল data-border="none" — সময়/পূর্ণমান split-line ও নম্বর-কলামে)
  * প্রিভিউও একই HTML দেখায় — তাই যা দেখা যায়, ঠিক তাই বসে।
  */
 export function paperToEditorHtml(p: QuestionPaper, lang: Lang): string {
@@ -1526,13 +1620,14 @@ export function paperToEditorHtml(p: QuestionPaper, lang: Lang): string {
   const L = qpLabels(lang);
   const compact = f === 'compact';
   const board = f === 'board';
+  const modern = f === 'modern';
   const adj = p.fontScale === 'sm' ? -2 : p.fontScale === 'lg' ? 2 : 0;
   const subAdj = p.fontScale === 'sm' ? -1 : p.fontScale === 'lg' ? 1 : 0;
   const hN = (compact ? 16 : 18) + adj;
   const subN = (compact ? 11 : 12) + subAdj;
   const hSize = `${hN}pt`;
   const subSize = `${subN}pt`;
-  const secSize = `${board ? subN + 1 : subN}pt`;
+  const secSize = `${board || modern ? subN + 1 : subN}pt`;
   const bodySize = p.fontScale === 'sm' ? '10.5pt' : p.fontScale === 'lg' ? '13pt' : '';
   const sty = (extra = '') => {
     const all = [extra, bodySize ? `font-size:${bodySize}` : ''].filter(Boolean).join(';');
@@ -1541,20 +1636,20 @@ export function paperToEditorHtml(p: QuestionPaper, lang: Lang): string {
   const center = sty('text-align:center');
   const parts: string[] = [];
 
+  // হেডার-সহায়ক — কেন্দ্রীয় বড়/মাঝারি শিরোনাম (সব প্রথার মিল)
+  const bigLine = (txt: string) => `<p${center}><span style="font-size:${hSize}"><strong>${escapeQpHtml(txt)}</strong></span></p>`;
+  const midLine = (txt: string, em = false) => `<p${center}><span style="font-size:${subSize}"><strong>${em ? '<em>' : ''}${escapeQpHtml(txt)}${em ? '</em>' : ''}</strong></span></p>`;
+
   // ── হেডার ──
   const sug = p.docType === 'suggestion';
   if (sug) {
     // সাজেশন-হেডার — প্রতিষ্ঠান → "সাজেশন — বিষয় (শ্রেণি)" → পরীক্ষা → তথ্য-লাইন → শিক্ষক
-    if (m.schoolName) {
-      parts.push(`<p${center}><span style="font-size:${hSize}"><strong>${escapeQpHtml(m.schoolName)}</strong></span></p>`);
-    }
+    if (m.schoolName) parts.push(bigLine(m.schoolName));
     const sugTitleLine = m.subject
       ? (m.classLabel ? `${L.sugTitle} — ${m.subject} (${m.classLabel})` : `${L.sugTitle} — ${m.subject}`)
       : L.sugTitle;
-    parts.push(`<p${center}><span style="font-size:${hSize}"><strong>${escapeQpHtml(sugTitleLine)}</strong></span></p>`);
-    if (m.examTitle) {
-      parts.push(`<p${center}><span style="font-size:${subSize}"><strong><em>${escapeQpHtml(m.examTitle)}</em></strong></span></p>`);
-    }
+    parts.push(bigLine(sugTitleLine));
+    if (m.examTitle) parts.push(midLine(m.examTitle, true));
     const sugInfo: string[] = [];
     if (m.date) sugInfo.push(`${L.date}: ${m.date}`);
     if (m.time) sugInfo.push(`${L.time}: ${m.time}`);
@@ -1564,39 +1659,63 @@ export function paperToEditorHtml(p: QuestionPaper, lang: Lang): string {
       parts.push(`<p${center}><span style="font-size:${subSize}"><em>${escapeQpHtml(L.teacher)}: ${escapeQpHtml(m.teacherName.trim())}</em></span></p>`);
     }
     parts.push('<hr>');
+  } else if (modern) {
+    // বোর্ড-MCQ হেডার (ঢাকা-বোর্ড প্রথা): শিরোনাম → বিষয় → "বহুনির্বাচনি অভীক্ষা"
+    // → কোড-বক্স (বিষয় কোড ডিজিট + সেট) → সময়↔পূর্ণমান → সিলেবাস → বিশেষ দ্রষ্টব্য
+    if (m.schoolName) parts.push(bigLine(m.schoolName));
+    if (m.examTitle) parts.push(bigLine(m.examTitle));
+    if (m.subject) parts.push(midLine(m.subject));
+    parts.push(`<p${center}><span style="font-size:${subSize}"><strong>${escapeQpHtml(L.mcqExam)}</strong></span></p>`);
+    const codeBox = qpCodeBoxHtml(m, L);
+    if (codeBox) parts.push(codeBox);
+    const split = qpSplitLineHtml(m, L);
+    if (split) parts.push(split);
+    if (m.syllabusNote) parts.push(`<p${center}><em>[${escapeQpHtml(m.syllabusNote)}]</em></p>`);
+    const insBox = qpInstructionBoxHtml(m.instructions, L.specialNote, lang, subSize);
+    if (insBox) parts.push(insBox);
+    parts.push(`<p${center}><em>${escapeQpHtml(L.warn)}</em></p>`);
+    parts.push('<hr>');
   } else if (board) {
-    const box = boardHeaderHtml(m, lang, L, hSize, subSize);
-    if (box) parts.push(box);
+    // বোর্ড-সৃজনশীল হেডার: শিরোনাম → বিষয় → কোড-বক্স → সময়↔পূর্ণমান → সিলেবাস-নোট
+    if (m.examTitle) parts.push(bigLine(m.examTitle));
+    else if (m.schoolName) parts.push(bigLine(m.schoolName));
+    if (m.subject) parts.push(midLine(m.subject));
+    const codeBox = qpCodeBoxHtml(m, L);
+    if (codeBox) parts.push(codeBox);
+    const split = qpSplitLineHtml(m, L);
+    if (split) parts.push(split);
+    if (m.syllabusNote) parts.push(`<p${center}><em>[${escapeQpHtml(m.syllabusNote)}]</em></p>`);
+    const insBox = qpInstructionBoxHtml(m.instructions, L.instructions, lang, subSize);
+    if (insBox) parts.push(insBox);
+    parts.push('<hr>');
   } else {
-    if (m.schoolName) {
-      parts.push(`<p${center}><span style="font-size:${hSize}"><strong>${escapeQpHtml(m.schoolName)}</strong></span></p>`);
-    }
-    if (m.examTitle) {
-      parts.push(`<p${center}><span style="font-size:${subSize}"><strong><em>${escapeQpHtml(m.examTitle)}</em></strong></span></p>`);
-    }
-    const info = qpInfoLine(m, lang, '   |   ');
-    if (info) parts.push(`<p${center}>${escapeQpHtml(info)}</p>`);
+    // স্কুল-প্রথা হেডার: স্কুল → পরীক্ষা → শ্রেণি·বিষয় → সময়↔পূর্ণমান → নাম-রোল → নির্দেশনা-বক্স
+    if (m.schoolName) parts.push(bigLine(m.schoolName));
+    if (m.examTitle) parts.push(midLine(m.examTitle, true));
+    const clsSub: string[] = [];
+    if (m.classLabel) clsSub.push(`${L.cls}: ${m.classLabel}`);
+    if (m.subject) clsSub.push(`${L.subject}: ${m.subject}`);
+    if (m.date) clsSub.push(`${L.date}: ${m.date}`);
+    if (clsSub.length > 0) parts.push(`<p${center}>${escapeQpHtml(clsSub.join('   ·   '))}</p>`);
+    const split = qpSplitLineHtml(m, L);
+    if (split) parts.push(split);
+    if (m.studentLine) parts.push(`<p${sty()}>${escapeQpHtml(L.nameRoll)}</p>`);
+    const insBox = qpInstructionBoxHtml(m.instructions, L.instructions, lang, subSize);
+    if (insBox) parts.push(insBox);
     parts.push('<hr>');
   }
 
-  // ── শিক্ষার্থী ঘর + নির্দেশনা ──
+  // ── সাজেশন ★-কিংবদন্তি ──
   const hasStars = p.sections.some((s) => s.questions.some((q) => q.importance));
   if (sug && hasStars) {
     parts.push(`<p${center}><em><strong>\u2605</strong> ${escapeQpHtml(L.star1)} &nbsp;\u00b7&nbsp; <strong>\u2605\u2605</strong> ${escapeQpHtml(L.star2)}</em></p>`);
-  }
-  if (m.studentLine && !sug) parts.push(`<p${sty()}>${escapeQpHtml(L.nameRoll)}</p>`);
-  if (m.instructions.length > 0) {
-    parts.push(
-      `<p${sty()}><strong>${escapeQpHtml(L.instructions)}:</strong></p>` +
-      `<ul>${m.instructions.map((i) => `<li>${escapeQpHtml(i)}</li>`).join('')}</ul>`,
-    );
   }
 
   // ── বিভাগ ও প্রশ্ন (উন্নত লেআউট-সচেতন) ──
   let firstSection = true;
   for (const sec of p.sections) {
     if (sec.title) {
-      if (board && !firstSection) parts.push('<hr>');
+      if ((board || modern) && !firstSection) parts.push('<hr>');
       const t = escapeQpHtml(sec.title);
       if (layout.sectionStyle === 'box') {
         // বাক্সে বিভাগ-শিরোনাম — স্কিমা-সাপোর্টেড এককোষ টেবিল
@@ -1611,21 +1730,46 @@ export function paperToEditorHtml(p: QuestionPaper, lang: Lang): string {
     if (sec.note) parts.push(`<p${center}><em>${escapeQpHtml(sec.note)}</em></p>`);
 
     const colCount = qpSectionColumns(sec, layout);
+    // ডান-নম্বর-কলাম — শুধু এক-কলাম বিভাগে; মাল্টি-কলাম MCQ-তে inline [২]-ই বাস্তবসম্মত
+    const marksRight = layout.marksStyle === 'right' && colCount === 1;
     const blocks = sec.questions.map((q) => {
-      const bits: string[] = [];
       const num = qpNumHtml(q.number, layout.numStyle);
-      const marks = qpMarksHtml(q.marks, layout.marksStyle, L.markWord);
+      const marksInline = qpMarksHtml(q.marks, layout.marksStyle, L.markWord);
       const starTxt = q.importance === 2 ? '\u2605\u2605 ' : q.importance === 1 ? '\u2605 ' : '';
-      bits.push(`<p${sty()}><strong>${starTxt}${num}</strong> ${mathRichToHtml(q.text)}${marks}</p>`);
+      const stem = `<strong>${starTxt}${num}</strong> ${mathRichToHtml(q.text)}`;
       // সত্য-মিথ্যা — উত্তর-স্থিরক লেখা না থাকলে যোগ হয়
-      if (q.kind === 'tf' && !/সত্য|মিথ্যা|सत्य|असत्य|true|false/i.test(q.text)) {
-        bits.push(`<p${sty('text-align:left')}><em>(${escapeQpHtml(L.trueFalse)})</em></p>`);
-      }
+      const tfNote = q.kind === 'tf' && !/সত্য|মিথ্যা|सत्य|असत्य|true|false/i.test(q.text)
+        ? `<em>(${escapeQpHtml(L.trueFalse)})</em>` : '';
       const matchTable = qpMatchHtml(q);
+      const opts = qpOptionsHtml(q, layout, sty());
+      const space = qpAnswerSpaceHtml(layout.answerSpace, colCount);
+
+      // ডান-নম্বর-কলাম (আসল-পত্র প্রথা): মূল-প্রশ্ন + উপ-প্রশ্ন এক টেবিলে, মান ডান প্রান্তে
+      if (marksRight && (q.marks || q.subs.some((s) => s.marks)) && !matchTable) {
+        const rows: Array<{ body: string; marks: string; indent?: boolean }> = [{
+          body: `${stem}${tfNote ? ` ${tfNote}` : ''}`,
+          marks: qpMarksRaw(q.marks, layout.marksStyle, L.markWord),
+        }];
+        for (const sub of q.subs) {
+          const sm = sub.marks ? ` [${escapeQpHtml(sub.marks)}]` : '';
+          const body = mathRichToHtml(sub.text);
+          const lm = body.match(/^((?:\([^)<]{1,8}\))|(?:[কখগঘঙiIvVxX]{1,4}[).):।]))\s*([\s\S]*)$/);
+          const inner = lm && lm[2] ? `<strong>${lm[1]}</strong> ${lm[2]}` : body;
+          rows.push({ body: `${inner}${sm}`, marks: qpMarksRaw(sub.marks, layout.marksStyle, L.markWord), indent: true });
+        }
+        const after: string[] = [];
+        if (opts) after.push(opts);
+        if (space) after.push(space);
+        return qpMarksRowTable(rows, 44) + after.join('');
+      }
+
+      // সাধারণ ধারা — inline মান
+      const bits: string[] = [];
+      bits.push(`<p${sty()}><strong>${starTxt}${num}</strong> ${mathRichToHtml(q.text)}${marksInline}${tfNote ? ` ${tfNote}` : ''}</p>`);
       if (matchTable) bits.push(matchTable);
       for (const sub of q.subs) bits.push(qpSubHtml(sub, sty()));
-      bits.push(qpOptionsHtml(q, layout, sty()));
-      bits.push(qpAnswerSpaceHtml(layout.answerSpace, colCount));
+      if (opts) bits.push(opts);
+      if (space) bits.push(space);
       return bits.join('');
     });
 
@@ -1659,7 +1803,9 @@ export function paperToEditorHtml(p: QuestionPaper, lang: Lang): string {
  */
 export function paperToStandaloneHtml(p: QuestionPaper, lang: Lang): string {
   const body = paperToEditorHtml(p, lang);
-  const board = resolveQpFormat(p) === 'board';
+  // বোর্ড-প্রথা (MCQ ও সৃজনশীল) — আসল পত্রের মতো পাতার ফ্রেম
+  const resolvedF = resolveQpFormat(p);
+  const board = resolvedF === 'board' || resolvedF === 'modern';
   const layout = normalizeQpLayout(p.layout);
   const size = QP_PAGE_SIZES[layout.pageSize] ?? QP_PAGE_SIZES.a4;
   const scale = p.fontScale === 'sm' ? '11pt' : p.fontScale === 'lg' ? '13.5pt' : '12pt';
@@ -1813,6 +1959,8 @@ Section C [5 marks each]
   }
   return `বার্ষিক পরীক্ষা — গণিত
 ষষ্ঠ শ্রেণি
+বিষয় কোড: ১২৬
+সেট: ক
 
 বিভাগ – ক [প্রত্যেকটির মান ১]
 ১. বাংলাদেশের রাজধানীর নাম কী? [১]

@@ -1,11 +1,16 @@
 /**
- * Table cell / header extensions with a backgroundColor + verticalAlign
- * attribute — used by the context menu and the floating table toolbar.
+ * Table cell / header extensions with a backgroundColor + verticalAlign +
+ * borderless attribute — used by the context menu, the floating table toolbar
+ * and the প্রশ্নপত্র স্টুডিও authentic-paper generator.
  *
  * Storage contract:
  *  - backgroundColor: data-bg="#fef3c7" + style="background-color: #fef3c7"
  *  - verticalAlign:   data-v-align="middle|bottom" + style="vertical-align: …"
  *                     (top is the default → no attr rendered)
+ *  - borderless:      data-border="none" + style="border: none"
+ *                     (bordered is the default → no attr rendered)
+ *                     আসল প্রশ্নপত্রের সময়/পূর্ণমান split-line ও ডান-নম্বর-কলাম
+ *                     borderless সেলেই বসে — বক্স ছাড়া, কিন্তু টেবিল-স্কিমায়।
  */
 
 import { TableCell } from '@tiptap/extension-table-cell';
@@ -52,6 +57,21 @@ function withCellAttributes(node: typeof TableCell | typeof TableHeader) {
             const v = attrs.verticalAlign as string | null;
             if (!v || v === 'top') return {};
             return { 'data-v-align': v, style: `vertical-align: ${v}` };
+          },
+        },
+
+        borderless: {
+          default: null as boolean | null,
+          parseHTML: (el) => {
+            if (el.getAttribute('data-border') === 'none') return true;
+            const st = (el as HTMLElement).style;
+            const none = st.borderTopStyle === 'none' && st.borderRightStyle === 'none'
+              && st.borderBottomStyle === 'none' && st.borderLeftStyle === 'none';
+            return none ? true : null;
+          },
+          renderHTML: (attrs) => {
+            if (!attrs.borderless) return {};
+            return { 'data-border': 'none', style: 'border: none' };
           },
         },
       };

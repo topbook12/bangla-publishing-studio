@@ -97,13 +97,15 @@ const ADV_GROUPS: Array<{ id: keyof QpLayout; label: string; opts: Array<{ v: st
   {
     id: 'numStyle', label: 'qp.layout.num',
     opts: [
-      { v: 'dot', key: 'qp.num.dot' }, { v: 'paren', key: 'qp.num.paren' }, { v: 'dash', key: 'qp.num.dash' },
+      { v: 'danda', key: 'qp.num.danda' }, { v: 'dot', key: 'qp.num.dot' },
+      { v: 'paren', key: 'qp.num.paren' }, { v: 'dash', key: 'qp.num.dash' },
     ],
   },
   {
     id: 'marksStyle', label: 'qp.layout.marks',
     opts: [
-      { v: 'bracket', key: 'qp.marks.bracket' }, { v: 'paren', key: 'qp.marks.paren' }, { v: 'word', key: 'qp.marks.word' },
+      { v: 'right', key: 'qp.marks.right' }, { v: 'bracket', key: 'qp.marks.bracket' },
+      { v: 'paren', key: 'qp.marks.paren' }, { v: 'word', key: 'qp.marks.word' },
     ],
   },
   {
@@ -115,7 +117,7 @@ const ADV_GROUPS: Array<{ id: keyof QpLayout; label: string; opts: Array<{ v: st
   {
     id: 'mcqLayout', label: 'qp.layout.mcq',
     opts: [
-      { v: 'inline', key: 'qp.mcq.inline' }, { v: 'grid', key: 'qp.mcq.grid' }, { v: 'list', key: 'qp.mcq.list' },
+      { v: 'grid', key: 'qp.mcq.grid' }, { v: 'inline', key: 'qp.mcq.inline' }, { v: 'list', key: 'qp.mcq.list' },
     ],
   },
   {
@@ -149,7 +151,7 @@ function DocTypeVis({ id }: { id: QpDocType }) {
   return <>{bar('44%', true)}{bar('58%', true)}<span className="qp-vis-rule" />{bar('72%')}{bar('64%')}{bar('70%')}</>;
 }
 
-/** নকশা-কার্ডের ভেতরের মিনি-প্রিভিউ (গ্রে বার) */
+/** নকশা-কার্ডের ভেতরের মিনি-প্রিভিউ (গ্রে বার) — আসল-পত্র প্রথার চেহারা */
 function FormatVis({ id }: { id: QpFormat }) {
   const bar = (w: string, center = false) => (
     <span
@@ -161,19 +163,43 @@ function FormatVis({ id }: { id: QpFormat }) {
     return <>{bar('34%', true)}{bar('52%', true)}{bar('70%')}{bar('62%')}</>;
   }
   if (id === 'classic') {
-    return <>{bar('44%', true)}{bar('58%', true)}<span className="qp-vis-rule" />{bar('72%')}{bar('64%')}</>;
+    // স্কুল প্রশ্নপত্র — কেন্দ্রীয় হেডার + সময়↔পূর্ণমান + নির্দেশনা-বক্স + ডান মান
+    return (
+      <>
+        {bar('46%', true)}{bar('34%', true)}
+        <span className="qp-vis-rule" />
+        <span className="qp-vis-box"><span className="qp-vis-row">{bar('82%')}</span><span className="qp-vis-row">{bar('74%')}</span></span>
+        <span className="qp-vis-row">{bar('62%')}<span className="qp-vis-bar" style={{ width: '12%', marginLeft: 'auto' }} /></span>
+        <span className="qp-vis-row">{bar('70%')}<span className="qp-vis-bar" style={{ width: '12%', marginLeft: 'auto' }} /></span>
+      </>
+    );
   }
   if (id === 'modern') {
-    return <>{bar('38%')}<span className="qp-vis-rule" />{bar('70%')}{bar('58%')}</>;
+    // বোর্ড MCQ — ৩-অঞ্চল হেডার + কোড-বক্স + দুই কলাম ২×২ অপশন
+    return (
+      <>
+        <span className="qp-vis-row">
+          {bar('30%')}
+          {bar('18%', true)}
+          <span className="qp-vis-code"><span /><span /><span /></span>
+        </span>
+        <span className="qp-vis-rule" />
+        <span className="qp-vis-row">{bar('42%')}<span style={{ width: '10%' }} />{bar('42%')}</span>
+        <span className="qp-vis-row">{bar('38%')}<span style={{ width: '14%' }} />{bar('38%')}</span>
+        <span className="qp-vis-row">{bar('40%')}<span style={{ width: '10%' }} />{bar('40%')}</span>
+      </>
+    );
   }
   if (id === 'board') {
+    // বোর্ড সৃজনশীল — কেন্দ্রীয় শিরোনাম + কোড-বক্স + দুই কলাম সৃজনশীল
     return (
-      <span className="qp-vis-box">
-        {bar('46%', true)}{bar('34%', true)}
-        <span className="qp-vis-boxrow">
-          {bar('38%')}{bar('26%', true)}
-        </span>
-      </span>
+      <>
+        {bar('40%', true)}{bar('28%', true)}
+        <span className="qp-vis-code"><span /><span /><span /></span>
+        <span className="qp-vis-rule" />
+        <span className="qp-vis-row">{bar('44%')}<span style={{ width: '10%' }} />{bar('44%')}</span>
+        <span className="qp-vis-row">{bar('40%')}<span style={{ width: '14%' }} />{bar('42%')}</span>
+      </>
     );
   }
   return <>{bar('26%')}{bar('78%')}{bar('78%')}{bar('70%')}{bar('78%')}{bar('52%')}</>;
@@ -482,11 +508,17 @@ export function QuestionPaperDialog() {
     }, 450);
   };
 
-  // সাম্প্রতিক প্রশ্নপত্র — এক ক্লিকে উইজার্ডে ফেরত
+  // সাম্প্রতিক প্রশ্নপত্র — এক ক্লিকে উইজার্ডে ফেরত (পুরনো এন্ট্রিতে কোড/সেট-ঘর থাকতে পারে না)
   const loadHistory = (h: QpHistoryItem) => {
     if (busy) return;
     setRawText(h.rawText);
-    setMeta((prev) => ({ ...(prev ?? defaultQpMeta(lang)), ...h.meta }));
+    setMeta((prev) => ({
+      ...(prev ?? defaultQpMeta(lang)),
+      ...h.meta,
+      subjectCode: h.meta.subjectCode ?? '',
+      setCode: h.meta.setCode ?? '',
+      syllabusNote: h.meta.syllabusNote ?? '',
+    }));
     setFormat(h.format);
     setFontScale(h.fontScale);
     setLayout(normalizeQpLayout(h.layout));
@@ -757,6 +789,37 @@ export function QuestionPaperDialog() {
         <span>{tt('qp.meta.marks')}</span>
         <Input value={meta.fullMarks} onChange={(e) => patchMeta({ fullMarks: e.target.value })} disabled={busy} />
       </label>
+      {docType !== 'suggestion' ? (
+        <>
+          <label className="qp-field">
+            <span>{tt('qp.meta.code')}</span>
+            <Input
+              value={meta.subjectCode ?? ''}
+              onChange={(e) => patchMeta({ subjectCode: e.target.value })}
+              placeholder={tt('qp.meta.code.ph')}
+              disabled={busy}
+            />
+          </label>
+          <label className="qp-field">
+            <span>{tt('qp.meta.set')}</span>
+            <Input
+              value={meta.setCode ?? ''}
+              onChange={(e) => patchMeta({ setCode: e.target.value })}
+              placeholder={tt('qp.meta.set.ph')}
+              disabled={busy}
+            />
+          </label>
+          <label className="qp-field qp-field-full">
+            <span>{tt('qp.meta.syllabus')}</span>
+            <Input
+              value={meta.syllabusNote ?? ''}
+              onChange={(e) => patchMeta({ syllabusNote: e.target.value })}
+              placeholder={tt('qp.meta.syllabus.ph')}
+              disabled={busy}
+            />
+          </label>
+        </>
+      ) : null}
       <label className="qp-field qp-field-full">
         <span>{tt('qp.meta.instructions')}</span>
         <Textarea

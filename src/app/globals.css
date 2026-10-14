@@ -4191,6 +4191,31 @@ html.dark .qp-format-vis { background: oklch(0.27 0.01 260); border-color: rgb(2
   border-radius: 2px;
   background: color-mix(in oklab, var(--foreground) 55%, transparent);
 }
+/* বিষয়-কোড ডিজিট-বক্সের মিনি-ভাব — বোর্ড-MCQ/সৃজনশীল কার্ডে */
+.qp-vis-code {
+  display: inline-flex;
+  gap: 3px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.qp-vis-code > span {
+  width: 9px;
+  height: 11px;
+  border: 1.3px solid color-mix(in oklab, var(--foreground) 60%, transparent);
+  border-radius: 2px;
+}
+/* স্কুল-প্রথার নির্দেশনা-বক্স মিনি-ভাব */
+.qp-format-vis .qp-vis-box {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 86%;
+  margin: 0 auto;
+  padding: 4px 6px;
+  border: 1.2px solid color-mix(in oklab, var(--foreground) 45%, transparent);
+  border-radius: 3px;
+}
+.qp-format-vis .qp-vis-box .qp-vis-row { gap: 4px; }
 
 /* স্ট্যাট বার */
 .qp-stats {
