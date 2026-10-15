@@ -646,6 +646,27 @@ export function QuestionPaperDialog() {
 
   const patchMeta = (patch: Partial<QpMeta>) => setMeta((prev) => (prev ? { ...prev, ...patch } : prev));
 
+  /**
+   * ডকুমেন্ট-ধরন বদল — সাজেশন-শিটে সময়/পূর্ণমান প্রযোজ্য নয় (বোর্ড-প্রথায়
+   * সাজেশনে সময়/নম্বর লেখা হয় না)। ভাষা-ডিফল্ট মান টানলে অদল-বদলে
+   * পরিষ্কার/ফেরত বসে — শিক্ষকের নিজের লেখা মান কখনো বদলায় না।
+   */
+  const changeDocType = (next: QpDocType) => {
+    if (next === docType) return;
+    const d = defaultQpMeta(lang);
+    setMeta((prev) => {
+      if (!prev) return prev;
+      if (next === 'suggestion') {
+        const isDefTime = !prev.time.trim() || prev.time === d.time;
+        const isDefMarks = !prev.fullMarks.trim() || prev.fullMarks === d.fullMarks;
+        return { ...prev, ...(isDefTime ? { time: '' } : {}), ...(isDefMarks ? { fullMarks: '' } : {}) };
+      }
+      // প্রশ্নপত্রে ফেরা — ডিফল্ট-মান ফাঁকা ঘরে ফেরত বসে
+      return { ...prev, ...(prev.time.trim() ? {} : { time: d.time }), ...(prev.fullMarks.trim() ? {} : { fullMarks: d.fullMarks }) };
+    });
+    setDocType(next);
+  };
+
   // ── ধাপ ১: ইনপুট ──
   const stepInput = (
     <section aria-label={tt('qp.step.input')} className="flex flex-col gap-3">
@@ -656,7 +677,7 @@ export function QuestionPaperDialog() {
             <button
               key={dt.id} type="button" role="radio" aria-checked={docType === dt.id}
               className={cn('qp-doctype', docType === dt.id && 'qp-doctype-on')}
-              onClick={() => setDocType(dt.id)}
+              onClick={() => changeDocType(dt.id)}
               disabled={busy}
             >
               <span className="qp-doctype-vis"><DocTypeVis id={dt.id} /></span>

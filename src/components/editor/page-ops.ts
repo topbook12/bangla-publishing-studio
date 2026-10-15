@@ -6,11 +6,29 @@
 'use client';
 
 import { DOMParser as PMDOMParser, DOMSerializer } from '@tiptap/pm/model';
+import { TextSelection } from '@tiptap/pm/state';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import type { Editor } from '@tiptap/react';
 import { createNodeFromContent } from '@tiptap/core';
 import { useEditorStore } from '@/lib/store';
 import { getEditor } from '@/lib/editor-registry';
+
+/**
+ * নিরাপদ টেক্সট-কার্সর বসানো — কাঁচা পজিশন ব্লক-সীমায় (টেবিলের আগে, দুই ব্লকের
+ * মাঝে, ডক-শেষে) পড়লে ProseMirror সতর্বার্তা দেয় ও কার্সর অবৈধ হয়।
+ * TextSelection.near নিকটতম বৈধ ইনলাইন-পজিশন খুঁজে নেয় — ফ্লো/ফিল-এর পরে
+ * কার্সর স্থানান্তর সবসময় নিরাপদ।
+ */
+function setSafeTextSelection(ed: Editor, pos: number): void {
+  try {
+    const doc = ed.state.doc;
+    const clamped = Math.max(0, Math.min(pos, doc.content.size));
+    const $pos = doc.resolve(clamped);
+    ed.view.dispatch(ed.state.tr.setSelection(TextSelection.near($pos)).scrollIntoView());
+  } catch {
+    try { ed.commands.focus('end'); } catch { /* এডিটর ধ্বংস */ }
+  }
+}
 
 /** PM Node → HTML (কনটেন্ট ফ্র্যাগমেন্ট) */
 export function nodeContentToHtml(doc: import('@tiptap/pm/model').Node, schema: import('@tiptap/pm/model').Schema): string {
@@ -204,16 +222,14 @@ function flowIfOverflowInner(editor: Editor, pageId: string, availableHeight: nu
       window.setTimeout(() => {
         const nextEditor = getEditor(nextPageId);
         if (nextEditor && !nextEditor.isDestroyed) {
-          const target = Math.max(0, Math.min(selection.from - pos, nextEditor.state.doc.content.size - 1));
-          nextEditor.commands.setTextSelection(Math.max(1, target));
+          setSafeTextSelection(nextEditor, selection.from - pos);
           nextEditor.commands.focus();
         }
       }, 80);
     }
   } else {
     window.setTimeout(() => {
-      const target = Math.max(1, Math.min(selection.from, editor.state.doc.content.size - 1));
-      editor.commands.setTextSelection(target);
+      if (!editor.isDestroyed) setSafeTextSelection(editor, selection.from);
     }, 30);
   }
   return true;
@@ -268,10 +284,8 @@ export function availableHeightOfEditor(pageId: string): number {
 
 /** কার্সর নিরাপদে আগের কাছাকাছি জায়গায় ফেরানো */
 function restoreCursor(editor: Editor, from: number): void {
-  try {
-    const size = editor.state.doc.content.size;
-    editor.commands.setTextSelection(Math.max(1, Math.min(from, size - 1)));
-  } catch { /* উপেক্ষা */ }
+  if (editor.isDestroyed) return;
+  setSafeTextSelection(editor, from);
 }
 
 /** ছবিগুলো লোড হওয়া পর্যন্ত সংক্ষিপ্ত অপেক্ষা — না হলে উচ্চতা ভুল মাপা হয় */
