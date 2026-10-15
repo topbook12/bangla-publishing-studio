@@ -301,7 +301,7 @@ const QP_KEY_PATTERNS: Array<{ field: 'subject' | 'classLabel' | 'date' | 'time'
   { field: 'fullMarks', re: /^(?:পূর্ণমান|পূর্ণ\s*মান|ফুল\s*মার্কস|সর্বমোট\s*নম্বর|পুরো\s*নম্বর|full\s*marks?|पूर्णांक)\s*[:：\-–—=]/i },
 ];
 
-const QP_SCHOOL_WORD = /(?:বিদ্যালয়|বিদ্যাপীঠ|স্কুল|মাদ্রাসা|কলেজ|academy|school|college|vidyalaya|विद्यालय|स्कूल|महाविद्यालय)/i;
+const QP_SCHOOL_WORD = /(?:বিদ্যালয়|বিদ্যাপীঠ|স্কুল|মাদ্রাসা|কলেজ|কোচিং|সেন্টার|টিউটোরিয়াল|কেন্দ্র|academy|school|college|coaching|centre|center|tutorial|vidyalaya|विद्यालय|स्कूल|महाविद्यालय|कोचिंग|सेंटर)/i;
 const QP_EXAM_WORD = /(?:বার্ষিক|অর্ধবার্ষিক|নির্বাচনী|সাময়িক|বোর্ড|সাপ্তাহিক|মাসিক|পরীক্ষা|টেস্ট|annual|half.?yearly|terminal|exam|test|परीक्षा)/i;
 
 /** "পূর্ণমান ৭০" জাতীয় কোলন-ছাড়া রূপও ধরে */
@@ -312,6 +312,18 @@ const QP_CODE_RE = /^(?:বিষয়\s*কোড|सब्जेक्ट\s*�
 
 /** "সেট: খ" / "Set — A" — বোর্ড-MCQ-র সেট-বক্স */
 const QP_SET_RE = /^(?:সেট|सेट|set)\s*(?:নং|নম্বর|no\.?)?\s*[:：\-–—=]\s*([\u0980-\u09ff\u0900-\u097fA-Za-z0-9]{1,4})\s*$/i;
+
+/**
+ * সাজেশন-শিটের শিরোনাম-লাইন — "ষষ্ঠ শ্রেণির গণিত সাজেশন" থেকে শ্রেণি + বিষয়,
+ * "গণিত সাজেশন" থেকে শুধু বিষয়। বাংলা/হিন্দি/ইংরেজি তিন ভাষার প্রচলিত রূপ।
+ */
+const QP_SUG_TITLE_RES: Array<{ re: RegExp; cls: (m: RegExpMatchArray) => string; subj: number; hasCls: boolean }> = [
+  { re: /^(.{1,24}?)\s*শ্রেণির\s+(.{1,40}?)\s*(?:সাজেশন|সাজেশ)$/i, cls: (m) => `${m[1].trim()} শ্রেণি`, subj: 2, hasCls: true },
+  { re: /^(.{1,40}?)\s*(?:সাজেশন|সাজেশ)$/i, cls: () => '', subj: 1, hasCls: false },
+  { re: /^(?:কক্ষা|कक्षा|क्लास)\s*(\S{1,12})\s+(.{1,40}?)\s*सजेशन$/i, cls: (m) => `কক্ষা ${m[1].trim()}`, subj: 2, hasCls: true },
+  { re: /^(?:class)\s*(\S{1,12})\s+(.{1,40}?)\s*suggestion$/i, cls: (m) => `Class ${m[1].trim()}`, subj: 2, hasCls: true },
+  { re: /^(.{1,40}?)\s*suggestion$/i, cls: () => '', subj: 1, hasCls: false },
+];
 
 /** "[২০২৫ সালের সিলেবাস অনুযায়ী]" / "(2025 Syllabus)" — বন্ধনীতে সিলেবাস-নোট */
 const QP_SYLLABUS_RE = /^[\[(]\s*([^\[\]()]{4,80}?(?:সিলেবাস|সিলেবাশ|syllabus|पाठ्यक्रम)[^\[\]()]{0,40}?)\s*[\])]\s*$/i;
@@ -353,6 +365,16 @@ export function qpPreambleMeta(raw: string, meta: QpMeta, lang: Lang): QpMeta {
     if (sm) { if (canFill(meta.setCode)) patch.setCode = sm[1]; continue; }
     const sym = line.match(QP_SYLLABUS_RE);
     if (sym) { if (canFill(meta.syllabusNote)) patch.syllabusNote = sym[1].trim(); continue; }
+
+    // সাজেশন-শিরোনাম — "ষষ্ঠ শ্রেণির গণিত সাজেশন" → শ্রেণি + বিষয়; "গণিত সাজেশন" → বিষয়
+    for (const pat of QP_SUG_TITLE_RES) {
+      const tm = line.match(pat.re);
+      if (!tm) continue;
+      if (pat.hasCls) put('classLabel', pat.cls(tm));
+      const subj = tm[pat.subj]?.trim();
+      if (subj && subj.length >= 2) put('subject', subj);
+      break;
+    }
 
     // এক লাইনে একাধিক কী-মান থাকতে পারে — কমা/পাইপে ভেঙে প্রতিটি খণ্ড আলাদা চিনি
     const segments = line.split(/\s*[,|;·]\s*/).map((s) => s.trim()).filter(Boolean);
@@ -809,8 +831,9 @@ export function extractTranscriptText(raw: string): string | null {
 
 // ─── কাঁচা-লেখা পরিষ্কারণ (হাতের-লেখা প্রতিলিপির আবর্জনা ছাঁটাই) ───
 
-/** আবর্জনা-রেখা: কেবল দাগ/দোত/আন্ডারস্কোর/তারকা — হাতের-লেখার আলাদা-করা রেখা বা স্ক্যান-শিল্পী */
-const QP_JUNK_LINE_RE = /^[\s\-.–—_=+~·•∙…•⋆*#|/\\]{3,}$/;
+/** আবর্জনা-রেখা: কেবল দাগ/দোত/আন্ডারস্কোর/তারকা — হাতের-লেখার আলাদা-করা রেখা বা স্ক্যান-শিল্পী
+ *  ═─━ বক্স-রেখা, ।॥ বাংলা দণ্ড-পুনরাবৃত্তি, ▬▄ … জাতীয় শিল্পী-রেখাও ধরা হয় */
+const QP_JUNK_LINE_RE = /^[\s\-.–—_=+~·•∙…•⋆*#|/\\═─━┄┅┈╌▬▄▀\u0964\u0965]{3,}$/;
 /** পাতার নম্বর/মুখপত্র-রেখা: "- 2 -", "—১৩—", "· ৩ ·", "Page 3", "পৃষ্ঠা ০৪" — খাঁটি সংখ্যা রেখে দেয় (মান/উত্তর হতে পারে) */
 const QP_PAGE_NUM_RE = /^(?:[-–—•·∙*]\s*[\u09e6-\u09ef\u0966-\u096f0-9]{1,3}\s*[-–—•·∙*]?|[-–—•·∙*]?\s*[\u09e6-\u09ef\u0966-\u096f0-9]{1,3}\s*[-–—•·∙*]|page\s*[-–—:\s]*\d+|পৃষ্ঠা\s*[\u09e6-\u09ef\u0966-\u096f0-9]+)$/i;
 
@@ -1728,7 +1751,8 @@ export function paperToEditorHtml(p: QuestionPaper, lang: Lang): string {
       ? (m.classLabel ? `${L.sugTitle} — ${m.subject} (${m.classLabel})` : `${L.sugTitle} — ${m.subject}`)
       : L.sugTitle;
     parts.push(bigLine(sugTitleLine));
-    if (m.examTitle) parts.push(midLine(m.examTitle, true));
+    // সাজেশন-শিটে পরীক্ষার নাম প্রযোজ্য নয় (শিক্ষকের অনুরোধ — সাজেশনে এক্সাম-লাইন চায় না);
+    // পরীক্ষার নাম শুধু প্রশ্নপত্র-ফরম্যাটেই দেখানো হয়
     const sugInfo: string[] = [];
     if (m.date) sugInfo.push(`${L.date}: ${m.date}`);
     if (m.time) sugInfo.push(`${L.time}: ${m.time}`);

@@ -708,6 +708,7 @@ function headerFooterParas(
   settings: DocumentSettings,
   pageIndex: number,
   showChrome: boolean,
+  page?: PageData,
 ): { header: Header; footer: Footer } {
   const accent = hexNoHash(hfH.accentColor) ?? '4F46E5';
   const pn = settings.pageNumber;
@@ -729,9 +730,13 @@ function headerFooterParas(
     : { w: preset.widthMm, h: preset.heightMm };
   const portrait = settings.orientation === 'portrait';
   const pageWidthTwip = Math.round((portrait ? paperSize.w : paperSize.h) * MM_TO_TWIP);
+  // per-page মার্জিন-অ্যারাপোর্ট — স্ক্রিনে যে পাতার নিজস্ব margin-override আছে, Word-এর
+  // হেডার/ফুটার ট্যাব-স্টপও সেই একই মার্জিন মানে (আগে ডকুমেন্ট-ডিফল্ট মার্জিন ধরত —
+  // per-page মার্জিনের পাতায় হেডার অ্যালাইনমেন্ট সামান্য এদিক-ওদিক হত)
+  const pm = effectivePageMargins(page, settings);
   const gutterLeft = !(pn.oddEven && (pn.startAt + pageIndex) % 2 === 0);
-  const leftIn = gutterLeft ? settings.margins.left + settings.margins.gutter : settings.margins.left;
-  const rightIn = gutterLeft ? settings.margins.right : settings.margins.right + settings.margins.gutter;
+  const leftIn = gutterLeft ? pm.left + pm.gutter : pm.left;
+  const rightIn = gutterLeft ? pm.right : pm.right + pm.gutter;
   const tabPos = Math.max(1000, Math.round(pageWidthTwip - (leftIn + rightIn) * INCH_TO_TWIP));
   const midPos = Math.round(tabPos / 2);
 
@@ -1023,7 +1028,7 @@ export async function exportProjectToDocx(input: DocxExportInput): Promise<void>
       && !(settings.pageNumber.differentFirst && pageIdx === 0);
     const effH = page.headerOverride ?? settings.header;
     const effF = page.footerOverride ?? settings.footer;
-    const { header, footer } = headerFooterParas(effH, effF, settings, pageIdx, showChrome);
+    const { header, footer } = headerFooterParas(effH, effF, settings, pageIdx, showChrome, page);
 
     // পাতার ভেতরে একাধিক কলাম-অংশ থাকতে পারে (মাল্টি-কলাম ব্লক) — প্রতিটি অংশ =
     // একটি continuous Word-section; মাল্টি-কলাম অংশে w:cols বসে (আসল Word কলাম)

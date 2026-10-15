@@ -293,6 +293,8 @@ export function QuestionPaperDialog() {
   const [zoomMult, setZoomMult] = useState(1);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  /** পুনঃপ্রতিলিপিতে প্রতিস্থাপিত আগের লেখা — টোস্টের "আনডু"-তে ফেরত পাওয়া যায় */
+  const prevRawRef = useRef<string>('');
   const sheetRef = useRef<HTMLDivElement | null>(null);
   const previewWrapRef = useRef<HTMLDivElement | null>(null);
   /** কাঁচা-লেখা বাক্স — প্রতিলিপি শেষে সরাসরি এখানে ফোকাস যায় (সম্পাদনা-প্রথম অভিজ্ঞতা) */
@@ -301,6 +303,24 @@ export function QuestionPaperDialog() {
   const [fitScale, setFitScale] = useState(0.62);
 
   const busy = phase === 'transcribing' || phase === 'verifying' || phase === 'generating';
+
+  /**
+   * ডিজাইন-বদল লাইভ প্রয়োগ — প্রস্তুত প্রশ্নপত্র থাকলে ফরম্যাট/টাইপো/লেআউট/ধরন সঙ্গে সঙ্গে
+   * স্ন্যাপশটে বসে (নতুন AI-কল বা রি-পার্স ছাড়াই)। paperToEditorHtml বিশুদ্ধ ফাংশন —
+   * তাই প্রিভিউ ও শীটে-বসানো দুটোই সঙ্গে সঙ্গে নতুন সাজ দেখায়।
+   * (আগে স্ন্যাপশট ফ্রোজেন থাকত — ধাপ ৩-এ ২-কলাম বাছলেও প্রিভিউ/ইনসার্ট পুরনো সাজেই
+   * এক-কলাম থেকে যেত — ব্যবহারকারীর মূল অভিযোগ।)
+   */
+  const patchLive = useCallback((patch: Partial<QuestionPaper>) => {
+    setPaper((p) => (p ? { ...p, ...patch } : p));
+  }, []);
+
+  /**
+   * নির্দেশনা-বাক্সের কাঁচা-ড্রাফট — নিয়ন্ত্রিত-ইনপুট-লস বাগ বন্ধ: আগে প্রতি কিস্ট্রোকে
+   * filter() চলত, শেষের ফাঁকা লাইন সঙ্গে সঙ্গে মুছে কার্সর লাফাত (নতুন লাইন লেখাই যেত না)।
+   * এখন কাঁচা-লেখা এখানেই থাকে; জেনারেটের সময় লাইনে ভেঙে পরিষ্কার করা হয়।
+   */
+  const [instrDraft, setInstrDraft] = useState<string | null>(null);
 
   // স্কুলের নাম পরের বারের জন্য মনে রাখা
   useEffect(() => {
@@ -390,11 +410,22 @@ export function QuestionPaperDialog() {
     // প্রতিলিপিতে হাতের-লেখার separator/পাতার নম্বর জাতীয় আবর্জনা থাকে — বসানোর আগেই ছাঁটাই,
     // যেন ফরমেটিংয়ে মাঝখানে ফাঁক/আবর্জনা-রেখা না আসে (ব্যবহারকারীর মূল অভিযোগ)
     const cleaned = cleanRawQpText(text);
-    setRawText((prev) => (prev.trim() ? `${prev}\n${cleaned.text}` : cleaned.text));
+    const prevRaw = rawText;
+    // পুনঃপ্রতিলিপি — আগে আগের-লেখার পেছনে জোড়া হত, ফলে ডুপ্লিকেট জমত ও সম্পাদনা কঠিন হত।
+    // এখন প্রতিলিপি আগের-লেখা প্রতিস্থাপন করে; আগের লেখা টোস্টের "আনডু"-তে ফেরত পাওয়া যায়।
+    setRawText(cleaned.text);
     setIsDemo(!!res.demo);
     setPhase('idle');
-    if (cleaned.removed > 0) toast.success(tFmt('qp.clean.removed', { n: fmtNum(cleaned.removed) }));
-    else toast.success(tt('qp.transcribe.done'));
+    if (prevRaw.trim() && prevRaw.trim() !== cleaned.text.trim()) {
+      prevRawRef.current = prevRaw;
+      toast.success(tt('qp.transcribe.done'), {
+        action: { label: tt('qp.undo'), onClick: () => setRawText(prevRawRef.current) },
+      });
+    } else if (cleaned.removed > 0) {
+      toast.success(tFmt('qp.clean.removed', { n: fmtNum(cleaned.removed) }));
+    } else {
+      toast.success(tt('qp.transcribe.done'));
+    }
     // সম্পাদনার জন্য সরাসরি লেখা-বাক্সে ফোকাস — "পরবর্তীতে এডিট করব" স্বপ্নটা এখানেই পূরণ হয়
     window.setTimeout(() => {
       rawRef.current?.focus();
@@ -441,7 +472,9 @@ export function QuestionPaperDialog() {
     // কাঁচা-লেখার হেডার (স্কুল/পরীক্ষা/বিষয়/শ্রেণি/সময়/পূর্ণমান) ফর্মে স্বয়ংক্রিয় বসানো —
     // শুধু ফাঁকা/ডিফল্ট ঘর ভরে, শিক্ষকের নিজের লেখা অক্ষত থাকে। ফর্মে দেখা যায়,
     // তাই হেডার যা-ই হোক — শিক্ষকের চোখের সামনেই সেটা।
-    const effMeta = qpPreambleMeta(rawText, meta, lang);
+    // নির্দেশনা — ড্রাফট-বাক্সের কাঁচা-লেখা লাইনে ভেঙে (ফাঁকা লাইন বাদ) ফর্ম-মানে বসে।
+    const instructions = instrText.split('\n').map((l) => l.trim()).filter(Boolean);
+    const effMeta = qpPreambleMeta(rawText, { ...meta, instructions }, lang);
     setMeta(effMeta);
 
     const finish = (result: QuestionPaper, demo: boolean) => {
@@ -473,7 +506,8 @@ export function QuestionPaperDialog() {
     if (useAi) {
       const header = [
         effMeta.schoolName && `school_name: ${effMeta.schoolName}`,
-        effMeta.examTitle && `exam_title: ${effMeta.examTitle}`,
+        // সাজেশন-শিটে পরীক্ষার নাম পাঠানো হয় না — সেখানে এই ঘরই প্রযোজ্য নয়
+        docType !== 'suggestion' && effMeta.examTitle && `exam_title: ${effMeta.examTitle}`,
         effMeta.subject && `subject: ${effMeta.subject}`,
         effMeta.classLabel && `class: ${effMeta.classLabel}`,
         effMeta.date && `date: ${effMeta.date}`,
@@ -590,6 +624,7 @@ export function QuestionPaperDialog() {
     setFontScale(h.fontScale);
     setLayout(normalizeQpLayout(h.layout));
     setDocType(h.docType ?? 'question');
+    setInstrDraft((h.meta.instructions ?? []).join('\n'));
     setImage(null);
     setPhase('idle');
     setError(null);
@@ -644,7 +679,24 @@ export function QuestionPaperDialog() {
   const pages = Math.max(1, Math.ceil((sheetH || pageH) / pageH));
   const effScale = Math.max(0.25, Math.min(1.4, fitScale * zoomMult));
 
-  const patchMeta = (patch: Partial<QpMeta>) => setMeta((prev) => (prev ? { ...prev, ...patch } : prev));
+  const patchMeta = (patch: Partial<QpMeta>) => {
+    setMeta((prev) => (prev ? { ...prev, ...patch } : prev));
+    // প্রস্তুত প্রশ্নপত্র থাকলে মেটা-বদলও লাইভ — ধাপ ২-এ স্কুল/বিষয়/সময় বদলালে প্রিভিউ
+    // সঙ্গে সঙ্গে আপডেট হয় (আগে স্ন্যাপশটে পুরনো মেটাই থেকে যেত)
+    setPaper((p) => (p ? { ...p, meta: { ...p.meta, ...patch } } : p));
+  };
+
+  // নির্দেশনা-বাক্সের প্রদর্শিত লেখা — ড্রাফট না থাকলে ফর্ম-মান থেকে
+  const instrText = instrDraft ?? (meta ? meta.instructions.join('\n') : '');
+
+  // ধাপ ৩-এর লাইভ-ডিজাইন বদল — প্রস্তুত প্রশ্নপত্র সঙ্গে সঙ্গে নতুন সাজে রেন্ডার হয়
+  const changeFormat = (f: QpFormat) => { setFormat(f); patchLive({ format: f }); };
+  const changeTypo = (s: QpFontScale) => { setFontScale(s); patchLive({ fontScale: s }); };
+  const changeLayout = (key: keyof QpLayout, v: string) => {
+    const next = { ...layout, [key]: v } as QpLayout;
+    setLayout(next);
+    patchLive({ layout: next });
+  };
 
   /**
    * ডকুমেন্ট-ধরন বদল — সাজেশন-শিটে সময়/পূর্ণমান প্রযোজ্য নয় (বোর্ড-প্রথায়
@@ -652,19 +704,35 @@ export function QuestionPaperDialog() {
    * পরিষ্কার/ফেরত বসে — শিক্ষকের নিজের লেখা মান কখনো বদলায় না।
    */
   const changeDocType = (next: QpDocType) => {
-    if (next === docType) return;
+    if (next === docType || !meta) return;
     const d = defaultQpMeta(lang);
-    setMeta((prev) => {
-      if (!prev) return prev;
-      if (next === 'suggestion') {
-        const isDefTime = !prev.time.trim() || prev.time === d.time;
-        const isDefMarks = !prev.fullMarks.trim() || prev.fullMarks === d.fullMarks;
-        return { ...prev, ...(isDefTime ? { time: '' } : {}), ...(isDefMarks ? { fullMarks: '' } : {}) };
-      }
+    const isDefTime = !meta.time.trim() || meta.time === d.time;
+    const isDefMarks = !meta.fullMarks.trim() || meta.fullMarks === d.fullMarks;
+    const isDefExam = !meta.examTitle.trim() || meta.examTitle === d.examTitle;
+    let nextMeta: QpMeta;
+    if (next === 'suggestion') {
+      // সাজেশন-শিটে সময়/পূর্ণমান/পরীক্ষার নাম প্রযোজ্য নয় — ভাষা-ডিফল্ট মান ফাঁকা হয়;
+      // শিক্ষকের নিজের লেখা মান অক্ষত থাকে (ফেরত গেলে হারায় না)
+      nextMeta = {
+        ...meta,
+        ...(isDefTime ? { time: '' } : {}),
+        ...(isDefMarks ? { fullMarks: '' } : {}),
+        ...(isDefExam ? { examTitle: '' } : {}),
+      };
+    } else {
       // প্রশ্নপত্রে ফেরা — ডিফল্ট-মান ফাঁকা ঘরে ফেরত বসে
-      return { ...prev, ...(prev.time.trim() ? {} : { time: d.time }), ...(prev.fullMarks.trim() ? {} : { fullMarks: d.fullMarks }) };
-    });
+      nextMeta = {
+        ...meta,
+        ...(meta.time.trim() ? {} : { time: d.time }),
+        ...(meta.fullMarks.trim() ? {} : { fullMarks: d.fullMarks }),
+        ...(meta.examTitle.trim() ? {} : { examTitle: d.examTitle }),
+      };
+    }
+    setMeta(nextMeta);
     setDocType(next);
+    // প্রস্তুত প্রশ্নপত্র থাকলে ধরন + মেটা দুটোই লাইভ — প্রিভিউ সঙ্গে সঙ্গে সাজেশন-সাজে
+    // (আগে শুধু state বদলাত — স্ন্যাপশটে পুরনো সময়/মান/ধরনই থেকে যেত)
+    patchLive({ docType: next, meta: nextMeta });
   };
 
   // ── ধাপ ১: ইনপুট ──
@@ -854,10 +922,12 @@ export function QuestionPaperDialog() {
           disabled={busy}
         />
       </label>
-      <label className="qp-field">
-        <span>{tt('qp.meta.exam')}</span>
-        <Input value={meta.examTitle} onChange={(e) => patchMeta({ examTitle: e.target.value })} disabled={busy} />
-      </label>
+      {docType !== 'suggestion' ? (
+        <label className="qp-field">
+          <span>{tt('qp.meta.exam')}</span>
+          <Input value={meta.examTitle} onChange={(e) => patchMeta({ examTitle: e.target.value })} disabled={busy} />
+        </label>
+      ) : null}
       <label className="qp-field">
         <span>{tt('qp.meta.subject')}</span>
         <Input value={meta.subject} onChange={(e) => patchMeta({ subject: e.target.value })} disabled={busy} />
@@ -875,14 +945,18 @@ export function QuestionPaperDialog() {
           </Button>
         </div>
       </label>
-      <label className="qp-field">
-        <span>{tt('qp.meta.time')}</span>
-        <Input value={meta.time} onChange={(e) => patchMeta({ time: e.target.value })} disabled={busy} />
-      </label>
-      <label className="qp-field">
-        <span>{tt('qp.meta.marks')}</span>
-        <Input value={meta.fullMarks} onChange={(e) => patchMeta({ fullMarks: e.target.value })} disabled={busy} />
-      </label>
+      {docType !== 'suggestion' ? (
+        <label className="qp-field">
+          <span>{tt('qp.meta.time')}</span>
+          <Input value={meta.time} onChange={(e) => patchMeta({ time: e.target.value })} disabled={busy} />
+        </label>
+      ) : null}
+      {docType !== 'suggestion' ? (
+        <label className="qp-field">
+          <span>{tt('qp.meta.marks')}</span>
+          <Input value={meta.fullMarks} onChange={(e) => patchMeta({ fullMarks: e.target.value })} disabled={busy} />
+        </label>
+      ) : null}
       {docType !== 'suggestion' ? (
         <>
           <label className="qp-field">
@@ -917,8 +991,8 @@ export function QuestionPaperDialog() {
       <label className="qp-field qp-field-full">
         <span>{tt('qp.meta.instructions')}</span>
         <Textarea
-          value={meta.instructions.join('\n')}
-          onChange={(e) => patchMeta({ instructions: e.target.value.split('\n').filter((l) => l.trim()) })}
+          value={instrText}
+          onChange={(e) => setInstrDraft(e.target.value)}
           className="min-h-[70px]"
           disabled={busy}
         />
@@ -959,7 +1033,7 @@ export function QuestionPaperDialog() {
           <button
             key={f.id} type="button" role="radio" aria-checked={format === f.id}
             className={cn('qp-format', format === f.id && 'qp-format-on')}
-            onClick={() => setFormat(f.id)}
+            onClick={() => changeFormat(f.id)}
             disabled={busy}
           >
             <span className="qp-format-vis"><FormatVis id={f.id} /></span>
@@ -977,7 +1051,7 @@ export function QuestionPaperDialog() {
               <button
                 key={s.id} type="button" role="radio" aria-checked={fontScale === s.id}
                 className={cn('qp-scale-btn', fontScale === s.id && 'qp-scale-on')}
-                onClick={() => setFontScale(s.id)}
+                onClick={() => changeTypo(s.id)}
                 disabled={busy}
               >
                 {tt(s.key)}
@@ -1015,7 +1089,7 @@ export function QuestionPaperDialog() {
                     <button
                       key={o.v} type="button" aria-pressed={on}
                       className={cn('qp-scale-btn', on && 'qp-scale-on')}
-                      onClick={() => setLayout((prev) => ({ ...prev, [g.id]: o.v }) as QpLayout)}
+                      onClick={() => changeLayout(g.id, o.v)}
                       disabled={busy}
                     >
                       {tt(o.key)}

@@ -218,6 +218,7 @@ export const dictQuestionPaper = {
   'qp.clean.done': { bn: 'লেখা পরিষ্কার হয়েছে', hi: 'लेखा साफ़ हो गया', en: 'Text cleaned' },
   'qp.clean.removed': { bn: 'লেখা পরিষ্কার হয়েছে — {n}টি আবর্জনা-রেখা বাদ', hi: 'लेखा साफ़ हो गया — {n} अनावश्यक पंक्तियाँ हटीं', en: 'Text cleaned — {n} junk line(s) removed' },
   'qp.transcribe.editHint': { bn: 'পড়া হয়েছে — নিচের বাক্সে সরাসরি শুদ্ধ করুন', hi: 'पढ़ा गया — नीचे बॉक्स में सीधे सुधारें', en: 'Read — correct it directly in the box below' },
+  'qp.undo': { bn: 'আনডু', hi: 'पूर्ववत', en: 'Undo' },
 'qp.typo.title': { bn: 'লেখার আকার', hi: 'टेक्स्ट आकार', en: 'Text size' },
   'qp.typo.sm': { bn: 'ছোট', hi: 'छोटा', en: 'Small' },
   'qp.typo.md': { bn: 'মাঝারি', hi: 'मध्यम', en: 'Medium' },
