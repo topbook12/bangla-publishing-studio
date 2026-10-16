@@ -7,6 +7,7 @@
 import { useMemo, useRef, useState, type CSSProperties } from 'react';
 import {
   AlertTriangle, BookOpen, CalendarDays, ChevronDown, DraftingCompass, FileQuestion, Frame, Hash, Image as ImageIcon,
+  PenTool,
   Lightbulb, Link2, ListTree, Minus, Pin, Shapes, Square, Store, Table as TableIcon, FilePlus2, HelpCircle,
 } from 'lucide-react';
 import {
@@ -752,6 +753,12 @@ export function InsertTab() {
               label={tt('ins.qpstudio')}
               title={tt('ins.qpstudio.tip')}
               onClick={() => openDialog('questionPaper')}
+            />
+            <RibbonButton
+              icon={PenTool}
+              label={tt('ins.sketch')}
+              title={tt('ins.sketch.tip')}
+              onClick={() => openDialog('sketchPad')}
             />
             <RibbonButton icon={Lightbulb} label={tt('ins.conceptBox')} onClick={() => runCommand((e) => e.commands.insertCallout('concept', t('ins.callout.concept')))} />
             <RibbonButton icon={AlertTriangle} label={tt('ins.warningBox')} onClick={() => runCommand((e) => e.commands.insertCallout('warning', t('ins.callout.warning')))} />

@@ -51,6 +51,16 @@ export type QpQKind = 'short' | 'mcq' | 'creative' | 'match' | 'tf' | 'blank';
 export type QpDocType = 'question' | 'suggestion';
 /** প্রশ্নের গুরুত্ব — সাজেশন-শিটে ★ (১) / ★★ (২); অনুপস্থিত = সাধারণ */
 export type QpImportance = 1 | 2;
+/** শিক্ষার স্তর — স্কুল/মাদ্রাসা-প্রথা নাকি বিশ্ববিদ্যালয়-প্রথা (কোর্স-কোড, বিভাগ, বর্ষ-সেশন) */
+export type QpLevel = 'school' | 'university';
+
+/** স্তর-মান নিরাপদ — অজানা মান পেলে undefined */
+export function coerceQpLevel(v: unknown): QpLevel | undefined {
+  const s = (typeof v === 'string' ? v : '').trim().toLowerCase();
+  if (s === 'university' || s === 'uni' || s === 'varsity') return 'university';
+  if (s === 'school' || s === 'madrasa' || s === 'college') return 'school';
+  return undefined;
+}
 
 export interface QpPair {
   /** বাঁ-স্তম্ভের জিনিস (সাধারণত নম্বরযুক্ত) */
@@ -147,6 +157,8 @@ export interface QpQuestion {
   pairs?: QpPair[];
   /** সাজেশন-শিটের গুরুত্ব — ১ = ★ গুরুত্বপূর্ণ, ২ = ★★ অতি গুরুত্বপূর্ণ */
   importance?: QpImportance;
+  /** বিশ্ববিদ্যালয়-সাজেশনের বছর-ট্যাগ — [DU '19] / [চবি ২০১৫]; উৎসে লেখা থাকলেই বসে */
+  yearTag?: string;
 }
 
 export interface QpSection {
@@ -172,6 +184,12 @@ export interface QpMeta {
   syllabusNote: string;
   /** শিক্ষার্থীর নাম/রোল ঘর থাকবে কি না */
   studentLine: boolean;
+  /** বিশ্ববিদ্যালয়-স্তর — বিভাগ (Department of …) */
+  department?: string;
+  /** বিশ্ববিদ্যালয়-স্তর — প্রোগ্রাম/বর্ষ (অনার্স ২য় বর্ষ / B.Sc. 2nd Year) */
+  program?: string;
+  /** বিশ্ববিদ্যালয়-স্তর — শিক্ষাবর্ষ/সেশন (২০২৩–২৪ / Spring 2024) */
+  session?: string;
   /** সাজেশন-শিটের শিক্ষকের নাম (ঐচ্ছিক) */
   teacherName?: string;
 }
@@ -188,6 +206,8 @@ export interface QuestionPaper {
   docType?: QpDocType;
   /** সাজেশন-শিটের শেষ-পরামর্শ — অনুপস্থিত হলে ডিফল্ট লেখা বসে */
   finalNote?: string;
+  /** শিক্ষার স্তর — অনুপস্থিত হলে ফরম্যাট থেকে অনুমিত হয় */
+  level?: QpLevel;
 }
 
 // ─── সাম্প্রতিক প্রশ্নপত্র (localStorage ইতিহাস) ───
@@ -202,6 +222,8 @@ export interface QpHistoryItem {
   layout?: QpLayout;
   /** ডকুমেন্ট-ধরন — পুরনো এন্ট্রিতে অনুপস্থিত হতে পারে */
   docType?: QpDocType;
+  /** শিক্ষার স্তর — পুরনো এন্ট্রিতে অনুপস্থিত হতে পারে */
+  level?: QpLevel;
   /** v2 — প্রিভিউ-চিপে দেখানোর হিসাব */
   counts?: { sections: number; questions: number; marks: number };
 }
@@ -285,6 +307,41 @@ export function defaultQpMeta(lang: Lang): QpMeta {
   };
 }
 
+/**
+ * বিশ্ববিদ্যালয়-স্তরের ডিফল্ট নির্দেশনা — আসল বিশ্ববিদ্যালয়-পত্রের প্রথা:
+ * "যে-কোনো পাঁচটি প্রশ্নের উত্তর দাও" + "ডান পার্শ্বের সংখ্যা পূর্ণমান নির্দেশ করে" + চিত্র-আঁকার কথা।
+ */
+export function qpUniversityInstructions(lang: Lang): string[] {
+  if (lang === 'hi') {
+    return [
+      'निम्नलिखित में से किन्हीं पाँच प्रश्नों के उत्तर दें।',
+      'दाएँ हाशिये की संख्या पूर्णांक दर्शाती है।',
+      'आवश्यकतानुसार स्वच्छ, नामांकित चित्र बनाएँ।',
+    ];
+  }
+  if (lang === 'en') {
+    return [
+      'Answer any FIVE of the following questions.',
+      'The figures in the right margin indicate full marks.',
+      'Draw neat, labelled diagrams wherever necessary.',
+    ];
+  }
+  return [
+    'যে-কোনো পাঁচটি প্রশ্নের উত্তর দাও।',
+    'ডান পার্শ্বের সংখ্যা প্রশ্নের পূর্ণমান নির্দেশ করে।',
+    'প্রয়োজনে স্বচ্ছ ও সঠিক নামাঙ্কিত চিত্র আঁকো।',
+  ];
+}
+
+/** স্তর-বদলে নির্দেশনা অদল-বদল — শিক্ষকের নিজের লেখা নির্দেশনা কখনো বদলায় না */
+export function isDefaultQpInstructions(list: string[], lang: Lang, level: QpLevel): boolean {
+  const d = defaultQpMeta(lang);
+  const other = level === 'university' ? qpUniversityInstructions(lang) : d.instructions;
+  const cur = list.map((s) => s.trim()).filter(Boolean);
+  const ref = other.map((s) => s.trim());
+  return cur.length === ref.length && cur.every((s, i) => s === ref[i]);
+}
+
 // ─── কাঁচা-লেখার হেডার পড়ে ফর্ম পূরণ (preamble meta) ───
 
 /** ভাষা-অনুযায়ী ডিফল্ট মান — শিক্ষক নিজে বদলাননি (ডিফল্টই আছে) এমন ঘর চিনতে */
@@ -293,7 +350,7 @@ function defaultQpValues(lang: Lang): { time: string; fullMarks: string; examTit
   return { time: d.time, fullMarks: d.fullMarks, examTitle: d.examTitle };
 }
 
-const QP_KEY_PATTERNS: Array<{ field: 'subject' | 'classLabel' | 'date' | 'time' | 'fullMarks'; re: RegExp }> = [
+const QP_KEY_PATTERNS: Array<{ field: 'subject' | 'classLabel' | 'date' | 'time' | 'fullMarks' | 'department' | 'session' | 'program'; re: RegExp }> = [
   { field: 'subject', re: /^(?:বিষয়|subject|विषय)\s*[:：\-–—=]/i },
   { field: 'classLabel', re: /^(?:শ্রেণ[িী]|class|कक्षा)\s*[:：\-–—=]/i },
   { field: 'date', re: /^(?:তারিখ|date|दिनांक)\s*[:：\-–—=]/i },
@@ -301,8 +358,18 @@ const QP_KEY_PATTERNS: Array<{ field: 'subject' | 'classLabel' | 'date' | 'time'
   { field: 'fullMarks', re: /^(?:পূর্ণমান|পূর্ণ\s*মান|ফুল\s*মার্কস|সর্বমোট\s*নম্বর|পুরো\s*নম্বর|full\s*marks?|पूर्णांक)\s*[:：\-–—=]/i },
 ];
 
-const QP_SCHOOL_WORD = /(?:বিদ্যালয়|বিদ্যাপীঠ|স্কুল|মাদ্রাসা|কলেজ|কোচিং|সেন্টার|টিউটোরিয়াল|কেন্দ্র|academy|school|college|coaching|centre|center|tutorial|vidyalaya|विद्यालय|स्कूल|महाविद्यालय|कोचिंग|सेंटर)/i;
-const QP_EXAM_WORD = /(?:বার্ষিক|অর্ধবার্ষিক|নির্বাচনী|সাময়িক|বোর্ড|সাপ্তাহিক|মাসিক|পরীক্ষা|টেস্ট|annual|half.?yearly|terminal|exam|test|परीक्षा)/i;
+/** বিশ্ববিদ্যালয়-স্তরের হেডার-কি — বিভাগ/শিক্ষাবর্ষ/প্রোগ্রাম (preamble-এ ধরা হয়) */
+const QP_UNI_KEY_PATTERNS: Array<{ field: 'department' | 'session' | 'program'; re: RegExp }> = [
+  { field: 'department', re: /^(?:বিভাগ|department|dept\.?|विभाग)\s*[:：\-–—=]/i },
+  { field: 'session', re: /^(?:শিক্ষাবর্ষ|সেশন|session|academic\s*year|सत्र)\s*[:：\-–—=]/i },
+  { field: 'program', re: /^(?:প্রোগ্রাম|program(?:me)?|degree)\s*[:：\-–—=]/i },
+];
+
+/** সব কি-মান প্যাটার্ন — স্কুল + বিশ্ববিদ্যালয় (নির্দেশনা-ছাঁটাই ও preamble-দুটোতেই ব্যবহৃত) */
+const QP_ALL_KEY_PATTERNS = [...QP_KEY_PATTERNS, ...QP_UNI_KEY_PATTERNS];
+
+const QP_SCHOOL_WORD = /(?:বিদ্যালয়|বিদ্যাপীঠ|স্কুল|মাদ্রাসা|কলেজ|কোচিং|সেন্টার|টিউটোরিয়াল|কেন্দ্র|বিশ্ববিদ্যালয়|university|varsity|institute|academy|school|college|coaching|centre|center|tutorial|vidyalaya|विद्यालय|स्कूल|महाविद्यालय|कोचिंग|सेंटर)/i;
+const QP_EXAM_WORD = /(?:বার্ষিক|অর্ধবার্ষিক|নির্বাচনী|সাময়িক|বোর্ড|সাপ্তাহিক|মাসিক|পরীক্ষা|টেস্ট|সমাপনী|অনার্স|মাস্টার্স|annual|honou?rs|masters|final|half.?yearly|terminal|exam|test|परीक्षा)/i;
 
 /** "পূর্ণমান ৭০" জাতীয় কোলন-ছাড়া রূপও ধরে */
 const QP_MARKS_BARE = /^(?:পূর্ণমান|পূর্ণ\s*মান|ফুল\s*মার্কস|পুরো\s*নম্বর|पूर्णांक)\s+([\u09e6-\u09ef\u0966-\u096f0-9]{1,4})\s*$/i;
@@ -381,7 +448,7 @@ export function qpPreambleMeta(raw: string, meta: QpMeta, lang: Lang): QpMeta {
 
     for (const seg of segments) {
       let matched = false;
-      for (const kp of QP_KEY_PATTERNS) {
+      for (const kp of QP_ALL_KEY_PATTERNS) {
         if (kp.re.test(seg)) {
           const val = afterKeyValue(seg);
           if (val) {
@@ -390,6 +457,9 @@ export function qpPreambleMeta(raw: string, meta: QpMeta, lang: Lang): QpMeta {
             else if (kp.field === 'subject') put('subject', val);
             else if (kp.field === 'classLabel') put('classLabel', val);
             else if (kp.field === 'date') put('date', val);
+            else if (kp.field === 'department') put('department', val);
+            else if (kp.field === 'session') put('session', val);
+            else if (kp.field === 'program') put('program', val);
           }
           matched = true;
           break;
@@ -427,7 +497,7 @@ export function cleanQpInstructions(list: unknown): string[] {
     const s = (typeof item === 'string' ? item : '').trim();
     if (!s || s.length > 160) continue;
     const isHeader =
-      QP_KEY_PATTERNS.some((kp) => kp.re.test(s)) ||
+      QP_ALL_KEY_PATTERNS.some((kp) => kp.re.test(s)) ||
       /^(?:সময়|पूर्णांक|date|दिनांक)\s*[:：]/i.test(s) ||
       QP_MARKS_BARE.test(s) ||
       QP_META_LINE.test(s) ||
@@ -465,7 +535,8 @@ LAYOUT RULES (output text shape):
 - Sub-questions prefixed "(ক)" "(i)" etc. on their own lines.
 - Exam/school header text at the top, exactly as in the image.
 - Subject-code boxes, set codes and bracketed syllabus notes as header lines: "বিষয় কোড: ১০৯", "সেট: খ", "[২০২৫ সালের সিলেবাস অনুযায়ী]".
-- MATH in LaTeX inside $...$ : fractions $\\frac{5}{8}$, powers $x^2$, roots $\\sqrt{25}$, equations $2x + 3 = 7$. Use ASCII digits inside math.
+- MATH in LaTeX inside $...$ : fractions $\\frac{5}{8}$, powers $x^2$, roots $\\sqrt{25}$, equations $2x + 3 = 7$, vectors $\\vec{F}$, degrees $30^\\circ$, angles $\\angle ABC$. Use ASCII digits inside math.
+- FIGURES: a hand-drawn diagram/graph/geometry on the page becomes a placeholder line on its own, exactly where it sits relative to the questions: [চিত্র: one-line description in the paper's language] — e.g. [চিত্র: ত্রিভুজ ABC-এর AC-এর উপর D বিন্দু]. For English papers write [Figure: description]. Never describe the figure inside a question's text.
 
 OUTPUT: Return ONLY a valid JSON object — no markdown fences, no commentary. Shape exactly:
 { "text": "the complete transcription, one question per line" }
@@ -486,6 +557,9 @@ Return ONLY valid JSON — no markdown fences, no commentary. Shape exactly:
   "time": string,             // exam duration exactly as written ("" if unknown)
   "fullMarks": string,        // total marks exactly as written ("" if unknown)
   "subjectCode": string,      // subject code exactly as written, e.g. "১০৯"/"109" ("" if absent)
+  "department": string,       // university level: department as written ("" if absent)
+  "program": string,          // university level: program/year, e.g. "অনার্স ২য় বর্ষ" ("" if absent)
+  "session": string,          // university level: academic session, e.g. "২০২৩–২৪" ("" if absent)
   "setCode": string,          // set code exactly as written, e.g. "ক"/"খ"/"A" ("" if absent)
   "syllabusNote": string,     // bracketed note WITHOUT brackets, e.g. "২০২৫ সালের সিলেবাস অনুযায়ী" ("" if absent)
   "instructions": string[],   // 2–4 short exam-day directives in the paper's language
@@ -498,6 +572,7 @@ Return ONLY valid JSON — no markdown fences, no commentary. Shape exactly:
           "number": string,   // "১" / "1" — numerals of the paper's language
           "text": string,     // full question text; math stays in $...$ LaTeX
           "marks": string,    // "২" / "2" — "" if unknown
+          "yearTag": string,  // bracketed year label beside the question, e.g. "DU '19" — "" if none
           "kind": "short"|"mcq"|"creative"|"match"|"tf"|"blank",
           "options": [ { "label": "ক", "text": "…" } ],   // [] when not MCQ
           "subs": [ { "text": "(ক) …", "marks": "১" } ],   // [] when no sub-questions
@@ -519,6 +594,9 @@ Rules:
 - SECTION MARKS: if a section note states every question's marks (e.g. "প্রতিটি ২ নম্বর", "2 marks each", "प्रत्येक २ अंक"), set that value as marks on EACH question of that section — it is stated in the source, not invented. Keep the note as well.
 - SECTIONS: only split by the source's own section markers (বিভাগ/খণ্ড/Section); if none, one section with title "".
 - MATH: expressions remain in $...$ LaTeX ($\frac{3}{4}$, $x^2$, $\sqrt{50}$) with ASCII digits inside math.
+- UNIVERSITY LEVEL: when the prompt says "LEVEL: university", use university conventions — schoolName = university/institute name, subject = course title, subjectCode = course code, classLabel = year/semester when stated; department/program/session only from the source. Composite marks like [5+5=10] stay inside the question text, never in "marks".
+- YEAR TAGS: a bracketed year label beside a question — [DU '19], [চবি ২০১৫], (RU 2021) — goes to "yearTag" (inner text, brackets stripped). NEVER treat it as marks.
+- FIGURE PLACEHOLDERS: lines like [চিত্র: …] / [Figure: …] are figure slots — keep them verbatim at the END of the question "text" (prefix with \n); never delete, merge or reword them.
 - MCQ: 4 options with ক/খ/গ/ঘ labels (Bengali) or A/B/C/D (Latin-script papers).
 - SUB-QUESTIONS: keep "(ক)" "(i)" style prefixes inside sub text.
 - KIND (set on every question; "short" when unsure):
@@ -556,6 +634,7 @@ Return ONLY valid JSON — no markdown fences, no commentary. Shape exactly:
           "number": string,   // "১" / "1" — numerals of the paper's language
           "text": string,     // full question text; math stays in $...$ LaTeX
           "marks": string,    // usually "" for suggestions
+          "yearTag": string,  // year label beside the question, e.g. "DU '19"/"চবি ২০১৫" — "" if none
           "importance": 0,    // 0 = normal, 1 = important (★), 2 = very important (★★)
           "kind": "short"|"mcq"|"creative"|"match"|"tf"|"blank",
           "options": [ { "label": "ক", "text": "…" } ],
@@ -574,7 +653,9 @@ Rules:
 - FIDELITY: keep EVERY question from the source. NEVER invent, drop or merge questions. Light grammar/spacing polish only.
 - NUMBERING: sequential per section, in the source's numeral system.
 - HEADER FIDELITY: use the HEADER block values exactly when provided; otherwise infer from the RAW text; otherwise "" — never invent a school name.
+- UNIVERSITY SUGGESTIONS: when the prompt says "LEVEL: university", organize by chapter/syllabus unit, keep the source's own year labels as "yearTag" ([DU '19] → "DU '19", [চবি ২০১৫] → "চবি ২০১৫"), and put department/program/session in the new fields only when stated.
 - MATH: expressions remain in $...$ LaTeX with ASCII digits inside math.
+- FIGURE PLACEHOLDERS: lines like [চিত্র: …] / [Figure: …] are figure slots — keep them verbatim at the END of the question "text" (prefix with \n); never delete, merge or reword them.
 - MCQ: 4 options with ক/খ/গ/ঘ labels (Bengali) or A/B/C/D (Latin-script papers).
 - SUB-QUESTIONS: keep "(ক)" "(i)" prefixes in sub text.
 - instructions/finalNote must be ADVICE for the student — NEVER header data (time/marks/school) and never a repetition of section notes.
@@ -894,10 +975,34 @@ export function latexToSafeHtml(src: string): string {
   // আগে escape — পরের ট্রান্সফর্মগুলো শুধু ব্রেস/ব্যাকস্ল্যাশে কাজ করে
   let s = escapeQpHtml(src);
 
-  // ভগ্নাংশ \frac{a}{b} → (a⁄b) — এক লেভেল গভীরতা, ৩ পাসে নেস্টিং সামলায়
-  for (let i = 0; i < 3; i++) {
-    s = s.replace(/\\(?:dfrac|tfrac|frac)\s*\{([^{}]*)\}\s*\{([^{}]*)\}/g, '($1\u2044$2)');
+  // \{ \} → লিটারাল ব্রেস — নইলে শেষের ব্রেস-ছাঁটাইয়ে ব্যাকস্ল্যাশ রয়ে যায়
+  s = s.replace(/\\\{/g, '{').replace(/\\\}/g, '}');
+  // \left( \right) → সাধারণ বন্ধনী — ≤/≥-র আগে চলবে (নইলে \\le \\left-কে ≤ft করে ফেলত)
+  s = s.replace(/\\left\s*([\u0028\u005B\u007B])/g, '$1').replace(/\\right\s*([\u0029\u005D\u007D])/g, '$1');
+  // \begin{...}/\end{...} পরিবেশ-চিহ্ন বাদ — ম্যাট্রিক্স-লেআউট সরাসরি টেক্সটে মেলে না
+  s = s.replace(/\\(?:begin|end)\s*\{[^{}]*\}/g, ' ');
+  // ত্রিকোণমিতি/লগ-ফাংশন — নইলে অজানা-কমান্ড-ছাঁটাই এগুলো খেয়ে ফেলে (\\sin 30° → "30°" হয়ে যেত)
+  s = s.replace(/\\(?:cosec|csc|sec|cot|tan|sin|cos|log|ln|exp|det|lim|max|min|deg|mod)\b/g, (m) => m.slice(1));
+  // \overline{X} / \vec{X} / \hat{X} / \bar{X} — কম্বাইনিং-চিহ্ন (ব্রেস-ছাঁটাইয়ের আগে)
+  for (let i = 0; i < 2; i++) {
+    s = s.replace(/\\overline\s*\{([^{}]*)\}/g, (_m, g: string) => [...g].map((c) => c + '\u0305').join(''));
+    s = s.replace(/\\(?:vec|overrightarrow)\s*\{([^{}]*)\}/g, '$1\u20D7');
+    s = s.replace(/\\hat\s*\{([^{}]*)\}/g, '$1\u0302');
+    s = s.replace(/\\bar\s*\{([^{}]*)\}/g, '$1\u0304');
   }
+  // এস্কেপ-জাত লিটারাল — \% \& \# \_ (সূচক/নিচসূচক-রেগেক্সের আগেই, নইলে \\_x সাব-স্ক্রিপ্ট হয়ে যেত)
+  s = s.replace(/\\%/g, '%').replace(/\\&/g, '&').replace(/\\#/g, '#').replace(/\\_/g, '_');
+
+  // ভগ্নাংশ \frac{a}{b} → a⁄b — সরল টোকেনে বন্ধনী লাগে না, জটিল টোকেনে (a⁄b); ৪ পাসে নেস্টিং
+  for (let i = 0; i < 4; i++) {
+    s = s.replace(/\\(?:dfrac|tfrac|frac)\s*\{([^{}]*)\}\s*\{([^{}]*)\}/g, (_m, a: string, b: string) => {
+      const simple = (t: string) => /^[0-9A-Za-z\u00d7\u00f7]{1,4}$/.test(t.trim());
+      const A = a.trim(); const B = b.trim();
+      return simple(A) && simple(B) ? `${A}\u2044${B}` : `(${A}\u2044${B})`;
+    });
+  }
+  // ডিগ্রি — ^{\circ} যেন <sup>°</sup> না হয়ে সরাসরি ° হয়
+  s = s.replace(/\^\{\\circ\}/g, '\u00B0').replace(/\^\\circ\b/g, '\u00B0');
   // বর্গমূল
   s = s.replace(/\\sqrt\s*\{([^{}]*)\}/g, '\u221A($1)');
   s = s.replace(/\\sqrt\s*([0-9A-Za-z])/g, '\u221A$1');
@@ -906,29 +1011,57 @@ export function latexToSafeHtml(src: string): string {
   s = s.replace(/\^([0-9A-Za-z+\-])/g, '<sup>$1</sup>');
   s = s.replace(/_\{([^{}]*)\}/g, '<sub>$1</sub>');
   s = s.replace(/_([0-9A-Za-z])/g, '<sub>$1</sub>');
-  // গ্রিক ও চিহ্ন
+  // গ্রিক ও চিহ্ন — সম্পূর্ণ সেট (\\b সীমা-সহ: \\le যেন \\left-কে না খায়, \\in যেন \\int-কে না খায়)
   s = s
-    .replace(/\\times/g, '\u00D7').replace(/\\div/g, '\u00F7')
-    .replace(/\\pm/g, '\u00B1').replace(/\\mp/g, '\u2213')
-    .replace(/\\leq?/g, '\u2264').replace(/\\geq?/g, '\u2265')
-    .replace(/\\neq?/g, '\u2260').replace(/\\approx/g, '\u2248')
-    .replace(/\\cdot/g, '\u00B7').replace(/\\pi\b/g, '\u03C0')
-    .replace(/\\alpha/g, '\u03B1').replace(/\\beta/g, '\u03B2')
-    .replace(/\\theta/g, '\u03B8').replace(/\\degree/g, '\u00B0')
-    .replace(/\\(?:rightarrow|to\b)/g, '\u2192')
-    .replace(/\\infty/g, '\u221E').replace(/\\sum/g, '\u03A3')
-    .replace(/\\angle/g, '\u2220').replace(/\\triangle/g, '\u25B3')
-    .replace(/\\perp/g, '\u22A5').replace(/\\parallel/g, '\u2225')
-    .replace(/\\%/g, '%').replace(/\\circ/g, '\u00B0')
-    .replace(/\\therefore/g, '\u2234').replace(/\\because/g, '\u2235');
-  // \left( \right) → সাধারণ বন্ধনী
-  s = s.replace(/\\left\s*([\u0028\u005B\u007B])/g, '$1').replace(/\\right\s*([\u0029\u005D\u007D])/g, '$1');
-  // \text{…} → বিষয়বস্তু
-  s = s.replace(/\\text\s*\{([^{}]*)\}/g, '$1');
-  // স্পেসিং কমান্ড
-  s = s.replace(/\\[,;!]/g, ' ');
-  // অজানা কমান্ড বাদ, অবশিষ্ট ব্রেস বাদ
-  s = s.replace(/\\[a-zA-Z]+/g, '').replace(/[{}]/g, '');
+    .replace(/\\times\b/g, '\u00D7').replace(/\\div\b/g, '\u00F7')
+    .replace(/\\pm\b/g, '\u00B1').replace(/\\mp\b/g, '\u2213')
+    .replace(/\\le(?:q|qslant|slant)?\b/g, '\u2264').replace(/\\ge(?:q|qslant|slant)?\b/g, '\u2265')
+    .replace(/\\neq?\b/g, '\u2260').replace(/\\approx\b/g, '\u2248')
+    .replace(/\\equiv\b/g, '\u2261').replace(/\\propto\b/g, '\u221D')
+    .replace(/\\cdot\b/g, '\u00B7').replace(/\\ast\b/g, '\u2217')
+    .replace(/\\pi\b/g, '\u03C0')
+    .replace(/\\alpha\b/g, '\u03B1').replace(/\\beta\b/g, '\u03B2')
+    .replace(/\\gamma\b/g, '\u03B3').replace(/\\delta\b/g, '\u03B4').replace(/\\Delta\b/g, '\u0394')
+    .replace(/\\varepsilon\b/g, '\u03B5').replace(/\\epsilon\b/g, '\u03B5')
+    .replace(/\\zeta\b/g, '\u03B6').replace(/\\eta\b/g, '\u03B7').replace(/\\theta\b/g, '\u03B8')
+    .replace(/\\iota\b/g, '\u03B9').replace(/\\kappa\b/g, '\u03BA')
+    .replace(/\\lambda\b/g, '\u03BB').replace(/\\Lambda\b/g, '\u039B')
+    .replace(/\\mu\b/g, '\u03BC').replace(/\\nu\b/g, '\u03BD').replace(/\\xi\b/g, '\u03BE')
+    .replace(/\\rho\b/g, '\u03C1').replace(/\\sigma\b/g, '\u03C3').replace(/\\Sigma\b/g, '\u03A3')
+    .replace(/\\tau\b/g, '\u03C4').replace(/\\upsilon\b/g, '\u03C5')
+    .replace(/\\varphi\b/g, '\u03C6').replace(/\\phi\b/g, '\u03C6').replace(/\\Phi\b/g, '\u03A6')
+    .replace(/\\chi\b/g, '\u03C7').replace(/\\psi\b/g, '\u03C8').replace(/\\Psi\b/g, '\u03A8')
+    .replace(/\\omega\b/g, '\u03C9').replace(/\\Omega\b/g, '\u03A9')
+    .replace(/\\Gamma\b/g, '\u0393').replace(/\\Theta\b/g, '\u0398')
+    .replace(/\\degree\b/g, '\u00B0')
+    .replace(/\\(?:Rightarrow|implies)\b/g, '\u21D2').replace(/\\(?:Leftarrow|impliedby)\b/g, '\u21D0')
+    .replace(/\\Leftrightarrow\b/g, '\u21D4').replace(/\\leftrightarrow\b/g, '\u2194')
+    .replace(/\\(?:rightarrow|to)\b/g, '\u2192').replace(/\\leftarrow\b/g, '\u2190')
+    .replace(/\\mapsto\b/g, '\u21A6')
+    .replace(/\\infty\b/g, '\u221E')
+    .replace(/\\sum\b/g, '\u03A3').replace(/\\prod\b/g, '\u220F')
+    .replace(/\\int\b/g, '\u222B').replace(/\\oint\b/g, '\u222E')
+    .replace(/\\angle\b/g, '\u2220').replace(/\\triangle\b/g, '\u25B3')
+    .replace(/\\perp\b/g, '\u22A5').replace(/\\parallel\b/g, '\u2225')
+    .replace(/\\therefore\b/g, '\u2234').replace(/\\because\b/g, '\u2235')
+    .replace(/\\forall\b/g, '\u2200')
+    .replace(/\\nexists\b/g, '\u2204').replace(/\\exists\b/g, '\u2203')
+    .replace(/\\emptyset\b/g, '\u2205').replace(/\\varnothing\b/g, '\u2205')
+    .replace(/\\subseteq\b/g, '\u2286').replace(/\\subset\b/g, '\u2282')
+    .replace(/\\supseteq\b/g, '\u2287').replace(/\\supset\b/g, '\u2283')
+    .replace(/\\notin\b/g, '\u2209').replace(/\\in\b/g, '\u2208').replace(/\\ni\b/g, '\u220B')
+    .replace(/\\cup\b/g, '\u222A').replace(/\\cap\b/g, '\u2229')
+    .replace(/\\(?:ldots|dots|cdots)\b/g, '\u2026').replace(/\\vdots\b/g, '\u22EE')
+    .replace(/\\partial\b/g, '\u2202').replace(/\\nabla\b/g, '\u2207').replace(/\\prime\b/g, '\u2032')
+    .replace(/\\langle\b/g, '\u27E8').replace(/\\rangle\b/g, '\u27E9')
+    .replace(/\\Vert\b/g, '\u2016').replace(/\\vert\b/g, '|').replace(/\\mid\b/g, '|')
+    .replace(/\\circ\b/g, '\u00B0');
+  // \text{…} / \operatorname{…} → বিষয়বস্তু
+  s = s.replace(/\\(?:text|operatorname)\s*\{([^{}]*)\}/g, '$1');
+  // স্পেসিং কমান্ড + টিল্ড
+  s = s.replace(/\\[,;!]/g, ' ').replace(/\\(?:quad|qquad)\b/g, '  ').replace(/~/g, ' ');
+  // অজানা কমান্ড বাদ, অবশিষ্ট ব্রেস/ব্যাকস্ল্যাশ বাদ
+  s = s.replace(/\\[a-zA-Z]+/g, '').replace(/[{}]/g, '').replace(/\\/g, '');
   return s;
 }
 
@@ -985,6 +1118,49 @@ function coerceQpKind(v: unknown): QpQKind | null {
   if (/^blank|fill.?in.?the.?blank|gap$/.test(s)) return 'blank';
   return null;
 }
+
+/**
+ * বছর-ট্যাগ — বিশ্ববিদ্যালয়-সাজেশনের প্রশ্নের পাশের বছর-চিহ্ন [DU '19], [চবি ২০১৫], (RU 2021)।
+ * শর্ত: বন্ধনীর ভেতরে অক্ষর + সংখ্যা দুটোই আছে, মোট ২–২৮ অক্ষর, খাঁটি সংখ্যা নয় (সে মান)।
+ * marks-[২] আগেই আলাদা হয়, তাই [DU '19] জাতীয় ট্যাগের সাথে সংঘর্ষ হয় না।
+ */
+const QP_YEARTAG_TRAIL_RE = /[[(]\s*([^\]()]{2,28}?)\s*[\])]$/;
+
+/** বছর-ট্যাগের ভেতরের লেখা সত্যিই ট্যাগ-জাতীয় কি না — অক্ষর+সংখ্যা দুটোই লাগবে */
+function looksLikeYearTag(content: string): boolean {
+  const s = content.trim();
+  if (s.length < 3 || s.length > 28) return false;
+  const hasLetter = /[A-Za-z\u0980-\u09ff\u0900-\u097f]/.test(s);
+  const digitRuns = s.match(/[\u09e6-\u09ef\u0966-\u096f0-9]+/g) ?? [];
+  if (!hasLetter || digitRuns.length === 0) return false;
+  // সংখ্যা-খণ্ড ছোট হতে হবে (২–৪ অঙ্ক — '১৯ / 2015); পুরোটা সংখ্যা হলে সে মান, ট্যাগ নয়
+  const totalDigits = digitRuns.join('').length;
+  return totalDigits <= 4 && digitRuns.every((d) => d.length <= 4);
+}
+
+/** AI-এর দেওয়া বছর-ট্যাগ নিরাপদ করা — বন্ধনী খোলা, দৈর্ঘ্য-সীমা, ভেতরে সংখ্যা লাগবেই */
+export function coerceQpYearTag(v: unknown): string | undefined {
+  if (typeof v !== 'string') return undefined;
+  const s = v.trim().replace(/^[[({]+\s*/, '').replace(/\s*[\])}]+$/, '').trim();
+  if (!s) return undefined;
+  if (looksLikeYearTag(s)) return s;
+  // সংখ্যা-ছাড়া ট্যাগও চলবে (যেমন "বোর্ড প্রশ্ন") — কেবল দৈর্ঘ্য-সীমা
+  return s.length <= 28 ? s : undefined;
+}
+
+/** প্রশ্নের লেখার শেষে লাগানো বছর-ট্যাগ আলাদা করা — "…ব্যাখ্যা কর। [DU '19]" */
+export function extractYearTagFromText(text: string): { text: string; tag?: string } {
+  const t = text.trim();
+  const m = t.match(QP_YEARTAG_TRAIL_RE);
+  if (m && looksLikeYearTag(m[1])) {
+    const rest = t.slice(0, m.index).trim();
+    if (rest) return { text: rest, tag: m[1].trim() };
+  }
+  return { text: t };
+}
+
+/** [চিত্র: …] / [চিত্র] / [Fig: …] — হাতে-আঁকা চিত্রের স্লট-মার্কার (প্রতিলিপি ও কাঠামো-দুটোতেই) */
+export const QP_FIGURE_RE = /[[(]\s*(?:চিত্র|ছবি|চিত্রপট|चित्र|figure|fig\.?|diagram)\s*[:：\-]?\s*([^\]()]*)[\])]/gi;
 
 /** মডেল/পার্সারের গুরুত্ব-মান → ১/২ — সংখ্যা, তারকা ("★★") বা লেখা ("important") সব চলে */
 function coerceQpImportance(v: unknown): QpImportance | undefined {
@@ -1110,15 +1286,20 @@ export function normalizeQpJson(data: unknown, meta: QpMeta, format: QpFormat): 
       const kind = coerceQpKind(q.kind ?? q.type ?? q.questionType) ?? (options.length > 0 ? 'mcq' : 'short');
       const pairs = kind === 'match' ? coerceQpPairs(q.pairs ?? q.matches ?? q.match ?? q.columns) : undefined;
       const importance = coerceQpImportance(q.importance ?? q.star ?? q.stars ?? q.priority);
+      // বছর-ট্যাগ — AI-এর আলাদা ঘর থেকে, না পেলে লেখার শেষের বন্ধনী থেকে ([DU '19])
+      const fromText = extractYearTagFromText(text);
+      const finalText = fromText.tag ? fromText.text : text;
+      const yearTag = coerceQpYearTag(q.yearTag ?? q.year ?? q.year_tag ?? q.attempt) ?? fromText.tag;
       questions.push({
         number: firstStr(q, ['number', 'no', 'num', 'qno', 'serial']),
-        text,
+        text: finalText,
         marks: firstStr(q, ['marks', 'mark', 'value', 'points', 'nombor']),
         options,
         subs,
         kind,
         pairs,
         ...(importance ? { importance } : {}),
+        ...(yearTag ? { yearTag } : {}),
       });
     }
     sections.push({
@@ -1151,11 +1332,15 @@ export function normalizeQpJson(data: unknown, meta: QpMeta, format: QpFormat): 
       subjectCode: fillIfEmpty(meta.subjectCode, 'subjectCode', 'subject_code', 'code'),
       setCode: fillIfEmpty(meta.setCode, 'setCode', 'set_code', 'set'),
       syllabusNote: fillIfEmpty(meta.syllabusNote, 'syllabusNote', 'syllabus_note', 'syllabus'),
+      department: fillIfEmpty(meta.department ?? '', 'department', 'dept', 'department_name'),
+      program: fillIfEmpty(meta.program ?? '', 'program', 'programme', 'degree'),
+      session: fillIfEmpty(meta.session ?? '', 'session', 'academic_year', 'term'),
       instructions: aiInstructions.length > 0 ? aiInstructions : meta.instructions,
     },
     sections: valid,
     format,
     ...(finalNote ? { finalNote } : {}),
+    ...(coerceQpLevel(d.level) ? { level: coerceQpLevel(d.level) } : {}),
   };
 }
 
@@ -1344,13 +1529,16 @@ export function parseQuestionText(raw: string, meta: QpMeta, format: QpFormat, l
         qNo++;
         const rest = line.slice(qm[0].length - qm[2].length);
         const { text, marks } = splitTrailingMarks(rest);
+        // বছর-ট্যাগ — "…ব্যাখ্যা কর। [DU '19]" → tag আলাদা
+        const yt = extractYearTagFromText(text);
         q = {
           number: banglaNums ? toBanglaNumber(qNo) : String(qNo),
-          text,
+          text: yt.text,
           marks,
           options: [],
           subs: [],
           importance: stars >= 2 ? 2 : stars === 1 ? 1 : undefined,
+          ...(yt.tag ? { yearTag: yt.tag } : {}),
         };
         cur.questions.push(q);
         continue;
@@ -1377,6 +1565,9 @@ export function parseQuestionText(raw: string, meta: QpMeta, format: QpFormat, l
       const { text, marks } = splitTrailingMarks(line);
       q.text = `${q.text} ${text}`.trim();
       if (marks && !q.marks) q.marks = marks;
+      // ধারাবাহিক লাইনের শেষেও বছর-ট্যাগ আসতে পারে
+      const yt = extractYearTagFromText(q.text);
+      if (yt.tag) { q.text = yt.text; q.yearTag = yt.tag; }
     } else {
       preamble.push(line);
     }
@@ -1665,6 +1856,14 @@ function qpMatchHtml(q: QpQuestion): string | null {
   return `<table><colgroup><col /><col /></colgroup><tbody>${rows.join('')}</tbody></table>`;
 }
 
+/** চিত্র-স্লট — [চিত্র: …] মার্কার → এডিটর-স্কিমা-নিরাপদ এককোষ টেবিল-বক্স; পরে শিক্ষক স্কেচ/ভেক্টর-ছবি বসান */
+function qpFigureSlotHtml(desc: string, lang: Lang): string {
+  const label = desc.trim();
+  const caption = label
+    || (lang === 'en' ? 'Draw the figure here' : lang === 'hi' ? 'यहाँ चित्र बनाएँ' : 'এখানে চিত্রটি আঁকো');
+  return `<table style="margin:8px auto;width:78%"><colgroup><col /></colgroup><tbody><tr><td style="text-align:center;padding:14px 12px"><p style="margin:0;text-align:center;color:#555"><em>\u25A1 ${escapeQpHtml(caption)}</em></p></td></tr></tbody></table>`;
+}
+
 /** উত্তরের জায়গা — ডট-লাইন শ্রেণি-পরীক্ষার খাতা-ধাঁচে (কলামে সংক্ষিপ্ত হয়) */
 function qpAnswerSpaceHtml(space: QpAnswerSpace, colCount: number): string {
   if (space === 'none') return '';
@@ -1712,7 +1911,16 @@ export function paperToEditorHtml(p: QuestionPaper, lang: Lang): string {
   const f = resolveQpFormat(p);
   const layout = normalizeQpLayout(p.layout);
   const m = p.meta;
-  const L = qpLabels(lang);
+  // স্তর — স্পষ্ট না থাকলে university-ফরম্যাট থেকে অনুমিত; স্তর অনুযায়ী লেবেল (কোর্স কোড/বর্ষ)
+  const level: QpLevel = p.level ?? (f === 'university' ? 'university' : 'school');
+  const uni = level === 'university';
+  const L = (() => {
+    const base = qpLabels(lang);
+    if (!uni) return base;
+    if (lang === 'hi') return { ...base, code: 'कोर्स कोड', subject: 'कोर्स शीर्षक', cls: 'वर्ष/सेमेस्टर' };
+    if (lang === 'en') return { ...base, code: 'Course Code', subject: 'Course Title', cls: 'Year/Semester' };
+    return { ...base, code: 'কোর্স কোড', subject: 'কোর্স টাইটেল', cls: 'বর্ষ/সেমিস্টার' };
+  })();
   const compact = f === 'compact' || f === 'twocol';
   const board = f === 'board';
   const modern = f === 'modern';
@@ -1794,28 +2002,22 @@ export function paperToEditorHtml(p: QuestionPaper, lang: Lang): string {
     if (headBits.length > 0) parts.push(`<p${center}>${escapeQpHtml(headBits.join('   ·   '))}</p>`);
     parts.push('<hr>');
   } else if (university) {
-    // বিশ্ববিদ্যালয়-প্রথা হেডার — পরীক্ষা (বড়) → প্রতিষ্ঠান → সীমান্তযুক্ত তথ্য-টেবিল (বিষয়/শ্রেণি/সময়/পূর্ণমান) →
-    // সিলেবাস → নির্দেশনা-বক্স
-    if (m.examTitle) parts.push(bigLine(m.examTitle));
-    else if (m.schoolName) parts.push(bigLine(m.schoolName));
-    if (m.examTitle && m.schoolName) parts.push(midLine(m.schoolName));
-    if (m.subject) parts.push(midLine(m.subject));
-    const infoRows: Array<[string, string, string, string]> = [];
-    if (m.subject || m.subjectCode) infoRows.push([L.subject, m.subject, L.code, m.subjectCode]);
-    if (m.classLabel || m.time) infoRows.push([L.cls, m.classLabel, L.time, m.time]);
-    if (m.fullMarks || m.setCode) infoRows.push([L.marks, m.fullMarks, L.set, m.setCode]);
-    if (infoRows.length > 0) {
-      const rowsHtml = infoRows
-        .map(([k1, v1, k2, v2]) =>
-          `<tr>`
-          + `<td style="width:16%;white-space:nowrap"><p style="margin:2px 0"><strong>${escapeQpHtml(k1)}</strong></p></td>`
-          + `<td style="width:34%"><p style="margin:2px 0">${escapeQpHtml(v1)}</p></td>`
-          + `<td style="width:16%;white-space:nowrap"><p style="margin:2px 0"><strong>${escapeQpHtml(k2)}</strong></p></td>`
-          + `<td style="width:34%"><p style="margin:2px 0">${escapeQpHtml(v2)}</p></td>`
-          + `</tr>`)
-        .join('');
-      parts.push(`<table style="margin:8px 0"><colgroup><col style="width:16%" /><col style="width:34%" /><col style="width:16%" /><col style="width:34%" /></colgroup><tbody>${rowsHtml}</tbody></table>`);
-    }
+    // বিশ্ববিদ্যালয়-প্রথা হেডার — প্রতিষ্ঠান (বড়) → বিভাগ → প্রোগ্রাম·সেশন → পরীক্ষা →
+    // কোর্স-লাইন (কোড+টাইটেল+বর্ষ) → সময়↔পূর্ণমান → তারিখ → সিলেবাস → নির্দেশনা-বক্স
+    if (m.schoolName) parts.push(bigLine(m.schoolName));
+    if (m.department?.trim()) parts.push(midLine(m.department.trim()));
+    const progBits: string[] = [];
+    if (m.program?.trim()) progBits.push(m.program.trim());
+    if (m.session?.trim()) progBits.push(m.session.trim());
+    if (progBits.length > 0) parts.push(`<p${center}>${escapeQpHtml(progBits.join('   ·   '))}</p>`);
+    if (m.examTitle) parts.push(midLine(m.examTitle, true));
+    const courseBits: string[] = [];
+    if (m.subjectCode) courseBits.push(`${L.code}: ${m.subjectCode}`);
+    if (m.subject) courseBits.push(`${L.subject}: ${m.subject}`);
+    if (m.classLabel) courseBits.push(m.classLabel);
+    if (courseBits.length > 0) parts.push(`<p${center}><strong>${escapeQpHtml(courseBits.join('   ·   '))}</strong></p>`);
+    const split = qpSplitLineHtml(m, L);
+    if (split) parts.push(split);
     if (m.date) parts.push(`<p${center}><em>${escapeQpHtml(`${L.date}: ${m.date}`)}</em></p>`);
     if (m.syllabusNote) parts.push(`<p${center}><em>[${escapeQpHtml(m.syllabusNote)}]</em></p>`);
     const insBox = qpInstructionBoxHtml(m.instructions, L.instructions, lang, subSize);
@@ -1905,16 +2107,23 @@ export function paperToEditorHtml(p: QuestionPaper, lang: Lang): string {
       const num = qpNumHtml(q.number, layout.numStyle);
       const marksInline = qpMarksHtml(q.marks, layout.marksStyle, L.markWord);
       const starTxt = q.importance === 2 ? '\u2605\u2605 ' : q.importance === 1 ? '\u2605 ' : '';
-      const stem = `<strong>${starTxt}${num}</strong> ${mathRichToHtml(q.text)}`;
+      // চিত্র-স্লট — লেখা থেকে [চিত্র: …] মার্কার আলাদা করে বক্স-আকারে বসে
+      const figs: string[] = [];
+      const bodyText = q.text.replace(QP_FIGURE_RE, (_mm, d: string) => { figs.push((d ?? '').trim()); return ' '; }).replace(/\s{2,}/g, ' ').trim();
+      // বিশ্ববিদ্যালয়-সাজেশনের বছর-ট্যাগ — প্রশ্নের শেষে ধূসর [DU '19]
+      const yearTxt = q.yearTag ? `<span style="color:#555">[${escapeQpHtml(q.yearTag)}]</span>` : '';
+      const stem = `<strong>${starTxt}${num}</strong> ${mathRichToHtml(bodyText)}${yearTxt ? ` ${yearTxt}` : ''}`;
       // সত্য-মিথ্যা — উত্তর-স্থিরক লেখা না থাকলে যোগ হয়
       const tfNote = q.kind === 'tf' && !/সত্য|মিথ্যা|सत्य|असत्य|true|false/i.test(q.text)
         ? `<em>(${escapeQpHtml(L.trueFalse)})</em>` : '';
       const matchTable = qpMatchHtml(q);
       const opts = qpOptionsHtml(q, layout, sty());
       const space = qpAnswerSpaceHtml(layout.answerSpace, colCount);
+      const figBoxes = figs.map((d) => qpFigureSlotHtml(d, lang)).join('');
 
       // ডান-নম্বর-কলাম (আসল-পত্র প্রথা): মূল-প্রশ্ন + উপ-প্রশ্ন এক টেবিলে, মান ডান প্রান্তে
-      if (marksRight && (q.marks || q.subs.some((s) => s.marks)) && !matchTable) {
+      // চিত্র-স্লট থাকলে সাধারণ ধারায় — বক্সটা পূর্ণ-প্রস্থ নেয়
+      if (marksRight && (q.marks || q.subs.some((s) => s.marks)) && !matchTable && figs.length === 0) {
         const rows: Array<{ body: string; marks: string; indent?: boolean }> = [{
           body: `${stem}${tfNote ? ` ${tfNote}` : ''}`,
           marks: qpMarksRaw(q.marks, layout.marksStyle, L.markWord),
@@ -1934,7 +2143,8 @@ export function paperToEditorHtml(p: QuestionPaper, lang: Lang): string {
 
       // সাধারণ ধারা — inline মান
       const bits: string[] = [];
-      bits.push(`<p${sty()}><strong>${starTxt}${num}</strong> ${mathRichToHtml(q.text)}${marksInline}${tfNote ? ` ${tfNote}` : ''}</p>`);
+      bits.push(`<p${sty()}><strong>${starTxt}${num}</strong> ${mathRichToHtml(bodyText)}${yearTxt ? ` ${yearTxt}` : ''}${marksInline}${tfNote ? ` ${tfNote}` : ''}</p>`);
+      if (figBoxes) bits.push(figBoxes);
       if (matchTable) bits.push(matchTable);
       for (const sub of q.subs) bits.push(qpSubHtml(sub, sty()));
       if (opts) bits.push(opts);
@@ -2045,7 +2255,96 @@ ${board ? '</div>\n' : ''}</body>
 // ─── নমুনা (ডেমো/ফাস্ট-ট্রাই) ───
 
 /** এক ক্লিকে চেষ্টা করার জন্য নমুনা কাঁচা-লেখা — শিক্ষক সাথে সাথে ফিচার বোঝেন */
-export function qpSampleText(lang: Lang, docType: QpDocType = 'question'): string {
+export function qpSampleText(lang: Lang, docType: QpDocType = 'question', level: QpLevel = 'school'): string {
+  if (level === 'university') {
+    if (docType === 'suggestion') {
+      if (lang === 'hi') {
+        return `राष्ट्रीय विश्वविद्यालय — ऑनर्स २या वर्ष
+व्यावसायिक अर्थशास्त्र सजेशन
+
+अध्याय १ — माँग और पूर्ति [महत्वपूर्ण]
+\u2605 १. माँग वक्र का ढाल ज्ञात करने का नियम लिखें। [DU 2019]
+\u2605\u2605 २. स्थितिस्थापकता के प्रकार समझाएँ। [RU 2022]
+३. बाज़ार संतुलन कैसे स्थापित होता है? [JU 2021]
+
+अध्याय २ — उत्पादन और लागत [अति महत्वपूर्ण]
+\u2605\u2605 ४. स्थिर और परिवर्ती लागत में अंतर लिखें। [NU 2020]
+\u2605 ५. $TC = 100 + 5Q$ से $Q = 10$ पर औसत लागत निकालें। [CU 2018]`;
+      }
+      if (lang === 'en') {
+        return `National University — Honours 2nd Year
+Business Economics Suggestion
+
+Chapter 1 — Demand & Supply [important]
+\u2605 1. State the rule for finding the slope of a demand curve. [DU 2019]
+\u2605\u2605 2. Explain the types of elasticity. [RU 2022]
+3. How is market equilibrium established? [JU 2021]
+
+Chapter 2 — Production & Cost [very important]
+\u2605\u2605 4. Distinguish between fixed and variable cost. [NU 2020]
+\u2605 5. From $TC = 100 + 5Q$, find the average cost at $Q = 10$. [CU 2018]`;
+      }
+      return `জাতীয় বিশ্ববিদ্যালয় — অনার্স ২য় বর্ষ
+ব্যবসায় অর্থনীতি সাজেশন
+
+অধ্যায় ১ — চাহিদা ও যোগান [গুরুত্বপূর্ণ]
+\u2605 ১. চাহিদা রেখার ঢাল নির্ণয়ের নিয়ম লিখ। [ঢাবি ২০১৯]
+\u2605\u2605 ২. স্থিতিস্থাপকতার প্রকারভেদ ব্যাখ্যা কর। [রুবি ২০২২]
+৩. বাজার-ভারসাম্য কীভাবে স্থাপিত হয়? [জাবি ২০২১]
+
+অধ্যায় ২ — উৎপাদন ও ব্যয় [অতি গুরুত্বপূর্ণ]
+\u2605\u2605 ৪. স্থির ও পরিবর্তশীল ব্যয়ের পার্থক্য লিখ। [নবি ২০২০]
+\u2605 ৫. $TC = 100 + 5Q$ হলে $Q = 10$ এর গড় ব্যয় নির্ণয় কর। [চবি ২০১৮]`;
+    }
+    if (lang === 'hi') {
+      return `राष्ट्रीय विश्वविद्यालय
+विभाग: प्रबंधन
+ऑनर्स २या वर्ष समापनी परीक्षा — २०२४
+कोर्स कोड: 232507 · कोर्स शीर्षक: व्यावसायिक अर्थशास्त्र
+
+समय: 4 घंटे
+पूर्णांक: 80
+
+निम्नलिखित में से किन्हीं पाँच प्रश्नों के उत्तर दें।
+
+१. (क) माँग की मूल्य-स्थितिस्थापकता किसे कहते हैं? (ख) इसका व्यावहारिक महत्व समझाएँ। [5+5=10]
+२. (क) पूर्ण प्रतियोगिता की विशेषताएँ लिखें। (ख) अल्पकालीन संतुलन की शर्तें बताएँ। [5+5=10]
+३. मुद्रास्फीति के कारण और प्रभाव की विवेचना करें। [10]
+४. हल करें: $2x^2 - 5x - 3 = 0$ [10]`;
+    }
+    if (lang === 'en') {
+      return `National University
+Department of Management
+Honours 2nd Year Final Examination — 2024
+Course Code: 232507 · Course Title: Business Economics
+
+Time: 4 Hours
+Full Marks: 80
+
+Answer any FIVE of the following questions.
+The figures in the right margin indicate full marks.
+
+1. (a) Define price elasticity of demand. (b) Explain its practical importance. [5+5=10]
+2. (a) State the features of perfect competition. (b) Explain the short-run equilibrium conditions. [5+5=10]
+3. Discuss the causes and effects of inflation. [10]
+4. Solve: $2x^2 - 5x - 3 = 0$ [10]`;
+    }
+    return `জাতীয় বিশ্ববিদ্যালয়
+বিভাগ: ব্যবস্থাপনা
+অনার্স ২য় বর্ষ সমাপনী পরীক্ষা — ২০২৪
+কোর্স কোড: ২৩২৫০৭ · কোর্স টাইটেল: ব্যবসায় অর্থনীতি
+
+সময়: ৪ ঘণ্টা
+পূর্ণমান: ৮০
+
+যে-কোনো পাঁচটি প্রশ্নের উত্তর দাও।
+ডান পার্শ্বের সংখ্যা প্রশ্নের পূর্ণমান নির্দেশ করে।
+
+১. (ক) চাহিদার মূল্য-স্থিতিস্থাপকতা কাকে বলে? (খ) এর ব্যবহারিক গুরুত্ব ব্যাখ্যা কর। [৫+৫=১০]
+২. (ক) পূর্ণ প্রতিযোগিতামূলক বাজারের বৈশিষ্ট্য লিখ। (খ) স্বল্পকালীন ভারসাম্যের শর্ত ব্যাখ্যা কর। [৫+৫=১০]
+৩. মুদ্রাস্ফীতির কারণ ও প্রভাব আলোচনা কর। [১০]
+৪. সমাধান কর: $2x^2 - 5x - 3 = 0$ [১০]`;
+  }
   if (docType === 'suggestion') {
     if (lang === 'hi') {
       return `आदर्श कोचिंग सेंटर

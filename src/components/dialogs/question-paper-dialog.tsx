@@ -35,12 +35,12 @@ import type { PreparedImage } from '@/lib/ai-client';
 import { useEditorStore } from '@/lib/store';
 import {
   QP_SCHOOL_KEY, QP_REPAIR_NOTE, QP_STRUCTURE_SYSTEM, QP_SUGGESTION_SYSTEM, QP_TRANSCRIBE_SYSTEM, QP_VERIFY_SYSTEM,
-  QP_DEFAULT_LAYOUT, cleanRawQpText, defaultQpMeta, extractQpJson, extractTranscriptText, loadQpHistory, normalizeQpJson,
-  normalizeQpLayout, paperToEditorHtml, paperToStandaloneHtml, parseLocaleInt, parseQuestionText,
-  pushQpHistory, qpPageSizePx, qpPreambleMeta, qpSampleText, removeQpHistoryItem, resolveQpFormat,
-  shufflePaper, sumQpMarks,
+  QP_DEFAULT_LAYOUT, cleanRawQpText, coerceQpLevel, defaultQpMeta, extractQpJson, extractTranscriptText, isDefaultQpInstructions,
+  loadQpHistory, normalizeQpJson, normalizeQpLayout, paperToEditorHtml, paperToStandaloneHtml, parseLocaleInt,
+  parseQuestionText, pushQpHistory, qpPageSizePx, qpPreambleMeta, qpSampleText, qpUniversityInstructions,
+  removeQpHistoryItem, resolveQpFormat, shufflePaper, sumQpMarks,
 } from '@/lib/question-paper';
-import type { QpDocType, QpFontScale, QpFormat, QpHistoryItem, QpLayout, QpMeta, QuestionPaper } from '@/lib/question-paper';
+import type { QpDocType, QpFontScale, QpFormat, QpHistoryItem, QpLayout, QpLevel, QpMeta, QuestionPaper } from '@/lib/question-paper';
 import { runCommand } from '@/components/ribbon/ribbon-shell';
 import { tFmt, useLangStore, useT, useFmtNum } from '@/lib/i18n';
 import { formatDateLong } from '@/lib/i18n/core';
@@ -62,6 +62,12 @@ const STEPS: Array<{ id: Step; key: string }> = [
 const DOC_TYPES: Array<{ id: QpDocType; label: string; desc: string }> = [
   { id: 'question', label: 'qp.docType.question', desc: 'qp.docType.question.desc' },
   { id: 'suggestion', label: 'qp.docType.suggestion', desc: 'qp.docType.suggestion.desc' },
+];
+
+/** শিক্ষার স্তর — স্কুল/মাদ্রাসা প্রথা নাকি বিশ্ববিদ্যালয় প্রথা (কোর্স-কোড, বিভাগ, বর্ষ-সেশন) */
+const LEVELS: Array<{ id: QpLevel; label: string; desc: string }> = [
+  { id: 'school', label: 'qp.level.school', desc: 'qp.level.school.desc' },
+  { id: 'university', label: 'qp.level.university', desc: 'qp.level.university.desc' },
 ];
 
 const FORMATS: Array<{ id: QpFormat; label: string; desc: string }> = [
@@ -262,6 +268,8 @@ export function QuestionPaperDialog() {
   const [mode, setMode] = useState<'photo' | 'text'>('text');
   // ডকুমেন্ট-ধরন — প্রশ্নপত্র নাকি সাজেশন শিট (সাজেশনে আলাদা নকশা, ★-গুরুত্ব, শিক্ষক-স্বাক্ষর)
   const [docType, setDocType] = useState<QpDocType>('question');
+  // শিক্ষার স্তর — স্কুল প্রথা বা বিশ্ববিদ্যালয় প্রথা (কোর্স-কোড/বিভাগ/বর্ষ-সেশন)
+  const [level, setLevel] = useState<QpLevel>('school');
   const [image, setImage] = useState<PreparedImage | null>(null);
   const [rawText, setRawText] = useState('');
   // ভাষা-অনুযায়ী ডিফল্ট মেটা + মনে-রাখা স্কুলের নাম — প্রথম রেন্ডারেই (lazy init)
@@ -480,7 +488,7 @@ export function QuestionPaperDialog() {
     const finish = (result: QuestionPaper, demo: boolean) => {
       // সেট বৈচিত্র্য চালু থাকলে প্রশ্নের ক্রম এলোমেলো + নতুন ধারাবাহিক নম্বর
       const final = shuffle ? shufflePaper(result) : result;
-      setPaper({ ...final, fontScale, layout, docType });
+      setPaper({ ...final, fontScale, layout, docType, level });
       setIsDemo(demo);
       setPhase('done');
       setStep(4);
@@ -494,6 +502,7 @@ export function QuestionPaperDialog() {
         fontScale,
         layout,
         docType,
+        level,
         counts: {
           sections: final.sections.length,
           questions: final.sections.reduce((n, s) => n + s.questions.length, 0),
@@ -513,11 +522,17 @@ export function QuestionPaperDialog() {
         effMeta.date && `date: ${effMeta.date}`,
         effMeta.time && `time: ${effMeta.time}`,
         effMeta.fullMarks && `full_marks: ${effMeta.fullMarks}`,
+        // বিশ্ববিদ্যালয়-স্তর — বিভাগ/প্রোগ্রাম/সেশন/কোর্স-কোড
+        level === 'university' && effMeta.department && `department: ${effMeta.department}`,
+        level === 'university' && effMeta.program && `program: ${effMeta.program}`,
+        level === 'university' && effMeta.session && `session: ${effMeta.session}`,
+        level === 'university' && effMeta.subjectCode && `course_code: ${effMeta.subjectCode}`,
       ].filter(Boolean).join('\n');
       const prompt = [
         'HEADER:',
         header || '(none provided)',
         '',
+        ...(level === 'university' ? ['LEVEL: university — university exam conventions apply.', ''] : []),
         'RAW QUESTION TEXT:',
         rawText.trim().slice(0, 20000),
         '',
@@ -624,6 +639,7 @@ export function QuestionPaperDialog() {
     setFontScale(h.fontScale);
     setLayout(normalizeQpLayout(h.layout));
     setDocType(h.docType ?? 'question');
+    setLevel(coerceQpLevel(h.level) ?? (h.format === 'university' ? 'university' : 'school'));
     setInstrDraft((h.meta.instructions ?? []).join('\n'));
     setImage(null);
     setPhase('idle');
@@ -657,14 +673,15 @@ export function QuestionPaperDialog() {
   const previewHtml = useMemo(() => (paper ? paperToEditorHtml(paper, lang) : ''), [paper, lang]);
   const resolved = useMemo(() => (paper ? resolveQpFormat(paper) : 'classic'), [paper]);
   const stats = useMemo(() => {
-    if (!paper) return { q: 0, sec: 0, mcq: 0, star: 0 };
-    let q = 0, mcq = 0, star = 0;
+    if (!paper) return { q: 0, sec: 0, mcq: 0, star: 0, tag: 0 };
+    let q = 0, mcq = 0, star = 0, tag = 0;
     for (const s of paper.sections) {
       q += s.questions.length;
       mcq += s.questions.filter((x) => x.options.length > 0).length;
       star += s.questions.filter((x) => x.importance).length;
+      tag += s.questions.filter((x) => x.yearTag).length;
     }
-    return { q, sec: paper.sections.length, mcq, star };
+    return { q, sec: paper.sections.length, mcq, star, tag };
   }, [paper]);
   // প্রো-যাচাই: প্রশ্নের মোট নম্বর বনাম ফর্মের পূর্ণমান
   const totals = useMemo(() => {
@@ -735,6 +752,23 @@ export function QuestionPaperDialog() {
     patchLive({ docType: next, meta: nextMeta });
   };
 
+  /**
+   * স্তর-বদল — বিশ্ববিদ্যালয়ে কোর্স-কোড/বিভাগ/বর্ষ-সেশন প্রথা + বিশ্ববিদ্যালয়-ফরম্যাট;
+   * ডিফল্ট নির্দেশনাও স্তর-অনুযায়ী অদল-বদল হয় (শিক্ষকের নিজের লেখা নির্দেশনা কখনো বদলায় না)।
+   */
+  const changeLevel = (next: QpLevel) => {
+    if (next === level || !meta) return;
+    const nextFormat: QpFormat = next === 'university' ? 'university' : 'auto';
+    const nextInstr = next === 'university'
+      ? (isDefaultQpInstructions(meta.instructions, lang, 'school') ? qpUniversityInstructions(lang) : meta.instructions)
+      : (isDefaultQpInstructions(meta.instructions, lang, 'university') ? defaultQpMeta(lang).instructions : meta.instructions);
+    const nextMeta = { ...meta, instructions: nextInstr };
+    setLevel(next);
+    setFormat(nextFormat);
+    setMeta(nextMeta);
+    patchLive({ level: next, format: nextFormat, meta: nextMeta });
+  };
+
   // ── ধাপ ১: ইনপুট ──
   const stepInput = (
     <section aria-label={tt('qp.step.input')} className="flex flex-col gap-3">
@@ -751,6 +785,23 @@ export function QuestionPaperDialog() {
               <span className="qp-doctype-vis"><DocTypeVis id={dt.id} /></span>
               <strong>{tt(dt.label)}</strong>
               <span className="qp-doctype-desc">{tt(dt.desc)}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <p className="ai-field-label mb-1.5">{tt('qp.level.title')}</p>
+        <div className="qp-doctypes" role="radiogroup" aria-label={tt('qp.level.title')}>
+          {LEVELS.map((lv) => (
+            <button
+              key={lv.id} type="button" role="radio" aria-checked={level === lv.id}
+              className={cn('qp-doctype', level === lv.id && 'qp-doctype-on')}
+              onClick={() => changeLevel(lv.id)}
+              disabled={busy}
+            >
+              <strong>{tt(lv.label)}</strong>
+              <span className="qp-doctype-desc">{tt(lv.desc)}</span>
             </button>
           ))}
         </div>
@@ -840,7 +891,7 @@ export function QuestionPaperDialog() {
         <div className="mb-1.5 flex items-center justify-between gap-2">
           <span className="ai-field-label">{tt(docType === 'suggestion' ? 'qp.raw.label.sug' : 'qp.raw.label')}</span>
           <div className="flex gap-1">
-            <Button size="sm" variant="ghost" className="h-7 gap-1 text-xs" onClick={() => setRawText(qpSampleText(lang, docType))}>
+            <Button size="sm" variant="ghost" className="h-7 gap-1 text-xs" onClick={() => setRawText(qpSampleText(lang, docType, level))}>
               <Sparkles size={12} aria-hidden="true" /> {tt('qp.sample')}
             </Button>
             {rawText ? (
@@ -914,11 +965,11 @@ export function QuestionPaperDialog() {
   const stepDetails = meta ? (
     <section aria-label={tt('qp.step.details')} className="qp-form">
       <label className="qp-field qp-field-full">
-        <span>{tt('qp.meta.school')}</span>
+        <span>{tt(level === 'university' ? 'qp.meta.uni.school' : 'qp.meta.school')}</span>
         <Input
           value={meta.schoolName}
           onChange={(e) => patchMeta({ schoolName: e.target.value })}
-          placeholder={tt('qp.meta.school.ph')}
+          placeholder={tt(level === 'university' ? 'qp.meta.uni.school.ph' : 'qp.meta.school.ph')}
           disabled={busy}
         />
       </label>
@@ -929,12 +980,17 @@ export function QuestionPaperDialog() {
         </label>
       ) : null}
       <label className="qp-field">
-        <span>{tt('qp.meta.subject')}</span>
+        <span>{tt(level === 'university' ? 'qp.meta.uni.subject' : 'qp.meta.subject')}</span>
         <Input value={meta.subject} onChange={(e) => patchMeta({ subject: e.target.value })} disabled={busy} />
       </label>
       <label className="qp-field">
-        <span>{tt('qp.meta.class')}</span>
-        <Input value={meta.classLabel} onChange={(e) => patchMeta({ classLabel: e.target.value })} disabled={busy} />
+        <span>{tt(level === 'university' ? 'qp.meta.uni.class' : 'qp.meta.class')}</span>
+        <Input
+          value={meta.classLabel}
+          onChange={(e) => patchMeta({ classLabel: e.target.value })}
+          placeholder={level === 'university' ? tt('qp.meta.uni.class.ph') : undefined}
+          disabled={busy}
+        />
       </label>
       <label className="qp-field">
         <span>{tt('qp.meta.date')}</span>
@@ -960,11 +1016,11 @@ export function QuestionPaperDialog() {
       {docType !== 'suggestion' ? (
         <>
           <label className="qp-field">
-            <span>{tt('qp.meta.code')}</span>
+            <span>{tt(level === 'university' ? 'qp.meta.uni.code' : 'qp.meta.code')}</span>
             <Input
               value={meta.subjectCode ?? ''}
               onChange={(e) => patchMeta({ subjectCode: e.target.value })}
-              placeholder={tt('qp.meta.code.ph')}
+              placeholder={tt(level === 'university' ? 'qp.meta.uni.code.ph' : 'qp.meta.code.ph')}
               disabled={busy}
             />
           </label>
@@ -986,6 +1042,37 @@ export function QuestionPaperDialog() {
               disabled={busy}
             />
           </label>
+          {level === 'university' ? (
+            <>
+              <label className="qp-field">
+                <span>{tt('qp.meta.uni.dept')}</span>
+                <Input
+                  value={meta.department ?? ''}
+                  onChange={(e) => patchMeta({ department: e.target.value })}
+                  placeholder={tt('qp.meta.uni.dept.ph')}
+                  disabled={busy}
+                />
+              </label>
+              <label className="qp-field">
+                <span>{tt('qp.meta.uni.program')}</span>
+                <Input
+                  value={meta.program ?? ''}
+                  onChange={(e) => patchMeta({ program: e.target.value })}
+                  placeholder={tt('qp.meta.uni.program.ph')}
+                  disabled={busy}
+                />
+              </label>
+              <label className="qp-field qp-field-full">
+                <span>{tt('qp.meta.uni.session')}</span>
+                <Input
+                  value={meta.session ?? ''}
+                  onChange={(e) => patchMeta({ session: e.target.value })}
+                  placeholder={tt('qp.meta.uni.session.ph')}
+                  disabled={busy}
+                />
+              </label>
+            </>
+          ) : null}
         </>
       ) : null}
       <label className="qp-field qp-field-full">
@@ -1138,6 +1225,7 @@ export function QuestionPaperDialog() {
         <span className="qp-stat"><strong>{fmtNum(stats.q)}</strong> {tt('qp.count.q')}</span>
         {stats.mcq > 0 ? <span className="qp-stat"><strong>{fmtNum(stats.mcq)}</strong> {tt('qp.count.mcq')}</span> : null}
         {stats.star > 0 ? <span className="qp-stat"><strong>{fmtNum(stats.star)}</strong> {tt('qp.count.star')}</span> : null}
+        {stats.tag > 0 ? <span className="qp-stat"><strong>{fmtNum(stats.tag)}</strong> {tt('qp.count.tag')}</span> : null}
         {totals ? (
           <span
             className={cn('qp-stat', marksMismatch && 'qp-stat-warn')}

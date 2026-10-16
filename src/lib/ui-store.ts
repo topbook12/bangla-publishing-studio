@@ -24,6 +24,7 @@ export type DialogName =
   | 'assetStore'
   | 'vectorLib'
   | 'questionPaper'
+  | 'sketchPad'
   | 'help';
 
 /** AI ডায়ালগের কোন ট্যাব নিয়ে খুলবে */
