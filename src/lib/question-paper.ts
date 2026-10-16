@@ -20,11 +20,15 @@
 import { toBanglaNumber, toDevanagariNumber, toEnglishDigits } from './bangla';
 import type { Lang } from './i18n/core';
 import { columnsStyleText } from './nodes-html';
+// চিত্র-স্মার্ট-সিস্টেম — স্লট-মার্কার ক্যানোনিক্যাল এখানেই; রি-এক্সপোর্টে পুরনো আমদানিকারক অক্ষত
+import { QP_FIGURE_RE, figureHtmlFor, type QpFigureFill } from './qp-figures';
+export { QP_FIGURE_RE } from './qp-figures';
+export type { QpFigureFill } from './qp-figures';
 
 // ─── টাইপ ───
 
-export type QpFormat = 'auto' | 'classic' | 'modern' | 'compact' | 'board' | 'royal' | 'twocol' | 'university';
-export type QpResolvedFormat = 'classic' | 'modern' | 'compact' | 'board' | 'royal' | 'twocol' | 'university';
+export type QpFormat = 'auto' | 'classic' | 'modern' | 'compact' | 'board' | 'royal' | 'twocol' | 'university' | 'sugslip' | 'quiz';
+export type QpResolvedFormat = 'classic' | 'modern' | 'compact' | 'board' | 'royal' | 'twocol' | 'university' | 'sugslip' | 'quiz';
 /** টাইপোগ্রাফি স্কেল — ছোট / মাঝারি / বড় */
 export type QpFontScale = 'sm' | 'md' | 'lg';
 
@@ -304,6 +308,11 @@ export function defaultQpMeta(lang: Lang): QpMeta {
     syllabusNote: '',
     studentLine: true,
     teacherName: '',
+    // বিশ্ববিদ্যালয়-ঘর — স্পষ্ট ফাঁকা স্ট্রিং: preamble-পার্সারের put() শুধু string-ঘরে লেখে,
+    // undefined থাকলে কাঁচা-লেখার "বিভাগ/প্রোগ্রাম/সেশন" ফর্মে বসতই না
+    department: '',
+    program: '',
+    session: '',
   };
 }
 
@@ -351,7 +360,8 @@ function defaultQpValues(lang: Lang): { time: string; fullMarks: string; examTit
 }
 
 const QP_KEY_PATTERNS: Array<{ field: 'subject' | 'classLabel' | 'date' | 'time' | 'fullMarks' | 'department' | 'session' | 'program'; re: RegExp }> = [
-  { field: 'subject', re: /^(?:বিষয়|subject|विषय)\s*[:：\-–—=]/i },
+  // বিশ্ববিদ্যালয়-প্রথা: "কোর্স টাইটেল: ব্যবসায় অর্থনীতি" / "Course Title: …" — subject হিসেবেই বসে
+  { field: 'subject', re: /^(?:বিষয়|কোর্স(?:\s*টাইটেল)?|subject|course(?:\s*title)?|विषय)\s*[:：\-–—=]/i },
   { field: 'classLabel', re: /^(?:শ্রেণ[িী]|class|कक्षा)\s*[:：\-–—=]/i },
   { field: 'date', re: /^(?:তারিখ|date|दिनांक)\s*[:：\-–—=]/i },
   { field: 'time', re: /^(?:সময়|समय|time)\s*[:：\-–—=]/i },
@@ -374,8 +384,8 @@ const QP_EXAM_WORD = /(?:বার্ষিক|অর্ধবার্ষিক
 /** "পূর্ণমান ৭০" জাতীয় কোলন-ছাড়া রূপও ধরে */
 const QP_MARKS_BARE = /^(?:পূর্ণমান|পূর্ণ\s*মান|ফুল\s*মার্কস|পুরো\s*নম্বর|पूर्णांक)\s+([\u09e6-\u09ef\u0966-\u096f0-9]{1,4})\s*$/i;
 
-/** "বিষয় কোড: ১০৯" / "Subject code — 109" — বোর্ড-প্রথার ডিজিট-বক্সের তথ্য */
-const QP_CODE_RE = /^(?:বিষয়\s*কোড|सब्जेक्ट\s*कोड|विषय\s*कोड|subject\s*code|code\s*no?)\s*[:：\-–—=]?\s*([\u09e6-\u09ef\u0966-\u096f0-9A-Za-z]{1,6})\s*$/i;
+/** "বিষয় কোড: ১০৯" / "কোর্স কোড: ২৩২৫০৭" / "Course code — 109" — বোর্ড/বিশ্ববিদ্যালয়-প্রথার ডিজিট-বক্সের তথ্য */
+const QP_CODE_RE = /^(?:বিষয়\s*কোড|কোর্স\s*কোড|सब्जेक्ट\s*कोड|विषय\s*कोड|subject\s*code|course\s*code|code\s*no?)\s*[:：\-–—=]?\s*([\u09e6-\u09ef\u0966-\u096f0-9A-Za-z]{1,6})\s*$/i;
 
 /** "সেট: খ" / "Set — A" — বোর্ড-MCQ-র সেট-বক্স */
 const QP_SET_RE = /^(?:সেট|सेट|set)\s*(?:নং|নম্বর|no\.?)?\s*[:：\-–—=]\s*([\u0980-\u09ff\u0900-\u097fA-Za-z0-9]{1,4})\s*$/i;
@@ -396,7 +406,7 @@ const QP_SUG_TITLE_RES: Array<{ re: RegExp; cls: (m: RegExpMatchArray) => string
 const QP_SYLLABUS_RE = /^[\[(]\s*([^\[\]()]{4,80}?(?:সিলেবাস|সিলেবাশ|syllabus|पाठ्यक्रम)[^\[\]()]{0,40}?)\s*[\])]\s*$/i;
 
 /** হেডার-ডাটা লাইন (কোড/সেট/সিলেবাস) — নির্দেশনার তালিকায় ঢুকবে না */
-const QP_META_LINE = /^(?:বিষয়\s*কোড|सब्जेक्ट\s*कोड|विषय\s*कोड|subject\s*code|code\s*no?|(?:সেট|सेट|set)\s*(?:নং|নম্বর|no\.?)?\s*[:：\-–—=])/i;
+const QP_META_LINE = /^(?:বিষয়\s*কোড|কোর্স\s*(?:কোড|টাইটেল)|सब्जेक्ट\s*कोड|विषय\s*कोड|subject\s*code|course\s*code|code\s*no?|(?:সেট|सेट|set)\s*(?:নং|নম্বর|no\.?)?\s*[:：\-–—=])/i;
 
 /** কী-মান লাইনের মান অংশ — "বিষয়: গণিত" → "গণিত" */
 function afterKeyValue(line: string): string {
@@ -448,6 +458,15 @@ export function qpPreambleMeta(raw: string, meta: QpMeta, lang: Lang): QpMeta {
 
     for (const seg of segments) {
       let matched = false;
+      // খণ্ড-ভিত্তিক বিশেষ হেডার — "কোর্স কোড: ২৩২৫০৭ · কোর্স টাইটেল: …" জাতীয় যৌগিক লাইনেও
+      // কোড/সেট-বক্সের তথ্য ধরা পড়ে (শুধু পূর্ণ-লাইনে চেক করলে যৌগিক রূপ বাদ পড়ত)
+      const segCm = seg.match(QP_CODE_RE);
+      if (segCm) { if (canFill(meta.subjectCode)) patch.subjectCode = segCm[1]; matched = true; }
+      else {
+        const segSm = seg.match(QP_SET_RE);
+        if (segSm) { if (canFill(meta.setCode)) patch.setCode = segSm[1]; matched = true; }
+      }
+      if (matched) continue;
       for (const kp of QP_ALL_KEY_PATTERNS) {
         if (kp.re.test(seg)) {
           const val = afterKeyValue(seg);
@@ -678,6 +697,32 @@ OUTPUT: Return ONLY a valid JSON object — { "text": "the corrected complete tr
 
 /** AI প্রথম উত্তর ভাঙা JSON দিলে মেরামত-পুনরায়ের অনুরোধ */
 export const QP_REPAIR_NOTE = `Your previous reply could not be parsed as JSON. Reply again with ONLY the JSON object itself — no markdown fences, no commentary. Inside JSON strings, escape every line break as \\n.`;
+
+/**
+ * AI চিত্র-নির্মাতা প্রম্পট — "[চিত্র: …]" বর্ণনা → প্রশ্নপত্র-উপযোগী লাইন-আর্ট SVG।
+ * বিশুদ্ধ জ্যামিতি/বিজ্ঞান-রেখাচিত্র — কালো-সাদা জিরোক্স-বান্ধব, লেবেল-মানাঙ্কিত।
+ * কঠোর JSON: { "svg": "<svg …>…</svg>" } — sanitizeFigureSvg পরিষ্কার করে নেয়।
+ */
+export const QP_FIGURE_SVG_SYSTEM = `You are the examination-figure engine of "Bangla Publishing Studio" — a precise technical illustrator that draws exam-paper diagrams as SVG line art.
+
+You receive a figure DESCRIPTION (usually Bengali, sometimes English/Hindi) and the QUESTION text it belongs to. Draw the described figure as clean, minimal SVG line art.
+
+Return ONLY valid JSON — no markdown fences, no commentary. Shape exactly:
+{ "svg": "<svg xmlns=\\"http://www.w3.org/2000/svg\\" viewBox=\\"0 0 240 180\\" …>…</svg>" }
+
+DRAWING RULES (absolute):
+- BLACK-AND-WHITE ONLY: stroke="#111111" (or #000), fills either "none" or light gray (#e5e5e5, #f3f3f3) or black. NO colors, NO gradients — the paper is photocopied in monochrome.
+- Root element: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 180" fill="none"> (keep 240×180 unless the figure is clearly wide/tall).
+- Shapes: <path> <line> <rect> <circle> <ellipse> <polyline> <polygon>. Crisp geometry — endpoints snapped, straight lines truly straight, circles truly round.
+- LABELS: use <text font-family="'Noto Sans Bengali',sans-serif" font-size="11" fill="#111111" text-anchor="middle">. Label the points/sides/vertices exactly as the description names them (A, B, C, O, P; বাংলা শব্দ থাকলে বাংলায়). Place labels so they never overlap the figure.
+- ANNOTATIONS the description implies: right-angle square mark, equal-tick marks on equal sides, arrows for rays/forces, dashed helper/dotted lines for constructions, hatching for ground/cross-section.
+- MATH conventions: degrees like 60°, angle marks with arc + label.
+- PHYSICS diagrams (ray diagrams, circuits, pulleys, magnets): standard textbook conventions — convex lens as two-facing arcs, battery as long/short plates, switch, resistor zigzag, arrowheads as small filled triangles.
+- GRAPHS: draw axes with arrowheads, label axes, plot smooth curves with <path>, mark given points with small circles.
+- NEVER: images, foreignObject, scripts, event attributes, external references, CSS urls, colors, shadow filters, background rect larger than needed. Keep the total SVG under 12KB.
+- FIDELITY: draw EXACTLY what the description says (this triangle with these letters, that circle with this radius mark). Do not add invented extra objects; do not add captions or titles inside the SVG.
+
+OUTPUT: Return ONLY the JSON object { "svg": "…" }. Inside the JSON string, escape every quote as \\" and every newline as \\n.`;
 
 // ─── সাধারণ সহায়ক ───
 
@@ -1159,8 +1204,8 @@ export function extractYearTagFromText(text: string): { text: string; tag?: stri
   return { text: t };
 }
 
-/** [চিত্র: …] / [চিত্র] / [Fig: …] — হাতে-আঁকা চিত্রের স্লট-মার্কার (প্রতিলিপি ও কাঠামো-দুটোতেই) */
-export const QP_FIGURE_RE = /[[(]\s*(?:চিত্র|ছবি|চিত্রপট|चित्र|figure|fig\.?|diagram)\s*[:：\-]?\s*([^\]()]*)[\])]/gi;
+/** [চিত্র: …] / [চিত্র] / [Fig: …] — হাতে-আঁকা চিত্রের স্লট-মার্কার (প্রতিলিপি ও কাঠামো-দুটোতেই)
+ * ক্যানোনিক্যাল সংজ্ঞা qp-figures.ts-এ — উপরে রি-এক্সপোর্ট করা; এখানে QP_FIGURE_RE ইমপোর্ট হয়েছে। */
 
 /** মডেল/পার্সারের গুরুত্ব-মান → ১/২ — সংখ্যা, তারকা ("★★") বা লেখা ("important") সব চলে */
 function coerceQpImportance(v: unknown): QpImportance | undefined {
@@ -1358,7 +1403,6 @@ export function resolveQpFormat(p: QuestionPaper): QpResolvedFormat {
   if (subN >= 2) return 'board';
   return 'classic';
 }
-
 // ─── প্রো হিসাব: নম্বর-যোগফল ও সেট বৈচিত্র্য ───
 
 /** বাংলা/দেবনাগরী/ইংরেজি — যেকোনো ডিজিট-রাশির পূর্ণসংখ্যা */
@@ -1907,10 +1951,14 @@ export function qpInfoLine(meta: QpMeta, lang: Lang, sep = '   ·   '): string {
  * (borderless সেল data-border="none" — সময়/পূর্ণমান split-line ও নম্বর-কলামে)
  * প্রিভিউও একই HTML দেখায় — তাই যা দেখা যায়, ঠিক তাই বসে।
  */
-export function paperToEditorHtml(p: QuestionPaper, lang: Lang): string {
+export function paperToEditorHtml(p: QuestionPaper, lang: Lang, figures?: readonly (QpFigureFill | null)[]): string {
   const f = resolveQpFormat(p);
   const layout = normalizeQpLayout(p.layout);
   const m = p.meta;
+  // চিত্র-পূর্ণক পরিকল্পনা — স্লট-ক্রমে (বিভাগ→প্রশ্ন→প্রশ্নের ভেতরে ক্রম) সারিবদ্ধ;
+  // null = ম্যানুয়াল খালি-বক্স স্লটই থাকবে
+  const figPlan = figures && figures.length > 0 ? figures : null;
+  let figCursor = 0;
   // স্তর — স্পষ্ট না থাকলে university-ফরম্যাট থেকে অনুমিত; স্তর অনুযায়ী লেবেল (কোর্স কোড/বর্ষ)
   const level: QpLevel = p.level ?? (f === 'university' ? 'university' : 'school');
   const uni = level === 'university';
@@ -1921,12 +1969,16 @@ export function paperToEditorHtml(p: QuestionPaper, lang: Lang): string {
     if (lang === 'en') return { ...base, code: 'Course Code', subject: 'Course Title', cls: 'Year/Semester' };
     return { ...base, code: 'কোর্স কোড', subject: 'কোর্স টাইটেল', cls: 'বর্ষ/সেমিস্টার' };
   })();
-  const compact = f === 'compact' || f === 'twocol';
+  const compact = f === 'compact' || f === 'twocol' || f === 'sugslip' || f === 'quiz';
   const board = f === 'board';
   const modern = f === 'modern';
   const royal = f === 'royal';
   const twocol = f === 'twocol';
   const university = f === 'university';
+  // সাজেশন-স্লিপ — কোচিং-সেন্টারের চেনা অল্প-জায়গার সাজেশন-পর্চা (২-স্তম্ভ, চাপা হেডার, ★-প্রধান)
+  const sugslip = f === 'sugslip';
+  // কুইজ/টেস্ট-স্লিপ — নিত্যদিনের টেস্ট-পর্চা (নাম-রোল ঘর, স্কোর-বাক্স, ২-স্তম্ভ MCQ)
+  const quiz = f === 'quiz';
   const adj = p.fontScale === 'sm' ? -2 : p.fontScale === 'lg' ? 2 : 0;
   const subAdj = p.fontScale === 'sm' ? -1 : p.fontScale === 'lg' ? 1 : 0;
   const hN = (compact ? 16 : royal ? 20 : 18) + adj;
@@ -1952,7 +2004,46 @@ export function paperToEditorHtml(p: QuestionPaper, lang: Lang): string {
 
   // ── হেডার ──
   const sug = p.docType === 'suggestion';
-  if (sug) {
+  if (sugslip) {
+    // সাজেশন-স্লিপ হেডার — কোচিং-সেন্টারের চেনা চাপা পর্চা: প্রতিষ্ঠান → "সাজেশন — বিষয় (শ্রেণি)"
+    // → এক-লাইনের পাতলা তথ্য-স্ট্রিপ (তারিখ থাকলেই) — জায়গা বাঁচাতে আর কিছুই নয়
+    if (m.schoolName) parts.push(bigLine(m.schoolName));
+    const slipTitle = m.subject
+      ? (m.classLabel ? `${L.sugTitle} — ${m.subject} (${m.classLabel})` : `${L.sugTitle} — ${m.subject}`)
+      : L.sugTitle;
+    parts.push(`<p${center}><span style="font-size:${hSize}"><strong>${escapeQpHtml(slipTitle)}</strong></span></p>`);
+    const strip: string[] = [];
+    if (m.date) strip.push(m.date);
+    if (m.teacherName?.trim()) strip.push(`${L.teacher}: ${m.teacherName.trim()}`);
+    if (strip.length > 0) parts.push(`<p${center}><span style="font-size:${subSize}">${escapeQpHtml(strip.join('   ·   '))}</span></p>`);
+    parts.push(`<hr style="margin:4px 0 8px">`);
+  } else if (quiz) {
+    // টেস্ট-স্লিপ হেডার — বাঁয়ে প্রতিষ্ঠান+বিষয়, ডানে টেস্ট/পূর্ণমান; নিচে নাম-রোল-তারিখ ঘর।
+    // সাজেশন-ধরনে বাঁয়ের শিরোনাম সাজেশন-টাইটেল — প্রেক্ষাপট সঠিক থাকে
+    const leftBits: string[] = [];
+    if (m.schoolName) leftBits.push(escapeQpHtml(m.schoolName));
+    if (sug) {
+      leftBits.push(`<strong>${escapeQpHtml(m.subject ? `${L.sugTitle} — ${m.subject}` : L.sugTitle)}</strong>`);
+    } else if (m.subject) {
+      leftBits.push(`<strong>${escapeQpHtml(m.subject)}</strong>`);
+    }
+    const rightBits: string[] = [];
+    if (m.examTitle) rightBits.push(escapeQpHtml(m.examTitle));
+    if (m.fullMarks) rightBits.push(`${L.marks}: ${escapeQpHtml(m.fullMarks)}`);
+    if (m.time) rightBits.push(`${L.time}: ${escapeQpHtml(m.time)}`);
+    const headRow = `<table style="margin:0 0 2px"><colgroup><col /><col /></colgroup><tbody><tr>`
+      + `${qpTdFree(`<p style="margin:1px 0;text-align:left">${leftBits.map((b) => `<span style="font-size:${subSize}">${b}</span>`).join('<br>')}</p>`)}`
+      + `${qpTdFree(`<p style="margin:1px 0;text-align:right">${rightBits.map((b) => `<span style="font-size:${subSize}">${b}</span>`).join('<br>')}</p>`)}`
+      + `</tr></tbody></table>`;
+    parts.push(headRow);
+    // নাম-রোল-তারিখ ঘর — টেস্ট-পর্চার সই-চেনা এক-লাইন ফিল-ইন
+    if (m.studentLine) {
+      parts.push(`<p${sty()}>${escapeQpHtml(L.nameRoll)}   ${escapeQpHtml(L.date)}: ________</p>`);
+    }
+    const insBox = qpInstructionBoxHtml(m.instructions, L.instructions, lang, subSize);
+    if (insBox) parts.push(insBox);
+    parts.push(`<hr style="margin:4px 0 8px">`);
+  } else if (sug) {
     // সাজেশন-হেডার — প্রতিষ্ঠান → "সাজেশন — বিষয় (শ্রেণি)" → পরীক্ষা → তথ্য-লাইন → শিক্ষক
     if (m.schoolName) parts.push(bigLine(m.schoolName));
     const sugTitleLine = m.subject
@@ -2076,7 +2167,8 @@ export function paperToEditorHtml(p: QuestionPaper, lang: Lang): string {
   }
 
   // ── বিভাগ ও প্রশ্ন (উন্নত লেআউট-সচেতন) ──
-  // twocol — লুপ-শেষে পুরো বডি একটাই ২-স্তম্ভ ব্লকে মোড়া হয় (পত্রিকা-ধাঁচ)
+  // twocol/sugslip/quiz — লুপ-শেষে পুরো বডি একটাই ২-স্তম্ভ ব্লকে মোড়া হয় (পত্রিকা-ধাঁচ)
+  const slipWrap = sugslip || quiz;
   const bodyStart = parts.length;
   let firstSection = true;
   for (const sec of p.sections) {
@@ -2100,16 +2192,20 @@ export function paperToEditorHtml(p: QuestionPaper, lang: Lang): string {
     firstSection = false;
     if (sec.note) parts.push(`<p${center}><em>${escapeQpHtml(sec.note)}</em></p>`);
 
-    const colCount = twocol ? 2 : qpSectionColumns(sec, layout);
+    const colCount = twocol || slipWrap ? 2 : qpSectionColumns(sec, layout);
     // ডান-নম্বর-কলাম — শুধু এক-কলাম বিভাগে; মাল্টি-কলাম MCQ-তে inline [২]-ই বাস্তবসম্মত
     const marksRight = layout.marksStyle === 'right' && colCount === 1;
     const blocks = sec.questions.map((q) => {
       const num = qpNumHtml(q.number, layout.numStyle);
       const marksInline = qpMarksHtml(q.marks, layout.marksStyle, L.markWord);
       const starTxt = q.importance === 2 ? '\u2605\u2605 ' : q.importance === 1 ? '\u2605 ' : '';
-      // চিত্র-স্লট — লেখা থেকে [চিত্র: …] মার্কার আলাদা করে বক্স-আকারে বসে
+      // চিত্র-স্লট — লেখা থেকে [চিত্র: …] মার্কার আলাদা করে বক্স-আকারে বসে;
+      // পরিকল্পনায় চিত্র থাকলে সরাসরি doc-figure নোডে বসে (সঙ্গে সঙ্গে প্রিন্ট-রেডি)
       const figs: string[] = [];
-      const bodyText = q.text.replace(QP_FIGURE_RE, (_mm, d: string) => { figs.push((d ?? '').trim()); return ' '; }).replace(/\s{2,}/g, ' ').trim();
+      const bodyText = q.text.replace(QP_FIGURE_RE, (_mm, d: string) => {
+        figs.push((d ?? '').trim());
+        return ' ';
+      }).replace(/\s{2,}/g, ' ').trim();
       // বিশ্ববিদ্যালয়-সাজেশনের বছর-ট্যাগ — প্রশ্নের শেষে ধূসর [DU '19]
       const yearTxt = q.yearTag ? `<span style="color:#555">[${escapeQpHtml(q.yearTag)}]</span>` : '';
       const stem = `<strong>${starTxt}${num}</strong> ${mathRichToHtml(bodyText)}${yearTxt ? ` ${yearTxt}` : ''}`;
@@ -2119,7 +2215,12 @@ export function paperToEditorHtml(p: QuestionPaper, lang: Lang): string {
       const matchTable = qpMatchHtml(q);
       const opts = qpOptionsHtml(q, layout, sty());
       const space = qpAnswerSpaceHtml(layout.answerSpace, colCount);
-      const figBoxes = figs.map((d) => qpFigureSlotHtml(d, lang)).join('');
+      // চিত্র-স্লট রেন্ডার — পরিকল্পনা মিললে প্রকৃত চিত্র (doc-figure), নইলে খালি বক্স
+      const figBoxes = figs.map((d) => {
+        const fill = figPlan && figCursor < figPlan.length ? figPlan[figCursor] : null;
+        figCursor++;
+        return fill ? figureHtmlFor(fill) : qpFigureSlotHtml(d, lang);
+      }).join('');
 
       // ডান-নম্বর-কলাম (আসল-পত্র প্রথা): মূল-প্রশ্ন + উপ-প্রশ্ন এক টেবিলে, মান ডান প্রান্তে
       // চিত্র-স্লট থাকলে সাধারণ ধারায় — বক্সটা পূর্ণ-প্রস্থ নেয়
@@ -2152,7 +2253,7 @@ export function paperToEditorHtml(p: QuestionPaper, lang: Lang): string {
       return bits.join('');
     });
 
-    if (colCount > 1 && !twocol) {
+    if (colCount > 1 && !twocol && !slipWrap) {
       // বাংলাদেশ-প্রথার ২/৩ কলাম — এডিটরের নিজস্ব doc-columns নোড (সম্পূর্ণ পাইপলাইন-সমর্থিত)
       // কলামের মাঝে রেখা — বোর্ড-স্টাইল MCQ-পত্রের চেনা ভাব
       // ইনলাইন column-count স্টাইল অপরিহার্য — এডিটরে TipTap renderHTML স্টাইল বসায়,
@@ -2166,17 +2267,30 @@ export function paperToEditorHtml(p: QuestionPaper, lang: Lang): string {
     }
   }
 
-  // twocol — পুরো বডি একটাই ২-স্তম্ভ পত্রিকা-ব্লকে (শিরোনাম ভাগ জুড়ে, বিভাগগুলো স্তম্ভে স্রোয়)
-  if (twocol) {
+  // twocol/sugslip/quiz — পুরো বডি একটাই ২-স্তম্ভ পত্রিকা-ব্লকে (শিরোনাম ভাগ জুড়ে, বিভাগগুলো স্তম্ভে স্রোয়);
+  // স্লিপ-দুটোতে ফাঁক আরো চাপা ও মাঝের রেখা নেই — কোচিং-পর্চার অল্প-জায়গা-প্রথা
+  if (twocol || slipWrap) {
     const bodyHtml = parts.splice(bodyStart).join('');
+    const slipGap = sugslip ? 14 : 20;
     parts.push(
-      `<div class="doc-columns" data-count="2" data-gap="20" data-rule="1" data-rule-style="solid" style="${columnsStyleText({ count: 2, gap: 20, rule: true, fill: 'balance' })}">${bodyHtml}</div>`,
+      `<div class="doc-columns" data-count="2" data-gap="${slipGap}" data-rule="${slipWrap ? 0 : 1}" data-rule-style="solid" style="${columnsStyleText({ count: 2, gap: slipGap, rule: !slipWrap, fill: 'balance' })}">${bodyHtml}</div>`,
     );
   }
 
   if (sug) {
     const note = (p.finalNote ?? '').trim() || (hasStars ? L.finalNoteDefault : '');
     if (note) parts.push(`<p${center}><strong>\u2605</strong> <em>${escapeQpHtml(note)}</em></p>`);
+    parts.push(`<p style="text-align:right"><em>${escapeQpHtml(L.signature)}: ____________________</em></p>`);
+  } else if (quiz) {
+    // টেস্ট-স্লিপের স্কোর-বক্স — ডান-কোণে ছোট ঘর (শিক্ষক লিখে দেন)
+    const scoreLabel = lang === 'en' ? 'Score' : lang === 'hi' ? 'प्राप्तांक' : 'প্রাপ্ত নম্বর';
+    parts.push(
+      `<table style="width:auto;min-width:32%;margin:10px 0 4px;margin-left:auto"><colgroup><col /><col style="width:64px" /></colgroup><tbody>`
+      + `<tr>${qpTdFree(`<p style="margin:2px 0;text-align:right"><strong>${escapeQpHtml(scoreLabel)}</strong></p>`)}`
+      + `<td style="padding:2px 8px"><p style="margin:2px 0">&nbsp;</p></td></tr></tbody></table>`,
+    );
+  } else if (sugslip) {
+    // স্লিপ-ফুটার — শুধু স্বাক্ষর-লাইন (জায়গা-সাশ্রয়ী)
     parts.push(`<p style="text-align:right"><em>${escapeQpHtml(L.signature)}: ____________________</em></p>`);
   } else {
     parts.push(`<p${center}>— ${escapeQpHtml(L.end)} —</p>`);
@@ -2189,8 +2303,8 @@ export function paperToEditorHtml(p: QuestionPaper, lang: Lang): string {
  * বাংলা ওয়েব-ফন্ট, বোর্ড-স্টাইলে ডাবল-রুল পাতার ফ্রেম, মাল্টি-কলাম সমর্থনসহ,
  * প্রিন্ট বাটনসহ। শিক্ষক ব্রাউজারে খুলেই সরাসরি প্রিন্ট/সেভ-করতে পারে।
  */
-export function paperToStandaloneHtml(p: QuestionPaper, lang: Lang): string {
-  const body = paperToEditorHtml(p, lang);
+export function paperToStandaloneHtml(p: QuestionPaper, lang: Lang, figures?: readonly (QpFigureFill | null)[]): string {
+  const body = paperToEditorHtml(p, lang, figures);
   // বোর্ড-প্রথা (MCQ ও সৃজনশীল) — আসল পত্রের মতো পাতার ফ্রেম;
   // বিশ্ববিদ্যালয় — আনুষ্ঠানিক এক-রেখা ফ্রেম; অলংকৃত — ডাবল-রুল অলংকৃত ফ্রেম
   const resolvedF = resolveQpFormat(p);
@@ -2232,6 +2346,10 @@ export function paperToStandaloneHtml(p: QuestionPaper, lang: Lang): string {
   .doc-columns > *:last-child { margin-bottom: 0; }
   .doc-columns > p { orphans: 2; widows: 2; break-inside: avoid; }
   .doc-columns > ul { orphans: 2; widows: 2; }
+  /* চিত্র-স্লটে বসা ভেক্টর/স্কেচ-চিত্র — কেন্দ্রে, প্রশ্নের লেখা থেকে আলাদা নিঃশ্বাসে */
+  .qp-page figure.doc-figure { margin: 10px auto; text-align: center; }
+  .qp-page figure.doc-figure img { max-width: 100%; height: auto; }
+  .qp-page figure.doc-figure figcaption { font-size: 0.82em; color: #333; margin-top: 2px; font-style: italic; }
   .qp-printbar { position: fixed; top: 12px; right: 12px; display: flex; gap: 8px; }
   .qp-printbar button { font: inherit; font-size: 14px; padding: 8px 16px; border-radius: 8px; border: none; background: #111; color: #fff; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.3); }
   @media print {

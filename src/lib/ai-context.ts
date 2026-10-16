@@ -13,6 +13,7 @@ import type { Editor } from '@tiptap/react';
 import type { Node as PMNode } from 'prosemirror-model';
 import { useEditorStore } from './store';
 import { getEditor } from './editor-registry';
+import { getVector } from './vector-catalog';
 
 // ─── ক্যাপ (অক্ষর) ───
 const CAP_OUTLINE_ITEMS = 14; // রূপরেখায় সর্বোচ্চ শিরোনাম
@@ -35,6 +36,8 @@ export interface DocContextParts {
   afterText?: string;
   /** চলতি পাতার পূর্ণ লেখা (ক্যাপ-করা) */
   pageExcerpt?: string;
+  /** পাতায় আছে এমন চিত্র — লেবেল/ক্যাপশন তালিকা (AI বুঝবে পাতাটা চিত্র-সমৃদ্ধ) */
+  figures?: string[];
 }
 
 /** এডিটর-ডক থেকে শিরোনামগুলো অর্ডারে বের করা */
@@ -101,6 +104,24 @@ export function gatherDocContext(editor: Editor | null | undefined, opts?: {
       }
     }
 
+    // পাতার চিত্রসমূহ — docFigure নোডের ক্যাপশন/লেবেল (চিত্র-সচেতন AI-উত্তরের জন্য)
+    try {
+      const figs: string[] = [];
+      doc.descendants((node) => {
+        if (node.type.name === 'docFigure' && figs.length < 8) {
+          const cap = String(node.attrs.cap ?? '').trim();
+          const vid = String(node.attrs.vid ?? '').trim();
+          const label = vid ? (getVector(vid)?.label ?? '') : '';
+          const txt = cap || label;
+          if (txt) figs.push(txt.slice(0, 80));
+        }
+        return true;
+      });
+      if (figs.length > 0) parts.figures = figs;
+    } catch {
+      /* চিত্র-তালিকা ঐচ্ছিক */
+    }
+
     // আশে-পাশের লেখা
     if (opts?.range && opts.range.from !== null && opts.range.to !== null) {
       const { from, to } = opts.range;
@@ -146,6 +167,12 @@ export function formatDocContext(parts: DocContextParts): string {
   if (parts.pagePosition) rows.push(`- অবস্থান: পৃষ্ঠা ${parts.pagePosition}`);
   if (parts.currentChapter) rows.push(`- চলতি অধ্যায়/শিরোনাম: ${parts.currentChapter}`);
   if (parts.outline?.length) rows.push(`- এই পাতার কাঠামো:\n${parts.outline.map((l) => `    ${l}`).join('\n')}`);
+  if (parts.figures?.length) {
+    rows.push(
+      `- এই পাতায় বসানো চিত্র: ${parts.figures.join('; ')} `
+      + `(প্ল্যাটফর্মে ভেক্টর-চিত্র-লাইব্রেরি ও AI-চিত্র আছে — নতুন চিত্র দরকার হলে লেখার মাঝে [চিত্র: এক-লাইন স্পষ্ট বর্ণনা] মার্কার দাও)`,
+    );
+  }
   if (parts.beforeText) rows.push(`- কাজের অংশের ঠিক আগের লেখা: "${parts.beforeText}"`);
   if (parts.afterText) rows.push(`- কাজের অংশের ঠিক পরের লেখা: "${parts.afterText}"`);
   if (parts.pageExcerpt) rows.push(`- চলতি পাতার লেখা:\n"""\n${parts.pageExcerpt}\n"""`);

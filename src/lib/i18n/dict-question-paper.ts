@@ -288,13 +288,33 @@ export const dictQuestionPaper = {
   },
   'qp.format.university': {
     bn: 'বিশ্ববিদ্যালয়',
-    hi: 'विश्वविद्यालय',
+    hi: 'विश्वविद्यालয',
     en: 'University',
   },
   'qp.format.university.desc': {
     bn: 'আনুষ্ঠানিক প্রথা — তথ্য-টেবিল সহ ফ্রেমড হেডার, বাঁ-সারিত বিভাগ, ডানে মান',
     hi: 'औपचारिक शैली — सूचना-तालिका वाला फ्रेम हेडर, बाएँ-सरेखित खण्ड, दाएँ अंक',
     en: 'Formal convention — framed header with info table, left-aligned sections, marks at right',
+  },
+  'qp.format.sugslip': {
+    bn: 'সাজেশন-স্লিপ',
+    hi: 'सजेशन-स्लिप',
+    en: 'Suggestion Slip',
+  },
+  'qp.format.sugslip.desc': {
+    bn: 'কোচিং-পর্চা ধাঁচ — চাপা হেডার, ২ স্তম্ভে ★-গুরুত্বপূর্ণ প্রশ্ন, ন্যূনতম জায়গা',
+    hi: 'कोचिंग-स्लिप शैली — कॉम्पैक्ट हेडर, २ स्तंभों में ★-प्रश्न, न्यूनतम जगह',
+    en: 'Coaching-slip style — compact header, 2-column starred questions, minimal space',
+  },
+  'qp.format.quiz': {
+    bn: 'টেস্ট-স্লিপ',
+    hi: 'टेस्ट-स्लिप',
+    en: 'Test Slip',
+  },
+  'qp.format.quiz.desc': {
+    bn: 'নিত্যদিনের টেস্ট — নাম-রোল ঘর, ২ স্তম্ভে প্রশ্ন, নিচে স্কোর-বক্স',
+    hi: 'रोज़ का टेस्ट — नाम-रोल घर, २ स्तंभों में प्रश्न, नीचे स्कोर-बॉक्स',
+    en: 'Daily test — name/roll fill-ins, 2-column questions, score box at bottom',
   },
   'qp.clean': { bn: 'লেখা পরিষ্কার', hi: 'लेखा साफ़ करें', en: 'Clean text' },
   'qp.clean.done': { bn: 'লেখা পরিষ্কার হয়েছে', hi: 'लेखा साफ़ हो गया', en: 'Text cleaned' },
@@ -478,5 +498,33 @@ export const dictQuestionPaper = {
   'qp.meta.uni.session': { bn: 'শিক্ষাবর্ষ/সেশন (ঐচ্ছিক)', hi: 'शिक्षावर्ष/सत्र (वैकल्पिक)', en: 'Session (optional)' },
   'qp.meta.uni.session.ph': { bn: 'যেমন: ২০২৩–২৪', hi: 'जैसे: २०२३–२४', en: 'e.g. 2023–24' },
   'qp.count.tag': { bn: 'বছর-ট্যাগ', hi: 'वर्ष-टैग', en: 'year tags' },
+
+  // চিত্র-ব্যবস্থাপনা — [চিত্র: …] স্লটে ক্যাটালগ/AI চিত্র বসানো
+  'qp.fig.title': { bn: 'চিত্র ব্যবস্থাপনা', hi: 'चित्र प्रबंधन', en: 'Figure manager' },
+  'qp.fig.count': { bn: 'চিত্র — {n}টি স্লট', hi: 'चित्र — {n} स्लॉट', en: 'Figures — {n} slot(s)' },
+  'qp.fig.hint': {
+    bn: 'লাইব্রেরি থেকে মিলিয়ে বসান, AI দিয়ে আঁকুন, নইলে প্রিভিউতে খালি-বক্সই থাকবে — শীটে বসানোর পরেও সাইজ/ক্যাপশন বদলানো যায়।',
+    hi: 'लाइब्रेरी से मिलाकर रखें, AI से बनाएं, अन्यथा प्रीव्यू में खाली-बॉक्स रहेगा — शीट में जोड़ने के बाद भी साइज़/कैप्शन बदल सकते हैं।',
+    en: 'Match from the library, draw with AI, or keep the empty box — size/caption stay editable after insert.',
+  },
+  'qp.fig.match': { bn: 'মেলাও', hi: 'मिलाएँ', en: 'Match' },
+  'qp.fig.matchTip': { bn: 'লাইব্রেরির সেরা-মিল চিত্র বসান', hi: 'लाइब्रेरी का सबसे मिलता-जुलता चित्र रखें', en: 'Place the best-matching library figure' },
+  'qp.fig.matchAll': { bn: 'সব মেলাও', hi: 'सब मिलाएँ', en: 'Match all' },
+  'qp.fig.matchAllTip': { bn: 'প্রতিটি স্লটে লাইব্রেরির সেরা-মিল চিত্র', hi: 'हर स्लॉट में सबसे मिलता-जुलता चित्र', en: 'Best-matching library figure in every slot' },
+  'qp.fig.matched': { bn: 'মিলেছে', hi: 'मिल गया', en: 'Matched' },
+  'qp.fig.matchedMany': { bn: '{n}/{total} স্লটে চিত্র বসল', hi: '{n}/{total} स्लॉट में चित्र बैठा', en: 'Filled {n} of {total} slots' },
+  'qp.fig.noMatch': { bn: 'লাইব্রেরিতে মেলা চিত্র নেই — AI দিয়ে আঁকুন বা হাতে আঁকুন', hi: 'लाइब्रेरी में मिलता चित्र नहीं — AI से बनाएँ या हाथ से बनाएँ', en: 'No library match — draw with AI or by hand' },
+  'qp.fig.ai': { bn: 'AI চিত্র', hi: 'AI चित्र', en: 'AI figure' },
+  'qp.fig.aiTip': { bn: 'বর্ণনা পড়ে AI লাইন-আর্ট চিত্র আঁকবে', hi: 'विवरण पढ़कर AI लाइन-आर्ट बनाएगा', en: 'AI draws line-art from the description' },
+  'qp.fig.aiAll': { bn: 'সব AI দিয়ে', hi: 'सब AI से', en: 'AI for all' },
+  'qp.fig.aiAllTip': { bn: 'সব খালি স্লটে AI চিত্র', hi: 'सभी खाली स्लॉट में AI चित्र', en: 'AI figures in every empty slot' },
+  'qp.fig.aiWorking': { bn: 'আঁকছে…', hi: 'बना रहा है…', en: 'Drawing…' },
+  'qp.fig.aiDone': { bn: 'AI চিত্র স্লটে বসেছে', hi: 'AI चित्र स्लॉट में बैठा', en: 'AI figure placed' },
+  'qp.fig.aiAllDone': { bn: 'সব স্লটে AI চিত্র চেষ্টা শেষ', hi: 'सभी स्लॉट में AI चित्र प्रयास पूरा', en: 'AI drawing attempted for all slots' },
+  'qp.fig.aiFail': { bn: 'AI চিত্র আঁকা গেল না — আবার চেষ্টা করুন বা লাইব্রেরি থেকে মেলান', hi: 'AI चित्र नहीं बना — फिर कोशिश करें या लाइब्रेरी से मिलाएँ', en: 'AI figure failed — retry or match from library' },
+  'qp.fig.clear': { bn: 'বাদ', hi: 'हटाएँ', en: 'Remove' },
+  'qp.fig.clearTip': { bn: 'চিত্র সরিয়ে খালি-বক্সে ফেরত', hi: 'चित्र हटाकर खाली-बॉक्स पर लौटें', en: 'Remove the figure, back to empty box' },
+  'qp.fig.noDesc': { bn: 'বর্ণনা নেই — প্রশ্ন পড়ে AI আঁকবে', hi: 'कोई विवरण नहीं — प्रश्न पढ़कर AI बनाएगा', en: 'No description — AI reads the question' },
+  'qp.fig.qLabel': { bn: 'প্রশ্ন', hi: 'प्रश्न', en: 'Q' },
 
 } as const;

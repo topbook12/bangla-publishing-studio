@@ -4092,6 +4092,61 @@ html.dark .qp-doctype-vis { background: oklch(0.27 0.01 260); border-color: rgb(
 /* কাঁচা লেখা */
 .qp-raw { font-size: 13px; line-height: 1.65; }
 .qp-hint { font-size: 11px; line-height: 1.55; color: var(--muted-foreground); margin-top: 6px; }
+
+/* ── চিত্র-ব্যবস্থাপনা (প্রশ্নপত্রের [চিত্র: …] স্লট) ── */
+.qp-figman {
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  background: color-mix(in oklab, var(--muted) 38%, var(--card));
+  padding: 10px 12px 11px;
+}
+.qp-figman-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.qp-figman-title { font-size: 12.5px; font-weight: 700; color: var(--foreground); }
+.qp-figman-hint { font-size: 10.5px; line-height: 1.5; color: var(--muted-foreground); margin-top: 2px; }
+.qp-figman-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+  max-height: 208px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+.qp-figman-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--card);
+  padding: 6px 8px;
+}
+.qp-figman-row-filled { border-color: color-mix(in oklab, var(--primary) 34%, var(--border)); }
+.qp-figman-thumb {
+  width: 56px;
+  height: 44px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  border: 1px dashed var(--border);
+  background: #fff;
+  overflow: hidden;
+}
+html.dark .qp-figman-thumb { background: oklch(0.98 0 0); }
+.qp-figman-empty { font-size: 18px; color: var(--muted-foreground); line-height: 1; }
+.qp-figman-meta { min-width: 0; flex: 1; }
+.qp-figman-desc {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.qp-figman-where { font-size: 10.5px; color: var(--muted-foreground); margin-top: 1px; }
+.qp-figman-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
 /* হস্তলিপি-পড়ার পর শুদ্ধিকরণ-আহ্বান + ছবি-তোলার টিপস */
 .qp-check-hint { color: var(--warning-foreground, #8a6d1a); display: flex; align-items: flex-start; gap: 4px; }
 .dark .qp-check-hint { color: #d9b45c; }
@@ -4231,6 +4286,17 @@ html.dark .qp-format-vis { background: oklch(0.27 0.01 260); border-color: rgb(2
   padding: 2px 0;
   border-radius: 2px;
   background: color-mix(in oklab, var(--foreground) 14%, transparent);
+}
+/* টেস্ট-স্লিপ কার্ডের স্কোর-বক্স মিনি-ভাব — ডান-কোণে ছোট বাক্স */
+.qp-vis-scorebox {
+  display: flex;
+  justify-content: flex-end;
+  margin: 3px 0 0;
+  border: 1px solid color-mix(in oklab, var(--foreground) 45%, transparent);
+  border-radius: 2px;
+  padding: 2px 4px;
+  width: 38%;
+  margin-left: auto;
 }
 /* বিশ্ববিদ্যালয় কার্ডের তথ্য-টেবিল মিনি-ভাব — ৪ ঘরের গ্রিড */
 .qp-vis-grid {

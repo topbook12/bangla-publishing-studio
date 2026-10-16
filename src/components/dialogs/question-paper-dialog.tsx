@@ -34,13 +34,17 @@ import { callAi, prepareImageFile } from '@/lib/ai-client';
 import type { PreparedImage } from '@/lib/ai-client';
 import { useEditorStore } from '@/lib/store';
 import {
-  QP_SCHOOL_KEY, QP_REPAIR_NOTE, QP_STRUCTURE_SYSTEM, QP_SUGGESTION_SYSTEM, QP_TRANSCRIBE_SYSTEM, QP_VERIFY_SYSTEM,
+  QP_SCHOOL_KEY, QP_REPAIR_NOTE, QP_FIGURE_SVG_SYSTEM, QP_STRUCTURE_SYSTEM, QP_SUGGESTION_SYSTEM, QP_TRANSCRIBE_SYSTEM, QP_VERIFY_SYSTEM,
   QP_DEFAULT_LAYOUT, cleanRawQpText, coerceQpLevel, defaultQpMeta, extractQpJson, extractTranscriptText, isDefaultQpInstructions,
   loadQpHistory, normalizeQpJson, normalizeQpLayout, paperToEditorHtml, paperToStandaloneHtml, parseLocaleInt,
   parseQuestionText, pushQpHistory, qpPageSizePx, qpPreambleMeta, qpSampleText, qpUniversityInstructions,
   removeQpHistoryItem, resolveQpFormat, shufflePaper, sumQpMarks,
 } from '@/lib/question-paper';
 import type { QpDocType, QpFontScale, QpFormat, QpHistoryItem, QpLayout, QpLevel, QpMeta, QuestionPaper } from '@/lib/question-paper';
+import {
+  collectQpFigureSlots, matchFigureVector, fillFromMatch, fillFromSvg,
+  type QpFigureFill,
+} from '@/lib/qp-figures';
 import { runCommand } from '@/components/ribbon/ribbon-shell';
 import { tFmt, useLangStore, useT, useFmtNum } from '@/lib/i18n';
 import { formatDateLong } from '@/lib/i18n/core';
@@ -79,6 +83,8 @@ const FORMATS: Array<{ id: QpFormat; label: string; desc: string }> = [
   { id: 'royal', label: 'qp.format.royal', desc: 'qp.format.royal.desc' },
   { id: 'twocol', label: 'qp.format.twocol', desc: 'qp.format.twocol.desc' },
   { id: 'university', label: 'qp.format.university', desc: 'qp.format.university.desc' },
+  { id: 'sugslip', label: 'qp.format.sugslip', desc: 'qp.format.sugslip.desc' },
+  { id: 'quiz', label: 'qp.format.quiz', desc: 'qp.format.quiz.desc' },
 ];
 
 const FONT_SCALES: Array<{ id: QpFontScale; key: string }> = [
@@ -252,6 +258,32 @@ function FormatVis({ id }: { id: QpFormat }) {
       </>
     );
   }
+  if (id === 'sugslip') {
+    // সাজেশন-স্লিপ — চাপা শিরোনাম + ★-প্রধান চাপা ২-স্তম্ভ (মাঝে রেখা নেই)
+    return (
+      <>
+        {bar('42%', true)}{bar('54%', true)}
+        <span className="qp-vis-rule" />
+        <span className="qp-vis-row"><span className="qp-vis-star">★</span>{bar('44%')}<span style={{ width: '6%' }} />{bar('40%')}</span>
+        <span className="qp-vis-row"><span className="qp-vis-star">★★</span>{bar('38%')}<span style={{ width: '8%' }} />{bar('44%')}</span>
+        <span className="qp-vis-row">{bar('46%')}<span style={{ width: '8%' }} />{bar('34%')}</span>
+        {bar('30%', true)}
+      </>
+    );
+  }
+  if (id === 'quiz') {
+    // টেস্ট-স্লিপ — দুই-কোণ হেডার + নাম-ঘর + ২-স্তম্ভ + স্কোর-বক্স
+    return (
+      <>
+        <span className="qp-vis-row">{bar('40%')}<span style={{ flex: 1 }} />{bar('28%')}</span>
+        <span className="qp-vis-row">{bar('66%')}</span>
+        <span className="qp-vis-rule" />
+        <span className="qp-vis-row">{bar('42%')}<span style={{ width: '8%' }} />{bar('40%')}</span>
+        <span className="qp-vis-row">{bar('38%')}<span style={{ width: '10%' }} />{bar('42%')}</span>
+        <span className="qp-vis-scorebox">{bar('20%')}</span>
+      </>
+    );
+  }
   return <>{bar('26%')}{bar('78%')}{bar('78%')}{bar('70%')}{bar('78%')}{bar('52%')}</>;
 }
 
@@ -299,6 +331,11 @@ export function QuestionPaperDialog() {
   const [error, setError] = useState<QpError | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [zoomMult, setZoomMult] = useState(1);
+
+  // ── চিত্র-ব্যবস্থাপনা — [চিত্র: …] স্লটে ক্যাটালগ/AI চিত্র বসানো ──
+  // স্লট-কী থেকে পূর্ণক-ম্যাপ; null/অনুপস্থিত = ম্যানুয়াল খালি-বক্স
+  const [figFills, setFigFills] = useState<Record<string, QpFigureFill | null>>({});
+  const [figBusy, setFigBusy] = useState<Record<string, boolean>>({});
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   /** পুনঃপ্রতিলিপিতে প্রতিস্থাপিত আগের লেখা — টোস্টের "আনডু"-তে ফেরত পাওয়া যায় */
@@ -492,6 +529,16 @@ export function QuestionPaperDialog() {
       setIsDemo(demo);
       setPhase('done');
       setStep(4);
+      // চিত্র-স্লটে ক্যাটালগ-ম্যাচ স্বয়ংক্রিয় বসানো — শক্ত মিল থাকলেই (আত্মবিশ্বাস-থ্রেশহোল্ড
+      // matchFigureVector-এই); দুর্বল বর্ণনা খালি থাকে — শিক্ষক AI/হাতে আঁকবেন
+      const slots = collectQpFigureSlots(final.sections);
+      const auto: Record<string, QpFigureFill | null> = {};
+      for (const s of slots) {
+        const qText = final.sections[s.secIdx]?.questions[s.qIdx]?.text ?? '';
+        const m = s.desc ? matchFigureVector(s.desc, qText) : null;
+        auto[s.key] = m ? fillFromMatch(m, s.desc) : null;
+      }
+      setFigFills(auto);
       // সাম্প্রতিক তালিকায় তুলে রাখা — পরের বার এক ক্লিকে ফেরত
       const got = sumQpMarks(final);
       pushQpHistory({
@@ -576,7 +623,7 @@ export function QuestionPaperDialog() {
 
   const insertIntoSheet = () => {
     if (!paper) return;
-    const html = paperToEditorHtml(paper, lang);
+    const html = paperToEditorHtml(paper, lang, figPlan);
     // সম্পূর্ণ প্রশ্নপত্র — ডকুমেন্টের একদম শেষে বসে। কারেন্ট-সিলেকশনে
     // insertContent করলে TipTap টেক্সট-ব্লকের মাঝে মাল্টি-ব্লক HTML-এর
     // <ul>-এর পরের অংশ নীরবে ফেলে দেয় — তাই স্পষ্ট পজিশনে insertContentAt
@@ -591,7 +638,7 @@ export function QuestionPaperDialog() {
 
   const downloadPaper = () => {
     if (!paper) return;
-    const html = paperToStandaloneHtml(paper, lang);
+    const html = paperToStandaloneHtml(paper, lang, figPlan);
     const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
     const a = document.createElement('a');
     const name = (paper.meta.schoolName || paper.meta.examTitle || 'question-paper')
@@ -616,7 +663,7 @@ export function QuestionPaperDialog() {
       return;
     }
     w.document.open();
-    w.document.write(paperToStandaloneHtml(paper, lang));
+    w.document.write(paperToStandaloneHtml(paper, lang, figPlan));
     w.document.close();
     toast.success(tt('qp.toast.print'));
     window.setTimeout(() => {
@@ -659,6 +706,10 @@ export function QuestionPaperDialog() {
       return;
     }
     if (s === 4 && !paper) return;
+    // ধাপ ২-তে ঢুকলেই কাঁচা-লেখার হেডার (স্কুল/বিষয়/শ্রেণি/সময়/পূর্ণমান/কোড) ফর্মে বসে —
+    // শুধু ফাঁকা/ডিফল্ট ঘর; শিক্ষকের নিজের লেখা কখনো বদলায় না। আগে জেনারেটের পরে বসত —
+    // ততক্ষণে ফর্মে আগের প্রশ্নপত্রের পুরনো মান দেখিয়ে বিভ্রান্তি হত।
+    if (s >= 2 && meta) setMeta(qpPreambleMeta(rawText, meta, lang));
     setStep(s);
   };
 
@@ -667,10 +718,18 @@ export function QuestionPaperDialog() {
       toast.info(tt('qp.toast.noText'));
       return;
     }
+    if (meta) setMeta(qpPreambleMeta(rawText, meta, lang));
     setStep(2);
   };
 
-  const previewHtml = useMemo(() => (paper ? paperToEditorHtml(paper, lang) : ''), [paper, lang]);
+  // ── চিত্র-স্লট → পূর্ণক-পরিকল্পনা ──
+  // স্লট-তালিকা (বিভাগ→প্রশ্ন→ক্রম), শিক্ষকের বসানো চিত্র-ম্যাপ, আর রেন্ডার-অর্ডারে সারিবদ্ধ পরিকল্পনা
+  const figSlots = useMemo(() => (paper ? collectQpFigureSlots(paper.sections) : []), [paper]);
+  const figPlan = useMemo(
+    () => figSlots.map((s) => figFills[s.key] ?? null),
+    [figSlots, figFills],
+  );
+  const previewHtml = useMemo(() => (paper ? paperToEditorHtml(paper, lang, figPlan) : ''), [paper, lang, figPlan]);
   const resolved = useMemo(() => (paper ? resolveQpFormat(paper) : 'classic'), [paper]);
   const stats = useMemo(() => {
     if (!paper) return { q: 0, sec: 0, mcq: 0, star: 0, tag: 0 };
@@ -701,6 +760,90 @@ export function QuestionPaperDialog() {
     // প্রস্তুত প্রশ্নপত্র থাকলে মেটা-বদলও লাইভ — ধাপ ২-এ স্কুল/বিষয়/সময় বদলালে প্রিভিউ
     // সঙ্গে সঙ্গে আপডেট হয় (আগে স্ন্যাপশটে পুরনো মেটাই থেকে যেত)
     setPaper((p) => (p ? { ...p, meta: { ...p.meta, ...patch } } : p));
+  };
+
+  // ── চিত্র-ব্যবস্থাপনা: অ্যাকশন ──
+
+  /** স্লটে ক্যাটালগের সেরা-মিল চিত্র বসানো (শিক্ষকের হাতে "মেলাও" বাটন) */
+  const autoMatchSlot = (key: string) => {
+    const slot = figSlots.find((s) => s.key === key);
+    if (!slot || !paper) return;
+    const qText = paper.sections[slot.secIdx]?.questions[slot.qIdx]?.text ?? '';
+    const m = matchFigureVector(slot.desc, qText);
+    if (!m) {
+      toast.info(tt('qp.fig.noMatch'));
+      return;
+    }
+    setFigFills((prev) => ({ ...prev, [key]: fillFromMatch(m, slot.desc) }));
+    toast.success(`${tt('qp.fig.matched')}: ${m.def.label}`);
+  };
+
+  /** সব স্লটে সেরা-মিল একসাথে */
+  const autoMatchAll = () => {
+    if (!paper) return;
+    let hit = 0;
+    setFigFills((prev) => {
+      const next = { ...prev };
+      for (const s of figSlots) {
+        const qText = paper.sections[s.secIdx]?.questions[s.qIdx]?.text ?? '';
+        const m = s.desc ? matchFigureVector(s.desc, qText) : null;
+        if (m) { next[s.key] = fillFromMatch(m, s.desc); hit++; }
+      }
+      return next;
+    });
+    toast.success(tFmt('qp.fig.matchedMany', { n: fmtNum(hit), total: fmtNum(figSlots.length) }));
+  };
+
+  /**
+   * AI দিয়ে চিত্র বানানো — বর্ণনা + প্রশ্নের প্রেক্ষাপট → লাইন-আর্ট SVG →
+   * sanitizeFigureSvg দিয়ে নিরাপদ করে doc-figure হিসেবে বসানো। ব্যর্থ হলে স্লট খালিই থাকে।
+   */
+  const aiGenerateSlot = async (key: string): Promise<void> => {
+    const slot = figSlots.find((s) => s.key === key);
+    if (!slot || !paper || figBusy[key]) return;
+    const qText = paper.sections[slot.secIdx]?.questions[slot.qIdx]?.text ?? '';
+    setFigBusy((prev) => ({ ...prev, [key]: true }));
+    try {
+      const prompt = [
+        `FIGURE DESCRIPTION: ${slot.desc || (lang === 'en' ? 'the diagram the question needs' : lang === 'hi' ? 'प्रश्न में जो चित्र चाहिए' : 'প্রশ্নে যে চিত্র দরকার')}`,
+        `QUESTION: ${qText.slice(0, 400)}`,
+        '',
+        'Draw this figure as the JSON shape { "svg": "…" }.',
+      ].join('\n');
+      const res = await callAi({ prompt, system: QP_FIGURE_SVG_SYSTEM, thinking: false });
+      if (!res.ok || !res.text) {
+        toast.error(tt('qp.fig.aiFail'));
+        return;
+      }
+      const parsed = extractQpJson<{ svg?: string }>(res.text);
+      const svgRaw = typeof parsed?.svg === 'string' ? parsed.svg : '';
+      const fill = svgRaw ? fillFromSvg(svgRaw, slot.desc) : null;
+      if (!fill) {
+        toast.error(tt('qp.fig.aiFail'));
+        return;
+      }
+      setFigFills((prev) => ({ ...prev, [key]: fill }));
+      if (res.demo) setIsDemo(true);
+      toast.success(tt('qp.fig.aiDone'));
+    } catch {
+      toast.error(tt('qp.fig.aiFail'));
+    } finally {
+      setFigBusy((prev) => ({ ...prev, [key]: false }));
+    }
+  };
+
+  /** সব মিলহীন স্লটে AI চিত্র — ধারাবাহিক (সার্ভার-বান্ধব); মাঝপথে ব্যর্থ হলে বাকিগুলো চলতেই থাকে */
+  const aiGenerateAll = async (): Promise<void> => {
+    const pending = figSlots.filter((s) => !figFills[s.key]);
+    for (const s of pending) {
+      await aiGenerateSlot(s.key);
+    }
+    if (pending.length > 0) toast.success(tt('qp.fig.aiAllDone'));
+  };
+
+  /** স্লটের চিত্র বাদ — ম্যানুয়াল খালি-বক্সে ফেরত */
+  const clearSlotFill = (key: string) => {
+    setFigFills((prev) => ({ ...prev, [key]: null }));
   };
 
   // নির্দেশনা-বাক্সের প্রদর্শিত লেখা — ড্রাফট না থাকলে ফর্ম-মান থেকে
@@ -1244,6 +1387,67 @@ export function QuestionPaperDialog() {
           <button type="button" aria-label="Zoom in" onClick={() => setZoomMult((z) => Math.min(1.6, Math.round((z + 0.1) * 10) / 10))} disabled={busy}><ZoomIn size={13} aria-hidden="true" /></button>
         </span>
       </div>
+
+      {/* ── চিত্র-ব্যবস্থাপনা — [চিত্র: …] স্লট থাকলেই প্রিভিউ-বাক্সের উপরে ── */}
+      {figSlots.length > 0 ? (
+        <div className="qp-figman" role="group" aria-label={tt('qp.fig.title')}>
+          <div className="qp-figman-head">
+            <p className="qp-figman-title">
+              <ImageIcon size={14} aria-hidden="true" className="inline mr-1 -mt-0.5" />
+              {tFmt('qp.fig.count', { n: fmtNum(figSlots.length) })}
+            </p>
+            <div className="flex gap-1.5">
+              <Button size="sm" variant="outline" onClick={autoMatchAll} disabled={busy} title={tt('qp.fig.matchAllTip')}>
+                <Sparkles size={13} aria-hidden="true" /> {tt('qp.fig.matchAll')}
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => void aiGenerateAll()} disabled={busy} title={tt('qp.fig.aiAllTip')}>
+                {Object.values(figBusy).some(Boolean)
+                  ? <><Loader2 size={13} className="animate-spin" aria-hidden="true" /> {tt('qp.fig.aiWorking')}</>
+                  : <><Wand2 size={13} aria-hidden="true" /> {tt('qp.fig.aiAll')}</>}
+              </Button>
+            </div>
+          </div>
+          <p className="qp-figman-hint">{tt('qp.fig.hint')}</p>
+          <div className="qp-figman-list">
+            {figSlots.map((s) => {
+              const fill = figFills[s.key] ?? null;
+              const slotBusy = !!figBusy[s.key];
+              const qLabel = `${tt('qp.fig.qLabel')} ${paper?.sections[s.secIdx]?.questions[s.qIdx]?.number ?? ''}`;
+              return (
+                <div key={s.key} className={cn('qp-figman-row', fill && 'qp-figman-row-filled')}>
+                  <span className="qp-figman-thumb" aria-hidden="true">
+                    {fill ? (
+                      <img src={fill.src} alt="" className="max-h-14 max-w-24 object-contain" draggable={false} />
+                    ) : <span className="qp-figman-empty">□</span>}
+                  </span>
+                  <div className="qp-figman-meta">
+                    <p className="qp-figman-desc" title={s.desc}>{s.desc || tt('qp.fig.noDesc')}</p>
+                    <p className="qp-figman-where">{qLabel}</p>
+                  </div>
+                  <div className="qp-figman-actions">
+                    {!fill ? (
+                      <>
+                        <Button size="sm" variant="ghost" onClick={() => autoMatchSlot(s.key)} disabled={slotBusy} title={tt('qp.fig.matchTip')}>
+                          <Sparkles size={13} aria-hidden="true" /> {tt('qp.fig.match')}
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => void aiGenerateSlot(s.key)} disabled={slotBusy} title={tt('qp.fig.aiTip')}>
+                          {slotBusy
+                            ? <><Loader2 size={13} className="animate-spin" aria-hidden="true" /> {tt('qp.fig.aiWorking')}</>
+                            : <><Wand2 size={13} aria-hidden="true" /> {tt('qp.fig.ai')}</>}
+                        </Button>
+                      </>
+                    ) : (
+                      <Button size="sm" variant="ghost" onClick={() => clearSlotFill(s.key)} disabled={slotBusy} title={tt('qp.fig.clearTip')}>
+                        <X size={13} aria-hidden="true" /> {tt('qp.fig.clear')}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
 
       <div ref={previewWrapRef} className="qp-preview">
         <div

@@ -38,7 +38,8 @@ Rules:
 - A BOOK CONTEXT block may be provided — match its topic, terminology and level; NEVER copy the context itself into blocks.
 - FIDELITY: transcribe ALL visible text faithfully; keep numbers, units, formulas exactly. NEVER invent facts, statistics or citations.
 - STRUCTURE: start with one heading (level 2) when the content has a clear topic; use bullets/numbered for enumerable things, table rows for tabular data (first row = header), callout for key warnings/formulas.
-- QUALITY: each paragraph 2–6 sentences, publication-grade prose. 4–14 blocks typical. No empty blocks, no duplicate blocks.`;
+- QUALITY: each paragraph 2–6 sentences, publication-grade prose. 4–14 blocks typical. No empty blocks, no duplicate blocks.
+- FIGURES: for textbooks/exam papers, when a paragraph references a diagram (geometry, ray diagram, circuit, map, graph), add a figure marker INSIDE that paragraph's text as its own line: [চিত্র: one-line precise description naming labels/points, e.g. "ত্রিভুজ ABC, AB-এর উপর D বিন্দু"] — the studio places a real figure there. Keep the description concrete and drawable.`;
 
 export const AI_VISION_SYSTEM = `You are the AI publishing engine of "Bangla Publishing Studio" — an expert book-composition assistant for Bengali, Hindi and English books, specialized in converting images into book-ready content.
 
