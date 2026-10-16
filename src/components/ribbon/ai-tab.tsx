@@ -4,7 +4,7 @@
 
 'use client';
 
-import { KeyRound, MessageSquare, ScanEye, Sparkles, Wand2 } from 'lucide-react';
+import { KeyRound, MessageSquare, ScanEye, ShieldCheck, Sparkles, Wand2 } from 'lucide-react';
 import { RibbonButton, RibbonDivider, RibbonGroup } from './ribbon-shell';
 import { useUiStore } from '@/lib/ui-store';
 import { useAiStore, aiConfiguredSelector } from '@/lib/ai-store';
@@ -38,6 +38,12 @@ export function AiTab() {
           label={tt('ai.btn.write')}
           title={tt('ai.btn.write.tip')}
           onClick={() => openAi('text')}
+        />
+        <RibbonButton
+          icon={ShieldCheck}
+          label={tt('rev.aiCheck')}
+          title={tt('rev.aiCheckTip')}
+          onClick={() => openDialog('accuracy')}
         />
         <RibbonButton
           icon={MessageSquare}

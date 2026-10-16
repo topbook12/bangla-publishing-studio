@@ -14,6 +14,7 @@ export type DialogName =
   | 'cover'
   | 'projects'
   | 'review'
+  | 'accuracy'
   | 'pageChrome'
   | 'templates'
   | 'findReplace'

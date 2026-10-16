@@ -8,6 +8,7 @@ import { HeaderFooterDialog } from './header-footer-dialog';
 import { CoverDialog } from './cover-dialog';
 import { ProjectsDialog } from './projects-dialog';
 import { ReviewDialog } from './review-dialog';
+import { AccuracyDialog } from './accuracy-dialog';
 import { PageChromeDialog } from './page-chrome-dialog';
 import { TemplatesDialog } from './templates-dialog';
 import { FindReplaceDialog, useFindReplaceShortcuts } from './find-replace-dialog';
@@ -29,6 +30,7 @@ export function Dialogs() {
       <CoverDialog />
       <ProjectsDialog />
       <ReviewDialog />
+      <AccuracyDialog />
       <PageChromeDialog />
       <TemplatesDialog />
       <FindReplaceDialog />

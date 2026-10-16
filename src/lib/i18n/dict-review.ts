@@ -22,8 +22,12 @@ export const dictReview: Dict = {
   'rev.spelling': { bn: 'বানান', hi: 'वर्तनी', en: 'Spelling' },
   'rev.findReplace': { bn: 'খোঁজ ও প্রতিস্থাপন', hi: 'खोजें और बदलें', en: 'Find & Replace' },
   'rev.findReplaceTip': { bn: 'সম্পূর্ণ বই জুড়ে খোঁজ ও প্রতিস্থাপন (Ctrl+F)', hi: 'पूरी पुस्तक में खोजें और बदलें (Ctrl+F)', en: 'Find & replace across the whole book (Ctrl+F)' },
-  'rev.aiCheck': { bn: 'AI যাচাই', hi: 'AI जाँच', en: 'AI Check' },
-  'rev.aiCheckTip': { bn: 'AI দিয়ে পুরো পাতার বানান, ব্যাকরণ ও তথ্য-অসংগতি যাচাই — লাইভ ফলাফল', hi: 'AI से पूरे पृष्ठ की वर्तनी, व्याकरण और तथ्य-जाँच — लाइव परिणाम', en: 'AI-check the whole page for spelling, grammar and inconsistencies — live results' },
+  'rev.aiCheck': { bn: 'নির্ভুলতা যাচাই', hi: 'सटीकता जाँच', en: 'Accuracy Check' },
+  'rev.aiCheckTip': {
+    bn: 'নির্ভুলতা কেন্দ্র — বানান, ব্যাকরণ, গণিত-হিসাব, তথ্য ও প্রশ্ন-কাঠামো যাচাই; এক-ক্লিক সংশোধন',
+    hi: 'सटीकता केंद्र — वर्तनी, व्याकरण, गणित, तथ्य और प्रश्न-संरचना जाँच; एक-क्लिक सुधार',
+    en: 'Accuracy Center — checks spelling, grammar, math, facts and question structure; one-click fixes',
+  },
 
   // ─── যুক্তাক্ষর প্যালেট ───
   'rev.conjuncts': { bn: 'যুক্তাক্ষর', hi: 'संयुक्ताक्षर', en: 'Conjuncts' },
