@@ -27,7 +27,7 @@ import type { AiVisionTab } from '@/lib/ui-store';
 import { useEditorStore } from '@/lib/store';
 import { getEditor } from '@/lib/editor-registry';
 import { useAiStore, aiConfiguredSelector } from '@/lib/ai-store';
-import { analyzeImage, generateBookText, prepareImageFile, AI_VISION_SYSTEM } from '@/lib/ai-client';
+import { analyzeImage, generateBookText, prepareImageFile } from '@/lib/ai-client';
 import { gatherDocContext, formatDocContext } from '@/lib/ai-context';
 import { pageToMarkdown, PAGE_MD_CAP } from '@/lib/ai-assistant';
 import type { PreparedImage } from '@/lib/ai-client';
@@ -136,7 +136,11 @@ export function AiVisionDialog() {
 
   const run = async (demo: boolean) => {
     if (busy) return;
-    if (tab === 'vision' && !image) return;
+    if (tab === 'vision' && !image) {
+      // ডেমো/রান বাটন ছবি ছাড়া চাপলে নীরব no-op নয় — বোঝাই (আগে কিছুই হত না)
+      toast.info(tt('ai.vision.needImage'));
+      return;
+    }
     if (!instruction.trim() && tab === 'text') {
       // লেখা ট্যাবে নির্দেশ আবশ্যক — নীরব ফেরত নয়, বোঝাই
       toast.info(tt('ai.err.instruction'));
@@ -203,7 +207,15 @@ export function AiVisionDialog() {
       toast.info(tt('ai.err.nothing'));
       return;
     }
-    ed.chain().focus().insertContent(html).run();
+    // মাল্টি-ব্লক HTML মাঝ-টেক্সটব্লকে বসালে TipTap নীরবে পরের ব্লক ফেলে দেয় (QP-পাইপলাইনে
+    // নথিভুক্ত বাগ) — কার্সরের টেক্সটব্লকের পরে স্পষ্ট পজিশনে বসাই
+    try {
+      const $from = ed.state.selection.$from;
+      const at = $from.parent.isTextblock && $from.depth >= 1 ? $from.after(1) : ed.state.selection.from;
+      ed.chain().focus().insertContentAt(Math.min(at, ed.state.doc.content.size), html).run();
+    } catch {
+      ed.chain().focus().insertContentAt(ed.state.doc.content.size, html).run();
+    }
     toast.success(tt('ai.inserted'));
     close();
   };

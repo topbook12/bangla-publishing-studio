@@ -170,8 +170,9 @@ export interface AiCallResult {
 /**
  * ইউজার-ক্যানসেল ও টাইমআউট — এক fetch-সিগন্যালে।
  * AbortSignal.any পুরনো ব্রাউজারে না থাকলে লিসেনার-ভিত্তিক fallback।
+ * (ai-stream সহ সব AI-কলার এক বেইজ থেকে সিগন্যাল মেলায় — আচরণ হুবহু এক)
  */
-function mergeAbortSignals(signals: AbortSignal[]): AbortSignal | undefined {
+export function mergeAbortSignals(signals: AbortSignal[]): AbortSignal | undefined {
   const usable = signals.filter(Boolean);
   if (usable.length === 0) return undefined;
   const anyFn = (AbortSignal as unknown as { any?: (sigs: AbortSignal[]) => AbortSignal }).any;

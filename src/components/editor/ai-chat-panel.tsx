@@ -52,6 +52,7 @@ export function AiChatPanel() {
   const setDraft = useAiChatStore((s) => s.setDraft);
   const addUser = useAiChatStore((s) => s.addUser);
   const addAssistant = useAiChatStore((s) => s.addAssistant);
+  const popLastUser = useAiChatStore((s) => s.popLastUser);
   const setSending = useAiChatStore((s) => s.setSending);
   const clear = useAiChatStore((s) => s.clear);
 
@@ -63,6 +64,21 @@ export function AiChatPanel() {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
+  // চলমান উত্তর বাতিল — নতুন প্রশ্ন/প্যানেল বন্ধে abort
+  const abortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => () => abortRef.current?.abort(), []);
+
+  /** চলমান উত্তর বাতিল — আংশিক লেখা এলে ড্রাফটে রেখে দিই (নষ্ট নয়) */
+  const cancelStream = useCallback(() => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setSending(false);
+    setStreamText(null);
+    // অরফান ইউজার-বার্তা নয় — শেষ পাঠানো প্রশ্নটি ড্রাফটে ফেরত
+    const last = popLastUser();
+    if (last) setDraft(last);
+  }, [popLastUser, setDraft, setSending]);
 
   const busy = sending;
 
@@ -160,6 +176,10 @@ export function AiChatPanel() {
     setImage(null);
     addUser(text || (img ? tt('ai.chat.imageMsg') : ''));
     setSending(true);
+    // নতুন প্রশ্ন এলেই আগের চলমান উত্তর বাতিল (এক সময়ে একটাই স্ট্রিম)
+    abortRef.current?.abort();
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
 
     const history = useAiChatStore.getState().messages.map((m) => ({ role: m.role, content: m.content }));
     // বইয়ের প্রেক্ষাপট — AI-কে চলতি বই/অধ্যায়/পাতা বুঝিয়ে দেওয়া (চ্যাটকে সচেতন সহ-লেখক বানাতে)
@@ -183,18 +203,24 @@ export function AiChatPanel() {
       messages: history,
       imageDataUrl: img?.dataUrl ?? null,
       docContext,
+      signal: ctrl.signal,
       onDelta: (full) => setStreamText(full),
     });
 
+    if (ctrl.signal.aborted) return; // বাতিল — ফলাফল-রাইট নয়
     setSending(false);
     setStreamText(null);
     if (res.ok && (res.markdown ?? res.text)) {
       addAssistant((res.markdown ?? res.text ?? '').trim(), res.demo);
+      if (res.truncated) toast.warning(tt('ai.err.truncated'));
       if (res.fixedModel) {
         toast.info(`${tt('ai.err.fixedModel')} ${res.fixedModel}`);
       }
     } else {
-      // বন্ধুত্বপূর্ণ ইঙ্গিত + প্রোভাইডারের raw বার্তা — রোগ-নির্ণয় সহজ হয়
+      // বন্ধুত্বপূর্ণ ইঙ্গিত + প্রোভাইডারের raw বার্তা — রোগ-নির্ণয় সহজ হয়।
+      // প্রশ্নটি হারায় না — ড্রাফটে ফেরত (আবার এক ক্লিকে পাঠানো যায়)
+      const last = popLastUser();
+      if (last) setDraft(last);
       const raw = rawProviderLine(res.error, tt('ai.err.raw'));
       setError([tt(res.hintKey ?? 'ai.err.title'), raw].filter(Boolean).join('\n'));
     }
@@ -212,8 +238,17 @@ export function AiChatPanel() {
       toast.error(tt('ai.err.parse'));
       return;
     }
-    ed.chain().focus().insertContent(html).run();
-    toast.success(tt('ai.inserted'));
+    // মাল্টি-ব্লক HTML মাঝ-টেক্সটব্লকে বসালে TipTap নীরবে পরের ব্লক ফেলে দেয় —
+    // সবসময় স্পষ্ট পজিশনে বসাই (কার্সরের টেক্সটব্লকের পরে / ডক-শেষে)
+    try {
+      const $from = ed.state.selection.$from;
+      const at = $from.parent.isTextblock && $from.depth >= 1 ? $from.after(1) : ed.state.selection.from;
+      ed.chain().focus().insertContentAt(Math.min(at, ed.state.doc.content.size), html).run();
+      toast.success(tt('ai.inserted'));
+    } catch {
+      ed.chain().focus().insertContentAt(ed.state.doc.content.size, html).run();
+      toast.success(tt('ai.inserted'));
+    }
   };
 
   const copyMessage = async (content: string) => {
@@ -410,12 +445,12 @@ export function AiChatPanel() {
           <button
             type="button"
             className="ai-chat-send"
-            onClick={() => void send()}
-            disabled={busy || (!draft.trim() && !image)}
-            aria-label={tt('ai.chat.send')}
-            title={tt('ai.chat.send')}
+            onClick={() => (busy ? cancelStream() : void send())}
+            disabled={!busy && !draft.trim() && !image}
+            aria-label={busy ? tt('ai.cancel') : tt('ai.chat.send')}
+            title={busy ? tt('ai.cancel') : tt('ai.chat.send')}
           >
-            {busy ? <Loader2 size={15} className="animate-spin" aria-hidden="true" /> : <Send size={15} aria-hidden="true" />}
+            {busy ? <X size={15} aria-hidden="true" /> : <Send size={15} aria-hidden="true" />}
           </button>
         </div>
         <div className="ai-chat-foot">

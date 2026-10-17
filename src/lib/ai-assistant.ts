@@ -3,12 +3,13 @@
  * ─────────────────────────────────────────────────────────
  *  - SELECTION_MODES: সিলেক্ট করা লেখায় এক-ট্যাপ AI কাজ (উন্নত, ব্যাকরণ,
  *    অনুবাদ, টেবিল, ব্যাখ্যা…)
- *  - runSelectionAi / runChatAi: /api/ai/chat প্রক্সি কল (BYOK — নিজের কি)
+ *  - runSelectionAi / runChatAiStream: /api/ai/chat প্রক্সি কল (BYOK — নিজের কি)
  *  - markdownToHtml: AI-র মার্কডাউন → সুরক্ষিত এডিটর HTML। ইনপুট আগে
  *    escape হয়, তারপর শুধু নির্দিষ্ট সিনট্যাক্স ট্যাগে রূপ নেয় — XSS-নিরাপদ।
  */
 
 import { useAiStore, providerPreset } from './ai-store';
+import { mergeAbortSignals } from './ai-client';
 import { withTransientRetry } from './ai-retry';
 import { callTextApiStream } from './ai-stream';
 import type { AiBubbleMode } from './ai-bubble-store';
@@ -228,9 +229,6 @@ export const SELECTION_MODES: SelectionModeDef[] = [
   },
 ];
 
-export const modeById = (id: string): SelectionModeDef | undefined =>
-  SELECTION_MODES.find((m) => m.id === id);
-
 // ─── API কল ───
 
 /** সার্ভারের সেন্টিনেল কোড — এগুলো raw "প্রোভাইডারের উত্তর" হিসেবে দেখানো হয় না */
@@ -263,12 +261,16 @@ export interface AiTextResult {
   fixedModel?: string;
   /** মডেল ব্যস্ত থাকায় একই পরিবারের হালকা বিকল্পে উত্তর এসেছে — কোনটিতে */
   busyFallback?: string;
+  /** স্ট্রিম মাঝপথে ভেঙেছে — পাওয়া অংশই ফেরত দেওয়া হয়েছে (কলার ইউজারকে সতর্ক করবে) */
+  truncated?: boolean;
 }
 
 async function callTextApi(opts: {
   prompt: string;
   system: string;
   imageDataUrl?: string | null;
+  /** চলমান কল বাতিল করতে (AI-বাবল বন্ধ/নতুন রান) */
+  signal?: AbortSignal;
 }): Promise<AiTextResult> {
   const attempt = async (): Promise<AiTextResult> => {
     const config = useAiStore.getState().config;
@@ -280,7 +282,7 @@ async function callTextApi(opts: {
     const res = await fetch('/api/ai/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      signal: AbortSignal.timeout(200_000), // সার্ভার hard-cap ১৮০সে + busy-retry — ক্লায়েন্টে ঢিলেঢালা সীমা
+      signal: mergeAbortSignals([AbortSignal.timeout(200_000), ...(opts.signal ? [opts.signal] : [])]), // সার্ভার hard-cap ১৮০সে + busy-retry — ক্লায়েন্টে ঢিলেঢালা সীমা
       body: JSON.stringify({
         prompt: opts.prompt,
         system: opts.system,
@@ -312,8 +314,12 @@ async function callTextApi(opts: {
     // ব্যস্ত/সার্ভার-সমস্যায় ক্লায়েন্টেও ২ পর্যন্ত চুপচাপ পুনরায় (৫ সে ও ১২ সে পরে)
     return await withTransientRetry(attempt);
   } catch (err) {
+    // ইউজার-ক্যানসেল — টাইমআউট নয়; আলাদা সংকেত ফেরত (কলার নীরবে এগোবে)
+    if (opts.signal?.aborted || (err as Error)?.name === 'AbortError') {
+      return { ok: false, error: 'CANCELLED', hintKey: 'ai.err.cancelled' };
+    }
     const name = (err as Error)?.name;
-    if (name === 'TimeoutError' || name === 'AbortError') {
+    if (name === 'TimeoutError') {
       return { ok: false, error: 'TIMEOUT_ERROR', hintKey: 'ai.err.timeout' };
     }
     return { ok: false, error: 'NETWORK', hintKey: 'ai.err.network' };
@@ -332,6 +338,8 @@ export interface SelectionAiOptions {
   docContext?: string;
   /** স্ট্রিমিং — প্রতি টোকেনে জমানো পূর্ণ লেখা (লাইভ প্রিভিউ); দিলে স্ট্রিম-পথ চলে */
   onDelta?: (fullText: string) => void;
+  /** চলমান রান বাতিল — AI-বাবল বন্ধ/নতুন রানে দেওয়া হয় */
+  signal?: AbortSignal;
 }
 
 /** চূড়ান্ত উত্তরে বাংলা যতি-পরিমার্জন — মডেলের ফেলে আসা ফাঁকা-যতি ভুল ঠিক করে
@@ -372,8 +380,8 @@ export async function runSelectionAi(opts: SelectionAiOptions): Promise<AiTextRe
   const prompt = ctx ? `${ctx}\n\n${core}` : core;
   const res = opts.onDelta
     ? await withTransientRetry(() =>
-        callTextApiStream({ prompt, system: AI_EDIT_SYSTEM, imageDataUrl: opts.imageDataUrl ?? null, onDelta: opts.onDelta }))
-    : await callTextApi({ prompt, system: AI_EDIT_SYSTEM, imageDataUrl: opts.imageDataUrl ?? null });
+        callTextApiStream({ prompt, system: AI_EDIT_SYSTEM, imageDataUrl: opts.imageDataUrl ?? null, onDelta: opts.onDelta, signal: opts.signal }))
+    : await callTextApi({ prompt, system: AI_EDIT_SYSTEM, imageDataUrl: opts.imageDataUrl ?? null, signal: opts.signal });
   if (!res.ok) return res;
   const raw = (res.markdown ?? res.text ?? '').trim();
   if (!raw) return { ok: false, error: 'EMPTY_RESPONSE', hintKey: 'ai.err.empty' };
@@ -381,7 +389,7 @@ export async function runSelectionAi(opts: SelectionAiOptions): Promise<AiTextRe
   // তবে 'verify' মোডের রিপোর্টে ভুল-লেখার উদ্ধৃতি থাকে — পরিমার্জন উদ্ধৃতির
   // স্পেস/দাঁড়ি বদলে ভুল-দেখানো অংশ নষ্ট করে, তাই ওই মোডে কাঁচা উত্তরই।
   const markdown = opts.mode.id === 'verify' ? raw : polishBanglaPunctuation(raw);
-  return { ok: true, markdown, demo: res.demo, fixedModel: res.fixedModel };
+  return { ok: true, markdown, demo: res.demo, fixedModel: res.fixedModel, truncated: res.truncated };
 }
 
 export interface ChatMessage {
@@ -389,7 +397,7 @@ export interface ChatMessage {
   content: string;
 }
 
-/** চ্যাট-প্রম্পট গঠন — runChatAi ও runChatAiStream দুই পথেই একই গঠন */
+/** চ্যাট-প্রম্পট গঠন — স্ট্রিমিং পথের একমাত্র উৎস */
 function buildChatPrompt(messages: ChatMessage[], docContext?: string): string {
   // শেষ ১২ বার্তা — টোকেন সাশ্রয়; মোট ট্রান্সক্রিপ্ট ~১৪k-এ ক্যাপ (প্রেক্ষাপট-ব্লকসহ ২৪k-ক্যাপ নিরাপদ)
   const MAX_TRANSCRIPT = 14_000;
@@ -404,39 +412,22 @@ function buildChatPrompt(messages: ChatMessage[], docContext?: string): string {
     : `কথোপকথন এখন পর্যন্ত:\n\n${transcript}\n\n---\n\nশেষ "লেখক"-বার্তার উত্তর দাও (চলতি কথোপকথনের ধারাবাহিকতায়)।`;
 }
 
-/** চ্যাট বার্তা পাঠানো (সম্পূর্ণ কথোপকথন + বইয়ের প্রেক্ষাপটসহ) */
-export async function runChatAi(opts: {
-  messages: ChatMessage[];
-  imageDataUrl?: string | null;
-  /** বইয়ের প্রেক্ষাপট-ব্লক (formatDocContext) — থাকলে AI বই বুঝে উত্তর দেয় */
-  docContext?: string;
-}): Promise<AiTextResult> {
-  const prompt = buildChatPrompt(opts.messages, opts.docContext);
-  const res = await callTextApi({
-    prompt,
-    system: AI_CHAT_SYSTEM,
-    imageDataUrl: opts.imageDataUrl ?? null,
-  });
-  if (!res.ok) return res;
-  const raw = (res.markdown ?? res.text ?? '').trim();
-  if (!raw) return { ok: false, error: 'EMPTY_RESPONSE', hintKey: 'ai.err.empty' };
-  return { ok: true, markdown: polishBanglaPunctuation(raw), demo: res.demo, fixedModel: res.fixedModel };
-}
-
 /** চ্যাট স্ট্রিমিং — প্রতি টোকেনে জমানো পূর্ণ লেখা onDelta-তে (লাইভ টাইপিং); চূড়ান্ত ফলাফল ফেরত */
 export async function runChatAiStream(opts: {
   messages: ChatMessage[];
   imageDataUrl?: string | null;
   docContext?: string;
   onDelta: (fullText: string) => void;
+  /** চলমান উত্তর বাতিল (নতুন প্রশ্ন/প্যানেল বন্ধ) */
+  signal?: AbortSignal;
 }): Promise<AiTextResult> {
   const prompt = buildChatPrompt(opts.messages, opts.docContext);
   const res = await withTransientRetry(() =>
-    callTextApiStream({ prompt, system: AI_CHAT_SYSTEM, imageDataUrl: opts.imageDataUrl ?? null, onDelta: opts.onDelta }));
+    callTextApiStream({ prompt, system: AI_CHAT_SYSTEM, imageDataUrl: opts.imageDataUrl ?? null, onDelta: opts.onDelta, signal: opts.signal }));
   if (!res.ok) return res;
   const raw = (res.markdown ?? res.text ?? '').trim();
   if (!raw) return { ok: false, error: 'EMPTY_RESPONSE', hintKey: 'ai.err.empty' };
-  return { ok: true, markdown: polishBanglaPunctuation(raw), demo: res.demo, fixedModel: res.fixedModel };
+  return { ok: true, markdown: polishBanglaPunctuation(raw), demo: res.demo, fixedModel: res.fixedModel, truncated: res.truncated };
 }
 
 // ─── নিরাপদ Markdown → HTML ───

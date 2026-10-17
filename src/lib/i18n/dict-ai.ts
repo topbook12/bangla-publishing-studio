@@ -579,6 +579,16 @@ export const dictAi: Dict = {
     hi: 'समय समाप्त — छवि छोटी करें या तेज़ मॉडल चुनें।',
     en: 'Timed out — shrink the image or pick a faster model.',
   },
+  'ai.err.cancelled': {
+    bn: 'কাজটি বাতিল করা হয়েছে।',
+    hi: 'कार्य रद्द कर दिया गया।',
+    en: 'The operation was cancelled.',
+  },
+  'ai.err.truncated': {
+    bn: 'উত্তরটি মাঝপথে বিচ্ছিন্ন হয়েছিল — পাওয়া অংশটুকুই বসানো হলো। প্রয়োজনে আবার চালান।',
+    hi: 'उत्तर बीच में टूट गया था — जो मिला वही जोड़ा गया। आवश्यकता हो तो फिर चलाएँ।',
+    en: 'The answer was cut off mid-stream — only the received part was inserted. Re-run if needed.',
+  },
   'ai.err.parse': {
     bn: 'AI-এর উত্তর পড়া যায়নি — আবার চেষ্টা করুন বা নির্দেশ সংক্ষিপ্ত করুন।',
     hi: 'AI का उत्तर पढ़ा नहीं जा सका — फिर प्रयास करें या निर्देश छोटा करें।',
@@ -904,6 +914,11 @@ export const dictAi: Dict = {
     hi: 'पहले एक छवि संलग्न करें',
     en: 'Attach an image first',
   },
+  'ai.vision.needImage': {
+    bn: 'আগে ছবি আপলোড করুন — ক্লিক, ড্র্যাগ-ড্রপ বা Ctrl+V পেস্ট করুন।',
+    hi: 'पहले छवि अपलोड करें — क्लिक, ड्रैग-ड्रॉप या Ctrl+V पेस्ट करें।',
+    en: 'Upload an image first — click, drag-and-drop, or paste with Ctrl+V.',
+  },
   'ai.bubble.copy': {
     bn: 'কপি',
     hi: 'कॉपी',
@@ -1160,6 +1175,11 @@ export const dictAi: Dict = {
     bn: 'AI চালাও',
     hi: 'AI चलाओ',
     en: 'Run AI',
+  },
+  'ai.cancel': {
+    bn: 'বাতিল করুন',
+    hi: 'रद्द करें',
+    en: 'Cancel',
   },
   'ai.sel.working': {
     bn: 'AI কাজ করছে…',

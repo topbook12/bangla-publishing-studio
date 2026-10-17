@@ -142,6 +142,7 @@ export const dictAccuracy: Dict = {
   'acc.applyAll': { bn: 'সব প্রয়োগ', hi: 'सभी लागू करें', en: 'Apply all' },
   'acc.dismissAll': { bn: 'সব উপেক্ষা', hi: 'सभी छोड़ें', en: 'Ignore all' },
   'acc.appliedToast': { bn: '{n}টি সংশোধন প্রয়োগ হয়েছে', hi: '{n} सुधार लागू हुए', en: '{n} fixes applied' },
+  'acc.appliedOccToast': { bn: '{n}টি সংশোধন — মোট {m} জায়গায় প্রয়োগ হয়েছে', hi: '{n} सुधार — कुल {m} जगह लागू हुए', en: '{n} fixes applied across {m} places' },
   'acc.appliedFailToast': { bn: '{n}টি প্রয়োগ হয়েছে, {m}টি হয়নি (লেখা বদলে গেছে)', hi: '{n} लागू हुए, {m} नहीं (टेक्स्ट बदल गया)', en: '{n} applied, {m} failed (text changed)' },
   'acc.fixFailToast': { bn: 'সংশোধন প্রয়োগ করা গেল না — লেখাটি বদলে গেছে।', hi: 'सुधार लागू नहीं हो सका — टेक्स्ट बदल गया।', en: 'Could not apply the fix — the text has changed.' },
 

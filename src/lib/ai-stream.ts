@@ -11,21 +11,10 @@
  */
 
 import { useAiStore, providerPreset } from './ai-store';
+import { mergeAbortSignals } from './ai-client';
 import type { AiTextResult } from './ai-assistant';
 import { t } from './i18n';
 import { toast } from 'sonner';
-
-/** সার্ভারের সেন্টিনেল কোড — raw প্রোভাইডার-উত্তর হিসেবে দেখানো হয় না */
-const RAW_SKIP = new Set([
-  'NETWORK', 'TIMEOUT_ERROR', 'EMPTY_RESPONSE', 'BASE_URL_EMPTY', 'MODEL_EMPTY', 'PARSE',
-  'READ_FAIL', 'IMAGE_DECODE_FAIL', 'IMAGE_TOO_LARGE', 'INVALID_REQUEST_BODY', 'PAYLOAD_TOO_LARGE',
-  'INCOMPLETE_CONFIG', 'DEMO_UNAVAILABLE',
-]);
-
-export function rawProviderLineStream(error: string | undefined, label: string): string {
-  if (!error || RAW_SKIP.has(error)) return '';
-  return `${label} ${error}`;
-}
 
 interface StreamEvent {
   delta?: string;
@@ -63,11 +52,14 @@ export async function callTextApiStream(opts: StreamCallOptions): Promise<AiText
   const hasKey = !!(config.apiKey.trim() && baseUrl && model);
 
   let res: Response;
+  // টাইমআউট + কলার-ক্যানসেল এক সিগন্যালে — mergeAbortSignals পুরনো ব্রাউজারেও কাজ করে
+  // (AbortSignal.any ছিল না এমন ব্রাউজারে TypeError নেমে "network error" দেখাত)
+  const signal = mergeAbortSignals([AbortSignal.timeout(200_000), ...(opts.signal ? [opts.signal] : [])]);
   try {
     res = await fetch('/api/ai/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      signal: AbortSignal.any([AbortSignal.timeout(200_000), ...(opts.signal ? [opts.signal] : [])]),
+      signal,
       body: JSON.stringify({
         prompt: opts.prompt,
         system: opts.system,
@@ -114,7 +106,7 @@ export async function callTextApiStream(opts: StreamCallOptions): Promise<AiText
     for (;;) {
       if (opts.signal?.aborted) {
         try { await reader.cancel(); } catch { /* বন্ধ */ }
-        return { ok: false, error: 'CANCELLED', hintKey: 'ai.err.timeout' };
+        return { ok: false, error: 'CANCELLED', hintKey: 'ai.err.cancelled' };
       }
       const { done, value } = await reader.read();
       if (done) break;
@@ -145,15 +137,16 @@ export async function callTextApiStream(opts: StreamCallOptions): Promise<AiText
       }
     }
   } catch {
-    if (acc) {
-      // অর্ধেক-স্ট্রিমে নেটওয়ার্ক ভাঙলে পর্যন্ত-পাওয়া অংশই মূল্যবান
-      return { ok: true, markdown: acc, text: acc };
+    if (acc.trim()) {
+      // অর্ধেক-স্ট্রিমে নেটওয়ার্ক ভাঙলে পর্যন্ত-পাওয়া অংশই মূল্যবান —
+      // তবে truncated চিহ্ন দিয়ে পাঠাই, যাতে কলার ইউজারকে সতর্ক করতে পারে
+      return { ok: true, markdown: acc, text: acc, truncated: true };
     }
     return { ok: false, error: 'NETWORK', hintKey: 'ai.err.network' };
   }
 
   if (!final) {
-    if (acc.trim()) return { ok: true, markdown: acc, text: acc };
+    if (acc.trim()) return { ok: true, markdown: acc, text: acc, truncated: true };
     return { ok: false, error: 'EMPTY_RESPONSE', hintKey: 'ai.err.empty' };
   }
   // স্বয়ং-নিরাময় — non-streaming পথের সাথে হুবহু এক আচরণ

@@ -147,7 +147,7 @@ export function AccuracyDialog() {
       const local = runLocalChecks(data.text).map<UiIssue>((i) => ({ ...i, status: 'open' }));
       setIssues(local);
 
-      // ২) AI গভীর যাচাই
+      // ২) AI গভীর যাচাই — লোকাল-ইস্যু সিড করা হয়, ফলে AI একই ভুল দ্বিতীয়বার জানালেও আসে না
       let aiIssues: UiIssue[] = [];
       try {
         const report = await runAiVerify({
@@ -157,6 +157,7 @@ export function AccuracyDialog() {
           onProgress: (done, total) => setProgress({ done, total }),
           shouldAbort: () => abortRef.current,
           signal: ctrl.signal,
+          localIssues: local,
         });
         const seen = new Set(local.map(dedupeKey));
         aiIssues = report.issues
@@ -190,9 +191,11 @@ export function AccuracyDialog() {
 
   const handleApply = async (issue: UiIssue) => {
     if (!issue.suggestion) return;
-    const ok = applyVerifyIssue(issue, scopePageIdsRef.current);
-    if (ok) {
+    const n = applyVerifyIssue(issue, scopePageIdsRef.current);
+    if (n > 0) {
       updateIssue(issue.id, 'applied');
+      // একই ভুল একাধিক জায়গায় থাকলে সবগুলো একসাথেই ঠিক হয় — ব্যবহারকারী জানুক
+      if (n > 1) toast.success(tFmt('acc.appliedOccToast', { n: f(1), m: f(n) }));
     } else {
       toast.error(tt('acc.fixFailToast'));
     }
@@ -221,10 +224,11 @@ export function AccuracyDialog() {
       toast.info(tt('acc.clean'));
       return;
     }
-    const { ok, fail } = applyVerifyIssues(applyable, scopePageIdsRef.current);
+    const { ok, fail, occurrences } = applyVerifyIssues(applyable, scopePageIdsRef.current);
     const ids = new Set(applyable.map((i) => i.id));
     setIssues((all) => all.map((i) => (ids.has(i.id) ? { ...i, status: 'applied' } : i)));
     if (fail > 0) toast.warning(tFmt('acc.appliedFailToast', { n: f(ok), m: f(fail) }));
+    else if (occurrences > ok) toast.success(tFmt('acc.appliedOccToast', { n: f(ok), m: f(occurrences) }));
     else toast.success(tFmt('acc.appliedToast', { n: f(ok) }));
   };
 
@@ -386,12 +390,25 @@ export function AccuracyDialog() {
         {/* ─── ফলাফল ─── */}
         {phase === 'results' && (
           <div className="space-y-4">
-            {/* স্কোর হেডার */}
+            {/* স্কোর হেডার — প্রিমিয়াম স্কোর-রিং (SVG প্রগতি-বৃত্ত) */}
             <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-accent/30 p-3">
-              <div className="flex items-center gap-2" title={tt('acc.score')}>
-                <BadgeCheck size={20} className={score >= 90 ? 'text-emerald-600' : score >= 60 ? 'text-amber-500' : 'text-red-500'} aria-hidden="true" />
-                <span className="text-2xl font-bold tabular-nums">{f(score)}</span>
-                <span className="text-xs text-muted-foreground">/ {f(100)}<br />{tt('acc.score')}</span>
+              <div className="flex items-center gap-2.5" title={tt('acc.score')}>
+                <span className="relative inline-flex h-12 w-12 items-center justify-center" aria-hidden="true">
+                  <svg viewBox="0 0 36 36" className="h-12 w-12 -rotate-90">
+                    <circle cx="18" cy="18" r="15.5" fill="none" stroke="currentColor" strokeWidth="3.5" className="text-border" />
+                    <circle
+                      cx="18" cy="18" r="15.5" fill="none" strokeWidth="3.5" strokeLinecap="round"
+                      strokeDasharray={`${(score / 100) * 97.4} 97.4`}
+                      className={score >= 90 ? 'text-emerald-500' : score >= 60 ? 'text-amber-500' : 'text-red-500'}
+                      stroke="currentColor"
+                    />
+                  </svg>
+                  <span className={cn(
+                    'absolute text-[13px] font-bold tabular-nums',
+                    score >= 90 ? 'text-emerald-600 dark:text-emerald-400' : score >= 60 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400',
+                  )}>{f(score)}</span>
+                </span>
+                <span className="text-xs leading-tight text-muted-foreground">{f(100)}<br />{tt('acc.score')}</span>
               </div>
               <span className="h-8 w-px bg-border" aria-hidden="true" />
               <div className="min-w-0 flex-1">

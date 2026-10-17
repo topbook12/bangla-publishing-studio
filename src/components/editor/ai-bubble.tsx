@@ -322,6 +322,15 @@ function AiBubblePanel({ req, style, onClose, configured, ref }: PanelProps) {
   const [error, setError] = useState<{ hintKey: string; detail?: string; raw?: string } | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const fileRef = useRef<HTMLInputElement | null>(null);
+  // চলমান AI-কল বাতিল — প্যানেল বন্ধ বা ক্যানসেল-বাটনে abort
+  const abortRef = useRef<AbortController | null>(null);
+  // "নিজের নির্দেশ" মোডের ডেফ — টাইপ-করা নির্দেশে চালানোর সময় ব্যবহৃত
+  const customDef = useMemo(() => SELECTION_MODES.find((m) => m.id === 'custom') ?? SELECTION_MODES[0], []);
+
+  useEffect(() => () => {
+    // আনমাউন্টে চলমান কল বাতিল — পেছনে অযথা টোকেন-খরচ নয়
+    abortRef.current?.abort();
+  }, []);
 
   const busy = phase === 'working';
 
@@ -358,6 +367,10 @@ function AiBubblePanel({ req, style, onClose, configured, ref }: PanelProps) {
       toast.info(tt('ai.bubble.needImage'));
       return;
     }
+    // আগের চলমান কল থাকলে বাতিল — নতুন রান শুধুমাত্র নিজের সিগন্যালে চলবে
+    abortRef.current?.abort();
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
     setMode(m);
     setPhase('working');
     setElapsed(0);
@@ -385,6 +398,7 @@ function AiBubblePanel({ req, style, onClose, configured, ref }: PanelProps) {
       tableContext: isTable ? tableRowsToMarkdown(tableRows ?? []) : undefined,
       pageScope: scope === 'page',
       docContext,
+      signal: ctrl.signal,
       onDelta: (full) => {
         // রেন্ডার-থ্রটল (~60ms) — টোকেন-ধারায়ও মসৃণ, বাড়তি রি-রেন্ডার নয়
         const now = Date.now();
@@ -394,17 +408,28 @@ function AiBubblePanel({ req, style, onClose, configured, ref }: PanelProps) {
       },
     });
 
+    if (ctrl.signal.aborted) return; // বাতিল — ফলাফল-রাইট নয়
     if (res.ok && res.markdown) {
       setResult(res.markdown);
       setResultDemo(!!res.demo);
       setFixedModel(res.fixedModel ?? null);
       setPhase('done');
+      // স্ট্রিম মাঝপথে ভাঙলে পাওয়া অংশই — ইউজারকে স্পষ্ট জানাই (নীরবে অসম্পূর্ণ লেখা বসানো নয়)
+      if (res.truncated) toast.warning(tt('ai.err.truncated'));
     } else {
       setResult(null);
       setError({ hintKey: res.hintKey ?? 'ai.err.title', detail: res.detail, raw: res.error });
       setPhase('error');
     }
   }, [busy, image, instruction, contextText, scope, tableRows, tt, captured]);
+
+  /** চলমান AI-কল বাতিল */
+  const cancelRun = useCallback(() => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setPhase('idle');
+    setResult(null);
+  }, []);
 
   const acceptFile = async (file: File) => {
     if (!file.type.startsWith('image/')) return;
@@ -472,10 +497,12 @@ function AiBubblePanel({ req, style, onClose, configured, ref }: PanelProps) {
         // সিলেকশন নেই (কার্সার) বা পেজ-স্কোপ — ধরা অবস্থানেই বসাও
         editor.chain().focus().insertContentAt(Math.min(captured.from, editor.state.doc.content.size), html).run();
       } else if (how === 'insert-after') {
-        // কোনো ধরা অবস্থান নেই — পেজের শেষে যোগ
+        // কোনো ধরা অবস্থান নেই — পেজের শেষে যোগ (মাল্টি-ব্লক HTML নীরবে ফেলে যাওয়ার
+        // TipTap-বাগ থেকে নিরাপদ — QP-পাইপলাইনের একই কৌশল: স্পষ্ট পজিশনে বসানো)
         editor.chain().focus().insertContentAt(editor.state.doc.content.size, html).run();
       } else {
-        editor.chain().focus().insertContent(html).run();
+        // ফলব্যাক-ও নিরাপদ পজিশনে — insertContent মাঝ-টেক্সটব্লকে মাল্টি-ব্লক ফেলে দিত পারে
+        editor.chain().focus().insertContentAt(editor.state.doc.content.size, html).run();
       }
       toast.success(tt('ai.inserted'));
       onClose();
@@ -650,7 +677,9 @@ function AiBubblePanel({ req, style, onClose, configured, ref }: PanelProps) {
               // রান-বাটনের গার্ডের সমান — খালি প্রেক্ষাপটে কীবোর্ড-পথেও অর্থহীন কল নয়
               if (!instruction.trim() && !image && !contextText && !tableRows) return;
               e.preventDefault();
-              void run(mode ?? SELECTION_MODES[0]);
+              // টাইপ-করা নির্দেশ + কোনো মোড বাছা নেই → 'নিজের নির্দেশ' মোডেই চলুক
+              // (আগে 'improve' চলে যেত — ইউজারের নির্দেশ নীরবে উপেক্ষিত হত)
+              void run(mode ?? (instruction.trim() ? customDef : SELECTION_MODES[0]));
             }
           }}
         />
@@ -658,14 +687,14 @@ function AiBubblePanel({ req, style, onClose, configured, ref }: PanelProps) {
           size="sm"
           className="ai-bubble-run"
           disabled={busy || (!instruction.trim() && !image && !contextText && !tableRows)}
-          onClick={() => void run(mode ?? SELECTION_MODES[0])}
+          onClick={() => void run(mode ?? (instruction.trim() ? customDef : SELECTION_MODES[0]))}
         >
           {busy ? <Loader2 size={13} className="animate-spin" aria-hidden="true" /> : <Sparkles size={13} aria-hidden="true" />}
           {busy ? tt('ai.sel.working') : tt('ai.sel.run')}
         </Button>
       </div>
 
-      {/* কাজ চলছে — শিমার + সেকেন্ড-গণনা (প্রিমিয়াম অপেক্ষা) */}
+      {/* কাজ চলছে — শিমার + সেকেন্ড-গণনা + বাতিল (প্রিমিয়াম অপেক্ষা) */}
       {busy ? (
         <div className="ai-bubble-working" role="status">
           <span className="ai-shimmer-bar" />
@@ -674,6 +703,15 @@ function AiBubblePanel({ req, style, onClose, configured, ref }: PanelProps) {
             {elapsed}
             {tt('ai.bubble.sec')}
           </span>
+          <button
+            type="button"
+            className="ai-bubble-x"
+            onClick={cancelRun}
+            aria-label={tt('ai.cancel')}
+            title={tt('ai.cancel')}
+          >
+            <X size={13} />
+          </button>
         </div>
       ) : null}
 
@@ -735,7 +773,7 @@ function AiBubblePanel({ req, style, onClose, configured, ref }: PanelProps) {
               variant="ghost"
               className="h-8 px-2"
               disabled={busy}
-              onClick={() => void run(mode ?? SELECTION_MODES[0])}
+              onClick={() => void run(mode ?? (instruction.trim() ? customDef : SELECTION_MODES[0]))}
               aria-label={tt('ai.reanalyze')}
               title={tt('ai.reanalyze')}
             >

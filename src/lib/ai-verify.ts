@@ -327,8 +327,8 @@ function checkArithmetic(text: string): VerifyIssue[] {
     i = afterRhs;
   }
 
-  // শতকরা: "২০% এর ৫০ = ৮" জাতীয়
-  const pctRe = /(\d+(?:\.\d+)?)\s*%\s*(?:এর|of)\s*(\d+(?:\.\d+)?)\s*=\s*(\d+(?:\.\d+)?)/gi;
+  // শতকরা: "২০% এর ৫০ = ৮" জাতীয় (বাংলা এর / हिन्दी का-की / English of)
+  const pctRe = /(\d+(?:\.\d+)?)\s*%\s*(?:এর|of|का|की)\s*(\d+(?:\.\d+)?)\s*=\s*(\d+(?:\.\d+)?)/gi;
   const normText = normalizeDigitsKeepLength(text);
   let m: RegExpExecArray | null;
   while ((m = pctRe.exec(normText)) !== null) {
@@ -528,7 +528,9 @@ function checkTypography(text: string): VerifyIssue[] {
 // ─── প্রশ্ন-কাঠামো যাচাই ───
 
 const OPT_LETTERS_BN = ['ক', 'খ', 'গ', 'ঘ', 'ঙ'];
-const OPT_RE = /^\s*[([]?(ক|খ|গ|ঘ|ঙ|[A-Da-d])[).\]:\s]\s*/;
+// হিন্দি MCQ-প্রথা — (क) (ख) (ग) (घ); এত হিন্দি প্রশ্নপত্রও লেয়ার-১ যাচাইয়ে পড়ে
+const OPT_LETTERS_HI = ['क', 'ख', 'ग', 'घ', 'ङ'];
+const OPT_RE = /^\s*[([]?(ক|খ|গ|ঘ|ঙ|क|ख|ग|घ|ङ|[A-Da-d])[).\]:\s]\s*/;
 
 interface McqGroup {
   startLine: number;
@@ -556,9 +558,9 @@ function checkQuestionStructure(text: string): VerifyIssue[] {
       }
       cur.endLine = li;
       cur.options.push({ letter: m[1], text: body, line: li });
-    } else if (cur && line.trim() && !/^\s*[([]?(ক|খ|গ|ঘ|ঙ|[A-Da-d])[).\]:]/.test(line)) {
+    } else if (cur && line.trim() && !/^\s*[([]?(ক|খ|গ|ঘ|ঙ|क|ख|ग|घ|ङ|[A-Da-d])[).\]:]/.test(line)) {
       // অপশন-বহির্ভূত লাইন এলে গ্রুপ শেষ — তবে উত্তর-লাইনে গ্রুপ টিক থাকে
-      if (!/^\s*(?:উত্তর|সঠিক উত্তর|Answer)/i.test(line)) cur = null;
+      if (!/^\s*(?:উত্তর|সঠিক উত্তর|Answer|उत्तर|सही उत्तर)/i.test(line)) cur = null;
     }
   });
 
@@ -580,13 +582,14 @@ function checkQuestionStructure(text: string): VerifyIssue[] {
       } else seen.set(key, opt.letter);
     }
 
-    // অপশন-ক্রম ভাঙা (ক খ ঘ → ক ঘ)
-    const bnLetters = g.options
+    // অপশন-ক্রম ভাঙা (ক খ ঘ → ক ঘ; हिन্দी: क ख घ → क घ)
+    const seqLetters = g.options
       .map((o) => o.letter)
-      .filter((l) => OPT_LETTERS_BN.includes(l));
-    if (bnLetters.length >= 3) {
-      const expected = OPT_LETTERS_BN.slice(0, bnLetters.length).join('');
-      const got = bnLetters.join('');
+      .filter((l) => OPT_LETTERS_BN.includes(l) || OPT_LETTERS_HI.includes(l));
+    const seqBase = OPT_LETTERS_BN.includes(seqLetters[0]) ? OPT_LETTERS_BN : OPT_LETTERS_HI;
+    if (seqLetters.length >= 3) {
+      const expected = seqBase.slice(0, seqLetters.length).join('');
+      const got = seqLetters.join('');
       if (got !== expected) {
         push({
           category: 'question', severity: 'note', original: '',
@@ -597,9 +600,9 @@ function checkQuestionStructure(text: string): VerifyIssue[] {
       }
     }
 
-    // উত্তর-চাবি যাচাই — গ্রুপের পরের উত্তর-লাইন
+    // উত্তর-চাবি যাচাই — গ্রুপের পরের উত্তর-লাইন (বাংলা+हिन্দी+ইংরেজি লেবেল)
     for (let li = g.endLine + 1; li <= Math.min(g.endLine + 2, lines.length - 1); li++) {
-      const ansM = /^\s*(?:উত্তর|সঠিক উত্তর|Answer)\s*[:=—-]?\s*[([]?(ক|খ|গ|ঘ|ঙ|[A-Da-d])[).\]]?/i.exec(lines[li]);
+      const ansM = /^\s*(?:উত্তর|সঠিক উত্তর|Answer|उत्तर|सही उत्तर)\s*[:=—-]?\s*[([]?(ক|খ|গ|ঘ|ঙ|क|ख|ग|घ|ङ|[A-Da-d])[).\]]?/i.exec(lines[li]);
       if (ansM) {
         const have = new Set(g.options.map((o) => o.letter));
         if (!have.has(ansM[1])) {
@@ -661,8 +664,8 @@ function checkQuestionStructure(text: string): VerifyIssue[] {
   return issues;
 }
 
-/** অফলাইন বানান-সন্দেহ (proofing.scanText) — পরামর্শ-স্তর; প্রতি রানে সর্বোচ্চ ১২টি */
-const SPELLING_MAX = 12;
+/** অফলাইন বানান-সন্দেহ (proofing.scanText) — পরামর্শ-স্তর; প্রতি রানে সর্বোচ্চ ১৮টি */
+const SPELLING_MAX = 18;
 
 function checkSpelling(text: string): VerifyIssue[] {
   // কোড/ম্যাথ-অংশের শব্দ অভিধানে না থাকলেও বাদ (সস্তা নিয়ম: $…$ ও inline-code বাদ)
@@ -863,10 +866,13 @@ export interface AiVerifyOptions {
   shouldAbort?: () => boolean;
   /** চলমান চাংক-কল বাতিল — ডায়ালগের Cancel/বন্ধে */
   signal?: AbortSignal;
+  /** লোকাল যাচাইয়ের ইস্যু — AI-ফলাফল ডুপ্লিকেট-ছাঁটনিতে আগেই সিড করা হয় */
+  localIssues?: VerifyIssue[];
 }
 
 /**
  * AI গভীর যাচাই — চাংক-ধরে কল, ফলাফল একত্রিত ও ডুপ্লিকেট-মুক্ত।
+ * চাংকগুলো সমান্তরালে চলে (সমবর্তন ৩) — ১৪-চাংক বইও কয়েক গুণ দ্রুত যাচাই হয়।
  * কোনো চাংক ব্যর্থ হলে বাদ দিয়ে বাকিগুলো চলে (failedChunks-এ গণনা)।
  */
 export async function runAiVerify(opts: AiVerifyOptions): Promise<VerifyReport> {
@@ -875,26 +881,27 @@ export async function runAiVerify(opts: AiVerifyOptions): Promise<VerifyReport> 
   const coveredChars = chunks.reduce((a, c) => a + c.text.length, 0);
   const issues: VerifyIssue[] = [];
   const seen = new Set<string>();
+  // লোকাল যাচাইয়ে যে ভুলগুলো আগেই ধরা পড়েছে — AI-ও সেগুলো জানালে দ্বিতীয়বার দেখাই না
+  for (const li of opts.localIssues ?? []) seen.add(dedupeKeyOf(li.original, li.suggestion));
   let summary = '';
   let failedChunks = 0;
   let done = 0;
 
-  for (const chunk of chunks) {
-    if (opts.shouldAbort?.() || opts.signal?.aborted) break;
+  const runOne = async (chunk: { text: string; pageId?: string; pageIndex?: number }): Promise<void> => {
+    if (opts.shouldAbort?.() || opts.signal?.aborted) return;
     const prompt = `CONTENT (verify ONLY this part):\n---\n${chunk.text}\n---\nVerify accuracy now. Reply with the JSON only.`;
     try {
       const res = await callAi({ prompt, system: ACCURACY_SYSTEM, demo: opts.demo, thinking: opts.deep, signal: opts.signal });
-      if (opts.signal?.aborted) break; // বাতিল — আংশিক ফল ধরে রেখে থামুন
+      if (opts.signal?.aborted) return; // বাতিল — আংশিক ফল ধরে রেখে থামুন
       if (res.ok && res.text) {
         const parsed = parseVerifyJson(res.text);
         if (parsed) {
-          summary = parsed.summary || summary;
+          if (parsed.summary && !summary) summary = parsed.summary;
           for (const raw of parsed.issues) {
             const issue = normalizeAiIssue(raw, chunk.text, opts.scope.text, chunk.pageId, chunk.pageIndex);
             if (!issue) continue;
             const key = dedupeKeyOf(issue.original, issue.suggestion);
             if (seen.has(key)) continue;
-            // লোকাল যাচাইয়ে থাকা হুবহু এক ভুল আর-একবার দেখাব না
             seen.add(key);
             issue.id = `ai-${issues.length}`;
             issues.push(issue);
@@ -907,10 +914,23 @@ export async function runAiVerify(opts: AiVerifyOptions): Promise<VerifyReport> 
       }
     } catch {
       failedChunks++;
+    } finally {
+      done++;
+      opts.onProgress?.(done, chunks.length);
     }
-    done++;
-    opts.onProgress?.(done, chunks.length);
-  }
+  };
+
+  // সমবর্তন-পুল — একসাথে ৩টি চাংক (রেট-লিমিট সৌজন্য; ধারাবাহিকতার চেয়ে বহু দ্রুত)
+  const CONCURRENCY = 3;
+  let next = 0;
+  const worker = async (): Promise<void> => {
+    while (next < chunks.length) {
+      if (opts.shouldAbort?.() || opts.signal?.aborted) return;
+      const idx = next++;
+      await runOne(chunks[idx]);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(CONCURRENCY, chunks.length) }, worker));
 
   // পৃষ্ঠা-অ্যাট্রিবিউশন: original কোন পাতায় আছে
   for (const issue of issues) {
@@ -957,13 +977,23 @@ function matchesInScope(issue: VerifyIssue, scopePageIds: Set<string>): FindMatc
   return all.filter((m) => scopePageIds.has(m.pageId));
 }
 
-/** একটি issue ডকুমেন্টে প্রয়োগ — সফল হলে true */
-export function applyVerifyIssue(issue: VerifyIssue, scopePageIds: string[]): boolean {
-  if (!issue.suggestion || !issue.original) return false;
+/**
+ * একটি issue ডকুমেন্টে প্রয়োগ — স্কোপের সব মিলে প্রয়োগ করে (একই ভুল যত পাতায়
+ * আছে সবখানে ঠিক হয় — আগে শুধু প্রথম মিল ঠিক হত, বাকিগুলো থেকে যেত)।
+ * ফেরত: যত জায়গায় প্রয়োগ হলো।
+ */
+export function applyVerifyIssue(issue: VerifyIssue, scopePageIds: string[]): number {
+  if (!issue.suggestion || !issue.original) return 0;
   const ids = new Set(scopePageIds);
-  const matches = matchesInScope(issue, ids);
-  if (!matches.length) return false;
-  return replaceMatch(matches[0], issue.original, issue.suggestion, true);
+  let applied = 0;
+  // প্রতিবার ফ্রেশ মিল-তালিকা — প্রতিস্থাপনের পর পজিশন সরে যায়; ৫০-গার্ডে অসীম-লুপ রোধ
+  for (let guard = 0; guard < 50; guard++) {
+    const matches = matchesInScope(issue, ids);
+    if (!matches.length) break;
+    if (!replaceMatch(matches[0], issue.original, issue.suggestion, true)) break;
+    applied++;
+  }
+  return applied;
 }
 
 /** issue-এর অবস্থান ভিউপোর্টে এনে সিলেক্ট করা */
@@ -975,16 +1005,20 @@ export function revealVerifyIssue(issue: VerifyIssue, scopePageIds: string[]): b
   return true;
 }
 
-/** এক ব্যাচ প্রয়োগ — ফেরত: সফল/ব্যর্থ সংখ্যা (স্কোপ-পাতার ক্রমে, প্রথম মিলে) */
-export function applyVerifyIssues(list: VerifyIssue[], scopePageIds: string[]): { ok: number; fail: number } {
+/** এক ব্যাচ প্রয়োগ — ফেরত: সফল ইস্যু-সংখ্যা + মোট কত জায়গায় প্রয়োগ হলো */
+export function applyVerifyIssues(list: VerifyIssue[], scopePageIds: string[]): { ok: number; fail: number; occurrences: number } {
   let ok = 0;
   let fail = 0;
+  let occurrences = 0;
   for (const issue of list) {
     if (!issue.suggestion) continue;
-    if (applyVerifyIssue(issue, scopePageIds)) ok++;
-    else fail++;
+    const n = applyVerifyIssue(issue, scopePageIds);
+    if (n > 0) {
+      ok++;
+      occurrences += n;
+    } else fail++;
   }
-  return { ok, fail };
+  return { ok, fail, occurrences };
 }
 
 /** নির্ভুলতা স্কোর (০–১০০) — খোলা issue গুলোর ভিত্তিতে */

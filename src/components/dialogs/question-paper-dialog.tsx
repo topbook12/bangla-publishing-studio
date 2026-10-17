@@ -307,6 +307,12 @@ export function QuestionPaperDialog() {
 
   const [step, setStep] = useState<Step>(1);
   const [mode, setMode] = useState<'photo' | 'text'>('text');
+  // দুই-পাস ভিশন-কল বাতিল — ডায়ালগ বন্ধে পেছনে মিনিট-লম্বা অপেক্ষা থাকবে না
+  const qpAbortRef = useRef<AbortController | null>(null);
+  useEffect(() => {
+    if (!open) qpAbortRef.current?.abort();
+  }, [open]);
+  useEffect(() => () => qpAbortRef.current?.abort(), []);
   // ডকুমেন্ট-ধরন — প্রশ্নপত্র নাকি সাজেশন শিট (সাজেশনে আলাদা নকশা, ★-গুরুত্ব, শিক্ষক-স্বাক্ষর)
   const [docType, setDocType] = useState<QpDocType>('question');
   // শিক্ষার স্তর — স্কুল প্রথা বা বিশ্ববিদ্যালয় প্রথা (কোর্স-কোড/বিভাগ/বর্ষ-সেশন)
@@ -427,12 +433,17 @@ export function QuestionPaperDialog() {
     if (!image || busy) return;
     setPhase('transcribing');
     setError(null);
+    qpAbortRef.current?.abort();
+    const ctrl = new AbortController();
+    qpAbortRef.current = ctrl;
     const res = await callAi({
       prompt: 'এই ছবির সব প্রশ্ন, হেডার ও নম্বর-মান সম্পূর্ণ উদ্ধার করে উপরের JSON ফরম্যাটে দাও। অস্পষ্ট হাতের লেখাও যতটা পারো পড়ো — কোনো প্রশ্ন বাদ দেবে না।',
       system: QP_TRANSCRIBE_SYSTEM,
       imageDataUrl: image.dataUrl,
       thinking: true, // হস্তলিপি-পড়া নির্ভুলতা-জরুরি — ধীর হলেও শুদ্ধ
+      signal: ctrl.signal,
     });
+    if (ctrl.signal.aborted) return; // বাতিল — ত্রুটি-ব্যানার নয়
     if (!(res.ok && res.text)) {
       setError({ hintKey: res.hintKey ?? 'ai.err.title', detail: res.detail });
       setPhase('error');
@@ -457,7 +468,9 @@ export function QuestionPaperDialog() {
       system: QP_VERIFY_SYSTEM,
       imageDataUrl: image.dataUrl,
       thinking: true,
+      signal: ctrl.signal,
     });
+    if (ctrl.signal.aborted) return;
     const verified = ver.ok && ver.text ? extractTranscriptText(ver.text) : null;
     const text = verified && verified.trim().length >= 4 ? verified : draft;
 

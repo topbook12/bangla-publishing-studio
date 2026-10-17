@@ -97,6 +97,23 @@ export const dictQuestionPaper = {
   'sketch.err.empty': { bn: 'ছবি পাওয়া যায়নি — বর্ণনা বদলে আবার চেষ্টা করুন', hi: 'चित्र नहीं मिला — विवरण बदलकर फिर कोशिश करें', en: 'No image returned — change the description and retry' },
   'sketch.err.fail': { bn: 'ছবি বানানো গেল না — একটু পরে আবার চেষ্টা করুন', hi: 'चित्र नहीं बन सका — थोड़ी देर बाद फिर कोशिश करें', en: 'Could not generate the figure — try again shortly' },
   'sketch.err.net': { bn: 'নেটওয়ার্ক সমস্যা — সংযোগ দেখে আবার চেষ্টা করুন', hi: 'नेटवर्क समस्या — कनेक्शन जाँचें', en: 'Network error — check your connection' },
+  'sketch.color.black': { bn: 'কালো', hi: 'काला', en: 'Black' },
+  'sketch.color.gray': { bn: 'ধূসর', hi: 'स्लेटी', en: 'Gray' },
+  'sketch.color.red': { bn: 'লাল', hi: 'लाल', en: 'Red' },
+  'sketch.hw.title': { bn: 'হাতের লেখা → সম্পাদনযোগ্য লেখা', hi: 'हस्तलेखन → संपादन योग्य टेक्स्ट', en: 'Handwriting → editable text' },
+  'sketch.hw.desc': {
+    bn: 'ক্যানভাসে হাতে লিখুন বা হাতের-লেখার ছবি আপলোড করুন — AI পড়ে সম্পাদনযোগ্য লেখা বানিয়ে দেয়, এক ক্লিকে কার্সরে বসে।',
+    hi: 'कैनवास पर हाथ से लिखें या हस्तलिखित फ़ोटो अपलोड करें — AI पढ़कर संपादन योग्य टेक्स्ट बनाता है, एक क्लिक में कर्सर पर बैठता है।',
+    en: 'Write on the canvas or upload a handwriting photo — AI reads it into editable text, one click to place at the cursor.',
+  },
+  'sketch.hw.fromCanvas': { bn: 'ক্যানভাস পড়ুন', hi: 'कैनवास पढ़ें', en: 'Read canvas' },
+  'sketch.hw.upload': { bn: 'ছবি আপলোড', hi: 'फ़ोटो अपलोड', en: 'Upload photo' },
+  'sketch.hw.extract': { bn: 'লেখা তুলুন', hi: 'टेक्स्ट निकालें', en: 'Extract text' },
+  'sketch.hw.extracting': { bn: 'পড়া হচ্ছে…', hi: 'पढ़ा जा रहा है…', en: 'Reading…' },
+  'sketch.hw.ph': { bn: 'AI-পড়া লেখা এখানে আসবে — দরকারমতো শুদ্ধ করে নিন…', hi: 'AI-पढ़ा टेक्स्ट यहाँ आएगा — आवश्यकतानुसार शुद्ध करें…', en: 'AI-read text will appear here — correct as needed…' },
+  'sketch.hw.insert': { bn: 'কার্সরে লেখা বসান', hi: 'कर्सर पर टेक्स्ट डालें', en: 'Insert text at cursor' },
+  'sketch.hw.empty': { bn: 'লেখা পাওয়া যায়নি — ছবিটি স্পষ্ট হলে আবার চেষ্টা করুন।', hi: 'टेक्स्ट नहीं मिला — छवि स्पष्ट हो तो फिर कोशिश करें।', en: 'No text found — retry with a clearer image.' },
+  'sketch.hw.inserted': { bn: 'লেখা পাতায় বসেছে — এখন স্বাভাবিক লেখার মতোই সাজান।', hi: 'टेक्स्ट पृष्ठ पर बैठ गया — अब सामान्य लेख की तरह सजाएँ।', en: 'Text placed on the page — now format it like normal text.' },
 
   // ── হেডার ও ধাপ ──
   'qp.title': {

@@ -9,25 +9,31 @@
  * সাথে "AI চিত্র" — বর্ণনা লিখলে পরীক্ষা/বই-উপযোগী লাইন-আর্ট ছবি বানিয়ে
  * দেয় (ব্যাকএন্ড /api/ai/image রুট — প্ল্যাটফর্মের বিল্ট-ইন SDK)।
  *
- * অফলাইন-প্রথম: ক্যানভাস-আঁকা সম্পূর্ণ লোকাল; কেবল AI চিত্রে নেট লাগে।
+ * আর "হাতের লেখা → লেখা" — ক্যানভাসে হাতে লেখা বা হস্তলিপির ছবি AI-ভিশনে
+ * পড়ে সম্পাদনযোগ্য লেখা বানায় → শুদ্ধ করে কার্সরে বসানো যায় (হস্তলিপি-
+ * থেকে-টেক্সট পাইপলাইন — QP স্টুডিওর সিস্টেম-প্রম্পট হাতে-নাতে এক মানে)।
+ *
+ * অফলাইন-প্রথম: ক্যানভাস-আঁকা সম্পূর্ণ লোকাল; কেবল AI চিত্র/পাঠে নেট লাগে।
  */
 
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Circle, Eraser, Loader2, Minus, MousePointer2, Pencil, Redo2, Sparkles,
-  Square, Undo2, ArrowRight, Wand2, ImagePlus, Trash2,
+  Circle, Eraser, Loader2, Minus, MousePointer2, Pencil, Redo2, ScanText, Sparkles,
+  Square, Undo2, ArrowRight, Wand2, ImagePlus, Trash2, Type, X,
 } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { useUiStore } from '@/lib/ui-store';
 import { useT } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { runCommand } from '@/components/ribbon/ribbon-shell';
+import { callAi, prepareImageFile } from '@/lib/ai-client';
 import { toast } from 'sonner';
 
 /** ক্যানভাসের লজিক্যাল মাপ — CSS-এ অনুপাত ধরে রেখে ১০০% প্রস্থে দেখানো হয় */
@@ -48,10 +54,10 @@ const TOOLS: Array<{ id: SketchTool; key: string; icon: typeof Pencil }> = [
   { id: 'ellipse', key: 'sketch.tool.ellipse', icon: Circle },
 ];
 
-const COLORS: Array<{ id: SketchColor; label: string }> = [
-  { id: '#111111', label: 'কালো' },
-  { id: '#6b7280', label: 'ধূসর' },
-  { id: '#b91c1c', label: 'লাল' },
+const COLORS: Array<{ id: SketchColor; labelKey: string }> = [
+  { id: '#111111', labelKey: 'sketch.color.black' },
+  { id: '#6b7280', labelKey: 'sketch.color.gray' },
+  { id: '#b91c1c', labelKey: 'sketch.color.red' },
 ];
 
 const WIDTHS = [2, 4, 8];
@@ -61,6 +67,17 @@ const AI_SIZES: Array<{ id: string; key: string }> = [
   { id: '1344x768', key: 'sketch.ai.size.landscape' },
   { id: '768x1344', key: 'sketch.ai.size.portrait' },
 ];
+
+/** হস্তলিপি-পাঠ সিস্টেম-প্রম্পট — সাধারণ লেখা (QP-এর JSON নয়): প্রতিটি লাইন অর্ডার ধরে রেখে */
+const HW_TRANSCRIBE_SYSTEM = `You transcribe handwriting photos into clean editable text for a publishing platform used by Bengali, Hindi and English writers.
+
+RULES
+1. Transcribe EVERY line of handwriting, top-to-bottom, keeping the original line/paragraph order. Never summarize, never skip.
+2. Write in the SAME language and script as the handwriting (Bengali stays Bengali, Hindi stays Hindi, English stays English).
+3. Fix only obvious slips of the pen that a careful human reader would resolve instantly (a crossed-out word is omitted; a repeated word written twice by accident is kept once). Do NOT rewrite phrasing.
+4. Numbers must be exact — read digit by digit when unclear.
+5. Math stays as plain text (x², ৩/৪, 50%) — no LaTeX, no markdown.
+6. Output ONLY the transcribed text — no preamble, no commentary, no markdown fences.`;
 
 export function SketchPadDialog() {
   const open = useUiStore((s) => s.openDialog === 'sketchPad');
@@ -91,6 +108,13 @@ export function SketchPadDialog() {
   const [aiBusy, setAiBusy] = useState(false);
   const [aiImg, setAiImg] = useState<string | null>(null);
 
+  // হাতের লেখা → লেখা
+  const [hwText, setHwText] = useState('');
+  const [hwBusy, setHwBusy] = useState(false);
+  const hwFileRef = useRef<HTMLInputElement | null>(null);
+  const hwAbortRef = useRef<AbortController | null>(null);
+  const [hwImage, setHwImage] = useState<string | null>(null);
+
   const syncFlags = useCallback(() => {
     setCanUndo(undoRef.current.length > 0);
     setCanRedo(redoRef.current.length > 0);
@@ -115,6 +139,9 @@ export function SketchPadDialog() {
     if (!open) return;
     setAiImg(null);
     setAiBusy(false);
+    setHwText('');
+    setHwImage(null);
+    setHwBusy(false);
     let tries = 0;
     let raf = 0;
     const tryReset = () => {
@@ -127,6 +154,12 @@ export function SketchPadDialog() {
     tryReset();
     return () => window.cancelAnimationFrame(raf);
   }, [open, resetCanvas]);
+
+  // বন্ধে/আনমাউন্টে চলমান হস্তলিপি-পাঠ বাতিল — পেছনে অযথা অপেক্ষা নয়
+  useEffect(() => {
+    if (!open) hwAbortRef.current?.abort();
+  }, [open]);
+  useEffect(() => () => hwAbortRef.current?.abort(), []);
 
   const pushUndo = useCallback(() => {
     const cv = canvasRef.current;
@@ -288,6 +321,88 @@ export function SketchPadDialog() {
     if (ok) {
       toast.success(tt('sketch.toast.inserted'));
       close();
+    } else {
+      // নীরব ব্যর্থতা নয় — এডিটর পাওয়া না গেলেও ব্যবহারকারী জানুক
+      toast.error(tt('ai.noEditor'));
+    }
+  };
+
+  /** ক্যানভাসের হাতের লেখা AI-ভিশনে পড়া */
+  const extractFromCanvas = async () => {
+    const cv = canvasRef.current;
+    if (!cv || hwBusy) return;
+    // খালি সাদা ক্যানভাসে কলের অর্থ নেই — বোঝাই
+    if (!undoRef.current.length) {
+      toast.info(tt('sketch.hw.desc'));
+      return;
+    }
+    setHwImage(cv.toDataURL('image/png'));
+    await transcribeImage(cv.toDataURL('image/png'));
+  };
+
+  const acceptHwFile = async (file: File) => {
+    if (!file.type.startsWith('image/')) return;
+    try {
+      // হাতের-লেখার ছোট অক্ষর টিক রাখতে বেশি রেজোলিউশন (ভিশনের জন্য ২২০০px)
+      const prepared = await prepareImageFile(file, { maxDim: 2200 });
+      setHwImage(prepared.dataUrl);
+      await transcribeImage(prepared.dataUrl);
+    } catch (err) {
+      toast.error(tt((err as Error)?.message === 'IMAGE_TOO_LARGE' ? 'ai.err.size' : 'ai.err.read'));
+    }
+  };
+
+  /** ছবি → AI পাঠ → সম্পাদনযোগ্য লেখা (দুই-পাসের সরল এক-পাস — সাধারণ লেখার জন্য) */
+  const transcribeImage = async (dataUrl: string) => {
+    if (hwBusy) return;
+    setHwBusy(true);
+    setHwText('');
+    const ctrl = new AbortController();
+    hwAbortRef.current = ctrl;
+    try {
+      const res = await callAi({
+        prompt: 'Transcribe every line of handwriting in this image as clean editable text, keeping the original order.',
+        system: HW_TRANSCRIBE_SYSTEM,
+        imageDataUrl: dataUrl,
+        thinking: true, // হস্তলিপি-পাঠে নির্ভুলতা-জরুরি — ধীর হলেও শুদ্ধ
+        signal: ctrl.signal,
+      });
+      if (ctrl.signal.aborted) return;
+      if (res.ok && res.text?.trim()) {
+        setHwText(res.text.trim());
+      } else if (!ctrl.signal.aborted) {
+        toast.error(tt(res.hintKey ?? 'sketch.err.fail'));
+      }
+    } catch {
+      if (!ctrl.signal.aborted) toast.error(tt('sketch.err.net'));
+    } finally {
+      setHwBusy(false);
+    }
+  };
+
+  /** AI-পড়া লেখা কার্সরে বসানো — স্বাভাবিক প্যারাগ্রাফ হিসেবে (পরে স্বাভাবিক সাজ)
+   *  মাল্টি-ব্লক মাঝ-টেক্সটব্লকে বসালে TipTap নীরবে ফেলে দেয় — তাই স্পষ্ট পজিশনে */
+  const insertHwText = () => {
+    const body = hwText.trim();
+    if (!body) return;
+    const html = body
+      .split(/\n+/)
+      .map((p) => `<p>${p.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>`)
+      .join('');
+    const ok = runCommand((ed) => {
+      try {
+        const $from = ed.state.selection.$from;
+        const at = $from.parent.isTextblock && $from.depth >= 1 ? $from.after(1) : ed.state.selection.from;
+        return ed.chain().focus().insertContentAt(Math.min(at, ed.state.doc.content.size), html).run();
+      } catch {
+        return ed.chain().focus().insertContentAt(ed.state.doc.content.size, html).run();
+      }
+    });
+    if (ok) {
+      toast.success(tt('sketch.hw.inserted'));
+      close();
+    } else {
+      toast.error(tt('ai.noEditor'));
     }
   };
 
@@ -356,7 +471,7 @@ export function SketchPadDialog() {
             {COLORS.map((c) => (
               <button
                 key={c.id} type="button" role="radio" aria-checked={color === c.id}
-                title={c.label} aria-label={c.label}
+                title={tt(c.labelKey)} aria-label={tt(c.labelKey)}
                 className={cn(
                   'h-7 w-7 rounded-full border-2 transition-transform',
                   color === c.id ? 'scale-110 border-foreground' : 'border-transparent hover:scale-105',
@@ -421,6 +536,59 @@ export function SketchPadDialog() {
           <Button onClick={insertCanvasImage}>
             <ImagePlus size={14} aria-hidden="true" /> {tt('sketch.insert')}
           </Button>
+        </div>
+
+        {/* হাতের লেখা → সম্পাদনযোগ্য লেখা (AI-ভিশন) */}
+        <div className="rounded-lg border bg-muted/30 p-3">
+          <p className="ai-field-label mb-2 flex items-center gap-1.5">
+            <ScanText size={13} aria-hidden="true" /> {tt('sketch.hw.title')}
+          </p>
+          <p className="qp-hint mb-2">{tt('sketch.hw.desc')}</p>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" onClick={() => void extractFromCanvas()} disabled={hwBusy}>
+              {hwBusy ? <Loader2 size={13} className="animate-spin" aria-hidden="true" /> : <Pencil size={13} aria-hidden="true" />}
+              {tt('sketch.hw.fromCanvas')}
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => hwFileRef.current?.click()} disabled={hwBusy}>
+              <ImagePlus size={13} aria-hidden="true" /> {tt('sketch.hw.upload')}
+            </Button>
+            <input
+              ref={hwFileRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) void acceptHwFile(file);
+                e.target.value = '';
+              }}
+            />
+            {hwBusy ? (
+              <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground" role="status">
+                <Loader2 size={12} className="animate-spin" aria-hidden="true" /> {tt('sketch.hw.extracting')}
+              </span>
+            ) : null}
+          </div>
+          {hwText ? (
+            <div className="mt-3">
+              <Textarea
+                value={hwText}
+                onChange={(e) => setHwText(e.target.value)}
+                placeholder={tt('sketch.hw.ph')}
+                rows={5}
+                className="max-h-64 overflow-y-auto bg-background text-sm"
+                aria-label={tt('sketch.hw.title')}
+              />
+              <div className="mt-2 flex items-center gap-2">
+                <Button size="sm" onClick={insertHwText}>
+                  <Type size={13} aria-hidden="true" /> {tt('sketch.hw.insert')}
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setHwText('')}>
+                  <X size={13} aria-hidden="true" /> {tt('sketch.ai.dismiss')}
+                </Button>
+              </div>
+            </div>
+          ) : null}
         </div>
 
         {/* AI চিত্র */}

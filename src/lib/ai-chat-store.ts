@@ -27,12 +27,14 @@ interface AiChatState {
   draft: string;
   addUser: (text: string) => void;
   addAssistant: (text: string, demo?: boolean) => void;
+  /** শেষ ব্যর্থ পাঠানো-বার্তাটি ফেরত ড্রাফটে নেওয়া (orphan বার্তা থাকবে না) */
+  popLastUser: () => string | null;
   setSending: (v: boolean) => void;
   setDraft: (v: string) => void;
   clear: () => void;
 }
 
-export const useAiChatStore = create<AiChatState>((set) => ({
+export const useAiChatStore = create<AiChatState>((set, get) => ({
   messages: [],
   sending: false,
   draft: '',
@@ -42,6 +44,16 @@ export const useAiChatStore = create<AiChatState>((set) => ({
     set((s) => ({
       messages: [...s.messages, { id: mkId(), role: 'assistant', content: text, ts: Date.now(), demo }],
     })),
+  popLastUser: () => {
+    const msgs = get().messages;
+    for (let i = msgs.length - 1; i >= 0; i--) {
+      if (msgs[i].role === 'user') {
+        set({ messages: msgs.filter((_, j) => j !== i) });
+        return msgs[i].content;
+      }
+    }
+    return null;
+  },
   setSending: (sending) => set({ sending }),
   setDraft: (draft) => set({ draft }),
   clear: () => set({ messages: [], draft: '' }),
