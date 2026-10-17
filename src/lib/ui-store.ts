@@ -25,6 +25,7 @@ export type DialogName =
   | 'assetStore'
   | 'vectorLib'
   | 'questionPaper'
+  | 'documentStudio'
   | 'sketchPad'
   | 'help';
 

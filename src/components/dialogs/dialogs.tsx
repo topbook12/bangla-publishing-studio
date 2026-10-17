@@ -20,6 +20,7 @@ import { AiSettingsDialog } from './ai-settings-dialog';
 import { AssetStoreDialog } from './asset-store-dialog';
 import { VectorLibraryDialog } from './vector-library-dialog';
 import { QuestionPaperDialog } from './question-paper-dialog';
+import { DocumentStudioDialog } from './document-studio-dialog';
 import { SketchPadDialog } from './sketch-pad-dialog';
 
 export function Dialogs() {
@@ -41,6 +42,7 @@ export function Dialogs() {
       <AssetStoreDialog />
       <VectorLibraryDialog />
       <QuestionPaperDialog />
+      <DocumentStudioDialog />
       <SketchPadDialog />
       <HelpDialog />
     </>

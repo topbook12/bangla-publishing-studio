@@ -28,6 +28,7 @@ import { dictKruti } from './dict-kruti';
 import { dictAi } from './dict-ai';
 import { dictQuestionPaper } from './dict-question-paper';
 import { dictAccuracy } from './dict-accuracy';
+import { dictDocumentStudio } from './dict-document-studio';
 
 export const ALL_DICTS: Dict = Object.assign(
   {},
@@ -45,6 +46,7 @@ export const ALL_DICTS: Dict = Object.assign(
   dictAi,
   dictQuestionPaper,
   dictAccuracy,
+  dictDocumentStudio,
 );
 
 function lookup(key: string, lang: Lang, fallback?: string): string {

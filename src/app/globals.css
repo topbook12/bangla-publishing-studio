@@ -4436,6 +4436,30 @@ html.dark .qp-format-vis { background: oklch(0.27 0.01 260); border-color: rgb(2
 .qp-sheet td { border: 1.2px solid #3f3f46; padding: 6px 11px; vertical-align: top; }
 .qp-sheet td p { margin: 3px 0; }
 
+/* ডকুমেন্ট স্টুডিও প্রিভিউ-শীট — A4-প্রতিরূপ; কাঁচা-HTML রেন্ডার (p-র ইনলাইন
+   স্টাইল অক্ষত), টেবিল/doc-textbox সাজ এডিটরের চেহারার সঙ্গে মিল রেখে */
+.ds-sheet {
+  width: 794px; /* A4 @96dpi */
+  min-height: 1123px;
+  background: #fff;
+  color: #1f2937;
+  padding: 46px 54px; /* ≈12mm × 14mm — ফরম/সনদের ঘন প্রথা */
+  font-size: 11.5pt;
+  line-height: 1.62;
+  border-radius: 2px;
+  box-shadow:
+    0 4px 22px rgb(15 23 42 / 0.18),
+    0 0 0 1px rgb(15 23 42 / 0.06);
+}
+.ds-sheet p { margin: 7px 0; }
+.ds-sheet ul { margin: 6px 0; padding-left: 22px; }
+.ds-sheet ol { margin: 6px 0; padding-left: 22px; }
+.ds-sheet li { margin: 2px 0; }
+.ds-sheet table { border-collapse: collapse; width: 100%; margin: 8px 0 10px; }
+.ds-sheet th, .ds-sheet td { border: 1.2px solid rgba(100, 116, 139, 0.55); padding: 4px 9px; vertical-align: top; }
+.ds-sheet th { background: rgba(100, 116, 139, 0.14); font-weight: 700; }
+.ds-sheet .fancy-divider { color: #334155; }
+
 /* AI কাজের ওভারলে */
 .qp-progress {
   position: fixed;

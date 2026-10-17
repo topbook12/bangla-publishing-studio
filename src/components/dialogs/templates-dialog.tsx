@@ -17,7 +17,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ArrowDownToLine, Baby, BookMarked, BookOpen, Briefcase, Feather, FileStack, FlaskConical,
+  ArrowDownToLine, Baby, BookMarked, BookOpen, Briefcase, Feather, FileStack, FileText, FlaskConical,
   GraduationCap, Landmark, LayoutTemplate, Moon, Newspaper, Palette, PenLine, Replace, Search,
   Sparkles, UtensilsCrossed,
 } from 'lucide-react';
@@ -41,12 +41,13 @@ import {
   type BlueprintGenre, type BookBlueprint,
 } from '@/lib/book-templates';
 import { getPaperPreset, fontStackOf } from '@/lib/paper';
+import { DS_CATEGORY_LABELS, DS_CATEGORY_ORDER, DS_TEMPLATES } from '@/lib/document-studio';
 import { newId } from '@/lib/dexie';
 import { ensurePageEditorMounted, fitTemplatePage } from '@/components/editor/page-ops';
 import { primeTocEntriesInHtml } from '@/lib/toc';
 import { StaticContent } from '@/components/editor/static-content';
 import type { DocumentSettings, HeaderFooterSettings } from '@/lib/types';
-import { useT, useFmtNum, getLang } from '@/lib/i18n';
+import { useT, useFmtNum, useLangStore, getLang } from '@/lib/i18n';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { OneColorDropdown } from './one-color-picker';
@@ -363,15 +364,17 @@ function primeEmptyTocs(pageIds: string[]): void {
 
 // ═════════════════════════ মূল স্টোর-ডায়ালগ ═════════════════════════
 
-type StoreTab = 'book' | 'page';
+type StoreTab = 'book' | 'page' | 'doc';
 type GenreFilter = BlueprintGenre | 'all';
 
 export function TemplatesDialog() {
   const tt = useT();
   const nf = useFmtNum();
   const openDialog = useUiStore((s) => s.openDialog);
+  const openAny = useUiStore((s) => s.open);
   const close = useUiStore((s) => s.close);
   const open = openDialog === 'templates';
+  const lang = useLangStore((s) => s.lang);
   const [tab, setTab] = useState<StoreTab>('book');
   const [query, setQuery] = useState('');
   const [genre, setGenre] = useState<GenreFilter>('all');
@@ -554,6 +557,22 @@ export function TemplatesDialog() {
                   {tt('store.tab.page')}
                   <span className="opacity-70">({nf(PAGE_TEMPLATES.length)})</span>
                 </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={tab === 'doc'}
+                  onClick={() => setTab('doc')}
+                  className={cn(
+                    'flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition',
+                    tab === 'doc'
+                      ? 'border-primary bg-primary text-primary-foreground shadow-sm'
+                      : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
+                  )}
+                >
+                  <FileText size={13} aria-hidden="true" />
+                  {tt('store.tab.doc')}
+                  <span className="opacity-70">({nf(DS_TEMPLATES.length)})</span>
+                </button>
               </div>
               <div className="relative min-w-36 flex-1 sm:max-w-64">
                 <Search size={14} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
@@ -630,7 +649,50 @@ export function TemplatesDialog() {
 
           {/* গ্রিড */}
           <div className="min-h-0 flex-1 overflow-y-auto px-5">
-            {tab === 'book' ? (
+            {tab === 'doc' ? (
+              /* ডকুমেন্ট স্টুডিও — প্রথাসিদ্ধ ডকুমেন্ট-নকশার ক্যাটালগ */
+              <div className="flex flex-col gap-3 pb-3">
+                <div className="flex flex-col gap-2 rounded-xl border border-primary/30 bg-primary/5 p-4">
+                  <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                    <FileText size={15} className="text-primary" aria-hidden="true" />
+                    {tt('store.doc.title')}
+                  </p>
+                  <p className="text-[12px] leading-relaxed text-muted-foreground">{tt('store.doc.desc')}</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {DS_CATEGORY_ORDER.map((c) => (
+                      <span key={c} className="rounded-full border border-border bg-background px-2.5 py-1 text-[11px] font-medium text-foreground">
+                        {DS_CATEGORY_LABELS[c][lang] ?? DS_CATEGORY_LABELS[c].bn}
+                        <span className="ml-1 opacity-70">({nf(DS_TEMPLATES.filter((t) => t.category === c).length)})</span>
+                      </span>
+                    ))}
+                  </div>
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        close();
+                        openAny('documentStudio');
+                      }}
+                      className="mt-1 inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-ring"
+                    >
+                      <Sparkles size={13} aria-hidden="true" />
+                      {tt('store.doc.cta')}
+                    </button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  {DS_TEMPLATES.map((t) => (
+                    <div key={t.id} className="flex flex-col gap-1 rounded-lg border border-border bg-card p-2.5">
+                      <p className="text-[12.5px] font-semibold leading-tight">{t.name[lang] ?? t.name.bn}</p>
+                      <p className="text-[10.5px] leading-snug text-muted-foreground">{t.desc[lang] ?? t.desc.bn}</p>
+                      <p className="mt-auto text-[9.5px] uppercase tracking-wide text-muted-foreground/70">
+                        {DS_CATEGORY_LABELS[t.category][lang] ?? DS_CATEGORY_LABELS[t.category].bn}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : tab === 'book' ? (
               filteredBps.length === 0 ? (
                 <p className="py-12 text-center text-sm text-muted-foreground">{tt('store.noresult')}</p>
               ) : (
