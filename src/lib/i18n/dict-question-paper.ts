@@ -263,7 +263,7 @@ export const dictQuestionPaper = {
   },
   'qp.format.board.desc': {
     bn: 'বোর্ড-সৃজনশীল প্রথা — কোড বক্স, দুই কলামে ক/খ/গ/ঘ প্রশ্ন, ডানে মান',
-    hi: 'বোর্ড-सृजनात्मक शैली — कोड बॉक्स, दो कॉलम में क/ख/ग/घ प्रश्न, दाएँ अंक',
+    hi: 'बोर्ड-रचनात्मक शैली — कोड बॉक्स, दो कॉलम में क/ख/ग/घ प्रश्न, दाएँ अंक',
     en: 'Board CQ convention — code box, two-column creative questions, marks at right',
   },
     'qp.format.royal': {
@@ -417,46 +417,46 @@ export const dictQuestionPaper = {
   // ── ডকুমেন্ট-ধরন — প্রশ্নপত্র নাকি সাজেশন শিট ──
   'qp.docType.title': {
     bn: 'কী বানাতে চান?',
-    hi: 'ক্যা বনানা চাহতে হ্যাঁ?',
+    hi: 'आप क्या बनाना चाहते हैं?',
     en: 'What would you like to create?',
   },
-  'qp.docType.question': { bn: 'প্রশ্নপত্র', hi: 'প্রশ্নপত্র', en: 'Question Paper' },
+  'qp.docType.question': { bn: 'প্রশ্নপত্র', hi: 'प्रश्नपत्र', en: 'Question Paper' },
   'qp.docType.question.desc': {
     bn: 'পরীক্ষার পূর্ণ প্রশ্নপত্র — হেডার, বিভাগ, নম্বর-মানসহ',
-    hi: 'পरীক্ষা কা পূরা প্রশ্নপত্র — হেডার, খণ্ড, অঙ্ক সহিত',
+    hi: 'परीक्षा का पूरा प्रश्नपत्र — हेडर, खण्ड, अंक सहित',
     en: 'Full exam paper — with header, sections and marks',
   },
-  'qp.docType.suggestion': { bn: 'সাজেশন শিট', hi: 'সজেশন শীট', en: 'Suggestion Sheet' },
+  'qp.docType.suggestion': { bn: 'সাজেশন শিট', hi: 'सजेशन शीट', en: 'Suggestion Sheet' },
   'qp.docType.suggestion.desc': {
     bn: 'পরীক্ষার আগের গুরুত্বপূর্ণ প্রশ্ন — অধ্যায়-ভিত্তিক, ★ চিহ্নসহ',
-    hi: 'পরীক্ষা সে পহলে কে মহত্বপূর্ণ প্রশ্ন — অধ্যায়-আধারিত, ★ চিহ্ন সহিত',
+    hi: 'परीक्षा से पहले के महत्वपूर्ण प्रश्न — अध्याय-आधारित, ★ चिह्न सहित',
     en: 'Exam-important questions — chapter-wise, with ★ marks',
   },
-  'qp.raw.label.sug': { bn: 'সাজেশনের কাঁচা লেখা', hi: 'সজেশন কা কচ্চা টেক্সট', en: 'Raw suggestion text' },
+  'qp.raw.label.sug': { bn: 'সাজেশনের কাঁচা লেখা', hi: 'सजेशन का कच्चा टेक्स्ट', en: 'Raw suggestion text' },
   'qp.raw.hint.sug': {
     bn: 'প্রতি লাইনে একটি প্রশ্ন — অধ্যায় (অধ্যায় ১), নম্বর, ★/★★ গুরুত্ব, MCQ অপশন বুঝে নেবে',
-    hi: 'প্রতি পংক্তি এক প্রশ্ন — অধ্যায়, নম্বর, ★/★★ মহত্ব, MCQ বিকল্প সমঝ লেগা',
+    hi: 'प्रति पंक्ति एक प्रश्न — अध्याय, नंबर, ★/★★ महत्व, MCQ विकल्प समझे जाएँगे',
     en: 'One question per line — chapters, numbers, ★/★★ importance and MCQ options are understood',
   },
   'qp.raw.ph.sug': {
     bn: 'উদাহরণ:\nঅধ্যায় ১ — ভগ্নাংশ [গুরুত্বপূর্ণ]\n★ ১. প্রশ্ন…\n★★ ২. প্রশ্ন…',
-    hi: 'উদাহরণ:\nঅধ্যায় ১ — ভিন্ন [মহত্বপূর্ণ]\n★ ১. প্রশ্ন…\n★★ ২. প্রশ্ন…',
+    hi: 'उदाहरण:\nअध्याय १ — भिन्न [महत्वपूर्ण]\n★ १. प्रश्न…\n★★ २. प्रश्न…',
     en: 'Example:\nChapter 1 — Fractions [important]\n★ 1. Question…\n★★ 2. Question…',
   },
-  'qp.meta.teacher': { bn: 'শিক্ষকের নাম (ঐচ্ছিক)', hi: 'শিক্ষক কা নাম (বৈকল্পিক)', en: 'Teacher name (optional)' },
-  'qp.generate.sug': { bn: 'সাজেশন বানান', hi: 'সজেশন বনাএঁ', en: 'Generate Suggestion' },
+  'qp.meta.teacher': { bn: 'শিক্ষকের নাম (ঐচ্ছিক)', hi: 'शिक्षक का नाम (वैकल्पिक)', en: 'Teacher name (optional)' },
+  'qp.generate.sug': { bn: 'সাজেশন বানান', hi: 'सजेशन बनाएँ', en: 'Generate Suggestion' },
   'qp.busy.analyze.sug': {
     bn: 'সাজেশন বিশ্লেষণ ও সাজানো হচ্ছে…',
-    hi: 'সজেশন বিশ্লেষণ ব সজায়া জা রহা হ্যাঁ…',
+    hi: 'सजेशन विश्लेषण और व्यवस्था हो रहा है…',
     en: 'Analyzing and arranging the suggestion…',
   },
-  'qp.preview.title.sug': { bn: 'প্রস্তুত সাজেশন শিট', hi: 'তৈয়ার সজেশন শীট', en: 'Ready suggestion sheet' },
+  'qp.preview.title.sug': { bn: 'প্রস্তুত সাজেশন শিট', hi: 'तैयार सजेशन शीट', en: 'Ready suggestion sheet' },
   'qp.toast.inserted.sug': {
     bn: 'সাজেশন শিট পাতায় বসেছে — দরকারলে সাজিয়ে প্রিন্ট করুন',
-    hi: 'সজেশন শীট পৃষ্ঠে পর আ গেসে — চাহেঁ তো সাজাকর প্রিন্ট করেঁ',
+    hi: 'सजेशन शीट पृष्ठ पर जुड़ गई — चाहें तो सजाकर प्रिंट करें',
     en: 'Suggestion sheet inserted — format and print as needed',
   },
-  'qp.count.star': { bn: '★ চিহ্নিত', hi: '★ চিহ্নিত', en: '★ marked' },
+  'qp.count.star': { bn: '★ চিহ্নিত', hi: '★ चिह्नित', en: '★ marked' },
 
   // ── শিক্ষার স্তর — স্কুল নাকি বিশ্ববিদ্যালয় ──
   'qp.level.title': {
@@ -527,4 +527,8 @@ export const dictQuestionPaper = {
   'qp.fig.noDesc': { bn: 'বর্ণনা নেই — প্রশ্ন পড়ে AI আঁকবে', hi: 'कोई विवरण नहीं — प्रश्न पढ़कर AI बनाएगा', en: 'No description — AI reads the question' },
   'qp.fig.qLabel': { bn: 'প্রশ্ন', hi: 'प्रश्न', en: 'Q' },
 
+
+  // প্রিভিউ জুম-বাটন (aria-label — স্ক্রিন-রিডার)
+  'qp.zoomOut': { bn: 'ছোট করুন', hi: 'ज़ूम आउट', en: 'Zoom out' },
+  'qp.zoomIn': { bn: 'বড় করুন', hi: 'ज़ूम इन', en: 'Zoom in' },
 } as const;

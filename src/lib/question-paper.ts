@@ -419,8 +419,10 @@ function afterKeyValue(line: string): string {
  * পড়ে ফর্মে বসায় — শুধু ফাঁকা বা ভাষা-ডিফল্ট ঘরে; শিক্ষকের নিজের লেখা ঘর কখনো বদলায় না।
  * এতে হেডার শিক্ষকের নিজের লেখার সাথে মিলে যায় — "সময় ভুল এসেছে" জাতীয় অসঙ্গতি বন্ধ।
  * এক লাইনে কয়েকটি ঘর ("সময়: ২ ঘণ্টা, পূর্ণমান: ৫০") থাকলেও সবগুলো ধরা পড়ে।
+ * সাজেশন-ধরনে (docType='suggestion') পরীক্ষার নাম-লাইন কখনো examTitle-এ ভরে না —
+ * সাজেশন-শিটে পরীক্ষার নাম প্রযোজ্যই নয় (শিক্ষকের বাগ-রিপোর্ট: সাজেশনে এক্সাম-নাম লিক)।
  */
-export function qpPreambleMeta(raw: string, meta: QpMeta, lang: Lang): QpMeta {
+export function qpPreambleMeta(raw: string, meta: QpMeta, lang: Lang, docType: QpDocType = 'question'): QpMeta {
   const lines = (raw ?? '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean).slice(0, 12);
   if (lines.length === 0) return meta;
   const def = defaultQpValues(lang);
@@ -487,8 +489,9 @@ export function qpPreambleMeta(raw: string, meta: QpMeta, lang: Lang): QpMeta {
       if (matched) continue;
       const bm = seg.match(QP_MARKS_BARE);
       if (bm) { put('fullMarks', bm[1], def.fullMarks); continue; }
-      // পরীক্ষার নাম — পরীক্ষা-শব্দমাখা খণ্ড (স্কুল-শব্দ না থাকলে)
-      if (exam === null && QP_EXAM_WORD.test(seg) && seg.length < 90 && !QP_SCHOOL_WORD.test(seg)) {
+      // পরীক্ষার নাম — পরীক্ষা-শব্দমাখা খণ্ড (স্কুল-শব্দ না থাকলে);
+      // সাজেশন-ধরনে এই ফসলই নেই — কাঁচা-লেখায় পরীক্ষা-লাইন থাকলেও examTitle ফাঁকা/ডিফল্টই থাকে
+      if (exam === null && docType !== 'suggestion' && QP_EXAM_WORD.test(seg) && seg.length < 90 && !QP_SCHOOL_WORD.test(seg)) {
         exam = seg;
         continue;
       }
@@ -636,7 +639,6 @@ You receive a HEADER block (teacher's details) and RAW QUESTION TEXT (typed or t
 Return ONLY valid JSON — no markdown fences, no commentary. Shape exactly:
 {
   "schoolName": string,       // school/coaching name ONLY if stated in RAW text and missing from HEADER
-  "examTitle": string,        // e.g. "বার্ষিক পরীক্ষা — ২০২৫" ("" if unknown)
   "subject": string,          // "" if unknown
   "classLabel": string,       // "" if unknown
   "date": string,
@@ -1261,8 +1263,9 @@ export function qpDetectKind(text: string, options: QpOption[], subs: QpSubQ[]):
  * AI-এর সম্ভাব্য-ভাঙা JSON-কে নিরাপদ QuestionPaper-এ রূপান্তর — সর্বোচ্চ সহনশীল:
  * নেস্ট-আবরণ ({paper|data|result:{…}}), সমতল questions, স্ট্রিং-প্রশ্ন/অপশন,
  * বিকল্প কি-নাম (question/body, mark/value, choices, sub_questions ইত্যাদি) সব চলে।
+ * docType='suggestion' হলে পরীক্ষার নাম জোর করে ফাঁকা — সাজেশনে এক্সাম-নাম লিক বন্ধ।
  */
-export function normalizeQpJson(data: unknown, meta: QpMeta, format: QpFormat): QuestionPaper | null {
+export function normalizeQpJson(data: unknown, meta: QpMeta, format: QpFormat, docType: QpDocType = 'question'): QuestionPaper | null {
   let root = data;
   // নেস্ট-আবরণ খোলা: { paper|questionPaper|data|result|qp: { sections… } }
   for (let i = 0; i < 3; i++) {
@@ -1358,6 +1361,9 @@ export function normalizeQpJson(data: unknown, meta: QpMeta, format: QpFormat): 
 
   // হেডার: ফর্মের ফাঁকা ঘরে AI-এর মান বসে — শিক্ষকের লেখা/আগে-থেকে-ভরা ঘরই প্রাধান্য পায়।
   // AI-কে নির্দেশ দেওয়া আছে কেবল RAW লেখায় স্পষ্ট লেখা তথ্যই মেটা-ফাঁকে দিতে।
+  // সাজেশন-ধরনে (docType='suggestion') পরীক্ষার নাম কখনোই বসে না — মডেল পাঠালেও
+  // জোর করে ফাঁকা রাখা হয় (সাজেশন-শিটে এক্সাম-নাম প্রযোজ্য নয়; AI-এর ফিরতি
+  // examTitle ফাঁকা রাখে, নইলে রেন্ডারে লিক হয়)।
   const fillIfEmpty = (cur: string, ...keys: string[]): string => {
     if (cur.trim()) return cur;
     return firstStr(d, keys);
@@ -1368,7 +1374,7 @@ export function normalizeQpJson(data: unknown, meta: QpMeta, format: QpFormat): 
     meta: {
       ...meta,
       schoolName: fillIfEmpty(meta.schoolName, 'schoolName', 'school', 'school_name', 'institution'),
-      examTitle: fillIfEmpty(meta.examTitle, 'examTitle', 'exam_title', 'exam', 'title'),
+      examTitle: docType === 'suggestion' ? '' : fillIfEmpty(meta.examTitle, 'examTitle', 'exam_title', 'exam', 'title'),
       subject: fillIfEmpty(meta.subject, 'subject', 'sub', 'subjectName'),
       classLabel: fillIfEmpty(meta.classLabel, 'classLabel', 'class', 'className', 'class_name'),
       date: fillIfEmpty(meta.date, 'date', 'examDate'),
@@ -2005,30 +2011,63 @@ export function paperToEditorHtml(p: QuestionPaper, lang: Lang, figures?: readon
   // ── হেডার ──
   const sug = p.docType === 'suggestion';
   if (sugslip) {
-    // সাজেশন-স্লিপ হেডার — কোচিং-সেন্টারের চেনা চাপা পর্চা: প্রতিষ্ঠান → "সাজেশন — বিষয় (শ্রেণি)"
-    // → এক-লাইনের পাতলা তথ্য-স্ট্রিপ (তারিখ থাকলেই) — জায়গা বাঁচাতে আর কিছুই নয়
-    if (m.schoolName) parts.push(bigLine(m.schoolName));
-    const slipTitle = m.subject
-      ? (m.classLabel ? `${L.sugTitle} — ${m.subject} (${m.classLabel})` : `${L.sugTitle} — ${m.subject}`)
-      : L.sugTitle;
-    parts.push(`<p${center}><span style="font-size:${hSize}"><strong>${escapeQpHtml(slipTitle)}</strong></span></p>`);
-    const strip: string[] = [];
-    if (m.date) strip.push(m.date);
-    if (m.teacherName?.trim()) strip.push(`${L.teacher}: ${m.teacherName.trim()}`);
-    if (strip.length > 0) parts.push(`<p${center}><span style="font-size:${subSize}">${escapeQpHtml(strip.join('   ·   '))}</span></p>`);
+    if (sug) {
+      // সাজেশন-স্লিপ হেডার — কোচিং-সেন্টারের চেনা চাপা পর্চা: প্রতিষ্ঠান → "সাজেশন — বিষয় (শ্রেণি)"
+      // → এক-লাইনের পাতলা তথ্য-স্ট্রিপ (তারিখ/শিক্ষক থাকলেই) — জায়গা বাঁচাতে আর কিছুই নয়
+      if (m.schoolName) parts.push(bigLine(m.schoolName));
+      const slipTitle = m.subject
+        ? (m.classLabel ? `${L.sugTitle} — ${m.subject} (${m.classLabel})` : `${L.sugTitle} — ${m.subject}`)
+        : L.sugTitle;
+      parts.push(`<p${center}><span style="font-size:${hSize}"><strong>${escapeQpHtml(slipTitle)}</strong></span></p>`);
+      const strip: string[] = [];
+      if (m.date) strip.push(m.date);
+      if (m.teacherName?.trim()) strip.push(`${L.teacher}: ${m.teacherName.trim()}`);
+      if (strip.length > 0) parts.push(`<p${center}><span style="font-size:${subSize}">${escapeQpHtml(strip.join('   ·   '))}</span></p>`);
+    } else {
+      // প্রশ্নপত্র-ধরনে sugslip এলে (পুরনো হিস্ট্রি/আমদানি) — "সাজেশন —" শিরোনাম নয়;
+      // প্রশ্নপত্র-প্রথার হেডার: পরীক্ষার নাম ডান ঘরে, বিষয়(শ্রেণি) বাঁয়ে —
+      // অন্য প্রশ্নপত্র-ফরম্যাটের মতোই পরীক্ষা-পরিচিতি থাকে (রিভার্স-লিক বন্ধ)
+      if (m.schoolName) parts.push(bigLine(m.schoolName));
+      const slipLeft: string[] = [];
+      if (m.subject) slipLeft.push(`<strong>${escapeQpHtml(m.classLabel ? `${m.subject} (${m.classLabel})` : m.subject)}</strong>`);
+      const slipRight: string[] = [];
+      if (m.examTitle) slipRight.push(escapeQpHtml(m.examTitle));
+      if (slipLeft.length > 0 || slipRight.length > 0) {
+        parts.push(`<table style="margin:0 0 2px"><colgroup><col /><col /></colgroup><tbody><tr>`
+          + `${qpTdFree(`<p style="margin:1px 0;text-align:left">${slipLeft.map((b) => `<span style="font-size:${subSize}">${b}</span>`).join('<br>')}</p>`)}`
+          + `${qpTdFree(`<p style="margin:1px 0;text-align:right">${slipRight.map((b) => `<span style="font-size:${subSize}">${b}</span>`).join('<br>')}</p>`)}`
+          + `</tr></tbody></table>`);
+      }
+      const qStrip: string[] = [];
+      if (m.date) qStrip.push(m.date);
+      if (m.time) qStrip.push(`${L.time}: ${m.time}`);
+      if (m.fullMarks) qStrip.push(`${L.marks}: ${m.fullMarks}`);
+      if (qStrip.length > 0) parts.push(`<p${center}><span style="font-size:${subSize}">${escapeQpHtml(qStrip.join('   ·   '))}</span></p>`);
+      if (m.studentLine) parts.push(`<p${sty()}>${escapeQpHtml(L.nameRoll)}</p>`);
+    }
     parts.push(`<hr style="margin:4px 0 8px">`);
   } else if (quiz) {
-    // টেস্ট-স্লিপ হেডার — বাঁয়ে প্রতিষ্ঠান+বিষয়, ডানে টেস্ট/পূর্ণমান; নিচে নাম-রোল-তারিখ ঘর।
-    // সাজেশন-ধরনে বাঁয়ের শিরোনাম সাজেশন-টাইটেল — প্রেক্ষাপট সঠিক থাকে
+    // টেস্ট-স্লিপ হেডার — বাঁয়ে প্রতিষ্ঠান+বিষয়, ডানে তথ্য; নিচে নাম-রোল-তারিখ ঘর।
+    // সাজেশন-ধরনে বাঁয়ের শিরোনাম সাজেশন-টাইটেল, ডানে পরীক্ষার নাম নয় —
+    // তারিখ/শ্রেণি-জাতীয় তথ্য (সাজেশন-হেডারের তথ্য-লাইনের মতোই) — এক্সাম-নাম লিক বন্ধ
     const leftBits: string[] = [];
     if (m.schoolName) leftBits.push(escapeQpHtml(m.schoolName));
     if (sug) {
-      leftBits.push(`<strong>${escapeQpHtml(m.subject ? `${L.sugTitle} — ${m.subject}` : L.sugTitle)}</strong>`);
+      const quizSugTitle = m.subject
+        ? (m.classLabel ? `${L.sugTitle} — ${m.subject} (${m.classLabel})` : `${L.sugTitle} — ${m.subject}`)
+        : L.sugTitle;
+      leftBits.push(`<strong>${escapeQpHtml(quizSugTitle)}</strong>`);
     } else if (m.subject) {
       leftBits.push(`<strong>${escapeQpHtml(m.subject)}</strong>`);
     }
     const rightBits: string[] = [];
-    if (m.examTitle) rightBits.push(escapeQpHtml(m.examTitle));
+    if (sug) {
+      // সাজেশনে পরীক্ষার নাম প্রযোজ্য নয় — ডান ঘরে শ্রেণি/তারিখ (বাকি তথ্য নিচেই)
+      if (m.classLabel) rightBits.push(escapeQpHtml(m.classLabel));
+      if (m.date) rightBits.push(escapeQpHtml(m.date));
+    } else if (m.examTitle) {
+      rightBits.push(escapeQpHtml(m.examTitle));
+    }
     if (m.fullMarks) rightBits.push(`${L.marks}: ${escapeQpHtml(m.fullMarks)}`);
     if (m.time) rightBits.push(`${L.time}: ${escapeQpHtml(m.time)}`);
     const headRow = `<table style="margin:0 0 2px"><colgroup><col /><col /></colgroup><tbody><tr>`
@@ -2314,8 +2353,16 @@ export function paperToStandaloneHtml(p: QuestionPaper, lang: Lang, figures?: re
   const layout = normalizeQpLayout(p.layout);
   const size = QP_PAGE_SIZES[layout.pageSize] ?? QP_PAGE_SIZES.a4;
   const scale = p.fontScale === 'sm' ? '11pt' : p.fontScale === 'lg' ? '13.5pt' : '12pt';
-  const title = [p.meta.schoolName, p.meta.examTitle, p.meta.subject].filter(Boolean).join(' — ')
-    || (p.docType === 'suggestion' ? 'Suggestion Sheet' : 'Question Paper');
+  // <title> — সাজেশনে পরীক্ষার নাম বাদ: "প্রতিষ্ঠান — সাজেশন — বিষয় (শ্রেণি)";
+  // প্রশ্নপত্রে আগের প্রথাই (প্রতিষ্ঠান — পরীক্ষা — বিষয়)
+  const Ls = qpLabels(lang);
+  const sugDoc = p.docType === 'suggestion';
+  const sugTitleFull = p.meta.subject
+    ? (p.meta.classLabel ? `${Ls.sugTitle} — ${p.meta.subject} (${p.meta.classLabel})` : `${Ls.sugTitle} — ${p.meta.subject}`)
+    : Ls.sugTitle;
+  const title = sugDoc
+    ? [p.meta.schoolName, sugTitleFull].filter(Boolean).join(' — ')
+    : [p.meta.schoolName, p.meta.examTitle, p.meta.subject].filter(Boolean).join(' — ') || 'Question Paper';
   const fontLink =
     lang === 'hi'
       ? 'https://fonts.googleapis.com/css2?family=Noto+Serif+Devanagari:wght@400;600;700&display=swap'
@@ -2467,7 +2514,6 @@ The figures in the right margin indicate full marks.
     if (lang === 'hi') {
       return `आदर्श कोचिंग सेंटर
 कक्षा ६ गणित सजेशन
-वार्षिक परीक्षा — २०२५
 
 अध्याय १ — प्राकृत संख्या और भिन्न [महत्वपूर्ण]
 \u2605 १. ४/७ और ३/५ का योगफल निकालें।
@@ -2485,7 +2531,6 @@ The figures in the right margin indicate full marks.
     if (lang === 'en') {
       return `Model Coaching Centre
 Class 6 Mathematics Suggestion
-Annual Examination — 2025
 
 Chapter 1 — Natural Numbers & Fractions [important]
 \u2605 1. Find the sum of 4/7 and 3/5.
@@ -2502,7 +2547,6 @@ a) 1/2 b) 1/4 c) 1/3 d) 1/5`;
     }
     return `আদর্শ কোচিং সেন্টার
 ষষ্ঠ শ্রেণির গণিত সাজেশন
-বার্ষিক পরীক্ষা — ২০২৫
 
 অধ্যায় ১ — স্বাভাবিক সংখ্যা ও ভগ্নাংশ [গুরুত্বপূর্ণ]
 \u2605 ১. ৪/৭ ও ৩/৫ এর যোগফল নির্ণয় কর।

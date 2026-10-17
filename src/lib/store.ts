@@ -204,6 +204,14 @@ function mergeSettings(current: DocumentSettings, patch: Partial<DocumentSetting
 
 const initialSettings = createDefaultSettings();
 
+/** লোড/ইমপোর্ট/রিস্টোর হওয়া প্রজেক্টের settings শুদ্ধ করা — পুরনো সেভে autoFlow
+ * কী না থাকতেই পারে; হার্ড-রুল (এক পাতার সম্পাদনা অন্য পাতা বদলাবে না) অনুযায়ী
+ * অনুপস্থিত কী-কে 'বন্ধ' ধরা হয়। স্পষ্টভাবে true সেভ করা থাকলে ব্যবহারকারীর পছন্দ সম্মানিত হয়। */
+function normalizeLoadedSettings(settings: DocumentSettings): DocumentSettings {
+  const s = settings ?? createDefaultSettings();
+  return { ...s, autoFlow: s.autoFlow === true };
+}
+
 export const useEditorStore = create<EditorStore>((set, get) => ({
   loaded: false,
   projects: [],
@@ -232,7 +240,7 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
           set({
             projectId: existing.id,
             title: existing.title,
-            settings: existing.settings,
+            settings: normalizeLoadedSettings(existing.settings),
             pages: existing.pages.length ? existing.pages : [createEmptyPage()],
             activePageId: existing.pages[0]?.id ?? null,
             loaded: true,
@@ -296,7 +304,7 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
       set({
         projectId: project.id,
         title: project.title,
-        settings: project.settings,
+        settings: normalizeLoadedSettings(project.settings),
         pages: project.pages.length ? project.pages : [createEmptyPage()],
         activePageId: project.pages[0]?.id ?? null,
         saveState: { status: 'saved', at: Date.now() },
@@ -606,17 +614,17 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
         title: rec.title,
         createdAt: existing?.createdAt ?? Date.now(),
         updatedAt: Date.now(),
-        settings: rec.settings,
+        settings: normalizeLoadedSettings(rec.settings),
         pages: rec.pages,
       });
-      lastSaved = { title: rec.title, settings: rec.settings, pages: rec.pages };
+      lastSaved = { title: rec.title, settings: normalizeLoadedSettings(rec.settings), pages: rec.pages };
       lastSnapshottedPages = rec.pages;
       // সক্রিয় পাতা পুনরুদ্ধার-করা পাতার তালিকায় থাকলে ধরে রাখা (UX), নইলে প্রথম পাতা
       const curActive = get().activePageId;
       const nextActive = rec.pages.some((p) => p.id === curActive) ? curActive : (rec.pages[0]?.id ?? null);
       set({
         title: rec.title,
-        settings: rec.settings,
+        settings: normalizeLoadedSettings(rec.settings),
         pages: rec.pages,
         activePageId: nextActive,
         saveState: { status: 'saved', at: Date.now() },

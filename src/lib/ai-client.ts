@@ -167,6 +167,26 @@ export interface AiCallResult {
   busyFallback?: string;
 }
 
+/**
+ * ইউজার-ক্যানসেল ও টাইমআউট — এক fetch-সিগন্যালে।
+ * AbortSignal.any পুরনো ব্রাউজারে না থাকলে লিসেনার-ভিত্তিক fallback।
+ */
+function mergeAbortSignals(signals: AbortSignal[]): AbortSignal | undefined {
+  const usable = signals.filter(Boolean);
+  if (usable.length === 0) return undefined;
+  const anyFn = (AbortSignal as unknown as { any?: (sigs: AbortSignal[]) => AbortSignal }).any;
+  if (typeof anyFn === 'function') return anyFn.call(AbortSignal, usable);
+  const ctrl = new AbortController();
+  for (const sig of usable) {
+    if (sig.aborted) {
+      ctrl.abort(sig.reason);
+      return ctrl.signal;
+    }
+    sig.addEventListener('abort', () => ctrl.abort(sig.reason), { once: true });
+  }
+  return ctrl.signal;
+}
+
 /** সেভ করা BYOK কনফিগ (থাকলে) সহ /api/ai/chat কল — অস্থায়ী ত্রুটিতে স্বয়ং-পুনরায় সহ */
 export async function callAi(opts: {
   prompt: string;
@@ -176,6 +196,8 @@ export async function callAi(opts: {
   demo?: boolean;
   /** হস্তলিপি-উদ্ধারের মতো নির্ভুলতা-জরুরি কাজে মডেলের "চিন্তা" চালু — ধীর কিন্তু নির্ভুল */
   thinking?: boolean;
+  /** চলমান কল বাতিল করতে (যেমন নির্ভুলতা-কেন্দ্রের Cancel/ডায়ালগ-বন্ধ) */
+  signal?: AbortSignal;
 }): Promise<AiCallResult> {
   const attempt = async (): Promise<AiCallResult> => {
     const config = useAiStore.getState().config;
@@ -186,10 +208,13 @@ export async function callAi(opts: {
     const model = (config.model || preset.visionModel || preset.model).trim();
     const useOwnKey = !opts.demo && !!(config.apiKey.trim() && baseUrl && model);
 
+    // ২০০সে টাইমআউট + (দিলে) কলারের ক্যানসেল-সিগন্যাল — একত্রে fetch-এ
+    const signal = mergeAbortSignals([AbortSignal.timeout(200_000), ...(opts.signal ? [opts.signal] : [])]);
+
     const res = await fetch('/api/ai/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      signal: AbortSignal.timeout(200_000), // সার্ভার hard-cap ১৮০সে + self-heal + busy-retry — ক্লায়েন্টে ঢিলেঢালা সীমা
+      signal, // সার্ভার hard-cap ১৮০সে + self-heal + busy-retry — ক্লায়েন্টে ঢিলেঢালা সীমা
       body: JSON.stringify({
         prompt: opts.prompt,
         system: opts.system,
@@ -222,6 +247,8 @@ export async function callAi(opts: {
     // ব্যস্ত/সার্ভার-সমস্যায় ক্লায়েন্টেও ২ পর্যন্ত চুপচাপ পুনরায় (৫ সে ও ১২ সে পরে)
     return await withTransientRetry(attempt);
   } catch (err) {
+    // ইউজার-বাতিল — টাইমআউট নয়; কলার নিজেই signal.aborted দেখে চুপচাপ থামবে
+    if (opts.signal?.aborted) return { ok: false, error: 'CANCELLED' };
     const name = (err as Error)?.name;
     if (name === 'TimeoutError' || name === 'AbortError') {
       return { ok: false, error: 'TIMEOUT_ERROR', hintKey: 'ai.err.timeout' };

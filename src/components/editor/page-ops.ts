@@ -96,21 +96,32 @@ function appliedZoomOf(el: HTMLElement): number {
 // ─── ফ্লো-অপ মিউচুয়াল এক্সক্লুশন ───
 // fillFromNextPage-এর await-জানালায় ResizeObserver-ট্রিগারড ফ্লো ঢুকে একই এডিটরের
 // ডক বদলে দিলে ব্লক দুই পাতায় ডুপ্লিকেট হতে পারে — প্রতি-এডিটর ফ্ল্যাগ দিয়ে আটকাই।
+// ★ গ্লোবাল লক: fill-এর await-জানালায় পাশের এডিটরের ফ্লো/ফিল ঢুকে পড়লে স্টোর-স্ন্যাপশট
+// স্টেল হয়ে পাশের পাতার কনটেন্ট ডুপ্লিকেট বা হারিয়ে যেতে পারে (প্রশ্নপত্রে মারাত্মক) —
+// তাই যেকোনো এক এডিটরে ফ্লো-অপ চলাকালীন সব এডিটরের ফ্লো-অপ আটকানো হয়।
 const flowOpsRunning = new WeakSet<object>();
+let globalFlowOpCount = 0;
 
 /** এই এডিটরে এখন কোনো ফ্লো/ফিল অপ চলছে কি না (page-editor-এর scheduleFlow গার্ড) */
 export function isFlowOpRunning(editor: Editor): boolean {
   return flowOpsRunning.has(editor);
 }
 
+/** যেকোনো এডিটরে এখন ফ্লো/ফিল অপ চলছে কি না (ক্রস-এডিটর রেস গার্ড) */
+export function isAnyFlowOpRunning(): boolean {
+  return globalFlowOpCount > 0;
+}
+
 function beginFlowOp(editor: Editor): boolean {
+  if (globalFlowOpCount > 0) return false; // অন্য কোনো এডিটরে ফ্লো চলছে — অপেক্ষা করো
   if (flowOpsRunning.has(editor)) return false;
   flowOpsRunning.add(editor);
+  globalFlowOpCount += 1;
   return true;
 }
 
 function endFlowOp(editor: Editor): void {
-  flowOpsRunning.delete(editor);
+  if (flowOpsRunning.delete(editor) && globalFlowOpCount > 0) globalFlowOpCount -= 1;
 }
 
 /** কার্সরের অবস্থানে পৃষ্ঠা ভাগ করা (Ctrl+Enter / Insert > পেজ ব্রেক) */
@@ -169,29 +180,36 @@ function flowIfOverflowInner(editor: Editor, pageId: string, availableHeight: nu
   if (used <= availableHeight + 4) return false;
 
   const children = Array.from(pmEl.children).filter((c): c is HTMLElement => c instanceof HTMLElement);
-  // নোডভিউ র‍্যাপার ইত্যাদি বাদ দিয়ে আসল ব্লকগুলো
-  if (children.length <= 1) return false;
+  // নোডভিউ র‍্যাপার ইত্যাদি বাদ দিয়ে আসল ব্লকগুলো; অদৃশ্য উইজেট (Gapcursor ইত্যাদি)
+  // বাদ না দিলে doc-শিশুর সাথে ১:১ ম্যাপ ভেঙে এক ব্লক এদিক-ওদিক হয়ে যায় (ভাগ-বিন্দু ভুল)
+  const visibleChildren = children.filter((c) => {
+    if (c.classList.contains('ProseMirror-gapcursor')) return false;
+    const r = c.getBoundingClientRect();
+    return !(r.width === 0 && r.height === 0);
+  });
+  if (visibleChildren.length <= 1) return false;
 
   const pmRect = pmEl.getBoundingClientRect();
   const zoom = appliedZoomOf(pmEl);
   const pmTop = pmRect.top;
   let fitCount = 0;
-  for (let i = 0; i < children.length; i++) {
-    const rect = children[i].getBoundingClientRect();
+  for (let i = 0; i < visibleChildren.length; i++) {
+    const rect = visibleChildren[i].getBoundingClientRect();
     // ভিজ্যুয়াল পিক্সেল → লেআউট পিক্সেল (availableHeight clientHeight লেআউট এককে)
     const bottom = (rect.bottom - pmTop) / zoom;
     if (bottom <= availableHeight - 4) fitCount = i + 1;
     else break;
   }
-  if (fitCount < 1 || fitCount >= children.length) return false;
+  if (fitCount < 1 || fitCount >= visibleChildren.length) return false;
 
-  // doc-এ fitCount-তম নোডের শুরু অবস্থান
+  // doc-এ fitCount-তম নোডের শুরু অবস্থান (doc-শিশুর সংখ্যায় ক্ল্যাম্প — ম্যাপ-ভাঙা রোধ)
   const doc = editor.state.doc;
+  const fitN = Math.min(fitCount, doc.childCount);
   let pos = 0;
   let counted = 0;
   let guard = 0;
   doc.forEach((child) => {
-    if (counted < fitCount) {
+    if (counted < fitN) {
       pos += child.nodeSize;
       counted += 1;
     }
@@ -236,23 +254,33 @@ function flowIfOverflowInner(editor: Editor, pageId: string, availableHeight: nu
 }
 
 /** Backspace-এ ডকুমেন্টের শুরুতে: বর্তমান পৃষ্ঠা আগের পৃষ্ঠার সাথে মিশে যাবে */
-export function mergeWithPreviousPage(editor: Editor, pageId: string): void {
-  const s = useEditorStore.getState();
-  const idx = s.pages.findIndex((p) => p.id === pageId);
-  if (idx <= 0) return;
-  const prev = s.pages[idx - 1];
-  if (prev.kind === 'cover') return;
-  const currentHtml = editor.getHTML();
-  const mergedHtml = `${prev.html}${currentHtml}`;
-  s.updatePageHtml(prev.id, mergedHtml);
-  s.deletePage(pageId);
-  s.setActivePage(prev.id);
-  window.setTimeout(() => {
-    const prevEditor = getEditor(prev.id);
-    if (prevEditor && !prevEditor.isDestroyed) {
-      prevEditor.commands.focus('end');
-    }
-  }, 80);
+export function mergeWithPreviousPage(editor: Editor, pageId: string, attempt = 0): void {
+  if (editor.isDestroyed) return;
+  // অন্য এডিটরে ফ্লো-অপ চলছে → স্টোর-স্ন্যাপশট স্টেল হতে পারে; অল্প পরে আবার চেষ্টা
+  if (!beginFlowOp(editor)) {
+    if (attempt < 4) window.setTimeout(() => mergeWithPreviousPage(editor, pageId, attempt + 1), 140);
+    return;
+  }
+  try {
+    const s = useEditorStore.getState();
+    const idx = s.pages.findIndex((p) => p.id === pageId);
+    if (idx <= 0) return;
+    const prev = s.pages[idx - 1];
+    if (prev.kind === 'cover') return;
+    const currentHtml = editor.getHTML();
+    const mergedHtml = `${prev.html}${currentHtml}`;
+    s.updatePageHtml(prev.id, mergedHtml);
+    s.deletePage(pageId);
+    s.setActivePage(prev.id);
+    window.setTimeout(() => {
+      const prevEditor = getEditor(prev.id);
+      if (prevEditor && !prevEditor.isDestroyed) {
+        prevEditor.commands.focus('end');
+      }
+    }, 80);
+  } finally {
+    endFlowOp(editor);
+  }
 }
 
 // ═══════════════════ ফাঁকা জায়গা পূরণ ইঞ্জিন (Content Flow Up) ═══════════════════
@@ -341,26 +369,47 @@ async function fillFromNextPageInner(editor: Editor, pageId: string, availableHe
   await waitForImages(editor);
   if (editor.isDestroyed) return { status: 'blocked', blocks: 0 };
 
-  // ২) কোন ব্লকগুলো ফাঁকা জায়গায় আঁটে মাপা
+  // ★ await-জানালার পরে পরের পাতার ফ্রেশনেস যাচাই — মাঝপথে অন্য কেউ (ফাইন্ড-রিপ্লেস,
+  // টেমপ্লেট, অন্য পাতার ফ্লো) পরের পাতার html বদলে ফেললে পুরনো স্ন্যাপশট লিখে বসানো
+  // পাশের পাতার কনটেন্ট ডুপ্লিকেট/মুছে ফেলে — তখন রোলব্যাক করে নিরাপদে হাল ছাড়াই
+  const nextNow = useEditorStore.getState().pages.find((p) => p.id === next.id);
+  if (!nextNow || nextNow.html !== next.html) {
+    replaceDocNoHistory(editor, currentHtml);
+    restoreCursor(editor, cursorBefore);
+    return { status: 'blocked', blocks: 0 };
+  }
+
+  // ২) কোন ব্লকগুলো ফাঁকা জায়গায় আঁটে মাপা (অদৃশ্য উইজেট বাদ — Gapcursor ইত্যাদি)
   const pmEl = editor.view.dom as HTMLElement;
   const children = Array.from(pmEl.children).filter((c): c is HTMLElement => c instanceof HTMLElement);
+  const visibleChildren = children.filter((c) => {
+    if (c.classList.contains('ProseMirror-gapcursor')) return false;
+    const r = c.getBoundingClientRect();
+    return !(r.width === 0 && r.height === 0);
+  });
   const pmRect = pmEl.getBoundingClientRect();
   const zoom = appliedZoomOf(pmEl);
   const pmTop = pmRect.top;
   let fitCount = 0;
-  for (let i = 0; i < children.length; i++) {
+  for (let i = 0; i < visibleChildren.length; i++) {
     // ভিজ্যুয়াল পিক্সেল → লেআউট পিক্সেল (availableHeight clientHeight লেআউট এককে)
-    const bottom = (children[i].getBoundingClientRect().bottom - pmTop) / zoom;
+    const bottom = (visibleChildren[i].getBoundingClientRect().bottom - pmTop) / zoom;
     if (bottom <= availableHeight - 4) fitCount = i + 1;
     else break;
   }
 
-  // ৩) পুরো পরের পাতাই উঠে এসেছে → পরের পাতা মুছে দেওয়া
-  if (fitCount >= children.length && children.length > originalCount) {
+  // ৩) পুরো পরের পাতাই উঠে এসেছে → পরের পাতা মুছে দেওয়া (ফ্রেশনেস আবার যাচাই)
+  const nextFresh = useEditorStore.getState().pages.find((p) => p.id === next.id);
+  if (!nextFresh || nextFresh.html !== next.html) {
+    replaceDocNoHistory(editor, currentHtml);
+    restoreCursor(editor, cursorBefore);
+    return { status: 'blocked', blocks: 0 };
+  }
+  if (fitCount >= visibleChildren.length && visibleChildren.length > originalCount) {
     s.replacePageHtml(pageId, currentHtml + next.html);
     s.deletePage(next.id);
     restoreCursor(editor, cursorBefore);
-    return { status: 'absorbed', blocks: children.length - originalCount };
+    return { status: 'absorbed', blocks: visibleChildren.length - originalCount };
   }
 
   // ৪) একটিও ব্লক উঠতে পারেনি → আগের অবস্থায় ফেরত (আন্ডু-হিস্টরিতে নয়)
@@ -370,12 +419,13 @@ async function fillFromNextPageInner(editor: Editor, pageId: string, availableHe
     return { status: 'none', blocks: 0 };
   }
 
-  // ৫) আঁটা অংশ এই পাতায়, বাকিটা পরের পাতায় ফেরত
+  // ৫) আঁটা অংশ এই পাতায়, বাকিটা পরের পাতায় ফেরত (doc-শিশুর সংখ্যায় ক্ল্যাম্প)
   const doc = editor.state.doc;
+  const fitN = Math.min(fitCount, doc.childCount);
   let pos = 0;
   let counted = 0;
   doc.forEach((child) => {
-    if (counted < fitCount) {
+    if (counted < fitN) {
       pos += child.nodeSize;
       counted += 1;
     }

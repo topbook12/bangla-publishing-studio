@@ -2,8 +2,9 @@
  * নির্ভুলতা কেন্দ্র (Accuracy Center) — ডায়ালগ
  * ────────────────────────────────────────────
  * লেখা/প্রশ্নের নির্ভুলতা যাচাই: লোকাল নির্ণায়ক যাচাই (গণিত, টাইপোগ্রাফি,
- * MCQ-কাঠামো — তাৎক্ষণিক) + AI গভীর যাচাই (বানান, ব্যাকরণ, তথ্য, প্রশ্ন-গঠন)।
- * প্রতিটি সমস্যার কার্ডে মূল → সংশোধন diff, কারণ ও এক-ক্লিক প্রয়োগ।
+ * MCQ-কাঠামো, অফলাইন বানান — তাৎক্ষণিক) + AI গভীর যাচাই (বানান, ব্যাকরণ,
+ * তথ্য, প্রশ্ন-গঠন)। প্রতিটি সমস্যার কার্ডে মূল → সংশোধন diff, কারণ ও
+ * এক-ক্লিক প্রয়োগ। ক্যাটাগরি-ফিল্টার চিপ, নিশ্চয়তা-ব্যাজ, বাতিলযোগ্য রান।
  * বিস্তারিত ইঞ্জিন: src/lib/ai-verify.ts
  */
 
@@ -11,7 +12,7 @@
 
 import { useMemo, useRef, useState } from 'react';
 import {
-  AlertTriangle, BadgeCheck, Ban, CheckCheck, CircleAlert, Crosshair, Info,
+  AlertTriangle, BadgeCheck, Ban, BookPlus, CheckCheck, CircleAlert, Crosshair, Info,
   Loader2, PenLine, RotateCcw, ShieldCheck, Sparkles,
 } from 'lucide-react';
 import {
@@ -22,12 +23,14 @@ import { Switch } from '@/components/ui/switch';
 import { Progress } from '@/components/ui/progress';
 import { useUiStore } from '@/lib/ui-store';
 import { useAiStore, aiConfiguredSelector } from '@/lib/ai-store';
+import { useEditorStore } from '@/lib/store';
+import { addToCustomDict } from '@/lib/proofing';
 import {
   applyVerifyIssue, applyVerifyIssues, accuracyScore, collectScope, revealVerifyIssue,
   runAiVerify, runLocalChecks,
-  type VerifyIssue, type VerifyScope,
+  type VerifyCategory, type VerifyIssue, type VerifyScope,
 } from '@/lib/ai-verify';
-import { t, tFmt, useT, useFmtNum } from '@/lib/i18n';
+import { tFmt, useT, useFmtNum } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -35,6 +38,7 @@ type IssueStatus = 'open' | 'applied' | 'dismissed';
 type UiIssue = VerifyIssue & { status: IssueStatus };
 type Phase = 'setup' | 'running' | 'results';
 type SevFilter = 'all' | 'error' | 'warning' | 'note';
+type CatFilter = 'all' | VerifyCategory;
 
 const SEV_ORDER: Record<string, number> = { error: 0, warning: 1, note: 2 };
 
@@ -43,6 +47,17 @@ const SEV_STYLE: Record<string, string> = {
   warning: 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300',
   note: 'bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300',
 };
+
+/** ক্যাটাগরি-চিপের ধ্রুব ক্রম (U1) */
+const ALL_CATEGORIES: VerifyCategory[] = ['math', 'fact', 'spelling', 'grammar', 'punctuation', 'question', 'consistency'];
+
+/** নিশ্চয়তা-ব্যাজ — সবসময় দৃশ্যমান; থিম-টোকেন রঙ (≥৯০ সবুজাভ, ≥৭০ অ্যাম্বার, নইলে নিরবে) */
+const CONF_STYLE = {
+  high: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300',
+  mid: 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300',
+  low: 'bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300',
+};
+const confStyleOf = (n: number) => (n >= 90 ? CONF_STYLE.high : n >= 70 ? CONF_STYLE.mid : CONF_STYLE.low);
 
 export function AccuracyDialog() {
   const openDialog = useUiStore((s) => s.openDialog);
@@ -61,9 +76,12 @@ export function AccuracyDialog() {
   const [coverage, setCoverage] = useState(1);
   const [failedChunks, setFailedChunks] = useState(0);
   const [aiError, setAiError] = useState(false);
+  const [runError, setRunError] = useState(false);
   const [sevFilter, setSevFilter] = useState<SevFilter>('all');
+  const [catFilter, setCatFilter] = useState<CatFilter>('all');
   const scopePageIdsRef = useRef<string[]>([]);
   const abortRef = useRef(false);
+  const abortCtrlRef = useRef<AbortController | null>(null);
   const [aiRan, setAiRan] = useState(false);
 
   // ডায়ালগ খোলার সময় ফ্রেশ সেটআপ-অবস্থা — সিলেকশন থাকলে ডিফল্ট পরিধি = নির্বাচিত অংশ।
@@ -76,13 +94,23 @@ export function AccuracyDialog() {
     setPhase('setup');
     setIssues([]);
     setSevFilter('all');
+    setCatFilter('all');
+    setRunError(false);
+    setAiError(false);
   } else if (!open && seenOpen) {
     setSeenOpen(false);
   }
 
+  // স্কোপ-টেক্সট একবারই সংগ্রহ — প্রতি রেন্ডারে collectScope নয় (ডকুমেন্ট-স্কোপে পুরো বই পার্স হয়)।
+  // মডাল-অবস্থায় পেজ/সিলেকশন বদলাতে পারে না, তাই [open, scope, activePageId]-এই যথেষ্ট।
+  const activePageId = useEditorStore((s) => s.activePageId);
+  const scopeData = useMemo(() => (open ? collectScope(scope) : null), [open, scope, activePageId]);
+  const scopeEmpty = !scopeData?.text.trim();
+
   const handleOpenChange = (v: boolean) => {
     if (!v) {
       abortRef.current = true;
+      abortCtrlRef.current?.abort();
       close();
     }
   };
@@ -92,55 +120,68 @@ export function AccuracyDialog() {
     `${i.original.replace(/\s+/g, ' ').trim()}|${i.suggestion.replace(/\s+/g, ' ').trim()}`;
 
   const run = async () => {
-    const scopeData = collectScope(scope);
-    if (!scopeData.text.trim()) {
-      toast.error(tt(`acc.scope.${scope}.empty`));
-      return;
-    }
-    scopePageIdsRef.current = scopeData.pages.map((p) => p.pageId);
-    abortRef.current = false;
-    setAiRan(true);
-    setPhase('running');
-    setProgress({ done: 0, total: 0 });
-    setAiError(false);
-    setFailedChunks(0);
-    setSummary('');
-    setCoverage(1);
-    setSevFilter('all');
-
-    // ১) লোকাল নির্ণায়ক যাচাই — তাৎক্ষণিক
-    await new Promise((r) => setTimeout(r, 30));
-    const local = runLocalChecks(scopeData.text).map<UiIssue>((i) => ({ ...i, status: 'open' }));
-    setIssues(local);
-
-    // ২) AI গভীর যাচাই
-    let aiIssues: UiIssue[] = [];
+    setRunError(false);
     try {
-      const report = await runAiVerify({
-        scope: scopeData,
-        deep,
-        demo: !configured,
-        onProgress: (done, total) => setProgress({ done, total }),
-        shouldAbort: () => abortRef.current,
-      });
-      const seen = new Set(local.map(dedupeKey));
-      aiIssues = report.issues
-        .filter((i) => !seen.has(dedupeKey(i)))
-        .map((i) => ({ ...i, status: 'open' as IssueStatus }));
-      setSummary(report.summary);
-      setCoverage(report.coverage);
-      setFailedChunks(report.failedChunks);
-      if (report.failedChunks > 0 && report.issues.length === 0 && local.length === 0) setAiError(true);
-    } catch {
-      setAiError(true);
-    }
+      const data = scopeData;
+      if (!data || !data.text.trim()) {
+        toast.error(tt(`acc.scope.${scope}.empty`));
+        return;
+      }
+      scopePageIdsRef.current = data.pages.map((p) => p.pageId);
+      // প্রতি রানে নিজের AbortController — Cancel/ডায়ালগ-বন্ধে চলমান চাংক-কলও থামে
+      const ctrl = new AbortController();
+      abortCtrlRef.current = ctrl;
+      abortRef.current = false;
+      setAiRan(true);
+      setPhase('running');
+      setProgress({ done: 0, total: 0 });
+      setAiError(false);
+      setFailedChunks(0);
+      setSummary('');
+      setCoverage(1);
+      setSevFilter('all');
+      setCatFilter('all');
 
-    // তীব্রতা অনুযায়ী সাজানো — ভুল সবার আগে
-    const merged = [...local, ...aiIssues].sort(
-      (a, b) => SEV_ORDER[a.severity] - SEV_ORDER[b.severity],
-    );
-    setIssues(merged);
-    setPhase('results');
+      // ১) লোকাল নির্ণায়ক যাচাই — তাৎক্ষণিক
+      await new Promise((r) => setTimeout(r, 30));
+      const local = runLocalChecks(data.text).map<UiIssue>((i) => ({ ...i, status: 'open' }));
+      setIssues(local);
+
+      // ২) AI গভীর যাচাই
+      let aiIssues: UiIssue[] = [];
+      try {
+        const report = await runAiVerify({
+          scope: data,
+          deep,
+          demo: !configured,
+          onProgress: (done, total) => setProgress({ done, total }),
+          shouldAbort: () => abortRef.current,
+          signal: ctrl.signal,
+        });
+        const seen = new Set(local.map(dedupeKey));
+        aiIssues = report.issues
+          .filter((i) => !seen.has(dedupeKey(i)))
+          .map((i) => ({ ...i, status: 'open' as IssueStatus }));
+        setSummary(report.summary);
+        setCoverage(report.coverage);
+        setFailedChunks(report.failedChunks);
+        if (report.failedChunks > 0 && report.issues.length === 0 && local.length === 0) setAiError(true);
+      } catch {
+        // বাতিল হলে ত্রুটি-ব্যানার নয় — আংশিক ফলই দেখাই
+        if (!ctrl.signal.aborted && !abortRef.current) setAiError(true);
+      }
+
+      // তীব্রতা অনুযায়ী সাজানো — ভুল সবার আগে (বাতিল হলেও আংশিক ফল থাকে)
+      const merged = [...local, ...aiIssues].sort(
+        (a, b) => SEV_ORDER[a.severity] - SEV_ORDER[b.severity],
+      );
+      setIssues(merged);
+      setPhase('results');
+    } catch (err) {
+      // নীরব প্রত্যাখ্যান নয় — ব্যবহারকারীকে দেখাই
+      if ((err as Error)?.name !== 'AbortError') setRunError(true);
+      setPhase('setup');
+    }
   };
 
   const updateIssue = (id: string, status: IssueStatus) => {
@@ -158,8 +199,20 @@ export function AccuracyDialog() {
   };
 
   const handleLocate = (issue: UiIssue) => {
-    const ok = revealVerifyIssue(issue, scopePageIdsRef.current);
-    if (!ok) toast.info(tt('acc.cannotApply'));
+    const ids = scopePageIdsRef.current;
+    // মডাল-পেছনে স্ক্রল অন্ধকারে হারায় — আগে ডায়ালগ বন্ধ, তারপর রিভিল।
+    // revealMatch এডিটর-রেজিস্ট্রি থেকেই কাজ করে; DOM-স্থিরকরণে ১০০ms বিরতি।
+    close();
+    window.setTimeout(() => {
+      const ok = revealVerifyIssue(issue, ids);
+      if (!ok) toast.info(tt('acc.cannotApply'));
+    }, 100);
+  };
+
+  const handleAddToDict = (issue: UiIssue) => {
+    addToCustomDict(issue.original);
+    updateIssue(issue.id, 'dismissed');
+    toast.success(tFmt('acc.spell.addedToast', { w: issue.original }));
   };
 
   const handleApplyBatch = (list: UiIssue[]) => {
@@ -181,29 +234,42 @@ export function AccuracyDialog() {
 
   const counts = useMemo(() => {
     const c = { all: issues.length, error: 0, warning: 0, note: 0, open: 0 };
+    const cats = { math: 0, fact: 0, spelling: 0, grammar: 0, punctuation: 0, question: 0, consistency: 0 } as Record<VerifyCategory, number>;
     for (const i of issues) {
       c[i.severity]++;
       if (i.status === 'open') c.open++;
+      cats[i.category]++;
     }
-    return c;
+    return { ...c, cats };
   }, [issues]);
 
   const score = useMemo(() => accuracyScore(issues), [issues]);
 
   const visible = useMemo(
-    () => (sevFilter === 'all' ? issues : issues.filter((i) => i.severity === sevFilter)),
-    [issues, sevFilter],
+    () => issues.filter(
+      (i) => (sevFilter === 'all' || i.severity === sevFilter) && (catFilter === 'all' || i.category === catFilter),
+    ),
+    [issues, sevFilter, catFilter],
   );
 
+  // "নিরাপদ সব প্রয়োগ" — টুলটিপের প্রতিশ্রুতির মতোই: সব ভুল-স্তরের সংশোধন + ৯০%+ নিশ্চয়তা
   const safeFixes = useMemo(
-    () => issues.filter((i) => i.status === 'open' && i.suggestion && i.confidence >= 90),
+    () => issues.filter((i) => i.status === 'open' && i.suggestion && (i.severity === 'error' || i.confidence >= 90)),
     [issues],
   );
 
-  const scopeEmpty = useMemo(() => {
-    if (!open) return false;
-    return !collectScope(scope).text.trim();
-  }, [open, scope]);
+  const catChips = useMemo(
+    () => ALL_CATEGORIES.filter((c) => counts.cats[c] > 0),
+    [counts],
+  );
+
+  // স্ক্রিন-রিডারে অগ্রগতি ও প্রগতিশীল ফল-সংখ্যার ঘোষণা (aria-live)
+  const liveMsg = phase === 'running'
+    ? ((progress.total > 0
+        ? tt('acc.running.ai').split('{done}').join(f(progress.done)).split('{total}').join(f(progress.total))
+        : tt('acc.running.local'))
+      + (issues.length > 0 ? ` — ${tFmt('acc.found', { n: f(issues.length) })}` : ''))
+    : tFmt('acc.found', { n: f(issues.length) });
 
   const runningPct = progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 8;
 
@@ -219,6 +285,15 @@ export function AccuracyDialog() {
           </DialogTitle>
           <DialogDescription>{tt('acc.desc')}</DialogDescription>
         </DialogHeader>
+
+        {/* স্ক্রিন-রিডার ঘোষণা — প্রগতিশীল ফলে সমস্যা-সংখ্যা জানায় */}
+        <div aria-live="polite" role="status" className="sr-only">{liveMsg}</div>
+
+        {runError && (
+          <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-xs text-red-700 dark:bg-red-950/40 dark:text-red-300">
+            {tt('acc.runError')}
+          </p>
+        )}
 
         {/* ─── সেটআপ ─── */}
         {phase === 'setup' && (
@@ -263,7 +338,7 @@ export function AccuracyDialog() {
 
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-xs text-muted-foreground">
-                {!configured ? tt('acc.demoNote') : tt('acc.chars').split('{n}').join(f(collectScope(scope).text.length))}
+                {!configured ? tt('acc.demoNote') : tt('acc.chars').split('{n}').join(f(scopeData?.text.length ?? 0))}
               </p>
               <Button onClick={() => void run()} disabled={scopeEmpty} className="gap-2 bg-emerald-600 hover:bg-emerald-700">
                 <ShieldCheck size={15} /> {tt('acc.run')}
@@ -284,12 +359,25 @@ export function AccuracyDialog() {
               </p>
             </div>
             <Progress value={runningPct} aria-label={tt('acc.run')} />
-            {issues.length > 0 && (
+            {issues.length > 0 ? (
               <p className="text-xs text-muted-foreground">
                 {tFmt('acc.found', { n: f(issues.length) })}
               </p>
+            ) : (
+              // প্রথম ফল আসার আগে — হালকা স্কেলিটন-শিমার
+              <div className="space-y-2" aria-hidden="true">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="rounded-lg border p-3">
+                    <div className="mb-2 flex gap-1.5">
+                      <div className="h-4 w-16 animate-pulse rounded-full bg-accent" />
+                      <div className="h-4 w-12 animate-pulse rounded-full bg-accent" style={{ animationDelay: `${i * 150}ms` }} />
+                    </div>
+                    <div className="h-9 animate-pulse rounded-md bg-accent" style={{ animationDelay: `${i * 150}ms` }} />
+                  </div>
+                ))}
+              </div>
             )}
-            <Button variant="outline" size="sm" onClick={() => { abortRef.current = true; }}>
+            <Button variant="outline" size="sm" onClick={() => { abortRef.current = true; abortCtrlRef.current?.abort(); }}>
               {tt('acc.cancel')}
             </Button>
           </div>
@@ -312,7 +400,12 @@ export function AccuracyDialog() {
                     ? tt('acc.clean')
                     : tFmt('acc.found', { n: f(counts.open) })}
                 </p>
-                {summary && <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{summary}</p>}
+                {summary && (
+                  <div className="mt-0.5">
+                    <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{tt('acc.summary')}</p>
+                    <p className="line-clamp-2 text-xs text-muted-foreground">{summary}</p>
+                  </div>
+                )}
               </div>
               <Button variant="outline" size="sm" className="gap-1.5" onClick={() => void run()}>
                 <RotateCcw size={13} /> {tt('acc.rerun')}
@@ -335,7 +428,7 @@ export function AccuracyDialog() {
               </p>
             )}
 
-            {/* ফিল্টার */}
+            {/* ফিল্টার — তীব্রতা */}
             <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={tt('acc.issues')}>
               {(['all', 'error', 'warning', 'note'] as SevFilter[]).map((s) => (
                 <button
@@ -354,15 +447,46 @@ export function AccuracyDialog() {
               ))}
             </div>
 
+            {/* ফিল্টার — ক্যাটাগরি (শুধু ফল-আছে ক্যাটাগরি; ক্লিকে টগল-ব্যাক = সব) */}
+            {catChips.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={tt('acc.filterBy')}>
+                {catChips.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    aria-pressed={catFilter === c}
+                    className={cn(
+                      'rounded-full border px-2.5 py-1 text-xs font-medium transition',
+                      catFilter === c
+                        ? 'border-emerald-600 bg-emerald-600 text-white dark:border-emerald-500 dark:bg-emerald-500'
+                        : 'text-muted-foreground hover:bg-accent',
+                    )}
+                    onClick={() => setCatFilter((cur) => (cur === c ? 'all' : c))}
+                  >
+                    {tt(`acc.cat.${c}`)}
+                    <span className="ml-1 tabular-nums opacity-70">{f(counts.cats[c])}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
             {/* issue তালিকা */}
             {visible.length === 0 ? (
-              <p className="flex flex-col items-center gap-2 py-8 text-center">
-                <ShieldCheck size={28} className="text-emerald-500" aria-hidden="true" />
-                <span className="text-sm text-emerald-700 dark:text-emerald-300">{tt('acc.clean')}</span>
-                {!aiRan && <span className="text-xs text-muted-foreground">{tt('acc.cleanLocal')}</span>}
-              </p>
+              issues.length === 0 ? (
+                <p className="flex flex-col items-center gap-2 py-8 text-center">
+                  <ShieldCheck size={28} className="text-emerald-500" aria-hidden="true" />
+                  <span className="text-sm text-emerald-700 dark:text-emerald-300">{tt('acc.clean')}</span>
+                  {!aiRan && <span className="text-xs text-muted-foreground">{tt('acc.cleanLocal')}</span>}
+                </p>
+              ) : (
+                <p className="py-8 text-center text-sm text-muted-foreground">{tt('acc.filterEmpty')}</p>
+              )
             ) : (
-              <div className="max-h-96 space-y-2 overflow-y-auto pr-1" role="list" aria-label={tt('acc.issues')}>
+              <div
+                className="max-h-[42vh] space-y-2 overflow-y-auto pr-1 [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border"
+                role="list"
+                aria-label={tt('acc.issues')}
+              >
                 {visible.map((issue) => (
                   <div
                     key={issue.id}
@@ -381,7 +505,7 @@ export function AccuracyDialog() {
                         {tt(`acc.cat.${issue.category}`)}
                       </span>
                       <span className="rounded-full border px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                        {issue.source === 'local' ? tt('acc.cat.local') : 'AI'}
+                        {issue.source === 'local' ? tt('acc.cat.local') : tt('acc.cat.ai')}
                       </span>
                       {issue.pageIndex !== undefined && (
                         <span className="text-[11px] text-muted-foreground">
@@ -389,11 +513,13 @@ export function AccuracyDialog() {
                         </span>
                       )}
                       <span className="flex-1" />
-                      {issue.confidence < 80 && (
-                        <span className="text-[10px] text-amber-600" title={tt('acc.lowConfidence')}>
-                          {tFmt('acc.confidence', { n: f(issue.confidence) })}
-                        </span>
-                      )}
+                      {/* নিশ্চয়তা-ব্যাজ — সবসময় দৃশ্যমান */}
+                      <span
+                        className={cn('rounded-full px-2 py-0.5 text-[10px] font-semibold tabular-nums', confStyleOf(issue.confidence))}
+                        title={issue.confidence < 70 ? tt('acc.lowConfidence') : tFmt('acc.confidence', { n: f(issue.confidence) })}
+                      >
+                        {tFmt('acc.confidenceShort', { n: f(issue.confidence) })}
+                      </span>
                     </div>
 
                     {issue.suggestion ? (
@@ -435,6 +561,12 @@ export function AccuracyDialog() {
                       {issue.status === 'open' && (
                         <Button size="sm" variant="ghost" className="h-7 gap-1 text-xs" onClick={() => updateIssue(issue.id, 'dismissed')}>
                           <Ban size={12} /> {tt('acc.dismiss')}
+                        </Button>
+                      )}
+                      {/* লোকাল বানান-সন্দেহ — এক ক্লিকে ব্যবহারকারীর অভিধানে */}
+                      {issue.status === 'open' && issue.source === 'local' && issue.category === 'spelling' && issue.original && (
+                        <Button size="sm" variant="ghost" className="h-7 gap-1 text-xs" title={tt('acc.spell.addDictTip')} onClick={() => handleAddToDict(issue)}>
+                          <BookPlus size={12} /> {tt('acc.spell.addDict')}
                         </Button>
                       )}
                       {issue.original && issue.status === 'open' && (

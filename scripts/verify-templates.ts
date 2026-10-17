@@ -121,6 +121,10 @@ const RAW_UNI = `জাতীয় বিশ্ববিদ্যালয়
 ২. পূর্ণ প্রতিযোগিতামূলক বাজারের বৈশিষ্ট্য লিখ। [১০]
 ৩. মুদ্রাস্ফীতির কারণ ও প্রভাব আলোচনা কর। [১০]`;
 
+// ডিফল্ট পরীক্ষা-নাম স্ট্রিং — সাজেশন-রেন্ডারে কোনোটাই কোথাও থাকতে পারে না
+// (তিন ভাষার ডিফল্ট examTitle; নমুনা-লেখায় আর পরীক্ষা-লাইন নেই, তাই পুরো HTML-এই নিষেধ)
+const EXAM_TITLE_STRINGS = ['বার্ষিক পরীক্ষা', 'वार्षिक परीक्षा', 'Annual Examination'];
+
 // ─── ১. সব প্রশ্নপত্র-ফরম্যাট ───
 section('প্রশ্নপত্র-ফরম্যাট × ধরন × স্তর — রেন্ডার-যাচাই');
 
@@ -134,8 +138,9 @@ for (const fmt of FORMATS) {
       for (const scale of SCALES) {
         const raw = level === 'university' ? (docType === 'suggestion' ? RAW_SUG : RAW_UNI) : (docType === 'suggestion' ? RAW_SUG : RAW_FULL);
         // ডায়ালগ-প্রথা: আগে preamble-meta (কাঁচা-লেখার হেডার ফর্মে বসে) — তারপর পার্স
+        // docType সচেতন — সাজেশনে কাঁচা-লেখার পরীক্ষা-লাইন examTitle ভরে না
         const baseMeta = { ...defaultQpMeta('bn'), schoolName: 'আদর্শ উচ্চ বিদ্যালয়', subject: 'গণিত', classLabel: 'ষষ্ঠ শ্রেণি' };
-        const meta = level === 'university' ? qpPreambleMeta(raw, baseMeta, 'bn') : baseMeta;
+        const meta = level === 'university' ? qpPreambleMeta(raw, baseMeta, 'bn', docType) : baseMeta;
         const p = parseQuestionText(raw, meta, fmt, 'bn');
         const tag = `${fmt}/${docType}/${level}/${scale}`;
         if (!p) {
@@ -177,9 +182,16 @@ for (const fmt of FORMATS) {
         }
         if (docType === 'suggestion') {
           check(`${tag}: সাজেশন-শিরোনাম`, html.includes('সাজেশন'), 'missing sug title');
-          // সাজেশনে পরীক্ষার নাম থাকবে না — শিক্ষকের বাগ-রিপোর্ট
-          const hasExamLine = /<p[^>]*>[^<]*বার্ষিক পরীক্ষা/.test(html) && !html.split('সাজেশন')[0].includes('বার্ষিক পরীক্ষা');
-          check(`${tag}: সাজেশনে পরীক্ষার নাম নেই`, !hasExamLine);
+          // সাজেশনে পরীক্ষার নাম একেবারেই থাকবে না — হেডার/কুইজ-ঘর/স্লিপ যে-কোনো জায়গায়
+          // (পুরো HTML স্ক্যান — span/টেবিল-ঘরেও লিক ধরবে; পুরনো split('সাজেশন') হিউরিস্টিক বাদ)
+          const examLeak = EXAM_TITLE_STRINGS.find((t) => html.includes(t));
+          check(`${tag}: সাজেশনে পরীক্ষার নাম নেই`, !examLeak, examLeak ? `found "${examLeak}"` : undefined);
+        }
+        if (docType === 'question' && f === 'sugslip') {
+          // রিভার্স-লিক — প্রশ্নপত্রে sugslip এলে "সাজেশন —" শিরোনাম নয়,
+          // পরীক্ষার নাম হেডারে থাকে (অন্য প্রশ্নপত্র-ফরম্যাটের মতোই)
+          check(`${tag}: sugslip-এ সাজেশন-শিরোনাম নেই`, !html.includes('সাজেশন —'), 'suggestion header leaked');
+          check(`${tag}: sugslip-এ পরীক্ষার নাম আছে`, !!meta.examTitle && html.includes(meta.examTitle), 'exam title missing');
         }
         // চিত্র-স্লট — RAW_FULL-এ একটা আছে (চিহ্নিতকারী-শব্দ নিজে রেন্ডারে থাকে না — কেবল □-বক্স)
         if (raw === RAW_FULL) {
@@ -188,6 +200,11 @@ for (const fmt of FORMATS) {
         // স্ট্যান্ডঅ্যালোন-ফাইলও ভাঙে না কি না
         const std = paperToStandaloneHtml(p, 'bn');
         check(`${tag}: standalone HTML`, std.includes('</html>') && std.includes('</body>') && tagBalance(std) === null);
+        // সাজেশনের স্ট্যান্ডঅ্যালোন <title>-ও পরীক্ষার নাম বহন করে না
+        if (docType === 'suggestion') {
+          const stdLeak = EXAM_TITLE_STRINGS.find((t) => std.includes(t));
+          check(`${tag}: standalone-এ পরীক্ষার নাম নেই`, !stdLeak, stdLeak ? `found "${stdLeak}"` : undefined);
+        }
       }
     }
   }
@@ -203,6 +220,58 @@ check(`মোট ${comboCount} সংমিশ্রণ পার্স হয�
   check('preamble: বিষয় কোড', m2.subjectCode === '১০৯', `got ${m2.subjectCode}`);
   const m3 = qpPreambleMeta('সেট: খ', defaultQpMeta('bn'), 'bn');
   check('preamble: সেট', m3.setCode === 'খ', `got ${m3.setCode}`);
+}
+
+// ─── ১b. সাজেশন exam-name রিগ্রেশন — সব পথে লিক বন্ধ + রিভার্স-লিক ───
+section('সাজেশন exam-name রিগ্রেশন');
+{
+  // (docType='suggestion', format='quiz') — কুইজ-হেডারের ডান ঘরে পরীক্ষার নাম আসে না;
+  // (docType='suggestion', format='auto') — auto-রেজল্ভ হয়েও লিক নেই।
+  // meta.examTitle ডিফল্ট-মানেই রাখা হয় (ভাষা-ডিফল্ট ফর্মে থাকতেই পারে) — রেন্ডারারই চাপবে।
+  for (const fmt of ['quiz', 'auto'] as QpFormat[]) {
+    const sugMeta = { ...defaultQpMeta('bn'), schoolName: 'আদর্শ কোচিং সেন্টার', subject: 'গণিত', classLabel: 'ষষ্ঠ শ্রেণি' };
+    const p = parseQuestionText(RAW_SUG, sugMeta, fmt, 'bn');
+    if (!p) { check(`suggestion/${fmt}: পার্স`, false, 'parseQuestionText → null'); continue; }
+    p.docType = 'suggestion';
+    const html = paperToEditorHtml(p, 'bn');
+    const leak = EXAM_TITLE_STRINGS.find((t) => html.includes(t));
+    check(`suggestion/${fmt}: পরীক্ষার নাম নেই`, !leak, leak ? `found "${leak}"` : undefined);
+    check(`suggestion/${fmt}: সাজেশন-শিরোনাম আছে`, html.includes('সাজেশন'));
+    const std = paperToStandaloneHtml(p, 'bn');
+    const stdLeak = EXAM_TITLE_STRINGS.find((t) => std.includes(t));
+    check(`suggestion/${fmt}: standalone-এ পরীক্ষার নাম নেই`, !stdLeak && tagBalance(std) === null, stdLeak ? `found "${stdLeak}"` : undefined);
+  }
+  // (docType='question', format='sugslip') — "সাজেশন —" শিরোনাম নয়, পরীক্ষার নাম হেডারে
+  {
+    const qMeta = { ...defaultQpMeta('bn'), schoolName: 'আদর্শ উচ্চ বিদ্যালয়', subject: 'গণিত', classLabel: 'ষষ্ঠ শ্রেণি' };
+    const p = parseQuestionText(RAW_FULL, qMeta, 'sugslip', 'bn');
+    if (p) {
+      p.docType = 'question';
+      const html = paperToEditorHtml(p, 'bn');
+      check('question/sugslip: "সাজেশন —" শিরোনাম নেই', !html.includes('সাজেশন —'), 'suggestion header leaked');
+      check('question/sugslip: পরীক্ষার নাম আছে', html.includes('বার্ষিক পরীক্ষা'), 'exam title missing');
+      check('question/sugslip: HTML গঠন', tagBalance(html) === null);
+    } else check('question/sugslip: পার্স', false, 'parseQuestionText → null');
+  }
+  // normalizeQpJson — সাজেশনে AI-এর পাঠানো examTitle জোর করে ফাঁকা; প্রশ্নপত্রে বসে
+  {
+    const data = { examTitle: 'বার্ষিক পরীক্ষা — ২০২৫', sections: [{ title: 'অধ্যায় ১', questions: [{ number: '১', text: '২ + ২ কত?' }] }] };
+    const blank = { ...defaultQpMeta('bn'), examTitle: '' };
+    const np = normalizeQpJson(data, blank, 'classic', 'suggestion');
+    check('normalizeQpJson: সাজেশনে examTitle জোর-ফাঁকা', !!np && np.meta.examTitle === '', np?.meta.examTitle);
+    const nq = normalizeQpJson(data, { ...defaultQpMeta('bn'), examTitle: '' }, 'classic');
+    check('normalizeQpJson: প্রশ্নপত্রে examTitle বসে', !!nq && nq.meta.examTitle === 'বার্ষিক পরীক্ষা — ২০২৫', nq?.meta.examTitle);
+    check('normalizeQpJson: সাজেশনে প্রশ্ন-কাঠামো অক্ষত', !!np && np.sections.length === 1 && np.sections[0].questions.length === 1);
+  }
+  // qpPreambleMeta — সাজেশনে কাঁচা-লেখার পরীক্ষা-লাইন examTitle ভরে না; প্রশ্নপত্রে ভরে
+  {
+    const raw = 'আদর্শ কোচিং সেন্টার\nবার্ষিক পরীক্ষা — ২০২৫\nষষ্ঠ শ্রেণির গণিত সাজেশন';
+    const mSug = qpPreambleMeta(raw, defaultQpMeta('bn'), 'bn', 'suggestion');
+    check('preamble: সাজেশনে পরীক্ষা-লাইন ভরে না', mSug.examTitle === 'বার্ষিক পরীক্ষা', `got ${mSug.examTitle}`);
+    const mQ = qpPreambleMeta(raw, defaultQpMeta('bn'), 'bn', 'question');
+    check('preamble: প্রশ্নপত্রে পরীক্ষা-লাইন ভরে', mQ.examTitle === 'বার্ষিক পরীক্ষা — ২০২৫', `got ${mQ.examTitle}`);
+    check('preamble: সাজেশনে সাজেশন-টাইটেল পার্স হয়', mSug.subject === 'গণিত' && mSug.classLabel === 'ষষ্ঠ শ্রেণি', `got ${mSug.subject}/${mSug.classLabel}`);
+  }
 }
 
 // ─── ২. উন্নত লেআউট-অপশন (কলাম/নম্বর/মান/বিভাগ/MCQ/উত্তর-জায়গা) ───
@@ -307,6 +376,13 @@ for (const bp of BOOK_BLUEPRINTS) {
   check(`${bp.id} (${bp.pages.length} পাতা)`, ok, why);
 }
 check(`ব্লুপ্রিন্ট মোট = যাচাইকৃত`, bpCount === BOOK_BLUEPRINTS.length);
+// id-অনন্যতা — ডুপ্লিকেট id-তে ব্লুপ্রিন্ট একে অপরকে পা কাটে (নির্বাচন/প্রয়োগ ভাঙে)
+{
+  const ids = new Set<string>();
+  let dup = 0;
+  for (const bp of BOOK_BLUEPRINTS) { if (ids.has(bp.id)) dup++; ids.add(bp.id); }
+  check(`ব্লুপ্রিন্ট id-অনন্যতা (ডুপ্লিকেট ${dup})`, dup === 0);
+}
 
 // ─── ৭. পেজ-টেমপ্লেট ───
 section('পেজ-টেমপ্লেট');
@@ -318,6 +394,13 @@ for (const tpl of PAGE_TEMPLATES) {
   check(`${tpl.id} (${tpl.category})`, ok, bal ?? undefined);
 }
 check(`পেজ-টেমপ্লেট মোট = যাচাইকৃত`, ptCount === PAGE_TEMPLATES.length);
+// id-অনন্যতা — ডুপ্লিকেট id-তে টেমপ্লেট একে অপরকে পা কাটে
+{
+  const ids = new Set<string>();
+  let dup = 0;
+  for (const tpl of PAGE_TEMPLATES) { if (ids.has(tpl.id)) dup++; ids.add(tpl.id); }
+  check(`পেজ-টেমপ্লেট id-অনন্যতা (ডুপ্লিকেট ${dup})`, dup === 0);
+}
 
 // ─── ৮. ভেক্টর-ক্যাটালগ ───
 section('ভেক্টর-ক্যাটালগ (চিত্র-লাইব্রেরি)');

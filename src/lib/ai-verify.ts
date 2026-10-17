@@ -17,11 +17,13 @@
  * প্রয়োগ (fix) find-replace ইঞ্জিনের উপর দাঁড়িয়ে — মার্ক/অলংকার সংরক্ষিত।
  */
 
-import { toBanglaNumber, toDevanagariNumber, toEnglishDigits } from './bangla';
+import { toArabicIndicNumber, toBanglaNumber, toDevanagariNumber, toEnglishDigits } from './bangla';
 import { findAllMatches, replaceMatch, revealMatch, type FindMatch } from './find-replace';
 import { useEditorStore } from './store';
 import { getEditor } from './editor-registry';
 import { callAi } from './ai-client';
+import { scanText } from './proofing';
+import { fmtNum, tFmt } from './i18n';
 import type { Editor } from '@tiptap/react';
 
 // ─── টাইপ ───
@@ -231,11 +233,18 @@ function normalizeDigitsKeepLength(text: string): string {
   return out;
 }
 
-type DigitStyle = 'bn' | 'dev' | 'ascii';
+/** লোকাল যাচাইয়ের ব্যাখ্যা — চলতি ভাষায় (অভিধান: dict-accuracy.ts → acc.why.*) */
+function localWhy(key: string, vars?: Record<string, string | number>): string {
+  return tFmt('acc.why.' + key, vars ?? {});
+}
+
+type DigitStyle = 'bn' | 'dev' | 'ar' | 'ascii';
 
 /** লেখাটির অংশে কোন সংখ্যা-পদ্ধতি ব্যবহৃত — সংশোধনও সেই পদ্ধতিতেই হবে */
 function digitStyleOf(s: string): DigitStyle {
   if (/[০-৯]/.test(s)) return 'bn';
+  if (/[\u06F0-\u06F9]/.test(s)) return 'ar'; // মাদ্রাসা/ফার্সি-ধাঁচ (۰-۹)
+  if (/[\u0660-\u0669]/.test(s)) return 'ar'; // আরবি-ইন্ডিক (٠-٩)
   if (/[०-९]/.test(s)) return 'dev';
   return 'ascii';
 }
@@ -244,6 +253,7 @@ function fmtNumOut(n: number, style: DigitStyle = 'ascii'): string {
   const rounded = Math.round(n * 1e6) / 1e6;
   if (style === 'bn') return toBanglaNumber(rounded);
   if (style === 'dev') return toDevanagariNumber(rounded);
+  if (style === 'ar') return toArabicIndicNumber(rounded);
   return String(rounded);
 }
 
@@ -255,7 +265,7 @@ function checkArithmetic(text: string): VerifyIssue[] {
   const issues: VerifyIssue[] = [];
   const norm = normalizeDigitsKeepLength(text);
   // "x" শুধু দুই সংখ্যার মাঝে গুণ-চিহ্ন হিসেবে গ্রহণযোগ্য
-  const MATH_CHARS = /[0-9+\-*/().\s]|×|÷|x|✕/;
+  const MATH_CHARS = /[0-9+\-*/().\sxX]|×|÷|✕/;
 
   for (let i = 0; i < norm.length; i++) {
     if (norm[i] !== '=') continue;
@@ -270,17 +280,20 @@ function checkArithmetic(text: string): VerifyIssue[] {
     let start = i;
     while (start > 0) {
       const ch = norm[start - 1];
-      if (ch === '×' || ch === '÷' || ch === '✕' || MATH_CHARS.test(ch)) {
-        if (/[a-zA-Z\u0980-\u09FF\u0900-\u097F]/.test(ch)) break; // অক্ষর/চলক এলে থামুন
+      // "x"/"X"/"×"/"✕" সংখ্যার মাঝে গুণ-চিহ্ন — অক্ষর হলেও এতে হাঁটা থামে না।
+      // (আগে যেকোনো অক্ষরে থেমে যেত, তাই "৫ x ৩ = ১৫" কখনোই ধরা পড়ত না।)
+      const isMulX = ch === 'x' || ch === 'X' || ch === '×' || ch === '✕';
+      if (isMulX || MATH_CHARS.test(ch)) {
+        if (!isMulX && /[a-zA-Z\u0980-\u09FF\u0900-\u097F]/.test(ch)) break; // আসল অক্ষর/চলক এলে থামুন
         start--;
       } else break;
     }
     let lhs = norm.slice(start, i).trim();
     if (!lhs || !/\d/.test(lhs)) continue;
-    if (!/[+\-*/×÷x✕]/.test(lhs)) continue; // অন্তত এক অপারেটর
+    if (!/[+\-*/×÷xX✕]/.test(lhs)) continue; // অন্তত এক অপারেটর
     if (/[a-zA-Z\u0980-\u09FF\u0900-\u097F]/.test(lhs)) {
       // চলক জাতীয় — শুধু স্বতন্ত্র "x" (গুণ) অনুমোদিত
-      const withX = lhs.replace(/(?<=\d)\s*[x✕]\s*(?=\d)/g, '*');
+      const withX = lhs.replace(/(?<=\d)\s*[xX✕×]\s*(?=\d)/g, '*');
       if (/[a-zA-Z\u0980-\u09FF\u0900-\u097F]/.test(withX)) continue;
       lhs = withX;
     }
@@ -307,7 +320,7 @@ function checkArithmetic(text: string): VerifyIssue[] {
         severity: 'error',
         original,
         suggestion,
-        why: `গণনা করলে ${fmtNumOut(value, style)} হয় — লেখা আছে ${fmtNumOut(written, style)}।`,
+        why: localWhy('arithmetic', { a: fmtNumOut(value, style), b: fmtNumOut(written, style) }),
         confidence: 100,
       });
     }
@@ -335,7 +348,7 @@ function checkArithmetic(text: string): VerifyIssue[] {
         severity: 'error',
         original,
         suggestion,
-        why: `${m[1]}% × ${m[2]} = ${fmtNumOut(expect, style)} হওয়ার কথা।`,
+        why: localWhy('percent', { a: fmtNum(m[1]), b: fmtNum(m[2]), c: fmtNumOut(expect, style) }),
         confidence: 100,
       });
     }
@@ -370,7 +383,7 @@ function checkTypography(text: string): VerifyIssue[] {
       push({
         category: 'punctuation', severity: 'note', original,
         suggestion: `${m[1]} ${m[2]}`,
-        why: 'শব্দদুটির মাঝে ডাবল স্পেস — একটি স্পেসই যথেষ্ট।',
+        why: localWhy('doubleSpace'),
         confidence: 95,
       });
       n++;
@@ -387,7 +400,7 @@ function checkTypography(text: string): VerifyIssue[] {
       push({
         category: 'punctuation', severity: 'note', original,
         suggestion: `${m[1]}।`,
-        why: 'দাঁড়ির আগে স্পেস হয় না — দাঁড়ি শব্দের সাথে লেগে থাকে।',
+        why: localWhy('spaceBeforeDanda'),
         confidence: 98,
       });
       n++;
@@ -404,7 +417,7 @@ function checkTypography(text: string): VerifyIssue[] {
       push({
         category: 'punctuation', severity: 'note', original,
         suggestion: `। ${text[m.index + 1]}`,
-        why: 'দাঁড়ির পরে স্পেস দরকার।',
+        why: localWhy('spaceAfterDanda'),
         confidence: 90,
       });
       n++;
@@ -420,7 +433,7 @@ function checkTypography(text: string): VerifyIssue[] {
       push({
         category: 'punctuation', severity: 'note', original: m[0],
         suggestion: '।',
-        why: 'পরপর দুটি দাঁড়ি — একটিই যথেষ্ট।',
+        why: localWhy('doubleDanda'),
         confidence: 92,
       });
       n++;
@@ -437,7 +450,7 @@ function checkTypography(text: string): VerifyIssue[] {
       push({
         category: 'punctuation', severity: 'note', original,
         suggestion: `${m[1]},`,
-        why: 'কমার আগে স্পেস হয় না।',
+        why: localWhy('spaceBeforeComma'),
         confidence: 96,
       });
       n++;
@@ -454,7 +467,7 @@ function checkTypography(text: string): VerifyIssue[] {
       push({
         category: 'grammar', severity: 'note', original: m[0],
         suggestion: m[1],
-        why: `“${m[1]}” পরপর দুবার এসেছে — ইচ্ছাকৃত পুনরাবৃত্তি কি না দেখুন।`,
+        why: localWhy('repeatedWord', { w: m[1] }),
         confidence: 70,
       });
       n++;
@@ -471,7 +484,7 @@ function checkTypography(text: string): VerifyIssue[] {
         push({
           category: 'punctuation', severity: 'note', original: '',
           suggestion: '',
-          why: `${open}${close} বন্ধনী সমান নয় (${a}টি ${open} বনাম ${b}টি ${close}) — কোথাও বন্ধনী খোলা রয়ে গেছে।`,
+          why: localWhy('brackets', { o: open, c: close, a: fmtNum(a), b: fmtNum(b) }),
           confidence: 85,
         });
       }
@@ -485,7 +498,7 @@ function checkTypography(text: string): VerifyIssue[] {
       push({
         category: 'punctuation', severity: 'warning', original: '',
         suggestion: '',
-        why: '$…$ গণিত-চিহ্ন জোড়া মেলেনি — একটি $ খোলা আছে, গণিতটি ঠিকমতো দেখাবে না।',
+        why: localWhy('dollar'),
         confidence: 95,
       });
     }
@@ -501,7 +514,7 @@ function checkTypography(text: string): VerifyIssue[] {
         push({
           category: 'consistency', severity: 'note', original: '',
           suggestion: '',
-          why: 'একই লাইনে বাংলা ও ইংরেজি দুই ধরনের অঙ্ক আছে — এক পদ্ধতিতে আনুন।',
+          why: localWhy('mixedDigits'),
           confidence: 75,
         });
         flagged++;
@@ -561,7 +574,7 @@ function checkQuestionStructure(text: string): VerifyIssue[] {
         push({
           category: 'question', severity: 'warning', original: '',
           suggestion: '',
-          why: `MCQ-র “${opt.letter}” ও “${seen.get(key)}” অপশন হুবহু এক — দুটি আলাদা অপশন দরকার।`,
+          why: localWhy('duplicateOption', { a: opt.letter, b: seen.get(key) ?? '' }),
           confidence: 90,
         });
       } else seen.set(key, opt.letter);
@@ -578,7 +591,7 @@ function checkQuestionStructure(text: string): VerifyIssue[] {
         push({
           category: 'question', severity: 'note', original: '',
           suggestion: '',
-          why: `অপশন-ক্রম “${got}” — স্বাভাবিক ক্রম হওয়া উচিত “${expected}”।`,
+          why: localWhy('optionOrder', { a: got, b: expected }),
           confidence: 80,
         });
       }
@@ -594,7 +607,7 @@ function checkQuestionStructure(text: string): VerifyIssue[] {
           push({
             category: 'question', severity: 'error', original,
             suggestion: '',
-            why: `উত্তর “${ansM[1]}” দেওয়া হয়েছে, কিন্তু এই MCQ-তে অপশনগুলো: ${Array.from(have).join(', ')}।`,
+            why: localWhy('answerKey', { a: ansM[1], b: Array.from(have).join(', ') }),
             confidence: 88,
           });
         }
@@ -614,7 +627,7 @@ function checkQuestionStructure(text: string): VerifyIssue[] {
         push({
           category: 'question', severity: 'note', original: '',
           suggestion: '',
-          why: `প্রশ্ন-নম্বর ${dup.map((d) => String(d)).join(', ')} একাধিকবার এসেছে।`,
+          why: localWhy('numberingDup', { a: dup.map((d) => fmtNum(d)).join(', ') }),
           confidence: 82,
         });
       } else {
@@ -623,7 +636,7 @@ function checkQuestionStructure(text: string): VerifyIssue[] {
             push({
               category: 'question', severity: 'note', original: '',
               suggestion: '',
-              why: `প্রশ্ন-নম্বরে লাফ: ${nums[i - 1]}-এর পরে ${nums[i]} — নম্বর-ক্রম যাচাই করুন।`,
+              why: localWhy('numberingSkip', { a: fmtNum(nums[i - 1]), b: fmtNum(nums[i]) }),
               confidence: 78,
             });
             break;
@@ -648,10 +661,31 @@ function checkQuestionStructure(text: string): VerifyIssue[] {
   return issues;
 }
 
-/** সব লোকাল (নির্ণায়ক) যাচাই একসাথে */
+/** অফলাইন বানান-সন্দেহ (proofing.scanText) — পরামর্শ-স্তর; প্রতি রানে সর্বোচ্চ ১২টি */
+const SPELLING_MAX = 12;
+
+function checkSpelling(text: string): VerifyIssue[] {
+  // কোড/ম্যাথ-অংশের শব্দ অভিধানে না থাকলেও বাদ (সস্তা নিয়ম: $…$ ও inline-code বাদ)
+  const clean = text.replace(/\$[^$\n]*\$/g, ' ').replace(/`[^`\n]*`/g, ' ');
+  const unknown = scanText(clean, { maxResults: SPELLING_MAX });
+  return unknown.map((sw, idx) => ({
+    id: 'local-sp-' + idx,
+    source: 'local',
+    category: 'spelling',
+    severity: 'warning',
+    original: sw.word,
+    suggestion: '',
+    why: sw.count > 1
+      ? localWhy('spellingTimes', { w: sw.word, n: fmtNum(sw.count) })
+      : localWhy('spelling'),
+    confidence: 60,
+  }));
+}
+
+/** সব লোকাল (নির্ণায়ক) যাচাই একসাথে — গণিত, টাইপোগ্রাফি, প্রশ্ন-কাঠামো, বানান */
 export function runLocalChecks(text: string): VerifyIssue[] {
   if (!text.trim()) return [];
-  return [...checkArithmetic(text), ...checkTypography(text), ...checkQuestionStructure(text)];
+  return [...checkArithmetic(text), ...checkTypography(text), ...checkQuestionStructure(text), ...checkSpelling(text)];
 }
 
 // ─── AI যাচাই ───
@@ -827,6 +861,8 @@ export interface AiVerifyOptions {
   demo?: boolean;
   onProgress?: (done: number, total: number) => void;
   shouldAbort?: () => boolean;
+  /** চলমান চাংক-কল বাতিল — ডায়ালগের Cancel/বন্ধে */
+  signal?: AbortSignal;
 }
 
 /**
@@ -844,10 +880,11 @@ export async function runAiVerify(opts: AiVerifyOptions): Promise<VerifyReport> 
   let done = 0;
 
   for (const chunk of chunks) {
-    if (opts.shouldAbort?.()) break;
+    if (opts.shouldAbort?.() || opts.signal?.aborted) break;
     const prompt = `CONTENT (verify ONLY this part):\n---\n${chunk.text}\n---\nVerify accuracy now. Reply with the JSON only.`;
     try {
-      const res = await callAi({ prompt, system: ACCURACY_SYSTEM, demo: opts.demo, thinking: opts.deep });
+      const res = await callAi({ prompt, system: ACCURACY_SYSTEM, demo: opts.demo, thinking: opts.deep, signal: opts.signal });
+      if (opts.signal?.aborted) break; // বাতিল — আংশিক ফল ধরে রেখে থামুন
       if (res.ok && res.text) {
         const parsed = parseVerifyJson(res.text);
         if (parsed) {
@@ -888,10 +925,24 @@ export async function runAiVerify(opts: AiVerifyOptions): Promise<VerifyReport> 
   // প্রয়োগযোগ্যতা-গেট: find-replace ইঞ্জিন হুবহু খুঁজে না পেলে সেটি অটো-ফিক্স
   // নয় — নিরাপদে পরামর্শ-স্তরে নামাই (প্রয়োগ-বাটনে ব্যর্থতা দেখাবে না)
   const scopeIds = new Set(opts.scope.pages.map((p) => p.pageId));
+  // পারফ: প্রতি issue-তে পুরো-বই DOM পার্স নয়। প্রথমে রান-সময়ের ক্যাশ-করা
+  // স্কোপ-টেক্সটে সস্তা includes-যাচাই; না মিললে তবেই লাইভ findAllMatches —
+  // ইউনিক original-প্রতি একবার (ক্যাশ)। আচরণ একই: না-পাওয়া গেলে পরামর্শ-স্তরে।
+  const liveCache = new Map<string, boolean>();
+  const applicableInScope = (original: string): boolean => {
+    const q = original.trim();
+    if (!q) return false;
+    if (opts.scope.pages.some((pg) => pg.text.includes(q))) return true;
+    let live = liveCache.get(q);
+    if (live === undefined) {
+      live = findAllMatches(q, true).some((m) => scopeIds.has(m.pageId));
+      liveCache.set(q, live);
+    }
+    return live;
+  };
   for (const issue of issues) {
     if (!issue.suggestion) continue;
-    const applicable = findAllMatches(issue.original, true).some((m) => scopeIds.has(m.pageId));
-    if (!applicable) issue.suggestion = '';
+    if (!applicableInScope(issue.original)) issue.suggestion = '';
   }
 
   return { issues, summary, failedChunks, coverage: totalChars ? Math.min(1, coveredChars / totalChars) : 1 };

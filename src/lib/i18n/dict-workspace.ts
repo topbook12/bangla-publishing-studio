@@ -28,6 +28,7 @@ export const dictWorkspace: Dict = {
   'ws.pages.aria': { bn: 'বইয়ের পৃষ্ঠাসমূহ', hi: 'पुस्तक के पृष्ठ', en: 'Book pages' },
   'ws.page.menu': { bn: 'পৃষ্ঠা মেনু', hi: 'पृष्ठ मेनू', en: 'Page menu' },
   'ws.page.n': { bn: 'পৃষ্ঠা {n}', hi: 'पृष्ठ {n}', en: 'Page {n}' },
+  'ws.close': { bn: 'বন্ধ করুন', hi: 'बंद करें', en: 'Close' },
   'ws.page.newAfter': { bn: 'এই পৃষ্ঠার পরে নতুন', hi: 'इस पृष्ठ के बाद नया', en: 'New page after this one' },
   'ws.page.duplicate': { bn: 'পৃষ্ঠা ডুপ্লিকেট', hi: 'पृष्ठ की प्रतिलिपि', en: 'Duplicate page' },
   'ws.page.pullUp': { bn: 'নিচের পাতার লেখা এই পাতায় তুলুন', hi: 'नीचे के पृष्ठ का लेख इस पृष्ठ पर लाएँ', en: 'Pull text from the next page onto this page' },

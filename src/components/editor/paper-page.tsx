@@ -11,6 +11,7 @@ import { getPageDimensionsMm, mmToPx, pageBorderVisual } from '@/lib/paper';
 import { effectivePageStyle, effectivePageTypography } from '@/lib/page-layout';
 import { PageFooter, PageHeader, PageWatermark, pageFontStyle, pagePaddingStyle } from './page-chrome';
 import { CoverView } from './cover-view';
+import { useT, useFmtNum } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
 interface PaperPageProps {
@@ -58,13 +59,15 @@ export const PaperPage = memo(
   // বর্ডার রং/স্টাইল/প্রস্থ পাতার কার্যকর রূপ থেকে আসে — একই ইনলাইন স্টাইল প্রিন্টেও প্রযোজ্য হয়
   const borderStyle = pageBorderVisual(st);
   const typoFont = effectivePageTypography(page, settings).defaultFont;
+  const tt = useT();
+  const fn = useFmtNum();
 
   return (
     <div
       className={cn('paper-page', paperClass, active && 'paper-active')}
       style={{ width, height }}
       role="article"
-      aria-label={`পৃষ্ঠা ${index + 1}`}
+      aria-label={tt('ws.page.n', 'Page {n}').split('{n}').join(fn(index + 1))}
       onClick={onPageClick}
       data-page-index={index}
     >

@@ -5,7 +5,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { ArrowLeftRight, Grid3x3, Pause, Search, Sigma, SpellCheck2, Square, Type, Volume2, ScanEye } from 'lucide-react';
+import { ArrowLeftRight, ChevronDown, Grid3x3, Pause, Search, Sigma, SpellCheck2, Square, Type, Volume2, ScanEye } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Switch } from '@/components/ui/switch';
@@ -162,7 +162,7 @@ function ReadAloudControls() {
       <DropdownMenu>
         <DropdownMenuTrigger asChild disabled={noEditor}>
           <button type="button" className="ribbon-select w-16 justify-center" title={tt('rev.ra.speedTip')}>
-            {toBanglaNumber(ra.rate)}× <span aria-hidden="true">▾</span>
+            {toBanglaNumber(ra.rate)}× <ChevronDown className="h-3 w-3 opacity-60" aria-hidden="true" />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent

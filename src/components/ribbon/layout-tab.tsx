@@ -7,7 +7,7 @@
 
 import { Fragment, useState } from 'react';
 import {
-  ArrowUpToLine, Ban, Check, Columns2, Columns3, Droplet, Eraser, MoveDown, RotateCcw, SlidersHorizontal, SwatchBook, Wand2,
+  ArrowUpToLine, Ban, Check, ChevronDown, Columns2, Columns3, Droplet, Eraser, MoveDown, RotateCcw, SlidersHorizontal, SwatchBook, Wand2,
 } from 'lucide-react';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
@@ -364,7 +364,21 @@ export function LayoutTab() {
   const ed = useActiveEditor();
   const inColumns = (() => {
     if (!ed || ed.isDestroyed) return false;
-    try { return ed.isActive('columns'); } catch { return false; }
+    try {
+      if (ed.isActive('columns')) return true;
+      // সিলেকশন-রেঞ্জে কলাম-ব্লক থাকলেও সক্রিয় ধরা হয় — নইলে Ctrl+A করে বদল দিলে
+      // হাইলাইট/প্রিসেট-চেক ঠিক দেখাত না (কার্সর কলামের ভেতরে না থাকলে)
+      const { from, to } = ed.state.selection;
+      let found = false;
+      ed.state.doc.nodesBetween(from, to, (n) => {
+        if (n.type.name === 'columns') {
+          found = true;
+          return false; // মোড়কের ভেতরে নামার দরকার নেই
+        }
+        return true;
+      });
+      return found;
+    } catch { return false; }
   })();
   const colAttrs = (inColumns ? ed?.getAttributes('columns') : null) as Partial<ColumnsAttrs> | null | undefined;
   const colCount = Math.max(1, Math.min(4, Math.round(Number(colAttrs?.count)) || 2));
@@ -466,7 +480,7 @@ export function LayoutTab() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button type="button" className="ribbon-select w-44">
-                {PAPER_PRESETS.find((p) => p.id === settings.paperSize)?.name ?? 'A4'} <span aria-hidden="true">▾</span>
+                {PAPER_PRESETS.find((p) => p.id === settings.paperSize)?.name ?? 'A4'} <ChevronDown className="h-3 w-3 opacity-60" aria-hidden="true" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-56">
@@ -536,7 +550,7 @@ export function LayoutTab() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button type="button" className="ribbon-select w-44">
-                {tt('lay.margins.preset')} <span aria-hidden="true">▾</span>
+                {tt('lay.margins.preset')} <ChevronDown className="h-3 w-3 opacity-60" aria-hidden="true" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-56">
@@ -596,7 +610,7 @@ export function LayoutTab() {
               <button type="button" className="ribbon-select w-40">
                   <span className="flex items-center gap-1.5"><SwatchBook size={13} /> {tt('lay.border.label')} {
                   effStyle.pageBorder === 'none' ? tt('lay.border.none') : effStyle.pageBorder === 'thin' ? tt('lay.border.thin') : effStyle.pageBorder === 'double' ? tt('lay.border.double') : tt('lay.border.ornamental')
-                } <span aria-hidden="true">▾</span></span>
+                } <ChevronDown className="h-3 w-3 opacity-60" aria-hidden="true" /></span>
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
@@ -610,7 +624,7 @@ export function LayoutTab() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button type="button" className="ribbon-select w-28" title={tt('lay.border.styleTip')}>
-                  {tt('lay.border.stylePrefix')} {tt(BORDER_STYLE_LABELS[borderStyle])} <span aria-hidden="true">▾</span>
+                  {tt('lay.border.stylePrefix')} {tt(BORDER_STYLE_LABELS[borderStyle])} <ChevronDown className="h-3 w-3 opacity-60" aria-hidden="true" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
@@ -624,7 +638,7 @@ export function LayoutTab() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button type="button" className="ribbon-select w-28" title={tt('lay.border.widthTip')}>
-                  {tt('lay.border.widthPrefix')} {tt(BORDER_WIDTH_LABELS[borderWidth])} <span aria-hidden="true">▾</span>
+                  {tt('lay.border.widthPrefix')} {tt(BORDER_WIDTH_LABELS[borderWidth])} <ChevronDown className="h-3 w-3 opacity-60" aria-hidden="true" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
@@ -671,7 +685,7 @@ export function LayoutTab() {
               <button type="button" className="ribbon-select w-48" title={tt('lay.columns.tip')}>
                 {inColumns ? <Columns3 size={13} /> : <Columns2 size={13} />}{' '}
                 {inColumns ? tFmt('lay.columns.countN', { n: fnum(colCount) }) : tt('lay.columns.label')}
-                <span aria-hidden="true">▾</span>
+                <ChevronDown className="h-3 w-3 opacity-60" aria-hidden="true" />
               </button>
             </PopoverTrigger>
             <PopoverContent
@@ -872,7 +886,7 @@ export function LayoutTab() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button type="button" className="ribbon-select w-28" title={tt('lay.wm.preset')}>
-                  <span className="truncate">{wm.text.trim() || tt('lay.wm.presetShort')}</span> <span aria-hidden="true">▾</span>
+                  <span className="truncate">{wm.text.trim() || tt('lay.wm.presetShort')}</span> <ChevronDown className="h-3 w-3 opacity-60" aria-hidden="true" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-56">
@@ -889,7 +903,7 @@ export function LayoutTab() {
             <Popover>
               <PopoverTrigger asChild>
                 <button type="button" className="ribbon-select w-36" title={tt('lay.wm.customizeTitle')}>
-                  <SlidersHorizontal size={13} /> {tt('lay.wm.customizeBtn')} <span aria-hidden="true">▾</span>
+                  <SlidersHorizontal size={13} /> {tt('lay.wm.customizeBtn')} <ChevronDown className="h-3 w-3 opacity-60" aria-hidden="true" />
                 </button>
               </PopoverTrigger>
               <PopoverContent className="w-72 p-3" align="start">
@@ -1008,7 +1022,7 @@ export function LayoutTab() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button type="button" className="ribbon-select w-40" style={{ fontFamily: `'${effTypo.defaultFont}', sans-serif` }}>
-                {effTypo.defaultFont} <span aria-hidden="true">▾</span>
+                {effTypo.defaultFont} <ChevronDown className="h-3 w-3 opacity-60" aria-hidden="true" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="max-h-[24rem] w-72 overflow-y-auto">

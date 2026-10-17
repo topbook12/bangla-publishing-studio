@@ -16,7 +16,11 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { BookOpen, FileStack, LayoutTemplate, Palette, Search, Sparkles } from 'lucide-react';
+import {
+  ArrowDownToLine, Baby, BookMarked, BookOpen, Briefcase, Feather, FileStack, FlaskConical,
+  GraduationCap, Landmark, LayoutTemplate, Moon, Newspaper, Palette, PenLine, Replace, Search,
+  Sparkles, UtensilsCrossed,
+} from 'lucide-react';
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
@@ -42,14 +46,49 @@ import { ensurePageEditorMounted, fitTemplatePage } from '@/components/editor/pa
 import { primeTocEntriesInHtml } from '@/lib/toc';
 import { StaticContent } from '@/components/editor/static-content';
 import type { DocumentSettings, HeaderFooterSettings } from '@/lib/types';
-import { useT, useFmtNum } from '@/lib/i18n';
+import { useT, useFmtNum, getLang } from '@/lib/i18n';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { ArrowDownToLine, Replace } from 'lucide-react';
 import { OneColorDropdown } from './one-color-picker';
 
 /** প্রিভিউ শিটের ভার্চুয়াল প্রস্থ (px) — কার্ডের প্রস্থ অনুযায়ী স্কেল হয় */
 const SHEET_WIDTH = 620;
+
+/**
+ * ধাঁচ (genre) → lucide আইকন — book-templates-এর ইমোজি-চিপের প্রিমিয়াম বিকল্প।
+ * আইকন বর্তমান টেক্সটের রংই ধার করে (চিপ active হলে primary-foreground)।
+ * নতুন ধাঁচ যোগ হলে ফলব্যাক BookOpen।
+ */
+const GENRE_ICONS: Record<BlueprintGenre, React.ComponentType<{ size?: number; className?: string; 'aria-hidden'?: boolean | 'true' | 'false' }>> = {
+  literature: BookOpen,
+  poetry: Feather,
+  textbook: GraduationCap,
+  science: FlaskConical,
+  children: Baby,
+  cooking: UtensilsCrossed,
+  history: Landmark,
+  coaching: PenLine,
+  journal: BookMarked,
+  report: Briefcase,
+  magazine: Newspaper,
+  islamic: Moon,
+};
+
+function GenreIcon({ genre, size = 11, className }: { genre: BlueprintGenre; size?: number; className?: string }) {
+  const Icon = GENRE_ICONS[genre] ?? BookOpen;
+  return <Icon size={size} className={className} aria-hidden="true" />;
+}
+
+/**
+ * প্রয়োগ-ব্যর্থতার জেনেরিক বার্তা — dict-এ টেমপ্লেট-প্রয়োগের জেনেরিক error-কী নেই,
+ * তাই ভাষা-অনুযায়ী ফলব্যাক (bn/hi/en — অর্কেস্ট্রেটর-অনুমোদিত হার্ডকোড)।
+ */
+function applyFailMsg(): string {
+  const lang = getLang();
+  if (lang === 'en') return 'Could not apply — please try again';
+  if (lang === 'hi') return 'लागू नहीं हो सका — फिर से कोशिश करें';
+  return 'প্রয়োগ করা যায়নি — আবার চেষ্টা করুন';
+}
 
 /** প্রিভিউয়ের জন্য খালি স্পেসার প্যারাগ্রাফগুলো বাদ দিয়ে ডিজাইনটি কমপ্যাক্টভাবে দেখানো */
 function compactForPreview(html: string): string {
@@ -162,10 +201,11 @@ function BlueprintCard({ bp, onStart, onInsert }: {
         <div className="bp-preview-page left-1 top-1" style={{ transform: 'rotate(1.6deg)' }} />
         <SheetPreview html={blueprintPreviewHtml(bp)} className="h-48" />
         <span
-          className="absolute left-2 top-2 z-10 rounded-full px-2 py-0.5 text-[10px] font-semibold text-white shadow-sm"
+          className="absolute left-2 top-2 z-10 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold text-white shadow-sm"
           style={{ backgroundColor: bp.accent }}
         >
-          {genre.emoji} {genre.label}
+          <GenreIcon genre={bp.genre} size={11} />
+          {genre.label}
         </span>
         <span className="absolute right-2 top-2 z-10 rounded-full border border-border bg-white/95 px-2 py-0.5 text-[10px] font-medium text-slate-600 shadow-sm">
           {tt('store.bp.pageCount').split('{n}').join(nf(bp.pages.length))}
@@ -346,55 +386,71 @@ export function TemplatesDialog() {
     setStartBp(null);
     void (async () => {
       const s = useEditorStore.getState();
-      // নিরাপত্তা-স্ন্যাপশট — পুরনো বই স্ন্যাপশট ডায়ালগ থেকে ফেরানো যায়
-      try { await s.takeSnapshot('auto'); } catch { /* ইন-মেমরি মোড */ }
-      const cover = s.pages.find((p) => p.kind === 'cover');
-      const pages = blueprintToPageData(bp, newId);
-      const finalPages = cover ? [cover, ...pages] : pages;
-      s.replaceBook(finalPages, blueprintSettingsPatch(bp));
-      primeEmptyTocs(finalPages.map((p) => p.id));
-      toast.success(tt('store.bp.toastStarted').split('{name}').join(bp.name), {
-        description: tt('store.bp.toastStartedDesc'),
-      });
-      close();
-      const firstDesignPage = finalPages[cover ? 1 : 0];
-      if (firstDesignPage) void fitAllBlueprintPages([firstDesignPage.id]);
+      try {
+        // নিরাপত্তা-স্ন্যাপশট — পুরনো বই স্ন্যাপশট ডায়ালগ থেকে ফেরানো যায়
+        try { await s.takeSnapshot('auto'); } catch { /* ইন-মেমরি মোড */ }
+        const cover = s.pages.find((p) => p.kind === 'cover');
+        const pages = blueprintToPageData(bp, newId);
+        const finalPages = cover ? [cover, ...pages] : pages;
+        s.replaceBook(finalPages, blueprintSettingsPatch(bp));
+        primeEmptyTocs(finalPages.map((p) => p.id));
+        toast.success(tt('store.bp.toastStarted').split('{name}').join(bp.name), {
+          description: tt('store.bp.toastStartedDesc'),
+        });
+        close();
+        const firstDesignPage = finalPages[cover ? 1 : 0];
+        if (firstDesignPage) void fitAllBlueprintPages([firstDesignPage.id]);
+      } catch (err) {
+        // প্রয়োগ ব্যর্থ হলে ডায়ালগ ব্যবহারযোগ্য থাকে — ব্যস্ত অবস্থা নেই, শুধু জানানো হয়
+        console.error('[templates] applyStart failed', err);
+        toast.error(applyFailMsg());
+      }
     })();
   };
 
   const applyInsert = (bp: BookBlueprint) => {
-    const s = useEditorStore.getState();
-    let after = s.activePageId ?? s.pages[s.pages.length - 1]?.id ?? null;
-    const newIds: string[] = [];
-    for (const p of bp.pages) {
-      const id = s.addPage(after, p.html);
-      s.updatePage(id, { noChrome: Boolean(p.noChrome), flowLock: p.flowLock ?? true });
-      newIds.push(id);
-      after = id;
+    try {
+      const s = useEditorStore.getState();
+      let after = s.activePageId ?? s.pages[s.pages.length - 1]?.id ?? null;
+      const newIds: string[] = [];
+      for (const p of bp.pages) {
+        const id = s.addPage(after, p.html);
+        s.updatePage(id, { noChrome: Boolean(p.noChrome), flowLock: p.flowLock ?? true });
+        newIds.push(id);
+        after = id;
+      }
+      primeEmptyTocs(newIds);
+      toast.success(tt('store.bp.toastInserted').split('{name}').join(bp.name), {
+        description: tt('store.bp.toastInsertedDesc'),
+      });
+      close();
+      void fitAllBlueprintPages(newIds);
+    } catch (err) {
+      console.error('[templates] applyInsert failed', err);
+      toast.error(applyFailMsg());
     }
-    primeEmptyTocs(newIds);
-    toast.success(tt('store.bp.toastInserted').split('{name}').join(bp.name), {
-      description: tt('store.bp.toastInsertedDesc'),
-    });
-    close();
-    void fitAllBlueprintPages(newIds);
   };
 
   // ─── পাতার টেমপ্লেট ───
   const pick = (tpl: PageTemplate) => {
-    const s = useEditorStore.getState();
-    const afterId = s.activePageId ?? s.pages[s.pages.length - 1]?.id ?? null;
-    const newId2 = s.addPage(afterId, tpl.html);
-    // টেমপ্লেট = পূর্ণ-পাতার নকশা — অটো-ফ্লো ভাঙবে না; ব্যবহারকারী লিখতে শুরু
-    // করলেই লক নিজে থেকেই খুলে যায় (page-editor onUpdate)
-    s.updatePage(newId2, { flowLock: true });
-    s.setActivePage(newId2);
-    primeEmptyTocs([newId2]);
-    toast.success(tt('dlg1.tpl.toastAdded').split('{name}').join(tpl.name), {
-      description: tt('dlg1.tpl.toastAddedDesc'),
-    });
-    close();
-    void mountFitAndReveal(newId2);
+    try {
+      const s = useEditorStore.getState();
+      const afterId = s.activePageId ?? s.pages[s.pages.length - 1]?.id ?? null;
+      const newId2 = s.addPage(afterId, tpl.html);
+      // টেমপ্লেট = পূর্ণ-পাতার নকশা — অটো-ফ্লো ভাঙবে না; ব্যবহারকারী লিখতে শুরু
+      // করলেই লক নিজে থেকেই খুলে যায় (page-editor onUpdate)
+      s.updatePage(newId2, { flowLock: true });
+      s.setActivePage(newId2);
+      primeEmptyTocs([newId2]);
+      toast.success(tt('dlg1.tpl.toastAdded').split('{name}').join(tpl.name), {
+        description: tt('dlg1.tpl.toastAddedDesc'),
+      });
+      close();
+      void mountFitAndReveal(newId2);
+    } catch (err) {
+      console.error('[templates] pick failed', err);
+      toast.error(applyFailMsg());
+    }
   };
 
   const activePage = useEditorStore((s) => s.pages.find((p) => p.id === s.activePageId) ?? null);
@@ -405,14 +461,21 @@ export function TemplatesDialog() {
     const s = useEditorStore.getState();
     const pageId = s.activePageId;
     if (!pageId) return;
-    s.replacePageHtml(pageId, replaceTarget.html);
-    s.updatePage(pageId, { flowLock: true });
-    s.setActivePage(pageId);
-    primeEmptyTocs([pageId]);
-    toast.success(tt('dlg1.tpl.toastReplaced').split('{name}').join(replaceTarget.name));
-    setReplaceTarget(null);
-    close();
-    void mountFitAndReveal(pageId);
+    try {
+      s.replacePageHtml(pageId, replaceTarget.html);
+      s.updatePage(pageId, { flowLock: true });
+      s.setActivePage(pageId);
+      primeEmptyTocs([pageId]);
+      toast.success(tt('dlg1.tpl.toastReplaced').split('{name}').join(replaceTarget.name));
+      setReplaceTarget(null);
+      close();
+      void mountFitAndReveal(pageId);
+    } catch (err) {
+      // ব্যর্থ হলে নিশ্চিতকরণ-অ্যালার্ট বন্ধ করে ডায়ালগ ব্যবহারযোগ্য রাখা হয়
+      console.error('[templates] confirmReplace failed', err);
+      setReplaceTarget(null);
+      toast.error(applyFailMsg());
+    }
   };
 
   // ─── ফিল্টার ───
@@ -524,7 +587,14 @@ export function TemplatesDialog() {
                           : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
                       )}
                     >
-                      {g === 'all' ? tt('dlg1.tpl.all') : `${genreMeta[g].emoji} ${genreMeta[g].label}`}
+                      {g === 'all' ? (
+                        tt('dlg1.tpl.all')
+                      ) : (
+                        <>
+                          <GenreIcon genre={g} size={11} className="mr-0.5 inline-block align-[-1px] opacity-80" />
+                          {genreMeta[g].label}
+                        </>
+                      )}
                       <span className="ml-1 opacity-70">({nf(count)})</span>
                     </button>
                   );

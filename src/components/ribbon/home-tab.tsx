@@ -6,7 +6,7 @@
 
 import { Fragment, useEffect, useState } from 'react';
 import {
-  AlignCenter, AlignJustify, AlignLeft, AlignRight, Bold, CaseSensitive, ChevronsDown, ChevronsUp, Eraser,
+  AlignCenter, AlignJustify, AlignLeft, AlignRight, Bold, CaseSensitive, ChevronDown, ChevronsDown, ChevronsUp, Eraser,
   Highlighter, Info, Italic, List, ListOrdered, Paintbrush, Palette, Quote, Strikethrough,
   Subscript as SubIcon, Superscript as SupIcon, Underline as UnderlineIcon,
 } from 'lucide-react';
@@ -48,7 +48,7 @@ function FontFamilySelect() {
       <DropdownMenuTrigger asChild>
         <button type="button" className="ribbon-select w-44" title={tt('home.font')} style={{ fontFamily: current ? fontStackOf(current) : undefined }}>
           <span className="truncate">{current || tt('home.font')}</span>
-          <span aria-hidden="true">▾</span>
+          <ChevronDown className="h-3 w-3 shrink-0 opacity-60" aria-hidden="true" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
@@ -110,7 +110,7 @@ function FontSizeSelect() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button type="button" className="ribbon-select w-20 justify-center" title={tt('home.fontsize')}>
-          {current ? fmtN(current) : tt('home.size')} <span aria-hidden="true">▾</span>
+          {current ? fmtN(current) : tt('home.size')} <ChevronDown className="h-3 w-3 opacity-60" aria-hidden="true" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
@@ -212,7 +212,8 @@ function LineHeightSelect() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button type="button" className="ribbon-select w-16 justify-center" title={tt('home.lineheight')}>
-          {fmtN(shown)}▾
+          {fmtN(shown)}
+          <ChevronDown className="h-3 w-3 opacity-60" aria-hidden="true" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
@@ -282,7 +283,7 @@ function TextToolsMenu() {
         <button type="button" className="ribbon-btn" aria-label={tt('home.texttools')} title={tt('home.texttools.tip')}>
           <CaseSensitive size={16} aria-hidden="true" />
           <span className="ribbon-btn-label">{tt('home.texttools')}</span>
-          <span aria-hidden="true" className="text-[10px] opacity-60">▾</span>
+          <ChevronDown className="h-3 w-3 opacity-60" aria-hidden="true" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent

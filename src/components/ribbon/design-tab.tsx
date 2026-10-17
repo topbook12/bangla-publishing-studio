@@ -4,7 +4,7 @@
 
 'use client';
 
-import { Crown, LayoutTemplate, PaintBucket, Palette, RefreshCw, Settings2, Store } from 'lucide-react';
+import { Check, ChevronDown, Crown, LayoutTemplate, PaintBucket, Palette, RefreshCw, Settings2, Store } from 'lucide-react';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -105,7 +105,7 @@ export function DesignTab() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button type="button" className="ribbon-select w-40">
-                  {settings.header.style === 'parallel' ? tt('dsn.hstyle.parallel') : settings.header.style === 'royal' ? tt('dsn.hstyle.royal') : settings.header.style === 'academic' ? tt('dsn.hstyle.academic') : settings.header.style === 'plain' ? tt('dsn.hstyle.plain') : tt('dsn.hstyle.none')} <span aria-hidden="true">▾</span>
+                  {settings.header.style === 'parallel' ? tt('dsn.hstyle.parallel') : settings.header.style === 'royal' ? tt('dsn.hstyle.royal') : settings.header.style === 'academic' ? tt('dsn.hstyle.academic') : settings.header.style === 'plain' ? tt('dsn.hstyle.plain') : tt('dsn.hstyle.none')} <ChevronDown className="h-3 w-3 opacity-60" aria-hidden="true" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-52">
@@ -143,7 +143,7 @@ export function DesignTab() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button type="button" className="ribbon-select w-36">
-                  {settings.pageNumber.format === 'bangla' ? tt('dsn.pnfmt.sample.bangla') : settings.pageNumber.format === 'hindi' ? tt('dsn.pnfmt.sample.hindi') : settings.pageNumber.format === 'roman' ? tt('dsn.pnfmt.sample.roman') : tt('dsn.pnfmt.sample.english')} <span aria-hidden="true">▾</span>
+                  {settings.pageNumber.format === 'bangla' ? tt('dsn.pnfmt.sample.bangla') : settings.pageNumber.format === 'hindi' ? tt('dsn.pnfmt.sample.hindi') : settings.pageNumber.format === 'roman' ? tt('dsn.pnfmt.sample.roman') : tt('dsn.pnfmt.sample.english')} <ChevronDown className="h-3 w-3 opacity-60" aria-hidden="true" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
@@ -158,7 +158,7 @@ export function DesignTab() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button type="button" className="ribbon-select w-32">
-                  {tt(POSITION_LABELS[settings.pageNumber.position] ?? 'dsn.pos.fallback')} <span aria-hidden="true">▾</span>
+                  {tt(POSITION_LABELS[settings.pageNumber.position] ?? 'dsn.pos.fallback')} <ChevronDown className="h-3 w-3 opacity-60" aria-hidden="true" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
@@ -178,7 +178,7 @@ export function DesignTab() {
               onClick={() => update({ pageNumber: { ...settings.pageNumber, differentFirst: !settings.pageNumber.differentFirst } })}
               title={tt('dsn.pn.firstPageTip')}
             >
-              {settings.pageNumber.differentFirst ? '✓ ' : ''}{tt('dsn.pn.firstPage')}
+              {settings.pageNumber.differentFirst ? <Check size={12} className="text-primary" aria-hidden="true" /> : null}{tt('dsn.pn.firstPage')}
             </button>
             <button
               type="button"
@@ -186,7 +186,7 @@ export function DesignTab() {
               onClick={() => update({ pageNumber: { ...settings.pageNumber, oddEven: !settings.pageNumber.oddEven } })}
               title={tt('dsn.pn.oddEvenTip')}
             >
-              {settings.pageNumber.oddEven ? '✓ ' : ''}{tt('dsn.pn.oddEven')}
+              {settings.pageNumber.oddEven ? <Check size={12} className="text-primary" aria-hidden="true" /> : null}{tt('dsn.pn.oddEven')}
             </button>
           </div>
         </div>

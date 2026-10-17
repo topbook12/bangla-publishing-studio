@@ -13,7 +13,7 @@
 
 import { useState, type CSSProperties } from 'react';
 import {
-  AlignVerticalSpaceAround, ArrowRightToLine, IndentDecrease, IndentIncrease,
+  AlignVerticalSpaceAround, ArrowRightToLine, Check, ChevronDown, IndentDecrease, IndentIncrease,
   MoveHorizontal, Omega, SlidersHorizontal, Type,
 } from 'lucide-react';
 import {
@@ -155,7 +155,7 @@ function WordGapMenu() {
         <button type="button" className={cn('ribbon-btn', cur && 'ribbon-btn-active')} aria-label={tt('adv.wordgap')}>
           <MoveHorizontal size={16} aria-hidden="true" />
           <span className="ribbon-btn-label">{triggerLabel}</span>
-          <span aria-hidden="true" className="text-[10px] opacity-60">▾</span>
+          <ChevronDown className="h-3 w-3 opacity-60" aria-hidden="true" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
@@ -209,7 +209,7 @@ function CharGapMenu() {
         <button type="button" className={cn('ribbon-btn', (cur || selCur) && 'ribbon-btn-active')} aria-label={tt('adv.chargap')}>
           <Type size={16} aria-hidden="true" />
           <span className="ribbon-btn-label">{cur ? `${tt('adv.chargap')} · ${fmtN(numOf(cur) ?? 0)}` : tt('adv.chargap')}</span>
-          <span aria-hidden="true" className="text-[10px] opacity-60">▾</span>
+          <ChevronDown className="h-3 w-3 opacity-60" aria-hidden="true" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
@@ -267,8 +267,11 @@ function ParaSpaceMenu() {
       <DropdownMenuTrigger asChild>
         <button type="button" className={cn('ribbon-btn', active && 'ribbon-btn-active')} aria-label={tt('adv.paragap')}>
           <AlignVerticalSpaceAround size={16} aria-hidden="true" />
-          <span className="ribbon-btn-label">{active ? `${tt('adv.paragap')} ✓` : tt('adv.paragap')}</span>
-          <span aria-hidden="true" className="text-[10px] opacity-60">▾</span>
+          <span className="ribbon-btn-label">
+            {tt('adv.paragap')}
+            {active ? <Check size={11} className="ml-0.5 inline-block text-primary" aria-hidden="true" /> : null}
+          </span>
+          <ChevronDown className="h-3 w-3 opacity-60" aria-hidden="true" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
@@ -337,7 +340,7 @@ function FirstLineMenu() {
         <TooltipTrigger asChild>
           <DropdownMenuTrigger asChild>
             <button type="button" className={cn('ribbon-select w-24 justify-center', cur && 'ring-1 ring-primary')} title={tt('adv.firstline')}>
-              {cur ? `${tt('adv.firstline.short')} ${fmtN(numOf(cur) ?? 0)}` : tt('adv.firstline.short')} <span aria-hidden="true">▾</span>
+              {cur ? `${tt('adv.firstline.short')} ${fmtN(numOf(cur) ?? 0)}` : tt('adv.firstline.short')} <ChevronDown className="h-3 w-3 opacity-60" aria-hidden="true" />
             </button>
           </DropdownMenuTrigger>
         </TooltipTrigger>
@@ -429,7 +432,7 @@ function SpecialCharsMenu() {
         <button type="button" className="ribbon-btn" aria-label={tt('adv.specialchars')}>
           <Omega size={16} aria-hidden="true" />
           <span className="ribbon-btn-label">{tt('adv.symbols')}</span>
-          <span aria-hidden="true" className="text-[10px] opacity-60">▾</span>
+          <ChevronDown className="h-3 w-3 opacity-60" aria-hidden="true" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent

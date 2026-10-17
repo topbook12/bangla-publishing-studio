@@ -322,13 +322,13 @@ html.dark .header-action { box-shadow: 0 1px 2px rgb(0 0 0 / 0.3), inset 0 1px 0
 .pro-badge {
   display: inline-flex;
   align-items: center;
-  padding: 1.5px 6px;
   border-radius: 999px;
-  font-size: 8.5px;
+  font-size: 10px;
   font-weight: 800;
-  letter-spacing: 0.09em;
-  line-height: 1.5;
+  letter-spacing: 0.07em;
+  line-height: 1.45;
   color: oklch(0.42 0.11 85);
+  padding: 1px 6px;
   background: linear-gradient(135deg, oklch(0.9 0.09 92) 0%, oklch(0.82 0.13 84) 55%, oklch(0.74 0.13 76) 100%);
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 0.65),
@@ -345,9 +345,9 @@ html.dark .pro-badge {
     0 1px 4px rgb(0 0 0 / 0.4);
 }
 .pro-badge-lg {
-  font-size: 9.5px;
-  padding: 2.5px 8px;
-  letter-spacing: 0.11em;
+  font-size: 11px;
+  padding: 2px 8px;
+  letter-spacing: 0.09em;
 }
 
 /* ─── অ্যাবাউট কার্ড (Help ডায়ালগের প্রিমিয়াম ব্র্যান্ড প্যানেল) ─── */
@@ -1199,7 +1199,7 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
   content: "";
   position: absolute;
   inset: 0;
-  background: rgba(79, 70, 229, 0.12);
+  background: color-mix(in oklab, var(--primary) 12%, transparent);
   pointer-events: none;
 }
 
@@ -1235,8 +1235,8 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
   position: relative;
 }
 .callout-concept {
-  background: rgba(79, 70, 229, 0.09);
-  border: 1px solid rgba(79, 70, 229, 0.3);
+  background: color-mix(in oklab, var(--primary) 9%, transparent);
+  border: 1px solid color-mix(in oklab, var(--primary) 30%, transparent);
   border-left: 4px solid #0c7a54;
 }
 .callout-warning {
@@ -1454,7 +1454,7 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
   padding: 2px;
   transition: background 0.15s;
 }
-.doc-sticker-wrap:hover { background: rgba(79, 70, 229, 0.14); }
+.doc-sticker-wrap:hover { background: color-mix(in oklab, var(--primary) 14%, transparent); }
 .doc-sticker img { width: 100%; height: 100%; object-fit: contain; }
 
 /* ─── ডকুমেন্ট ফিগার (ভেক্টর লাইব্রেরি) ─── */
@@ -1469,7 +1469,7 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
   page-break-inside: avoid;
   border-radius: 4px;
 }
-.doc-figure-wrap:hover .doc-figure { outline: 1.5px dashed rgba(79, 70, 229, 0.45); outline-offset: 4px; }
+.doc-figure-wrap:hover .doc-figure { outline: 1.5px dashed color-mix(in oklab, var(--primary) 45%, transparent); outline-offset: 4px; }
 .doc-figure img { max-width: 100%; height: auto; display: block; }
 .doc-figure-cap {
   margin-top: 7px;
@@ -1490,7 +1490,7 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
   color: inherit;
 }
 .doc-figure-cap-input:focus { outline: 1.5px solid #0c7a54; }
-.doc-icon-wrap:hover { background: rgba(79, 70, 229, 0.14); }
+.doc-icon-wrap:hover { background: color-mix(in oklab, var(--primary) 14%, transparent); }
 .doc-icon-selected { outline: 2px solid #0c7a54; outline-offset: 1px; }
 .doc-icon-tools {
   position: absolute;
@@ -1632,7 +1632,7 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
 }
 .shape-card:hover {
   border-color: #0c7a54;
-  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.18);
+  box-shadow: 0 4px 14px color-mix(in oklab, var(--primary) 18%, transparent);
   transform: translateY(-1px);
 }
 .shape-card-preview {
@@ -1681,10 +1681,10 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
   transition: background 0.12s, border-color 0.12s, color 0.12s;
 }
 .paper-dark .icon-cell { color: #cbd5e1; }
-.icon-cell:hover { background: rgba(79, 70, 229, 0.10); color: #0f172a; }
+.icon-cell:hover { background: color-mix(in oklab, var(--primary) 10%, transparent); color: #0f172a; }
 .icon-cell-active {
   border-color: #0c7a54;
-  background: rgba(79, 70, 229, 0.12);
+  background: color-mix(in oklab, var(--primary) 12%, transparent);
   color: #0c7a54;
 }
 .chip {
@@ -1698,7 +1698,7 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
   transition: background 0.12s, border-color 0.12s, color 0.12s;
   white-space: nowrap;
 }
-.chip:hover { background: rgba(79, 70, 229, 0.08); }
+.chip:hover { background: color-mix(in oklab, var(--primary) 8%, transparent); }
 .chip-active {
   background: #0c7a54;
   border-color: #0c7a54;
@@ -2499,6 +2499,54 @@ html.dark .ws-ruler-zone { background: rgb(255 255 255 / 0.055); }
   background-color: color-mix(in oklab, var(--foreground) 18%, transparent);
 }
 .nav-scroll::-webkit-scrollbar-thumb:hover { background-color: color-mix(in oklab, var(--foreground) 32%, transparent); }
+
+/* ═══════════════ রাডিক্স পোর্টাল-কনটেন্টের স্লিম স্ক্রলবার ═══════════════
+   ওয়ার্কস্পেস/নেভিগেটরের সরু থাম্ব-নান্দনিকতা ডায়ালগ/পপওভার/ড্রপডাউন/সিলেক্টেও —
+   লাইট+ডার্ক (ভ্যারিয়েবল-ভিত্তিক)। shadcn কনটেন্টগুলো data-slot বহন করে; ডায়ালগ/
+   পপওভারের ভেতরের overflow-y-auto স্ক্রলারগুলো descendant সিলেক্টরে ধরা হয়।
+   নোট: রাডিক্স নিজে data-radix-dialog-content-জাতীয় অ্যাট্রিবিউট দেয় না —
+   কাজ করা সিলেক্টর: shadcn data-slot + রাডিক্স-নেটিভ data-radix-select-viewport। */
+[data-slot="dialog-content"],
+[data-slot="popover-content"],
+[data-slot="dropdown-menu-content"],
+[data-slot="select-content"],
+[data-radix-select-viewport] {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--foreground) 20%, transparent) transparent;
+}
+[data-slot="dialog-content"] ::-webkit-scrollbar,
+[data-slot="popover-content"] ::-webkit-scrollbar,
+[data-slot="dropdown-menu-content"] ::-webkit-scrollbar,
+[data-slot="dropdown-menu-content"]::-webkit-scrollbar,
+[data-slot="select-content"] ::-webkit-scrollbar,
+[data-slot="select-content"]::-webkit-scrollbar,
+[data-radix-select-viewport]::-webkit-scrollbar { width: 6px; height: 6px; }
+[data-slot="dialog-content"] ::-webkit-scrollbar-track,
+[data-slot="popover-content"] ::-webkit-scrollbar-track,
+[data-slot="dropdown-menu-content"] ::-webkit-scrollbar-track,
+[data-slot="dropdown-menu-content"]::-webkit-scrollbar-track,
+[data-slot="select-content"] ::-webkit-scrollbar-track,
+[data-slot="select-content"]::-webkit-scrollbar-track,
+[data-radix-select-viewport]::-webkit-scrollbar-track { background: transparent; }
+[data-slot="dialog-content"] ::-webkit-scrollbar-thumb,
+[data-slot="popover-content"] ::-webkit-scrollbar-thumb,
+[data-slot="dropdown-menu-content"] ::-webkit-scrollbar-thumb,
+[data-slot="dropdown-menu-content"]::-webkit-scrollbar-thumb,
+[data-slot="select-content"] ::-webkit-scrollbar-thumb,
+[data-slot="select-content"]::-webkit-scrollbar-thumb,
+[data-radix-select-viewport]::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background-color: color-mix(in oklab, var(--foreground) 18%, transparent);
+}
+[data-slot="dialog-content"] ::-webkit-scrollbar-thumb:hover,
+[data-slot="popover-content"] ::-webkit-scrollbar-thumb:hover,
+[data-slot="dropdown-menu-content"] ::-webkit-scrollbar-thumb:hover,
+[data-slot="dropdown-menu-content"]::-webkit-scrollbar-thumb:hover,
+[data-slot="select-content"] ::-webkit-scrollbar-thumb:hover,
+[data-slot="select-content"]::-webkit-scrollbar-thumb:hover,
+[data-radix-select-viewport]::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in oklab, var(--foreground) 32%, transparent);
+}
 
 /* বর্তমান অবস্থানের শিরোনাম — বাম দিকে অ্যাকসেন্ট বর্ডার (লেআউট নড়ে না) */
 .nav-row-active {

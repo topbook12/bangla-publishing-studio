@@ -10,7 +10,7 @@
 
 'use client';
 
-import { CircleHelp, CloudOff, FileDown, Globe2, Keyboard, LayoutTemplate, Printer, Type } from 'lucide-react';
+import { ChevronRight, CircleHelp, CloudOff, FileDown, Globe2, Keyboard, LayoutTemplate, Printer, Type } from 'lucide-react';
 import { BrandMark } from '@/components/brand-mark';
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
@@ -44,7 +44,9 @@ function Step({ title, children }: { title: string; children: React.ReactNode })
   return (
     <details className="group rounded-lg border bg-card open:bg-muted/30">
       <summary className="flex cursor-pointer select-none items-center gap-2 px-3 py-2.5 text-sm font-medium [&::-webkit-details-marker]:hidden">
-        <span className="text-primary transition-transform group-open:rotate-90" aria-hidden="true">▸</span>
+        <span className="text-primary transition-transform group-open:rotate-90" aria-hidden="true">
+          <ChevronRight size={12} />
+        </span>
         {title}
       </summary>
       <div className="px-4 pb-3 pt-0 text-[13px] leading-relaxed text-muted-foreground">{children}</div>

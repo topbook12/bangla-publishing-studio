@@ -10,6 +10,12 @@ export const BANGLA_DIGITS: readonly string[] = ['০', '১', '২', '৩', '�
 /** দেবনागরী সংখ্যা অক্ষরমালা (०-९) — হিন্দি পৃষ্ঠা নম্বরের জন্য */
 export const DEVANAGARI_DIGITS: readonly string[] = ['०', '१', '२', '३', '४', '५', '६', '७', '८', '९'];
 
+/** আরবি-ইন্ডিক সংখ্যা অক্ষরমালা (٠-٩, U+0660–U+0669) — আরবি/মাদ্রাসা-ধাঁচ কনটেন্টের জন্য */
+export const ARABIC_INDIC_DIGITS: readonly string[] = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+
+/** সম্প্রসারিত আরবি-ইন্ডিক সংখ্যা অক্ষরমালা (۰-۹, U+06F0–U+06F9) — ফার্সি/উর্দু ধাঁচ */
+export const EXTENDED_ARABIC_DIGITS: readonly string[] = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+
 /** সংখ্যা বা স্ট্রিং-এর ভেতরের সব ইংরেজি ডিজিট বাংলায় রূপান্তর করে (অন্য ক্যারেক্টার অক্ষত থাকে) */
 export function toBanglaNumber(n: number | string): string {
   const s = typeof n === 'number' ? String(n) : n;
@@ -22,11 +28,20 @@ export function toDevanagariNumber(n: number | string): string {
   return s.replace(/[0-9]/g, (d) => DEVANAGARI_DIGITS[Number(d)]);
 }
 
-/** বাংলা/দেবনাগরী ডিজিটযুক্ত স্ট্রিং থেকে ইংরেজি ডিজিটে রূপান্তর (লক্ষ্য-ইনপুট ইত্যাদি) */
+/** সংখ্যা বা স্ট্রিং-এর ইংরেজি ডিজিট আরবি-ইন্ডিকে (٠-٩) রূপান্তর — মাদ্রাসা-ধাঁচ কনটেন্ট */
+export function toArabicIndicNumber(n: number | string): string {
+  const s = typeof n === 'number' ? String(n) : n;
+  return s.replace(/[0-9]/g, (d) => ARABIC_INDIC_DIGITS[Number(d)]);
+}
+
+/** বাংলা/দেবনাগরী/আরবি-ইন্ডিক (U+0660–৬৯ ও U+06F0–৭৯) ডিজিটযুক্ত স্ট্রিং থেকে
+ * ইংরেজি ডিজিটে রূপান্তর (লক্ষ্য-ইনপুট, গণিত-যাচাই ইত্যাদি) — ১:১ দৈর্ঘ্য-সমান */
 export function toEnglishDigits(s: string): string {
   return s
     .replace(/[০-৯]/g, (d) => String(BANGLA_DIGITS.indexOf(d)))
-    .replace(/[०-९]/g, (d) => String(DEVANAGARI_DIGITS.indexOf(d)));
+    .replace(/[०-९]/g, (d) => String(DEVANAGARI_DIGITS.indexOf(d)))
+    .replace(/[٠-٩]/g, (d) => String(ARABIC_INDIC_DIGITS.indexOf(d)))
+    .replace(/[۰-۹]/g, (d) => String(EXTENDED_ARABIC_DIGITS.indexOf(d)));
 }
 
 /** সংখ্যাকে রোমান সংখ্যায় রূপান্তর (১-৩৯৯৯); অবৈধ ইনপুটে খালি স্ট্রিং */

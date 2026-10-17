@@ -64,7 +64,7 @@ export default function EditorApp() {
 
   if (!loaded) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-stone-100 dark:bg-stone-950">
+      <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-background">
         <div className="app-splash-mark" aria-hidden="true">
           <BrandMark size={36} />
         </div>

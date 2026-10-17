@@ -5,7 +5,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, ChevronUp, Database, FileText, ListOrdered, Maximize2, Minus, Plus, Ruler, Target, Type } from 'lucide-react';
+import { Check, ChevronDown, ChevronUp, Database, FileText, ListOrdered, Maximize2, Minus, Plus, Ruler, Target, Type } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
@@ -308,7 +308,7 @@ export function StatusBar() {
             if (activeIndex > 0) jumpToPage(activeIndex - 1, pages[activeIndex - 1].id);
           }}
         >
-          ↑
+          <ChevronUp size={13} aria-hidden="true" />
         </button>
         <button
           type="button"
@@ -320,7 +320,7 @@ export function StatusBar() {
             if (activeIndex < pages.length - 1) jumpToPage(activeIndex + 1, pages[activeIndex + 1].id);
           }}
         >
-          ↓
+          <ChevronDown size={13} aria-hidden="true" />
         </button>
         <span className="status-pill max-md:hidden">
           <Type size={12} aria-hidden="true" />

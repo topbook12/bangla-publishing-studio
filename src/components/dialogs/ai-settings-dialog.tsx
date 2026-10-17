@@ -332,7 +332,7 @@ export function AiSettingsDialog() {
               } catch { /* ক্লিপবোর্ড অনুমতি নেই — ম্যানুয়াল পেস্ট */ }
             }}>
               <Copy size={13} aria-hidden="true" />
-              <span className="sr-only">paste</span>
+              <span className="sr-only">{tt('ws.ctx.paste')}</span>
             </Button>
           </div>
         </div>

@@ -87,6 +87,15 @@ const FORMATS: Array<{ id: QpFormat; label: string; desc: string }> = [
   { id: 'quiz', label: 'qp.format.quiz', desc: 'qp.format.quiz.desc' },
 ];
 
+/**
+ * ফরম্যাট-তালিকা ডকুমেন্ট-ধরন অনুযায়ী — sugslip সাজেশন-পর্চার ফরম্যাট, তাই
+ * প্রশ্নপত্র-ধরনের তালিকা থেকে বাদ (পুরনো হিস্ট্রি/আমদানিতে এলে রেন্ডারার
+ * প্রশ্নপত্র-হেডারই দেয় — ফাইলে ভাঙা নেই, শুধু বাছাই-তালিকা থেকে সরানো)।
+ */
+function formatsForDocType(dt: QpDocType): typeof FORMATS {
+  return dt === 'question' ? FORMATS.filter((f) => f.id !== 'sugslip') : FORMATS;
+}
+
 const FONT_SCALES: Array<{ id: QpFontScale; key: string }> = [
   { id: 'sm', key: 'qp.typo.sm' },
   { id: 'md', key: 'qp.typo.md' },
@@ -518,8 +527,9 @@ export function QuestionPaperDialog() {
     // শুধু ফাঁকা/ডিফল্ট ঘর ভরে, শিক্ষকের নিজের লেখা অক্ষত থাকে। ফর্মে দেখা যায়,
     // তাই হেডার যা-ই হোক — শিক্ষকের চোখের সামনেই সেটা।
     // নির্দেশনা — ড্রাফট-বাক্সের কাঁচা-লেখা লাইনে ভেঙে (ফাঁকা লাইন বাদ) ফর্ম-মানে বসে।
+    // সাজেশন-ধরনে পরীক্ষা-লাইন examTitle-এ ভরে না (docType সচেতন preamble)।
     const instructions = instrText.split('\n').map((l) => l.trim()).filter(Boolean);
-    const effMeta = qpPreambleMeta(rawText, { ...meta, instructions }, lang);
+    const effMeta = qpPreambleMeta(rawText, { ...meta, instructions }, lang, docType);
     setMeta(effMeta);
 
     const finish = (result: QuestionPaper, demo: boolean) => {
@@ -594,7 +604,8 @@ export function QuestionPaperDialog() {
         const retry = await callAi({ prompt: `${prompt}\n\n${QP_REPAIR_NOTE}`, system });
         if (retry.ok && retry.text) data = extractQpJson<unknown>(retry.text);
       }
-      const result = data ? normalizeQpJson(data, effMeta, format) : null;
+      // সাজেশন-ধরনে AI-এর ফিরতি examTitle জোর করে ফাঁকা হয় (docType সচেতন নরমালাইজ)
+      const result = data ? normalizeQpJson(data, effMeta, format, docType) : null;
       if (result) {
         finish(result, !!res.demo);
         return;
@@ -641,10 +652,13 @@ export function QuestionPaperDialog() {
     const html = paperToStandaloneHtml(paper, lang, figPlan);
     const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
     const a = document.createElement('a');
-    const name = (paper.meta.schoolName || paper.meta.examTitle || 'question-paper')
+    // ফাইল-নাম — সাজেশনে পরীক্ষার নাম নয়: বিষয়-ভিত্তিক নাম; প্রশ্নপত্রে আগের প্রথা
+    const name = (paper.meta.schoolName
+      || (paper.docType === 'suggestion' ? paper.meta.subject : paper.meta.examTitle)
+      || (paper.docType === 'suggestion' ? 'suggestion-sheet' : 'question-paper'))
       .replace(/[\\/:*?"<>|]+/g, ' ')
       .trim()
-      .slice(0, 48) || 'question-paper';
+      .slice(0, 48) || (paper.docType === 'suggestion' ? 'suggestion-sheet' : 'question-paper');
     a.href = URL.createObjectURL(blob);
     a.download = `${name}.html`;
     a.click();
@@ -682,7 +696,7 @@ export function QuestionPaperDialog() {
       setCode: h.meta.setCode ?? '',
       syllabusNote: h.meta.syllabusNote ?? '',
     }));
-    setFormat(h.format);
+    setFormat(h.docType !== 'suggestion' && h.format === 'sugslip' ? 'auto' : h.format);
     setFontScale(h.fontScale);
     setLayout(normalizeQpLayout(h.layout));
     setDocType(h.docType ?? 'question');
@@ -709,7 +723,7 @@ export function QuestionPaperDialog() {
     // ধাপ ২-তে ঢুকলেই কাঁচা-লেখার হেডার (স্কুল/বিষয়/শ্রেণি/সময়/পূর্ণমান/কোড) ফর্মে বসে —
     // শুধু ফাঁকা/ডিফল্ট ঘর; শিক্ষকের নিজের লেখা কখনো বদলায় না। আগে জেনারেটের পরে বসত —
     // ততক্ষণে ফর্মে আগের প্রশ্নপত্রের পুরনো মান দেখিয়ে বিভ্রান্তি হত।
-    if (s >= 2 && meta) setMeta(qpPreambleMeta(rawText, meta, lang));
+    if (s >= 2 && meta) setMeta(qpPreambleMeta(rawText, meta, lang, docType));
     setStep(s);
   };
 
@@ -718,7 +732,7 @@ export function QuestionPaperDialog() {
       toast.info(tt('qp.toast.noText'));
       return;
     }
-    if (meta) setMeta(qpPreambleMeta(rawText, meta, lang));
+    if (meta) setMeta(qpPreambleMeta(rawText, meta, lang, docType));
     setStep(2);
   };
 
@@ -890,9 +904,13 @@ export function QuestionPaperDialog() {
     }
     setMeta(nextMeta);
     setDocType(next);
+    // ফরম্যাট-সামঞ্জস্য — sugslip সাজেশন-পর্চার ফরম্যাট; প্রশ্নপত্রে গেলে auto-তে ফেরত
+    // (তালিকা থেকেও sugslip বাদ, তাই অবৈধ বাছাই ঝুলে থাকবে না)
+    const nextFormat: QpFormat = next === 'question' && format === 'sugslip' ? 'auto' : format;
+    if (nextFormat !== format) setFormat(nextFormat);
     // প্রস্তুত প্রশ্নপত্র থাকলে ধরন + মেটা দুটোই লাইভ — প্রিভিউ সঙ্গে সঙ্গে সাজেশন-সাজে
     // (আগে শুধু state বদলাত — স্ন্যাপশটে পুরনো সময়/মান/ধরনই থেকে যেত)
-    patchLive({ docType: next, meta: nextMeta });
+    patchLive({ docType: next, meta: nextMeta, ...(nextFormat !== format ? { format: nextFormat } : {}) });
   };
 
   /**
@@ -1068,7 +1086,11 @@ export function QuestionPaperDialog() {
           <span className="qp-hist-title"><History size={11} aria-hidden="true" /> {tt('qp.hist.title')}</span>
           <div className="qp-hist-row">
             {history.map((h) => {
-              const label = h.meta.schoolName || h.meta.subject || h.meta.examTitle || tt('qp.title');
+              // চিপ-লেবেল — সাজেশন-এন্ট্রিতে পরীক্ষার নাম নয়: বিষয় → "সাজেশন শিট" লেবেল
+              const label = h.meta.schoolName
+                || h.meta.subject
+                || (h.docType === 'suggestion' ? tt('qp.docType.suggestion') : h.meta.examTitle)
+                || tt('qp.title');
               const cnt = h.counts;
               return (
                 <span key={h.ts} className="qp-hist-chip">
@@ -1259,7 +1281,7 @@ export function QuestionPaperDialog() {
     <section aria-label={tt('qp.step.format')} className="flex flex-col gap-3">
       <p className="ai-field-label">{tt('qp.format.title')}</p>
       <div className="qp-formats" role="radiogroup" aria-label={tt('qp.format.title')}>
-        {FORMATS.map((f) => (
+        {formatsForDocType(docType).map((f) => (
           <button
             key={f.id} type="button" role="radio" aria-checked={format === f.id}
             className={cn('qp-format', format === f.id && 'qp-format-on')}
@@ -1382,9 +1404,9 @@ export function QuestionPaperDialog() {
         <span className="qp-stat qp-stat-page">{tt('qp.preview.pages').replace('{n}', fmtNum(pages))}</span>
         {isDemo ? <span className="ai-demo-badge">{tt('qp.demo.badge')}</span> : null}
         <span className="qp-stat-zoom">
-          <button type="button" aria-label="Zoom out" onClick={() => setZoomMult((z) => Math.max(0.5, Math.round((z - 0.1) * 10) / 10))} disabled={busy}><ZoomOut size={13} aria-hidden="true" /></button>
+          <button type="button" aria-label={tt('qp.zoomOut')} onClick={() => setZoomMult((z) => Math.max(0.5, Math.round((z - 0.1) * 10) / 10))} disabled={busy}><ZoomOut size={13} aria-hidden="true" /></button>
           <span>{fmtNum(Math.round(effScale * 100))}%</span>
-          <button type="button" aria-label="Zoom in" onClick={() => setZoomMult((z) => Math.min(1.6, Math.round((z + 0.1) * 10) / 10))} disabled={busy}><ZoomIn size={13} aria-hidden="true" /></button>
+          <button type="button" aria-label={tt('qp.zoomIn')} onClick={() => setZoomMult((z) => Math.min(1.6, Math.round((z + 0.1) * 10) / 10))} disabled={busy}><ZoomIn size={13} aria-hidden="true" /></button>
         </span>
       </div>
 

@@ -210,7 +210,7 @@ export function Workspace() {
   return (
     <main
       ref={scrollRef}
-      className="workspace flex-1 overflow-auto bg-slate-200/70 dark:bg-slate-900 print:!bg-white print:!overflow-visible"
+      className="workspace flex-1 overflow-auto print:!bg-white print:!overflow-visible"
       aria-label={tt('ws.pages.aria', 'Book pages')}
     >
       <div
@@ -245,7 +245,7 @@ export function Workspace() {
         <div className="flex justify-center pb-16 pt-2 no-print">
           <Button
             variant="outline"
-            className="gap-2 bg-white/80"
+            className="gap-2 bg-card/80"
             onClick={() => {
               const id = useEditorStore.getState().addPage(null);
               useEditorStore.getState().setActivePage(id);

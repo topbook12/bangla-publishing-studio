@@ -18,7 +18,7 @@ export function createDefaultSettings(overrides?: Partial<DocumentSettings>): Do
       leftText: 'অধ্যায় ১ — ভূমিকা',
       centerText: '',
       rightText: 'আমার প্রথম বই',
-      accentColor: '#4f46e5',
+      accentColor: '#0c7a54',
       fontSize: 10,
     },
     footer: {
@@ -27,7 +27,7 @@ export function createDefaultSettings(overrides?: Partial<DocumentSettings>): Do
       leftText: '',
       centerText: '',
       rightText: '',
-      accentColor: '#4f46e5',
+      accentColor: '#0c7a54',
       fontSize: 10,
     },
     pageNumber: {
@@ -43,9 +43,11 @@ export function createDefaultSettings(overrides?: Partial<DocumentSettings>): Do
     defaultFontSize: 13,
     lineHeight: 1.6,
     paragraphSpacing: 8,
-    autoFlow: true,
+    // হার্ড-রুল: এক পাতায় সম্পাদনা অন্য পাতা বদলাবে না — তাই অটো-ফ্লো ডিফল্ট বন্ধ।
+    // চাইলে Review ট্যাবের 'অটো-ফ্লো' টগল দিয়ে চালু করা যায় (তখনই কেবল উপচে-পড়া টেনে যাবে)।
+    autoFlow: false,
     pageBorder: 'none',
-    pageBorderColor: '#4f46e5',
+    pageBorderColor: '#0c7a54',
     watermark: {
       enabled: false,
       text: 'খসড়া',

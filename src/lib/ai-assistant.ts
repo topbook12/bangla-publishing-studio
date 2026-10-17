@@ -377,8 +377,11 @@ export async function runSelectionAi(opts: SelectionAiOptions): Promise<AiTextRe
   if (!res.ok) return res;
   const raw = (res.markdown ?? res.text ?? '').trim();
   if (!raw) return { ok: false, error: 'EMPTY_RESPONSE', hintKey: 'ai.err.empty' };
-  // নির্ভুলতা — চূড়ান্ত উত্তরে যতি-পরিমার্জন (বাংলা টাইপোগ্রাফি)
-  return { ok: true, markdown: polishBanglaPunctuation(raw), demo: res.demo, fixedModel: res.fixedModel };
+  // নির্ভুলতা — চূড়ান্ত উত্তরে যতি-পরিমার্জন (বাংলা টাইপোগ্রাফি)।
+  // তবে 'verify' মোডের রিপোর্টে ভুল-লেখার উদ্ধৃতি থাকে — পরিমার্জন উদ্ধৃতির
+  // স্পেস/দাঁড়ি বদলে ভুল-দেখানো অংশ নষ্ট করে, তাই ওই মোডে কাঁচা উত্তরই।
+  const markdown = opts.mode.id === 'verify' ? raw : polishBanglaPunctuation(raw);
+  return { ok: true, markdown, demo: res.demo, fixedModel: res.fixedModel };
 }
 
 export interface ChatMessage {

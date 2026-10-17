@@ -16,7 +16,9 @@
 
 import { Node, Extension, mergeAttributes, type CommandProps } from '@tiptap/core';
 import { ReactNodeViewRenderer, NodeViewWrapper, NodeViewContent, type NodeViewProps } from '@tiptap/react';
-import { liftTarget } from 'prosemirror-transform';
+import { findWrapping, liftTarget } from 'prosemirror-transform';
+import { TextSelection } from 'prosemirror-state';
+import type { Node as PMNode, ResolvedPos } from 'prosemirror-model';
 import { useState } from 'react';
 import { AlertTriangle, BookOpen, ChevronDown, ChevronUp, Lightbulb, Lock, Pencil, Pin, Plus, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -736,56 +738,124 @@ export const Columns = Node.create({
     return {
       setColumns:
         (attrs?: Partial<ColumnsAttrs>) =>
-        ({ state, commands }: CommandProps) => {
-          // ইতিমধ্যে কলাম-ব্লকের ভেতরে থাকলে নতুন মোড়ক না দিয়ে বর্তমানটির অ্যাট্রিবিউট বদলাই —
-          // নইলে কলামের ভেতরে আরেকটা কলাম বসে যেত (নেস্টিং বিশৃঙ্খলা)
-          let inside = false;
-          for (let d = state.selection.$from.depth; d > 0; d--) {
-            if (state.selection.$from.node(d).type.name === this.name) { inside = true; break; }
-          }
-          if (inside) return commands.updateAttributes(this.name, attrs ?? {});
-          return commands.wrapIn(this.name, {
+        ({ state, tr, dispatch, commands }: CommandProps) => {
+          const attrsObj: ColumnsAttrs = {
             count: attrs?.count ?? COLUMNS_COUNT_DEFAULT,
             gap: attrs?.gap ?? COLUMNS_GAP_DEFAULT,
             rule: attrs?.rule ?? false,
             ruleStyle: attrs?.ruleStyle ?? 'solid',
             fill: attrs?.fill ?? 'balance',
             firstSpan: attrs?.firstSpan ?? false,
+          };
+
+          // ১) কার্সর/সিলেকশনের দুই প্রান্তের যেকোনো একটা কলাম-ব্লকের ভেতরে থাকলে নতুন
+          //    মোড়ক না দিয়ে বর্তমানটির অ্যাট্রিবিউট বদলাই — নইলে কলামের ভেতরে আরেকটা
+          //    কলাম বসে যেত (নেস্টিং বিশৃঙ্খলা)
+          const insideAt = (pos: ResolvedPos): boolean => {
+            for (let d = pos.depth; d > 0; d--) {
+              if (pos.node(d).type.name === this.name) return true;
+            }
+            return false;
+          };
+          const { from, to, empty, $from, $to } = state.selection;
+          if (insideAt($from) || insideAt($to)) {
+            return commands.updateAttributes(this.name, attrs ?? {});
+          }
+
+          // ২) খালি কার্সর বা পুরো ডকুমেন্ট-সিলেকশন (Ctrl+A) → পুরো পাতার কনটেন্টে কলাম বসে।
+          //    আগে খালি কার্সরে শুধু কার্সরের এক (প্রায়ই ফাঁকা) অনুচ্ছেদ মোড়াত — বদলটা
+          //    চোখেই পড়ত না, তাই ২-কলাম "কাজ করছে না" মনে হত (মূল বাগ)
+          const wholeDoc = from === 0 && to === state.doc.content.size;
+          const rangeFrom = wholeDoc || empty ? 0 : from;
+          const rangeTo = wholeDoc || empty ? state.doc.content.size : to;
+
+          // ৩) টার্গেট-রেঞ্জে আগে থেকে কলাম-ব্লক থাকলে আর মোড়াই না — সেগুলোর
+          //    অ্যাট্রিবিউটই আপডেট করি (নইলে Ctrl+A → 2-কলামে কলামের ভেতরে কলাম বসে যেত)
+          const found: Array<{ pos: number; node: PMNode }> = [];
+          state.doc.nodesBetween(rangeFrom, rangeTo, (node, pos) => {
+            if (node.type.name === this.name) {
+              found.push({ pos, node });
+              return false; // মোড়কের ভেতরের ব্লকগুলো নিজেই ঢাকা — নামার দরকার নেই
+            }
+            return true;
           });
+          if (found.length > 0) {
+            if (dispatch && attrs && Object.keys(attrs).length > 0) {
+              for (const { pos, node } of found) {
+                tr.setNodeMarkup(pos, undefined, { ...(node.attrs as Partial<ColumnsAttrs>), ...attrs });
+              }
+            }
+            return true;
+          }
+
+          // ৪) রেঞ্জের ব্লকগুলো এক কলাম-ব্লকে মোড়াই — findWrapping → tr.wrap এক ধাপে
+          //    (এক undo-এন্ট্রি), তারপর কার্সর আসল জায়গার কাছেই ফেরত বসাই (wrap-এ
+          //    পজিশন সরে যায় বলে mapping-এ ফেরত আনি; ভেতরে না ঢুকলেও between কাছের
+          //    বৈধ কার্সর-বিন্দু বেছে নেয়)
+          const blockRange = state.doc.resolve(rangeFrom).blockRange(state.doc.resolve(rangeTo));
+          if (!blockRange) return false;
+          const fit = findWrapping(blockRange, this.type, attrsObj);
+          if (!fit) return false;
+          if (dispatch) {
+            tr.wrap(blockRange, fit).scrollIntoView();
+            const mapPos = (p: number) => Math.min(Math.max(tr.mapping.map(p, 1), 0), tr.doc.content.size);
+            const selFrom = tr.doc.resolve(mapPos(state.selection.from));
+            const selTo = tr.doc.resolve(mapPos(state.selection.to));
+            tr.setSelection(TextSelection.between(selFrom, selTo, 1));
+          }
+          return true;
         },
-      updateColumns:
-        (attrs: Partial<ColumnsAttrs>) =>
-        ({ commands }: CommandProps) =>
-          commands.updateAttributes(this.name, attrs),
       unsetColumns:
         () =>
-        ({ state, dispatch }: CommandProps) => {
+        ({ state, tr, dispatch }: CommandProps) => {
           // Word-এর Columns → One-এর মতো পুরো মোড়ক গুলিয়ে যায় — সব কনটেন্ট এক
           // কলামে ফেরে। ProseMirror-এর ধাপে-ধাপে lift শুধু কার্সরের ব্লকটা তুলত,
           // তাই এখানে মোড়কের পুরো ভেতর-রেঞ্জ ধরে liftTarget দিয়ে একবারে খোলা হয়।
-          const { $from, from } = state.selection;
+          const { $from, from, to } = state.selection;
           let depth = -1;
           for (let d = $from.depth; d > 0; d--) {
             if ($from.node(d).type.name === this.name) { depth = d; break; }
           }
-          let innerFrom: number;
-          let innerTo: number;
           if (depth > 0) {
             // কার্সর কলাম-ব্লকের ভেতরে — মোড়কের পুরো কনটেন্ট-রেঞ্জ
-            innerFrom = $from.start(depth);
-            innerTo = $from.end(depth);
-          } else {
-            // NodeSelection — কলাম-নোড নিজেই নির্বাচিত হতে পারে
-            const nodeAfter = state.doc.resolve(from).nodeAfter;
-            if (!nodeAfter || nodeAfter.type.name !== this.name) return false;
-            innerFrom = from + 1;
-            innerTo = from + nodeAfter.nodeSize - 1;
+            const range = state.doc.resolve($from.start(depth)).blockRange(state.doc.resolve($from.end(depth)));
+            if (!range) return false;
+            const target = liftTarget(range);
+            if (target == null) return false;
+            if (dispatch) dispatch(state.tr.lift(range, target));
+            return true;
           }
-          const range = state.doc.resolve(innerFrom).blockRange(state.doc.resolve(innerTo));
-          if (!range) return false;
-          const target = liftTarget(range);
-          if (target == null) return false;
-          if (dispatch) dispatch(state.tr.lift(range, target));
+          // NodeSelection — কলাম-নোড নিজেই নির্বাচিত হতে পারে
+          const nodeAfter = state.doc.resolve(from).nodeAfter;
+          if (nodeAfter && nodeAfter.type.name === this.name) {
+            const range = state.doc.resolve(from + 1).blockRange(state.doc.resolve(from + nodeAfter.nodeSize - 1));
+            if (!range) return false;
+            const target = liftTarget(range);
+            if (target == null) return false;
+            if (dispatch) dispatch(state.tr.lift(range, target));
+            return true;
+          }
+          // বড় সিলেকশন (Ctrl+A-জাতীয়) — রেঞ্জের সব কলাম-ব্লক খুলে দিই। পরেরগুলো
+          // আগে তোলা হয়, নইলে একটা তোলার পজিশন-সরে-যাওয়ায় বাকিগুলোর ঠিকানা ভুল হত
+          const found: Array<{ pos: number; node: PMNode }> = [];
+          state.doc.nodesBetween(from, to, (node, pos) => {
+            if (node.type.name === this.name) {
+              found.push({ pos, node });
+              return false;
+            }
+            return true;
+          });
+          if (found.length === 0) return false;
+          if (dispatch) {
+            for (let i = found.length - 1; i >= 0; i--) {
+              const { pos, node } = found[i];
+              const range = tr.doc.resolve(pos + 1).blockRange(tr.doc.resolve(pos + node.nodeSize - 1));
+              if (!range) continue;
+              const target = liftTarget(range);
+              if (target == null) continue;
+              tr.lift(range, target);
+            }
+          }
           return true;
         },
     };
@@ -796,7 +866,6 @@ declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     columns: {
       setColumns: (attrs?: Partial<ColumnsAttrs>) => ReturnType;
-      updateColumns: (attrs: Partial<ColumnsAttrs>) => ReturnType;
       unsetColumns: () => ReturnType;
     };
   }
