@@ -6,7 +6,7 @@
 
 import { useMemo, useRef, useState, type CSSProperties } from 'react';
 import {
-  AlertTriangle, BookOpen, CalendarDays, ChevronDown, DraftingCompass, FileQuestion, FileText, Frame, Hash, Image as ImageIcon,
+  AlertTriangle, BookOpen, CalendarDays, ChevronDown, DraftingCompass, FileQuestion, FileText, Frame, GraduationCap, Hash, Image as ImageIcon,
   PenTool,
   Lightbulb, Link2, ListTree, Minus, Pin, Shapes, Square, Store, Table as TableIcon, FilePlus2, HelpCircle,
 } from 'lucide-react';
@@ -759,6 +759,12 @@ export function InsertTab() {
               label={tt('ds.entry')}
               title={tt('ds.entry.tip')}
               onClick={() => openDialog('documentStudio')}
+            />
+            <RibbonButton
+              icon={GraduationCap}
+              label={tt('ins.thesis')}
+              title={tt('ins.thesis.tip')}
+              onClick={() => openDialog('thesis')}
             />
             <RibbonButton
               icon={PenTool}

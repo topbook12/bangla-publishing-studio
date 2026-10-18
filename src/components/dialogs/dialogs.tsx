@@ -22,6 +22,7 @@ import { VectorLibraryDialog } from './vector-library-dialog';
 import { QuestionPaperDialog } from './question-paper-dialog';
 import { DocumentStudioDialog } from './document-studio-dialog';
 import { SketchPadDialog } from './sketch-pad-dialog';
+import { ThesisDialog } from './thesis-dialog';
 
 export function Dialogs() {
   useFindReplaceShortcuts();
@@ -44,6 +45,7 @@ export function Dialogs() {
       <QuestionPaperDialog />
       <DocumentStudioDialog />
       <SketchPadDialog />
+      <ThesisDialog />
       <HelpDialog />
     </>
   );

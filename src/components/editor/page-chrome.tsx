@@ -274,7 +274,7 @@ export function PageHeader({ index, settings, pageKind, noChrome, pageId, header
   if (pageNumber.differentFirst && index === 0) return null;
   const mirrored = mirrorIfEven(index, pageNumber.oddEven, pageNumber.startAt);
   const numberInHeader = pageNumber.enabled && pageNumber.position.startsWith('top');
-  const num = displayPageNumber(index, pageNumber);
+  const num = displayPageNumber(index, pageNumber, useEditorStore.getState().pages);
   // হেডার বন্ধ বা 'none' — ফুটারের মতোই: হেডার-বার বন্ধ, কিন্তু top-নম্বর
   // (চালু থাকলে) নম্বর-ওনলি আকারে দেখাই। আগে পুরোপুরি null দিত, ফলে
   // "হেডার নেই + উপরে নম্বর" কনফিগে নম্বরই হারিয়ে যেত।
@@ -338,7 +338,7 @@ export function PageFooter({ index, settings, pageKind, noChrome, pageId, footer
   // footer.enabled=false-এর সাথে একই আচরণ
   const footerOff = !footer.enabled || footer.style === 'none';
   const numberInFooter = pageNumber.enabled && pageNumber.position.startsWith('bottom');
-  const num = displayPageNumber(index, pageNumber);
+  const num = displayPageNumber(index, pageNumber, useEditorStore.getState().pages);
 
   /** commitHeader-এর মতোই — ফুটার সম্পাদনাও কেবল এই পাতায় সীমাবদ্ধ */
   const commitFooter = (next: HeaderFooterSettings) => {

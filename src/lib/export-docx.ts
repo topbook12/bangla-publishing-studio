@@ -709,10 +709,11 @@ function headerFooterParas(
   pageIndex: number,
   showChrome: boolean,
   page?: PageData,
+  pages?: PageData[],
 ): { header: Header; footer: Footer } {
   const accent = hexNoHash(hfH.accentColor) ?? '4F46E5';
   const pn = settings.pageNumber;
-  const num = showChrome ? displayPageNumber(pageIndex, pn) : '';
+  const num = showChrome ? displayPageNumber(pageIndex, pn, pages) : '';
   const numAlign = pn.position.endsWith('left')
     ? AlignmentType.LEFT
     : pn.position.endsWith('right') ? AlignmentType.RIGHT : AlignmentType.CENTER;
@@ -1028,7 +1029,7 @@ export async function exportProjectToDocx(input: DocxExportInput): Promise<void>
       && !(settings.pageNumber.differentFirst && pageIdx === 0);
     const effH = page.headerOverride ?? settings.header;
     const effF = page.footerOverride ?? settings.footer;
-    const { header, footer } = headerFooterParas(effH, effF, settings, pageIdx, showChrome, page);
+    const { header, footer } = headerFooterParas(effH, effF, settings, pageIdx, showChrome, page, pages);
 
     // পাতার ভেতরে একাধিক কলাম-অংশ থাকতে পারে (মাল্টি-কলাম ব্লক) — প্রতিটি অংশ =
     // একটি continuous Word-section; মাল্টি-কলাম অংশে w:cols বসে (আসল Word কলাম)

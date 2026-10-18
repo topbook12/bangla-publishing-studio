@@ -17,6 +17,7 @@ export const dictHome: Dict = {
   'home.fontgroup.bangla': { bn: 'বাংলা ফন্ট', hi: 'बांग्ला फ़ॉन्ट', en: 'Bengali fonts' },
   'home.fontgroup.devanagari': { bn: 'দেবনাগরী (হিন্দি) ফন্ট — ইউনিকোড', hi: 'देवनागरी (हिंदी) फ़ॉन्ट — यूनिकोड', en: 'Devanagari (Hindi) fonts — Unicode' },
   'home.fontgroup.hindilegacy': { bn: 'হিন্দি লিগ্যাসি ফন্ট — Kruti Dev / DevLys', hi: 'हिन्दी लीगेसी फ़ॉन्ट — Kruti Dev / DevLys', en: 'Hindi legacy fonts — Kruti Dev / DevLys' },
+  'home.fontgroup.english': { bn: 'English ফন্ট — থিসিস ও একাডেমিক', hi: 'English फ़ॉन्ट — थीसिस व एकेडेमिक', en: 'English fonts — thesis & academic' },
   'home.legacy.tip': {
     bn: 'নন-ইউনিকোড ফন্ট — ভারতীয় ছাপাখানার DTP স্ট্যান্ডার্ড। Remington Gail কীবোর্ড লেআউটে টাইপ করলেই দেবনাগরী গ্লিফ দেখায় (MS Word-এ Kruti Dev-এর মতোই)। ইউনিকোড ফন্টে টাইপ করা লেখা এসব ফন্টে সঠিক দেখাবে না।',
     hi: 'नॉन-यूनिकोड फ़ॉन्ट — भारतीय प्रिंटिंग DTP मानक। Remington Gail कीबोर्ड लेआउट से टाइप करने पर देवनागरी ग्लिफ़ दिखते हैं (MS Word में Kruti Dev की तरह)। यूनिकोड फ़ॉन्ट में टाइप किया टेक्स्ट इन फ़ॉन्ट्स में सही नहीं दिखेगा।',

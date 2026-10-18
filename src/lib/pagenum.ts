@@ -3,16 +3,37 @@
  */
 
 import { formatPageNumber } from './bangla';
-import type { PageData, PageNumberSettings } from './types';
+import type { PageData, PageNumberFormat, PageNumberSettings } from './types';
 
 /**
  * প্রদর্শিত পৃষ্ঠা নম্বর (খালি স্ট্রিং = নম্বর দেখানো হবে না)।
  * নিয়ম: differentFirst হলে ১ম পৃষ্ঠায় নম্বর লুকানো, কিন্তু গণনা চলতে থাকে।
+ * `pages` দিলে সেকশন-সচেতন: pages[0..index]-এর শেষ numberRestart থেকে
+ * নতুন গণনা (থিসিস: প্রারম্ভিক পাতা রোমান → অধ্যায় থেকে ১)।
  */
-export function displayPageNumber(index: number, pn: PageNumberSettings): string {
+export function displayPageNumber(index: number, pn: PageNumberSettings, pages?: PageData[]): string {
   if (!pn.enabled) return '';
+  if (pages && pages.length > 0) {
+    const restart = sectionRestartAt(pages, index);
+    if (restart) {
+      const fmt = restart.format ?? pn.format;
+      return formatPageNumber(restart.from + (index - restart.index), fmt);
+    }
+  }
   if (pn.differentFirst && index === 0) return '';
   return formatPageNumber(pn.startAt + index, pn.format);
+}
+
+/**
+ * প্রদত্ত পাতার কার্যকর নম্বর-সেকশনের সূচনা — শেষ numberRestart (index ≤ given)।
+ * সেকশন না থাকলে null (গ্লোবাল গণনা প্রযোজ্য)।
+ */
+export function sectionRestartAt(pages: PageData[], index: number): { index: number; from: number; format?: PageNumberFormat } | null {
+  for (let i = Math.min(index, pages.length - 1); i >= 0; i--) {
+    const r = pages[i]?.numberRestart;
+    if (r && typeof r.from === 'number') return { index: i, from: r.from, format: r.format };
+  }
+  return null;
 }
 
 /** এই পৃষ্ঠায় হেডার/ফুটার দেখানো হবে কি না */

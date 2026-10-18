@@ -29,7 +29,7 @@ export function scanTocEntries(pages: PageData[], settings: DocumentSettings): T
       entries.push({
         text,
         level,
-        pageNumber: displayPageNumber(index, settings.pageNumber) || `${settings.pageNumber.startAt + index}`,
+        pageNumber: displayPageNumber(index, settings.pageNumber, pages) || `${settings.pageNumber.startAt + index}`,
       });
     });
   });

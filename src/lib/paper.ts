@@ -101,8 +101,8 @@ export interface FontOption {
   family: string;
   name: string;
   stack: string;
-  /** ফন্ট ড্রপডাউনে গ্রুপ শিরোনাম (বাংলা / দেবনাগরী / হিন্দি লিগ্যাসি) */
-  group?: 'bangla' | 'devanagari' | 'hindi-legacy';
+  /** ফন্ট ড্রপডাউনে গ্রুপ শিরোনাম (বাংলা / দেবনাগরী / হিন্দি লিগ্যাসি / English) */
+  group?: 'bangla' | 'devanagari' | 'hindi-legacy' | 'english';
   /** লিগ্যাসি (নন-ইউনিকোড) ফন্ট — Remington Gail লেআউটে টাইপ করতে হয় */
   legacy?: boolean;
   /** ড্রপডাউনে নামের পাশে ছোট নোট (যেমন "Standard", "Windows") */
@@ -110,9 +110,32 @@ export interface FontOption {
 }
 
 /**
- * ফন্ট তালিকা — বাংলা + দেবনাগরী (হিন্দি)। বান্ডেল করা (fontsource, অফলাইন) + CDN (Kalpurush ইত্যাদি)
+ * ফন্ট তালিকা — বাংলা + দেবনাগরী (হিন্দি) + English (থিসিস/একাডেমিক)। বান্ডেল করা (fontsource, অফলাইন) + CDN (Kalpurush ইত্যাদি)
  */
 export const FONT_OPTIONS: FontOption[] = [
+  // English — থিসিস/গবেষণাপত্রের একাডেমিক স্ট্যান্ডার্ড। বান্ডেল (অফলাইন নিশ্চিত) +
+  // সিস্টেম-স্ট্যাক (Times/Cambria/Georgia — MS Word-এর চেনা সেট)।
+  { family: 'Times New Roman', name: 'Times New Roman', stack: "'Times New Roman', 'Liberation Serif', Times, serif", group: 'english', note: { bn: 'থিসিস স্ট্যান্ডার্ড', hi: 'थीसिस मानक', en: 'Thesis standard' } },
+  { family: 'Cambria', name: 'Cambria', stack: "Cambria, Caladea, Georgia, serif", group: 'english', note: { bn: 'উইন্ডোজ', hi: 'विंडोज़', en: 'Windows' } },
+  { family: 'Georgia', name: 'Georgia', stack: "Georgia, 'Noto Serif', serif", group: 'english' },
+  { family: 'Garamond', name: 'Garamond', stack: "Garamond, 'EB Garamond', serif", group: 'english' },
+  { family: 'Book Antiqua', name: 'Book Antiqua', stack: "'Book Antiqua', Palatino, 'URW Palladio L', serif", group: 'english' },
+  { family: 'Palatino Linotype', name: 'Palatino Linotype', stack: "'Palatino Linotype', Palatino, 'EB Garamond', serif", group: 'english' },
+  { family: 'Bookman Old Style', name: 'Bookman Old Style', stack: "'Bookman Old Style', Bookman, 'URW Bookman', serif", group: 'english' },
+  { family: 'Century Schoolbook', name: 'Century Schoolbook', stack: "'Century Schoolbook', 'Century Schoolbook L', Georgia, serif", group: 'english' },
+  { family: 'EB Garamond', name: 'EB Garamond', stack: "'EB Garamond', Garamond, serif", group: 'english', note: { bn: 'বান্ডেল', hi: 'बंडल', en: 'Bundled' } },
+  { family: 'Libre Baskerville', name: 'Libre Baskerville', stack: "'Libre Baskerville', Baskerville, serif", group: 'english', note: { bn: 'বান্ডেল', hi: 'बंडल', en: 'Bundled' } },
+  { family: 'Crimson Text', name: 'Crimson Text', stack: "'Crimson Text', Georgia, serif", group: 'english', note: { bn: 'বান্ডেল', hi: 'बंडल', en: 'Bundled' } },
+  { family: 'Lora', name: 'Lora', stack: "Lora, Georgia, serif", group: 'english', note: { bn: 'বান্ডেল', hi: 'बंडल', en: 'Bundled' } },
+  { family: 'Merriweather', name: 'Merriweather', stack: "'Merriweather', Georgia, serif", group: 'english', note: { bn: 'বান্ডেল', hi: 'बंडल', en: 'Bundled' } },
+  { family: 'Source Serif 4', name: 'Source Serif 4', stack: "'Source Serif 4', 'Source Serif Pro', Georgia, serif", group: 'english', note: { bn: 'বান্ডেল', hi: 'बंडल', en: 'Bundled' } },
+  { family: 'Playfair Display', name: 'Playfair Display', stack: "'Playfair Display', Georgia, serif", group: 'english', note: { bn: 'বান্ডেল — শিরোনাম', hi: 'बंडल — शीर्षक', en: 'Bundled — titles' } },
+  { family: 'Arial', name: 'Arial', stack: "Arial, 'Helvetica Neue', Helvetica, 'Liberation Sans', sans-serif", group: 'english' },
+  { family: 'Calibri', name: 'Calibri', stack: "Calibri, Carlito, 'Segoe UI', sans-serif", group: 'english' },
+  { family: 'Verdana', name: 'Verdana', stack: "Verdana, 'DejaVu Sans', sans-serif", group: 'english' },
+  { family: 'Inter', name: 'Inter', stack: "Inter, 'Segoe UI', sans-serif", group: 'english', note: { bn: 'বান্ডেল', hi: 'बंडल', en: 'Bundled' } },
+  { family: 'Courier New', name: 'Courier New', stack: "'Courier New', 'Liberation Mono', 'Courier Prime', monospace", group: 'english', note: { bn: 'কোড/মনো', hi: 'कोड/मोनो', en: 'Code/mono' } },
+  { family: 'Source Code Pro', name: 'Source Code Pro', stack: "'Source Code Pro', 'Courier New', monospace", group: 'english', note: { bn: 'বান্ডেল — কোড', hi: 'बंडल — कोड', en: 'Bundled — code' } },
   { family: 'Noto Serif Bengali', name: 'Noto Serif Bengali', stack: "'Noto Serif Bengali', serif", group: 'bangla' },
   { family: 'Noto Sans Bengali', name: 'Noto Sans Bengali', stack: "'Noto Sans Bengali', sans-serif", group: 'bangla' },
   { family: 'Hind Siliguri', name: 'Hind Siliguri', stack: "'Hind Siliguri', sans-serif", group: 'bangla' },

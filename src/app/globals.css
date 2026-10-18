@@ -4708,3 +4708,45 @@ html.dark .qp-stat-warn { color: #fbbf24; }
 @media print {
   .qp-page-guide { display: none !important; }
 }
+
+/* ═══════════ থিসিস স্টুডিও (Thesis Studio) ═══════════ */
+
+.thesis-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  border: 1px solid oklch(0.87 0.01 250); border-radius: 9999px;
+  padding: 3px 11px; font-size: 12.5px; line-height: 1.45;
+  background: color-mix(in oklab, oklch(0.98 0.003 250) 70%, transparent);
+  color: inherit; cursor: pointer; transition: background 0.15s, border-color 0.15s;
+  min-height: 28px;
+}
+.thesis-chip:hover { background: color-mix(in oklab, oklch(0.62 0.1 250) 12%, transparent); }
+.thesis-chip-on {
+  background: color-mix(in oklab, oklch(0.62 0.1 250) 22%, transparent);
+  border-color: oklch(0.62 0.1 250); font-weight: 600;
+}
+html.dark .thesis-chip { border-color: oklch(0.38 0.01 250); background: color-mix(in oklab, oklch(0.28 0.01 250) 60%, transparent); }
+html.dark .thesis-chip-on { border-color: oklch(0.72 0.09 250); background: color-mix(in oklab, oklch(0.55 0.09 250) 26%, transparent); }
+
+.thesis-out {
+  border: 1px solid oklch(0.87 0.01 250); border-radius: 10px;
+  background: color-mix(in oklab, oklch(0.97 0.005 250) 60%, transparent);
+  overflow: hidden;
+}
+.thesis-out-label {
+  font-size: 11px; font-weight: 600; color: oklch(0.5 0.02 250);
+  padding: 5px 10px 4px; border-bottom: 1px solid oklch(0.9 0.008 250);
+  text-transform: uppercase; letter-spacing: 0.03em;
+}
+.thesis-out-body { padding: 8px 10px; font-size: 13px; line-height: 1.65; min-height: 44px; }
+.thesis-out-sm { min-width: 128px; }
+.thesis-out-sm .thesis-out-body { font-size: 12.5px; }
+html.dark .thesis-out { border-color: oklch(0.38 0.01 250); background: color-mix(in oklab, oklch(0.28 0.01 250) 55%, transparent); }
+html.dark .thesis-out-label { color: oklch(0.72 0.01 250); border-color: oklch(0.36 0.01 250); }
+
+.thesis-guide-item {
+  display: flex; gap: 8px; align-items: flex-start;
+  border: 1px solid oklch(0.9 0.008 250); border-radius: 10px;
+  padding: 9px 11px; font-size: 13px; line-height: 1.65;
+  background: color-mix(in oklab, oklch(0.98 0.003 250) 60%, transparent);
+}
+html.dark .thesis-guide-item { border-color: oklch(0.36 0.01 250); background: color-mix(in oklab, oklch(0.28 0.01 250) 55%, transparent); }

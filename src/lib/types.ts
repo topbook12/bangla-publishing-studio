@@ -193,6 +193,12 @@ export interface PageData {
    * পূর্ণ-পাতার নকশা)। ব্যবহারকারী প্রথম নিজে কিছু সম্পাদনা করলেই লক খুলে যায়।
    */
   flowLock?: boolean;
+  /**
+   * এই পাতা থেকে পৃষ্ঠা-নম্বর নতুন করে শুরু (থিসিস স্ট্যান্ডার্ড: প্রারম্ভিক পাতা
+   * রোমান i, ii… → প্রথম অধ্যায় থেকে ১, ২, ৩ আরম্ভ)। null = সেকশন বিভাজক নয়।
+   * ফরম্যাট না দিলে গ্লোবাল settings.pageNumber.format প্রযোজ্য থাকে।
+   */
+  numberRestart?: { from: number; format?: PageNumberFormat } | null;
 }
 
 export interface BookProject {

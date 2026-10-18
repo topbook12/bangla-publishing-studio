@@ -64,6 +64,30 @@ import "@fontsource/khula/700.css";
 import "@fontsource/yantramanav/400.css";
 import "@fontsource/yantramanav/700.css";
 import "@fontsource/yatra-one/400.css";
+// English academic fonts — thesis writing (bundled = offline-safe)
+import "@fontsource/eb-garamond/400.css";
+import "@fontsource/eb-garamond/600.css";
+import "@fontsource/eb-garamond/700.css";
+import "@fontsource/libre-baskerville/400.css";
+import "@fontsource/libre-baskerville/700.css";
+import "@fontsource/crimson-text/400.css";
+import "@fontsource/crimson-text/600.css";
+import "@fontsource/crimson-text/700.css";
+import "@fontsource/lora/400.css";
+import "@fontsource/lora/600.css";
+import "@fontsource/lora/700.css";
+import "@fontsource/merriweather/400.css";
+import "@fontsource/merriweather/700.css";
+import "@fontsource/playfair-display/400.css";
+import "@fontsource/playfair-display/700.css";
+import "@fontsource/source-serif-4/400.css";
+import "@fontsource/source-serif-4/600.css";
+import "@fontsource/source-serif-4/700.css";
+import "@fontsource/inter/400.css";
+import "@fontsource/inter/600.css";
+import "@fontsource/inter/700.css";
+import "@fontsource/source-code-pro/400.css";
+import "@fontsource/source-code-pro/600.css";
 
 const APP_NAME = "বাংলা পাবলিশিং স্টুডিও";
 const APP_DESCRIPTION =

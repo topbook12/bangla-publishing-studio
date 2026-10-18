@@ -13,24 +13,33 @@
         "@fontsource/atma": "^5.3.0",
         "@fontsource/baloo-2": "^5.3.0",
         "@fontsource/baloo-da-2": "^5.3.0",
+        "@fontsource/crimson-text": "^5.3.0",
+        "@fontsource/eb-garamond": "^5.3.0",
         "@fontsource/galada": "^5.3.0",
         "@fontsource/halant": "^5.3.0",
         "@fontsource/hind": "^5.3.0",
         "@fontsource/hind-siliguri": "^5.3.0",
+        "@fontsource/inter": "^5.3.0",
         "@fontsource/kalam": "^5.3.0",
         "@fontsource/karma": "^5.3.0",
         "@fontsource/khula": "^5.3.0",
         "@fontsource/laila": "^5.3.0",
+        "@fontsource/libre-baskerville": "^5.3.0",
+        "@fontsource/lora": "^5.3.0",
         "@fontsource/martel": "^5.3.0",
+        "@fontsource/merriweather": "^5.3.0",
         "@fontsource/mina": "^5.3.0",
         "@fontsource/mukta": "^5.3.0",
         "@fontsource/noto-sans-bengali": "^5.3.0",
         "@fontsource/noto-sans-devanagari": "^5.3.0",
         "@fontsource/noto-serif-bengali": "^5.3.0",
         "@fontsource/noto-serif-devanagari": "^5.3.0",
+        "@fontsource/playfair-display": "^5.3.0",
         "@fontsource/rajdhani": "^5.3.0",
         "@fontsource/rozha-one": "^5.3.0",
         "@fontsource/sahitya": "^5.3.0",
+        "@fontsource/source-code-pro": "^5.3.1",
+        "@fontsource/source-serif-4": "^5.3.1",
         "@fontsource/teko": "^5.3.0",
         "@fontsource/tiro-bangla": "^5.3.0",
         "@fontsource/tiro-devanagari-hindi": "^5.3.0",
@@ -220,6 +229,10 @@
 
     "@fontsource/baloo-da-2": ["@fontsource/baloo-da-2@5.3.0", "", {}, "sha512-jujnLa2d6xPt4HGmWf8/aoWgV2BC9CSyrx5wF3KUFzbNOxxUndQ+0IPKMk723LVGmJcALcexab5MK2KBEGsdew=="],
 
+    "@fontsource/crimson-text": ["@fontsource/crimson-text@5.3.0", "", {}, "sha512-W1kLgOlsCD/8DhUNECgYvyx86+t3wAvA0w09juD3XtmwAtV6vuSEwijN4q8fnQ1LgQWV377jQiL8dpSYwLnoAw=="],
+
+    "@fontsource/eb-garamond": ["@fontsource/eb-garamond@5.3.0", "", {}, "sha512-VplwHpB8FLuzl+4G5LDci1b3Z4SghiuXH8XEgaxjnOb5aue5mEt1njmDKeO6iyLeGa73LffU7PC7hzncLRx0ZA=="],
+
     "@fontsource/galada": ["@fontsource/galada@5.3.0", "", {}, "sha512-WCEb6q/YAHk2TYYtpl8uUcge+FSBzcwoyAGHXOpmfSWomtr2yEv2XoWDg/g4FtcDNWU3gkB0mX7L4Cl/H0yQ3g=="],
 
     "@fontsource/halant": ["@fontsource/halant@5.3.0", "", {}, "sha512-y8MglcvNH7b9Wcx8Hwavjq9ADbODxeziuXBXnX1SGD4FjJUJDVb6bLLPlghgzsAaKWsZsVsi0yIDyxIKCAay/A=="],
@@ -227,6 +240,8 @@
     "@fontsource/hind": ["@fontsource/hind@5.3.0", "", {}, "sha512-tN9N0AurZa2N8JakQw8Eqs5/1Rzpw7J6YA1mYpkkHZ3iTw1JjbSHq6V6hGjhRdZlUMHk1sN+jOhPmuF+RkRKEg=="],
 
     "@fontsource/hind-siliguri": ["@fontsource/hind-siliguri@5.3.0", "", {}, "sha512-jTxXVXLTUYpiCqQ8zGzX9gK4pHkJ6nOn05nKqFjPEpqf3VY6gGREKAIvHfHprE/6N4ittSudnHsMPT10QQfgtw=="],
+
+    "@fontsource/inter": ["@fontsource/inter@5.3.0", "", {}, "sha512-RofMylZmjlJEfELXeNHFWBRcSs75rGU/6bV2S2jfnvv/3rPXPGe0LgUJTklcHZ9lM4OZmAVFhcJPnACfb91A3g=="],
 
     "@fontsource/kalam": ["@fontsource/kalam@5.3.0", "", {}, "sha512-FDkVoDfPDCSN/eO81FOYtUI67eMgpVBJmjBtAqSL0PmEhJyeFY2biC+CR+yEttksgXR9+swpFdYmQTyjwBq80Q=="],
 
@@ -236,7 +251,13 @@
 
     "@fontsource/laila": ["@fontsource/laila@5.3.0", "", {}, "sha512-vtIPlFZrb7VZIBfFdtO/ayWbiK9KD3lyrEqobZUbCLBy98Uz/IdwEoPSq0+jmeAexzY2PlngVmE0L8dT2NnTrQ=="],
 
+    "@fontsource/libre-baskerville": ["@fontsource/libre-baskerville@5.3.0", "", {}, "sha512-IA6OLq36/JWMX70Fha15sri2qWsijFh7hgdDXCRZHjKUHtWarLQoiGilvm7iMqm7HiYFEv9acF3+IuRHO9kUiA=="],
+
+    "@fontsource/lora": ["@fontsource/lora@5.3.0", "", {}, "sha512-OK1g1z01rHVPqO5aw/FOIoDqc46KKYZdgL3NOLkxLWDk6QhDHhdr/h2BV1cke6gTvR1tzpDfdKyUkGsC+sQLeQ=="],
+
     "@fontsource/martel": ["@fontsource/martel@5.3.0", "", {}, "sha512-E/L2GnnmYkcjgt6IMN9ISgr2ldDzSeO1J+aTMwWsOy+Ti4EEC8B9RHiU32kUMGiyI9Ot8JLzQ4FA39HH1tFfbQ=="],
+
+    "@fontsource/merriweather": ["@fontsource/merriweather@5.3.0", "", {}, "sha512-9LpPsNTYzRALj468Uj1K9Usl5eXk991L/kKmcpdWbTF1na9NfMyAXMgUABlMReViU1MYBz9kJ8jEzEOtX9qGDg=="],
 
     "@fontsource/mina": ["@fontsource/mina@5.3.0", "", {}, "sha512-i7IEGcTyghSBfKWocHbKS1rKWGX65J+Xja2Fb8TQ5gotlq5++uJ246fUxBWrcrtdqwCAtas2b0yHYt+uj2UBXA=="],
 
@@ -250,11 +271,17 @@
 
     "@fontsource/noto-serif-devanagari": ["@fontsource/noto-serif-devanagari@5.3.0", "", {}, "sha512-POketgM+TcAbtQCpl5GUmlCVvV7zGnFmLlQTIVxp0ePZkKTJ1UhpeyscIpgljOzHjrVzXPj7x1lSXl2W/wI3Gg=="],
 
+    "@fontsource/playfair-display": ["@fontsource/playfair-display@5.3.0", "", {}, "sha512-uJSABalvdWc10fEPppQjQocamT21LEyRfzzWfRfqbkPz+sRv+kKpYDKyluBUskvJREkJTos9epj1WjQROGu99Q=="],
+
     "@fontsource/rajdhani": ["@fontsource/rajdhani@5.3.0", "", {}, "sha512-oBJgSIibWJvVBKseme1JczqPLoDHN97LHti4uh0LjfcJqQoVmnQQlRKIpEjTJV559rmVQ6qbVZZwKwk2wkBTtw=="],
 
     "@fontsource/rozha-one": ["@fontsource/rozha-one@5.3.0", "", {}, "sha512-/IUdv9LTshBBIqym7gbgOp/RbyD4HxwYOb+5lZKcv78m1xrD0wWWTWp20PNN9W5RVOQfAYQRkT76inav6uAPqg=="],
 
     "@fontsource/sahitya": ["@fontsource/sahitya@5.3.0", "", {}, "sha512-zKxUghYcQ62mfnuc1oH1vEhcCEYEsV/APSlPc9s3yObbjM9Z8p3E0mvu50xb2jGbLtkTphnaPlVHFfc3UZDotA=="],
+
+    "@fontsource/source-code-pro": ["@fontsource/source-code-pro@5.3.1", "", {}, "sha512-qsJEkwJWXYP/9clmtt3BsIlZ+Lr4cuRgNAgu0vyZdCgESMRMhRkAmEFFHHNM81VdeURqg5D5+Rr3bALDFav78A=="],
+
+    "@fontsource/source-serif-4": ["@fontsource/source-serif-4@5.3.1", "", {}, "sha512-cWcTCXjYYrgF9A67fThVir1VSc0lPEYmwQ6jA4pPt01s2MSCi/maINUcZoCzaqnU8fyUReDO97eGcBUkHgOeug=="],
 
     "@fontsource/teko": ["@fontsource/teko@5.3.0", "", {}, "sha512-Kkc63jui7yWWSX0mYEhakA6vi5sK0UlTPn+ucNacqBYQ5flFpj2I/TJ8Vo3JlR9RG9kzUxfjAo6V/do7O+Vn5Q=="],
 

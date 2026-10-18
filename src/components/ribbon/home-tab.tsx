@@ -41,6 +41,7 @@ function FontFamilySelect() {
     bangla: 'home.fontgroup.bangla',
     devanagari: 'home.fontgroup.devanagari',
     'hindi-legacy': 'home.fontgroup.hindilegacy',
+    english: 'home.fontgroup.english',
   };
 
   return (
