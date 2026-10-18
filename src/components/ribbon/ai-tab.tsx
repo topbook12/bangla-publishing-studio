@@ -4,7 +4,7 @@
 
 'use client';
 
-import { KeyRound, MessageSquare, ScanEye, ShieldCheck, Sparkles, Wand2 } from 'lucide-react';
+import { Copy, KeyRound, MessageSquare, ScanEye, ShieldCheck, Sparkles, Wand2 } from 'lucide-react';
 import { RibbonButton, RibbonDivider, RibbonGroup } from './ribbon-shell';
 import { useUiStore } from '@/lib/ui-store';
 import { useAiStore, aiConfiguredSelector } from '@/lib/ai-store';
@@ -27,6 +27,12 @@ export function AiTab() {
           label={tt('ai.btn.vision')}
           title={tt('ai.btn.vision.tip')}
           onClick={() => openAi('vision')}
+        />
+        <RibbonButton
+          icon={Copy}
+          label={tt('ai.tab.clone')}
+          title={tt('ai.clone.desc')}
+          onClick={() => openAi('clone')}
         />
       </RibbonGroup>
 

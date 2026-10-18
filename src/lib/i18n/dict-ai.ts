@@ -97,6 +97,101 @@ export const dictAi: Dict = {
     hi: 'AI लेखक',
     en: 'AI Writer',
   },
+  'ai.tab.clone': {
+    bn: 'হুবহু কপি',
+    hi: 'हूबहू कॉपी',
+    en: 'Exact Copy',
+  },
+  'ai.clone.title': {
+    bn: 'হুবহু কপি — স্ক্রিনশট → সম্পূর্ণ পাতা',
+    hi: 'हूबहू कॉपी — स्क्रीनशॉट → पूरा पेज',
+    en: 'Exact Copy — screenshot → full page',
+  },
+  'ai.clone.desc': {
+    bn: 'প্রশ্নপত্র, নোটিশ, সনদ, রুটিন — যেকোনো স্ক্রিনশট/স্ক্যান দিন। AI প্রতিটি অক্ষর, সংখ্যা, সারিবিন্যাস, কলাম ও টেবিল হুবহু পড়ে একটি সম্পূর্ণ এডিটেবল পাতা বানিয়ে দেয়।',
+    hi: 'प्रश्नपत्र, नोटिस, प्रमाणपत्र, रूटीन — कोई भी स्क्रीनशॉट/स्कैन दें। AI हर अक्षर, संख्या, संरেखण, कॉलम व टेबल हूबहू पढ़कर एक पूर्ण संपादन-योग्य पेज बना देता है।',
+    en: 'Give any screenshot/scan — question paper, notice, certificate, routine. AI reads every letter, number, alignment, column and table exactly, and builds a fully editable page.',
+  },
+  'ai.clone.needImage': {
+    bn: 'হুবহু কপির জন্য আগে ছবি দিন — স্ক্রিনশট হলে সরাসরি Ctrl+V চাপুন',
+    hi: 'हूबहू कॉपी के लिए पहले छवि दें — स्क्रीनशॉट हो तो सीधे Ctrl+V दबाएँ',
+    en: 'Add an image first for Exact Copy — screenshots: just press Ctrl+V',
+  },
+  'ai.clone.analyze': {
+    bn: 'হুবহু প্রতিলিপি করুন',
+    hi: 'हूबहू प्रतिलिपि बनाएँ',
+    en: 'Replicate exactly',
+  },
+  'ai.clone.analyzing': {
+    bn: 'পাতা পড়া হচ্ছে… প্রতিটি লাইন মিলানো হচ্ছে',
+    hi: 'पेज पढ़ा जा रहा है… हर लाइन मिलाई जा रही है',
+    en: 'Reading the page… matching every line',
+  },
+  'ai.clone.asNewPage': {
+    bn: 'নতুন পাতা হিসেবে (সুপারিশকৃত)',
+    hi: 'नए पेज के रूप में (अनुशंसित)',
+    en: 'As a new page (recommended)',
+  },
+  'ai.clone.atCursor': {
+    bn: 'বর্তমান কার্সরে বসান',
+    hi: 'वर्तमान कर्सर पर रखें',
+    en: 'Insert at cursor',
+  },
+  'ai.clone.target': {
+    bn: 'কোথায় বসবে',
+    hi: 'कहाँ रखा जाए',
+    en: 'Insert target',
+  },
+  'ai.clone.pageType': {
+    bn: 'শনাক্ত ধরন',
+    hi: 'पहचाना गया प्रकार',
+    en: 'Detected type',
+  },
+  'ai.clone.fidelityNote': {
+    bn: 'প্রতিলিপির নিয়ম: লেখা হুবহু থাকবে — AI বানান ঠিক করবে না, অনুবাদ করবে না। অস্পষ্ট অংশ হুবহু-কপি করে AI-নির্ভুলতা কেন্দ্রে যাচাই করতে পারবেন।',
+    hi: 'प्रतिलिपि नियम: लेख हूबहू रहेगा — AI वर्तनी नहीं सुधारेगा, अनुवाद नहीं करेगा। अस्पष्ट भाग कॉपी करके AI-निर्भुलता केंद्र में जाँच सकते हैं।',
+    en: 'Fidelity rule: text stays verbatim — no spell-fixing, no translation. You can verify unclear parts later in the AI Accuracy Center.',
+  },
+  'ai.clone.insertedPage': {
+    bn: 'সম্পূর্ণ পাতা হুবহু কপি হয়ে বইয়ে যোগ হয়েছে',
+    hi: 'पूरा पेज हूबहू कॉपी होकर बुक में जुड़ गया',
+    en: 'Full page cloned and added to your book',
+  },
+  'ai.clone.insertedCursor': {
+    bn: 'প্রতিলিপি কার্সরে বসানো হয়েছে',
+    hi: 'प्रतिलिपि कर्सर पर रखी गई',
+    en: 'Replica inserted at cursor',
+  },
+  'ai.clone.sideOriginal': {
+    bn: 'মূল ছবি',
+    hi: 'मूल छवि',
+    en: 'Original',
+  },
+  'ai.clone.sideReplica': {
+    bn: 'AI প্রতিলিপি (এডিটেবল)',
+    hi: 'AI प्रतिलिपि (संपादन-योग्य)',
+    en: 'AI replica (editable)',
+  },
+  'ai.clone.verify': {
+    bn: 'নিখুঁত মোড — দ্বিতীয় ধাপে AI নিজেই আবার মিলিয়ে যাচাই করবে',
+    hi: 'निर्भुल मोड — दूसरे चरण में AI स्वयं दोबारा मिलाकर जाँच करेगा',
+    en: 'Precision mode — AI re-checks its own draft against the image in a second pass',
+  },
+  'ai.clone.verifying': {
+    bn: 'যাচাই চলছে — প্রতিটি লাইন ছবির সাথে আবার মিলানো হচ্ছে…',
+    hi: 'जाँच चल रही है — हर लाइन छवि से दोबारा मिलाई जा रही है…',
+    en: 'Verifying — re-matching every line against the image…',
+  },
+  'ai.clone.verified': {
+    bn: 'যাচাই সম্পন্ন — সংশোধিত প্রতিলিপি প্রস্তুত',
+    hi: 'जाँच पूर्ण — संशोधित प्रतिलिपि तैयार',
+    en: 'Verification done — corrected replica ready',
+  },
+  'ai.clone.verifyFail': {
+    bn: 'যাচাই-ধাপ ব্যর্থ — প্রথম ধাপের প্রতিলিপিই দেখানো হচ্ছে',
+    hi: 'जाँच-चरण विफल — पहले चरण की प्रतिलिपि दिखाई जा रही है',
+    en: 'Verification pass failed — showing the first-pass replica',
+  },
 
   'ai.drop.title': {
     bn: 'ছবি এখানে ফেলুন বা ক্লিক করে বাছুন',

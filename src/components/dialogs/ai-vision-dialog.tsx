@@ -5,6 +5,9 @@
  *    ড্র্যাগ-ড্রপ বা Ctrl+V পেস্ট) → AI ছবি দেখে বোঝে → লেখকের নির্দেশ
  *    অনুযায়ী বইয়ের কনটেন্ট (শিরোনাম/প্যারা/তালিকা/টেবিল/কলআউট) →
  *    প্রিভিউ → এক ক্লিকে বইয়ে সন্নিবেশ।
+ *  ট্যাব "হুবহু কপি": স্ক্রিনশট/স্ক্যান → সম্পূর্ণ এডিটেবল পাতা —
+ *    প্রশ্নপত্র/নোটিশ/সনদ যা-ই হোক, অক্ষরে-অক্ষরে লেআউটসহ প্রতিলিপি
+ *    → মূল-বনাম-প্রতিলিপি পাশাপাশি প্রিভিউ → নতুন পাতা হিসেবে/কার্সরে।
  *  ট্যাব ২ "AI লেখক": নির্দেশ দিলে AI বইয়ের উপযোগী লেখা তৈরি করে।
  *
  * BYOK: নিজের API Key (localStorage) — না থাকলে সেটআপ প্যানেল + সীমিত ডেমো।
@@ -14,7 +17,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  BadgeCheck, BookPlus, CircleAlert, Image as ImageIcon, ListChecks,
+  BadgeCheck, BookPlus, CircleAlert, Copy, Image as ImageIcon, ListChecks,
   Loader2, PenLine, ScanEye, Sparkles, Trash2, Type, Wand2, X,
 } from 'lucide-react';
 import {
@@ -28,6 +31,8 @@ import { useEditorStore } from '@/lib/store';
 import { getEditor } from '@/lib/editor-registry';
 import { useAiStore, aiConfiguredSelector } from '@/lib/ai-store';
 import { analyzeImage, generateBookText, prepareImageFile } from '@/lib/ai-client';
+import { clonePageFromImage, cloneToHtml, verifyCloneFromImage } from '@/lib/ai-clone';
+import type { CloneResult } from '@/lib/ai-clone';
 import { gatherDocContext, formatDocContext } from '@/lib/ai-context';
 import { pageToMarkdown, PAGE_MD_CAP } from '@/lib/ai-assistant';
 import type { PreparedImage } from '@/lib/ai-client';
@@ -95,6 +100,12 @@ export function AiVisionDialog() {
   const [includeImage, setIncludeImage] = useState(true);
   const [includeTitle, setIncludeTitle] = useState(true);
   const [dragOver, setDragOver] = useState(false);
+  // হুবহু কপি ট্যাবের নিজস্ব স্টেট
+  const [cloneResult, setCloneResult] = useState<CloneResult | null>(null);
+  const [cloneAsNewPage, setCloneAsNewPage] = useState(true);
+  const [cloneVerify, setCloneVerify] = useState(true);
+  /** 'draft' → pass-1 শেষ, verify চলছে | 'done' → যাচাই-সম্পন্ন */
+  const [cloneStage, setCloneStage] = useState<'draft' | 'verifying' | 'verified' | 'verifyFail'>('draft');
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const busy = phase === 'working';
@@ -108,12 +119,14 @@ export function AiVisionDialog() {
     setResult(null);
     setResultDemo(false);
     setExcluded(new Set());
+    setCloneResult(null);
   }, []);
 
   const acceptFile = useCallback(async (file: File) => {
     if (!file.type.startsWith('image/')) return;
     try {
-      const prepared = await prepareImageFile(file);
+      // হুবহু কপিতে ছোট অক্ষর (রোল/মান/সেট-কোড) টিক রাখতে বেশি রেজোলিউশন — ২২০০px
+      const prepared = await prepareImageFile(file, { maxDim: 2200 });
       resetAll();
       setImage(prepared);
     } catch (err) {
@@ -121,9 +134,9 @@ export function AiVisionDialog() {
     }
   }, [resetAll, tt]);
 
-  // Ctrl+V পেস্ট — ডায়ালগ খোলা থাকলে স্ক্রিনশট সরাসরি বসে
+  // Ctrl+V পেস্ট — ডায়ালগ খোলা থাকলে স্ক্রিনশট সরাসরি বসে (ভিশন + হুবহু কপি দুই ট্যাবেই)
   useEffect(() => {
-    if (!open || tab !== 'vision') return;
+    if (!open || (tab !== 'vision' && tab !== 'clone')) return;
     const onPaste = (e: ClipboardEvent) => {
       const file = Array.from(e.clipboardData?.files ?? []).find((f) => f.type.startsWith('image/'));
       if (!file) return;
@@ -136,9 +149,9 @@ export function AiVisionDialog() {
 
   const run = async (demo: boolean) => {
     if (busy) return;
-    if (tab === 'vision' && !image) {
+    if ((tab === 'vision' || tab === 'clone') && !image) {
       // ডেমো/রান বাটন ছবি ছাড়া চাপলে নীরব no-op নয় — বোঝাই (আগে কিছুই হত না)
-      toast.info(tt('ai.vision.needImage'));
+      toast.info(tt(tab === 'clone' ? 'ai.clone.needImage' : 'ai.vision.needImage'));
       return;
     }
     if (!instruction.trim() && tab === 'text') {
@@ -150,6 +163,37 @@ export function AiVisionDialog() {
     setError(null);
     setResultDemo(false);
     setExcluded(new Set());
+    setCloneResult(null);
+    setCloneStage('draft');
+
+    // ─── হুবহু কপি — দুই-ধাপের পাইপলাইন (খসড়া → যাচাই → সম্পূর্ণ পাতা) ───
+    if (tab === 'clone' && image) {
+      const res = await clonePageFromImage({ imageDataUrl: image.dataUrl, instruction, demo });
+      if (!res.ok) {
+        setError({ hintKey: res.hintKey ?? 'ai.err.title', detail: res.detail });
+        setPhase('error');
+        return;
+      }
+      setCloneResult(res.result);
+      setResultDemo(!!res.demo);
+      setCloneStage('draft');
+
+      // নিখুঁত মোড — দ্বিতীয় ধাপে AI নিজের খসড়াকে ছবির সাথে আবার মিলিয়ে সংশোধন করে
+      if (cloneVerify) {
+        setCloneStage('verifying');
+        const ver = await verifyCloneFromImage({ imageDataUrl: image.dataUrl, draft: res.result, demo });
+        if (ver.ok) {
+          setCloneResult(ver.result);
+          setCloneStage('verified');
+        } else {
+          // যাচাই ব্যর্থ হলেও খসড়া থাকে — ফল নষ্ট হয় না
+          setCloneStage('verifyFail');
+          toast.info(tt('ai.clone.verifyFail'));
+        }
+      }
+      setPhase('done');
+      return;
+    }
 
     // বইয়ের প্রেক্ষাপট — লেখক/ভিশন দুই ট্যাবেই: বইয়ের নাম, অধ্যায় ও চলতি পাতার লেখা
     let docContext = '';
@@ -183,6 +227,38 @@ export function AiVisionDialog() {
       });
       setPhase('error');
     }
+  };
+
+  /** হুবহু কপি — প্রতিলিপি বইয়ে বসানো (নতুন পাতা বা কার্সরে) */
+  const insertClone = () => {
+    if (!cloneResult) return;
+    const html = cloneToHtml(cloneResult);
+    if (!html.trim()) {
+      toast.info(tt('ai.err.nothing'));
+      return;
+    }
+    const { activePageId, addPage, setActivePage } = useEditorStore.getState();
+    if (cloneAsNewPage) {
+      // সম্পূর্ণ পাতা → সক্রিয় পাতার পরে নতুন পাতা, সেখানেই নেভিগেট
+      // (নতুন পাতার এডিটর html থেকেই মাউন্ট হয় — লেআউট অক্ষত থাকে)
+      const newId = addPage(activePageId, html);
+      setActivePage(newId);
+      toast.success(tt('ai.clone.insertedPage'));
+    } else {
+      const ed = getEditor(activePageId);
+      if (!ed || ed.isDestroyed) {
+        toast.error(tt('ai.noEditor'));
+        return;
+      }
+      try {
+        ed.chain().focus().insertContentAt(ed.state.doc.content.size, html).run();
+      } catch {
+        toast.error(tt('ai.noEditor'));
+        return;
+      }
+      toast.success(tt('ai.clone.insertedCursor'));
+    }
+    close();
   };
 
   const insertIntoBook = () => {
@@ -243,6 +319,9 @@ export function AiVisionDialog() {
     );
   }, [result, excluded, includeImage, includeTitle, tab, image]);
 
+  /** হুবহু কপির লাইভ প্রিভিউ HTML */
+  const clonePreviewHtml = useMemo(() => (cloneResult ? cloneToHtml(cloneResult) : ''), [cloneResult]);
+
   const chipRow = (
     <div className="ai-chips" role="group" aria-label={tt('ai.instruction.label')}>
       {INSTRUCTION_CHIPS.map((chip) => (
@@ -263,6 +342,7 @@ export function AiVisionDialog() {
     <div className="ai-tabs" role="tablist" aria-label={tt('ai.vision.title')}>
       {([
         { id: 'vision' as AiVisionTab, icon: ScanEye, label: tt('ai.tab.vision') },
+        { id: 'clone' as AiVisionTab, icon: Copy, label: tt('ai.tab.clone') },
         { id: 'text' as AiVisionTab, icon: PenLine, label: tt('ai.tab.text') },
       ]).map((t) => (
         <button
@@ -304,14 +384,32 @@ export function AiVisionDialog() {
             {tt('ai.vision.title')}
             {resultDemo ? <span className="ai-demo-badge">{tt('ai.demo.badge')}</span> : null}
           </DialogTitle>
-          <DialogDescription>{tt('ai.vision.desc')}</DialogDescription>
+          <DialogDescription>
+            {tab === 'clone' ? tt('ai.clone.desc') : tt('ai.vision.desc')}
+          </DialogDescription>
         </DialogHeader>
 
         {tabBar}
 
-        {/* ─── ট্যাব: ছবি → কনটেন্ট ─── */}
-        {tab === 'vision' ? (
-          <section aria-label={tt('ai.tab.vision')}>
+        {/* ─── ট্যাব: ছবি → কনটেন্ট / হুবহু কপি — ছবি-আপলোড অংশ শেয়ারড ─── */}
+        {tab === 'vision' || tab === 'clone' ? (
+          <section aria-label={tab === 'clone' ? tt('ai.tab.clone') : tt('ai.tab.vision')}>
+            {/* হুবহু কপির শিরোনাম-বার */}
+            {tab === 'clone' ? (
+              <div className="ai-setup" role="note">
+                <p className="ai-setup-title"><Copy size={14} aria-hidden="true" /> {tt('ai.clone.title')}</p>
+                <p className="ai-setup-desc">{tt('ai.clone.fidelityNote')}</p>
+                <label className="ai-check mt-1">
+                  <input
+                    type="checkbox"
+                    checked={cloneVerify}
+                    onChange={(e) => setCloneVerify(e.target.checked)}
+                    disabled={busy}
+                  />
+                  {tt('ai.clone.verify')}
+                </label>
+              </div>
+            ) : null}
             {!image ? (
               <div
                 className={cn('ai-drop', dragOver && 'ai-drop-over')}
@@ -362,11 +460,11 @@ export function AiVisionDialog() {
           </section>
         ) : null}
 
-        {/* নির্দেশ — দুই ট্যাবেই */}
+        {/* নির্দেশ — তিন ট্যাবেই */}
         <section aria-label={tt('ai.instruction.label')}>
           <div className="mb-1.5 flex items-center justify-between">
             <span className="ai-field-label">{tt('ai.instruction.label')}</span>
-            {result ? (
+            {result || cloneResult ? (
               <Button size="sm" variant="ghost" className="h-7 gap-1 text-xs" onClick={resetAll}>
                 <X size={12} aria-hidden="true" /> {tt('ai.reanalyze')}
               </Button>
@@ -386,16 +484,21 @@ export function AiVisionDialog() {
         <div className="flex flex-wrap items-center gap-2">
           <Button
             className="ai-analyze-btn"
-            disabled={busy || (tab === 'vision' ? !image : !instruction.trim())}
+            disabled={busy || (tab === 'text' ? !instruction.trim() : !image)}
             onClick={() => void run(false)}
           >
             {busy ? <Loader2 size={14} className="animate-spin" aria-hidden="true" /> : <Sparkles size={14} aria-hidden="true" />}
             {busy
-              ? (tab === 'vision' ? tt('ai.analyzing') : tt('ai.generating'))
-              : (tab === 'vision' ? tt('ai.analyze') : tt('ai.generate'))}
+              ? (tab === 'clone'
+                  ? (cloneStage === 'verifying' ? tt('ai.clone.verifying') : tt('ai.clone.analyzing'))
+                  : tab === 'vision' ? tt('ai.analyzing') : tt('ai.generating'))
+              : (tab === 'clone' ? tt('ai.clone.analyze') : tab === 'vision' ? tt('ai.analyze') : tt('ai.generate'))}
           </Button>
           {busy ? <span className="ai-progress" role="status"><span /></span> : null}
-          {!configured && !result ? <span className="ai-keyless-hint">{tt('ai.btn.addKey')} →</span> : null}
+          {busy && tab === 'clone' && cloneStage === 'verifying' ? (
+            <span className="ai-progress-text" role="status">{tt('ai.clone.verifying')}</span>
+          ) : null}
+          {!configured && !result && !cloneResult ? <span className="ai-keyless-hint">{tt('ai.btn.addKey')} →</span> : null}
         </div>
 
         {/* ত্রুটি */}
@@ -413,10 +516,83 @@ export function AiVisionDialog() {
         ) : null}
 
         {/* সেটআপ প্যানেল (কি নেই + রেজাল্ট নেই) */}
-        {!configured && phase !== 'error' && !result ? setupPanel : null}
+        {!configured && phase !== 'error' && !result && !cloneResult ? setupPanel : null}
+
+        {/* ─── হুবহু কপির রেজাল্ট: মূল বনাম প্রতিলিপি পাশাপাশি ─── */}
+        {tab === 'clone' && cloneResult ? (
+          <section className="ai-result" aria-label={tt('ai.tab.clone')}>
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <p className="ai-result-title">
+                <BadgeCheck size={14} className="text-emerald-600" aria-hidden="true" />
+                {tt('ai.clone.title')}
+                {cloneResult.pageType ? (
+                  <span className="ai-result-count">{tt('ai.clone.pageType')}: {cloneResult.pageType}</span>
+                ) : null}
+                {cloneStage === 'verified' ? (
+                  <span className="ai-demo-badge">✓ {tt('ai.clone.verified')}</span>
+                ) : cloneStage === 'verifyFail' ? (
+                  <span className="ai-demo-badge">{tt('ai.clone.verifyFail')}</span>
+                ) : null}
+              </p>
+            </div>
+
+            {/* পাশাপাশি তুলনা — মূল ছবি বনাম এডিটেবল প্রতিলিপি */}
+            <div className="grid gap-2 sm:grid-cols-2">
+              <figure className="overflow-hidden rounded-md border bg-white">
+                <figcaption className="border-b px-2 py-1 text-xs font-medium text-muted-foreground">
+                  {tt('ai.clone.sideOriginal')}
+                </figcaption>
+                {image ? (
+                  <img src={image.dataUrl} alt={tt('ai.clone.sideOriginal')} className="max-h-80 w-full object-contain" />
+                ) : null}
+              </figure>
+              <div
+                className="overflow-hidden rounded-md border bg-white"
+                aria-hidden="true"
+              >
+                <p className="border-b px-2 py-1 text-xs font-medium text-muted-foreground">
+                  {tt('ai.clone.sideReplica')}
+                </p>
+                <div
+                  className="clone-preview-sheet max-h-80 overflow-y-auto p-4 text-sm leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: clonePreviewHtml }}
+                />
+              </div>
+            </div>
+
+            {/* কোথায় বসবে */}
+            <div className="mt-3 flex flex-wrap items-center gap-4">
+              <span className="ai-field-label">{tt('ai.clone.target')}</span>
+              <label className="ai-check">
+                <input
+                  type="radio"
+                  name="clone-target"
+                  checked={cloneAsNewPage}
+                  onChange={() => setCloneAsNewPage(true)}
+                />
+                {tt('ai.clone.asNewPage')}
+              </label>
+              <label className="ai-check">
+                <input
+                  type="radio"
+                  name="clone-target"
+                  checked={!cloneAsNewPage}
+                  onChange={() => setCloneAsNewPage(false)}
+                />
+                {tt('ai.clone.atCursor')}
+              </label>
+            </div>
+
+            <div className="mt-2 flex justify-end">
+              <Button className="ai-insert-btn" onClick={insertClone}>
+                <BookPlus size={14} aria-hidden="true" /> {tt('ai.insert')}
+              </Button>
+            </div>
+          </section>
+        ) : null}
 
         {/* রেজাল্ট প্রিভিউ */}
-        {result ? (
+        {result && tab !== 'clone' ? (
           <section className="ai-result" aria-label={tt('ai.result.title')}>
             <div className="mb-2 flex items-center justify-between">
               <p className="ai-result-title">

@@ -30,7 +30,7 @@ export type DialogName =
   | 'help';
 
 /** AI ডায়ালগের কোন ট্যাব নিয়ে খুলবে */
-export type AiVisionTab = 'vision' | 'text';
+export type AiVisionTab = 'vision' | 'text' | 'clone';
 
 /** নেভিগেটর সাইডবারের ট্যাব — আউটলাইন (শিরোনাম) বা পাতা (থাম্বনেইল) */
 export type NavigatorTab = 'outline' | 'pages';

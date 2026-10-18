@@ -3215,6 +3215,25 @@ html.dark .ai-live-preview-body th, html.dark .ai-live-preview-body td { border-
 .ai-live-preview-body pre { background: #f4f4f5; border-radius: 8px; padding: 8px 10px; font-size: 12px; overflow-x: auto; margin: 0 0 7px; }
 .ai-live-preview-body img { max-width: 100%; height: auto; border-radius: 6px; }
 
+/* হুবহু কপি প্রিভিউ — প্রতিলিপি মিনি-কাগজ (কলাম/টেবিল/সারিবিন্যাস সহ) */
+.clone-preview-sheet { font-size: 12.5px; line-height: 1.7; color: #171717; }
+.clone-preview-sheet h1 { font-size: 16px; font-weight: 700; margin: 0 0 8px; }
+.clone-preview-sheet h2 { font-size: 14.5px; font-weight: 700; margin: 10px 0 5px; }
+.clone-preview-sheet h3 { font-size: 13px; font-weight: 650; margin: 8px 0 4px; }
+.clone-preview-sheet p { margin: 0 0 6px; }
+.clone-preview-sheet ul, .clone-preview-sheet ol { margin: 0 0 7px; padding-left: 20px; }
+.clone-preview-sheet li { margin-bottom: 2px; }
+.clone-preview-sheet table { border-collapse: collapse; margin: 6px 0; width: 100%; font-size: 11.5px; }
+.clone-preview-sheet th, .clone-preview-sheet td { border: 1px solid #d4d4d8; padding: 3px 7px; text-align: left; }
+.clone-preview-sheet th { background: #f4f4f5; font-weight: 650; }
+.clone-preview-sheet hr { border: none; border-top: 1px solid #d4d4d8; margin: 8px 0; }
+.clone-preview-sheet .doc-columns { column-count: 2; column-gap: 22px; }
+.clone-preview-sheet .doc-columns[data-count='3'] { column-count: 3; }
+html.dark .clone-preview-sheet { color: oklch(0.93 0.005 260); }
+html.dark .clone-preview-sheet th { background: oklch(0.3 0.01 260); }
+html.dark .clone-preview-sheet th, html.dark .clone-preview-sheet td { border-color: oklch(0.4 0.01 260); }
+html.dark .clone-preview-sheet hr { border-color: oklch(0.4 0.01 260); }
+
 /* সন্নিবেশ বাটন */
 .ai-insert-btn {
   background: linear-gradient(135deg, oklch(0.62 0.16 155), oklch(0.52 0.15 165));
@@ -3223,6 +3242,18 @@ html.dark .ai-live-preview-body th, html.dark .ai-live-preview-body td { border-
     inset 0 1px 0 rgb(255 255 255 / 0.3);
 }
 .ai-insert-btn:hover { filter: brightness(1.07); }
+
+/* হুবহু কপি — যাচাই-ধাপের প্রগ্রেস টেক্সট */
+.ai-progress-text {
+  font-size: 12px;
+  font-weight: 550;
+  color: var(--muted-foreground);
+  animation: ai-progress-pulse 1.4s ease-in-out infinite;
+}
+@keyframes ai-progress-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
 
 /* মোবাইলে প্রোভাইডার কার্ড এক-কলাম */
 @media (max-width: 480px) {
