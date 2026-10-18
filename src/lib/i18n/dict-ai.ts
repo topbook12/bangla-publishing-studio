@@ -620,6 +620,58 @@ export const dictAi: Dict = {
     hi: 'कोड/सूत्र',
     en: 'Code/formula',
   },
+  'ai.block.lines': {
+    bn: 'ফাঁকা উত্তর-লাইন',
+    hi: 'रिक्त उत्तर-पंक्तियाँ',
+    en: 'Fill-in lines',
+  },
+  'ai.block.columns': {
+    bn: 'কলাম-ব্লক',
+    hi: 'कॉलम-ब्लॉक',
+    en: 'Columns',
+  },
+  'ai.block.figure': {
+    bn: 'চিত্র',
+    hi: 'चित्र',
+    en: 'Figure',
+  },
+  'ai.block.divider': {
+    bn: 'বিভাজক',
+    hi: 'विभाजक',
+    en: 'Divider',
+  },
+
+  // ─── হুবহু কপি — প্রতিলিপি সংশোধন (ইনলাইন সম্পাদনা) ───
+  'ai.clone.editBtn': {
+    bn: 'প্রতিলিপি সংশোধন করুন',
+    hi: 'प्रतिलिपि सुधारें',
+    en: 'Fix replica text',
+  },
+  'ai.clone.editTitle': {
+    bn: 'প্রতিলিপি সম্পাদনা',
+    hi: 'प्रतिलिपि संपादन',
+    en: 'Edit replica',
+  },
+  'ai.clone.editHint': {
+    bn: 'AI-পাঠে ভুল থাকলে সরাসরি ঠিক করুন — প্রিভিউ সঙ্গে সঙ্গে বদলাবে',
+    hi: 'AI पाठ में त्रुटि हो तो सीधे ठीक करें — पूर्वावलोकन तुरंत बदलेगा',
+    en: 'Fix any AI misreads directly — the preview updates instantly',
+  },
+  'ai.clone.itemsHelp': {
+    bn: 'প্রতি লাইনে একটি আইটেম',
+    hi: 'प्रति पंक्ति एक आइटम',
+    en: 'One item per line',
+  },
+  'ai.clone.tableHelp': {
+    bn: 'প্রতি লাইনে একটি সারি — ঘর আলাদা করতে | ব্যবহার করুন',
+    hi: 'प्रति पंक्ति एक पंक्ति — कोशिकाएँ | से अलग करें',
+    en: 'One row per line — separate cells with |',
+  },
+  'ai.clone.staticBlock': {
+    bn: 'এই ব্লক সম্পাদনাযোগ্য নয়',
+    hi: 'यह ब्लॉक संपादन योग्य नहीं है',
+    en: 'Not editable',
+  },
 
   // ─── ত্রুটি-বার্তা (hintKey) ───
   'ai.err.network': {

@@ -3234,6 +3234,41 @@ html.dark .clone-preview-sheet th { background: oklch(0.3 0.01 260); }
 html.dark .clone-preview-sheet th, html.dark .clone-preview-sheet td { border-color: oklch(0.4 0.01 260); }
 html.dark .clone-preview-sheet hr { border-color: oklch(0.4 0.01 260); }
 
+/* প্রতিলিপি সংশোধন-প্যানেল — ব্লক-স্তরের ইনলাইন সম্পাদনা (OCR-ভুল ইউজারই ঠিক করেন) */
+.clone-edit-toggle {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12.5px; font-weight: 600; color: oklch(0.45 0.1 250);
+  background: color-mix(in oklab, oklch(0.62 0.1 250) 10%, transparent);
+  border: 1px solid color-mix(in oklab, oklch(0.62 0.1 250) 28%, transparent);
+  border-radius: 8px; padding: 5px 12px; cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.clone-edit-toggle:hover { background: color-mix(in oklab, oklch(0.62 0.1 250) 18%, transparent); }
+.clone-edit-wrap { margin-top: 8px; border: 1px solid oklch(0.87 0.01 250); border-radius: 10px; padding: 10px; background: color-mix(in oklab, oklch(0.97 0.005 250) 60%, transparent); }
+.clone-edit-hint { font-size: 11.5px; color: oklch(0.5 0.02 250); margin: 0 0 8px; }
+.clone-edit-list { display: flex; flex-direction: column; gap: 8px; }
+.clone-edit-row { display: grid; grid-template-columns: 108px 1fr; gap: 8px; align-items: start; }
+.clone-edit-kind {
+  font-size: 10.5px; font-weight: 650; text-transform: uppercase; letter-spacing: 0.02em;
+  color: oklch(0.45 0.05 250); background: color-mix(in oklab, oklch(0.62 0.06 250) 12%, transparent);
+  border-radius: 6px; padding: 3px 6px; text-align: center; margin-top: 2px;
+}
+.clone-edit-input {
+  width: 100%; font-size: 12.5px; line-height: 1.55; color: inherit;
+  border: 1px solid oklch(0.85 0.01 250); border-radius: 7px; padding: 6px 8px;
+  background: #fff; resize: vertical; min-height: 34px;
+}
+.clone-edit-input:focus { outline: 2px solid color-mix(in oklab, oklch(0.6 0.12 250) 55%, transparent); outline-offset: 1px; border-color: transparent; }
+.clone-edit-mono { font-variant-numeric: tabular-nums; }
+.clone-edit-static { font-size: 11.5px; color: oklch(0.55 0.02 250); font-style: italic; padding-top: 6px; }
+html.dark .clone-edit-toggle { color: oklch(0.78 0.08 250); background: color-mix(in oklab, oklch(0.55 0.08 250) 16%, transparent); border-color: color-mix(in oklab, oklch(0.55 0.08 250) 34%, transparent); }
+html.dark .clone-edit-toggle:hover { background: color-mix(in oklab, oklch(0.55 0.08 250) 26%, transparent); }
+html.dark .clone-edit-wrap { border-color: oklch(0.38 0.01 250); background: color-mix(in oklab, oklch(0.28 0.01 250) 55%, transparent); }
+html.dark .clone-edit-hint { color: oklch(0.68 0.01 250); }
+html.dark .clone-edit-kind { color: oklch(0.75 0.04 250); background: color-mix(in oklab, oklch(0.55 0.05 250) 18%, transparent); }
+html.dark .clone-edit-input { background: oklch(0.24 0.01 250); border-color: oklch(0.42 0.01 250); }
+html.dark .clone-edit-static { color: oklch(0.62 0.01 250); }
+
 /* সন্নিবেশ বাটন */
 .ai-insert-btn {
   background: linear-gradient(135deg, oklch(0.62 0.16 155), oklch(0.52 0.15 165));

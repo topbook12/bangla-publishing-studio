@@ -31,8 +31,8 @@ import { useEditorStore } from '@/lib/store';
 import { getEditor } from '@/lib/editor-registry';
 import { useAiStore, aiConfiguredSelector } from '@/lib/ai-store';
 import { analyzeImage, generateBookText, prepareImageFile } from '@/lib/ai-client';
-import { clonePageFromImage, cloneToHtml, verifyCloneFromImage } from '@/lib/ai-clone';
-import type { CloneResult } from '@/lib/ai-clone';
+import { clonePageFromImage, cloneToHtml, verifyCloneFromImage, buildCloneComposite } from '@/lib/ai-clone';
+import type { CloneResult, CloneBlock } from '@/lib/ai-clone';
 import { gatherDocContext, formatDocContext } from '@/lib/ai-context';
 import { pageToMarkdown, PAGE_MD_CAP } from '@/lib/ai-assistant';
 import type { PreparedImage } from '@/lib/ai-client';
@@ -68,6 +68,19 @@ const BLOCK_LABEL: Record<AiBlock['type'], string> = {
   callout: 'ai.block.callout',
   quote: 'ai.block.quote',
   code: 'ai.block.code',
+};
+
+/** হুবহু কপির ব্লক-লেবেল — সংশোধন-প্যানেলের প্রতিটি সারিতে */
+const CLONE_BLOCK_LABEL: Record<CloneBlock['type'], string> = {
+  heading: 'ai.block.heading',
+  paragraph: 'ai.block.paragraph',
+  bullets: 'ai.block.bullets',
+  numbered: 'ai.block.numbered',
+  table: 'ai.block.table',
+  lines: 'ai.block.lines',
+  columns: 'ai.block.columns',
+  figure: 'ai.block.figure',
+  divider: 'ai.block.divider',
 };
 
 /** এক-ট্যাপ নির্দেশ চিপস — নির্দেশ-প্রম্পট তিন ভাষাতেই (label = বাটন, prompt = ইনপুটে বসে) */
@@ -106,6 +119,8 @@ export function AiVisionDialog() {
   const [cloneVerify, setCloneVerify] = useState(true);
   /** 'draft' → pass-1 শেষ, verify চলছে | 'done' → যাচাই-সম্পন্ন */
   const [cloneStage, setCloneStage] = useState<'draft' | 'verifying' | 'verified' | 'verifyFail'>('draft');
+  /** প্রতিলিপি সংশোধন-প্যানেল খোলা কি না — OCR-ভুল ইউজার নিজে ঠিক করতে পারেন */
+  const [cloneEditing, setCloneEditing] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const busy = phase === 'working';
@@ -168,7 +183,9 @@ export function AiVisionDialog() {
 
     // ─── হুবহু কপি — দুই-ধাপের পাইপলাইন (খসড়া → যাচাই → সম্পূর্ণ পাতা) ───
     if (tab === 'clone' && image) {
-      const res = await clonePageFromImage({ imageDataUrl: image.dataUrl, instruction, demo });
+      // কম্পোজিট ছবি — সম্পূর্ণ পাতা + হেডার-অংশের হাই-জুম (ছোট অক্ষরের নির্ভুলতার জন্য)
+      const composite = await buildCloneComposite(image.dataUrl);
+      const res = await clonePageFromImage({ imageDataUrl: composite, instruction, demo });
       if (!res.ok) {
         setError({ hintKey: res.hintKey ?? 'ai.err.title', detail: res.detail });
         setPhase('error');
@@ -181,7 +198,7 @@ export function AiVisionDialog() {
       // নিখুঁত মোড — দ্বিতীয় ধাপে AI নিজের খসড়াকে ছবির সাথে আবার মিলিয়ে সংশোধন করে
       if (cloneVerify) {
         setCloneStage('verifying');
-        const ver = await verifyCloneFromImage({ imageDataUrl: image.dataUrl, draft: res.result, demo });
+        const ver = await verifyCloneFromImage({ imageDataUrl: composite, draft: res.result, demo });
         if (ver.ok) {
           setCloneResult(ver.result);
           setCloneStage('verified');
@@ -321,6 +338,31 @@ export function AiVisionDialog() {
 
   /** হুবহু কপির লাইভ প্রিভিউ HTML */
   const clonePreviewHtml = useMemo(() => (cloneResult ? cloneToHtml(cloneResult) : ''), [cloneResult]);
+
+  // ─── প্রতিলিপি সংশোধন — ব্লক-স্তরের সরাসরি সম্পাদনা (প্রিভিউ ও সন্নিবেশ সাথে সাথে আপডেট) ───
+  const patchCloneBlock = useCallback((i: number, patch: Partial<CloneBlock>) => {
+    setCloneResult((prev) => {
+      if (!prev) return prev;
+      const blocks = prev.blocks.map((b, idx) => (idx === i ? { ...b, ...patch } : b));
+      return { ...prev, blocks };
+    });
+  }, []);
+
+  /** তালিকা-ধাঁচের ব্লক (bullets/numbered/lines) — প্রতি লাইনে একটি আইটেম */
+  const cloneItemsText = (b: CloneBlock): string => (b.items ?? []).join('\n');
+  const patchCloneItems = (i: number, text: string) =>
+    patchCloneBlock(i, { items: text.split('\n').map((s) => s.trimEnd()).filter((s) => s.trim().length > 0) });
+
+  /** টেবিল — প্রতি লাইনে একটি সারি, ঘর আলাদা করতে " | " */
+  const cloneRowsText = (b: CloneBlock): string => (b.rows ?? []).map((r) => r.join(' | ')).join('\n');
+  const patchCloneRows = (i: number, text: string) =>
+    patchCloneBlock(i, {
+      rows: text
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map((line) => line.split('|').map((c) => c.trim())),
+    });
 
   const chipRow = (
     <div className="ai-chips" role="group" aria-label={tt('ai.instruction.label')}>
@@ -558,6 +600,67 @@ export function AiVisionDialog() {
                   dangerouslySetInnerHTML={{ __html: clonePreviewHtml }}
                 />
               </div>
+            </div>
+
+            {/* প্রতিলিপি সংশোধন — AI-পাঠে ভুল থাকলে ইউজার সরাসরি ঠিক করে নেন */}
+            <div className="mt-3">
+              <button
+                type="button"
+                className="clone-edit-toggle"
+                onClick={() => setCloneEditing((v) => !v)}
+                aria-expanded={cloneEditing}
+              >
+                <PenLine size={13} aria-hidden="true" /> {tt('ai.clone.editBtn')}
+              </button>
+              {cloneEditing ? (
+                <div className="clone-edit-wrap" role="group" aria-label={tt('ai.clone.editTitle')}>
+                  <p className="clone-edit-hint">{tt('ai.clone.editHint')}</p>
+                  <div className="clone-edit-list max-h-80 overflow-y-auto">
+                    {cloneResult.blocks.map((b, i) => (
+                      <div key={i} className="clone-edit-row">
+                        <span className="clone-edit-kind">{tt(CLONE_BLOCK_LABEL[b.type])}</span>
+                        {b.type === 'heading' || b.type === 'paragraph' ? (
+                          <textarea
+                            value={b.text ?? ''}
+                            rows={2}
+                            className="clone-edit-input"
+                            aria-label={`${tt(CLONE_BLOCK_LABEL[b.type])} ${i + 1}`}
+                            onChange={(e) => patchCloneBlock(i, { text: e.target.value })}
+                          />
+                        ) : b.type === 'bullets' || b.type === 'numbered' || b.type === 'lines' ? (
+                          <textarea
+                            value={cloneItemsText(b)}
+                            rows={Math.min(6, Math.max(2, (b.items ?? []).length))}
+                            className="clone-edit-input"
+                            placeholder={tt('ai.clone.itemsHelp')}
+                            aria-label={`${tt(CLONE_BLOCK_LABEL[b.type])} ${i + 1}`}
+                            onChange={(e) => patchCloneItems(i, e.target.value)}
+                          />
+                        ) : b.type === 'table' ? (
+                          <textarea
+                            value={cloneRowsText(b)}
+                            rows={Math.min(8, Math.max(2, (b.rows ?? []).length))}
+                            className="clone-edit-input clone-edit-mono"
+                            placeholder={tt('ai.clone.tableHelp')}
+                            aria-label={`${tt(CLONE_BLOCK_LABEL[b.type])} ${i + 1}`}
+                            onChange={(e) => patchCloneRows(i, e.target.value)}
+                          />
+                        ) : b.type === 'figure' ? (
+                          <input
+                            type="text"
+                            value={b.caption ?? ''}
+                            className="clone-edit-input"
+                            aria-label={`${tt(CLONE_BLOCK_LABEL[b.type])} ${i + 1}`}
+                            onChange={(e) => patchCloneBlock(i, { caption: e.target.value })}
+                          />
+                        ) : (
+                          <span className="clone-edit-static">{tt('ai.clone.staticBlock')}</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
             </div>
 
             {/* কোথায় বসবে */}

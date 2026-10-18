@@ -91,7 +91,12 @@ ABSOLUTE FIDELITY RULES (violating any of these is failure):
 10. MULTI-LINE paragraphs: keep each visual line's text in the same block; join wrapped lines of the SAME paragraph with a single space, but do NOT join separate lines that end with "।"/"."/"?"/":" — those are separate blocks.
 11. LANGUAGE of pageType/caption/figure descriptions: same language as the document (Bengali document → Bengali).`;
 
-export const AI_CLONE_SYSTEM = `You are the Exact-Replication Engine of "Bangla Publishing Studio" — a professional print-grade page cloner used by Bengali/Hindi/English publishers and teachers.
+/** কম্পোজিট-ছবির লে-আউট ব্যাখ্যা — প্রম্পটে যোগ হয় */
+export const CLONE_IMAGE_LAYOUT_NOTE = `The image contains TWO stacked regions separated by a thick black horizontal line: REGION 1 (top) = the full document page; REGION 2 (bottom) = a HIGH-ZOOM copy of the page's TOP header area. Use REGION 2 to resolve tiny header/meta text (institution name, exam name, subject, date, time, full marks, set code) at character-level certainty. REGION 2 is a magnified duplicate — never output it as extra blocks.`;
+
+export const AI_CLONE_SYSTEM = `${CLONE_IMAGE_LAYOUT_NOTE}
+
+You are the Exact-Replication Engine of "Bangla Publishing Studio" — a professional print-grade page cloner used by Bengali/Hindi/English publishers and teachers.
 
 TASK: You receive a screenshot/scan/photo of ONE document page (question paper, notice, certificate, routine, marksheet, form, book page, handwritten sheet, newspaper clipping) and optionally a short user instruction. You produce a STRUCTURED, EDITABLE replica of that page — text, layout, numbering, alignment and order all preserved, ready to be typeset on a real paper page.
 
@@ -109,6 +114,56 @@ Common document layouts you must handle perfectly:
 - FORM: label lines with dotted fill-ins.
 ${CLONE_SCHEMA_RULES}`;
 
+/**
+ * কম্পোজিট ছবি — সম্পূর্ণ পাতার নিচে হেডার-অংশের ২× জুম জোড়া লাগানো হয়।
+ * ছোট হেডার-লেখা (প্রতিষ্ঠান, সময়-পূর্ণমান, সেট-কোড) মডেলের কাছে সবচেয়ে
+ * ভুল-প্রবণ — বড় করে পাঠালে অক্ষর-স্তরে নিশ্চিত পড়া যায় (প্রফেশনাল OCR কৌশল)।
+ */
+export async function buildCloneComposite(dataUrl: string): Promise<string> {
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const el = new Image();
+      el.onload = () => resolve(el);
+      el.onerror = () => reject(new Error('LOAD'));
+      el.src = dataUrl;
+    });
+    const sw = img.naturalWidth;
+    const sh = img.naturalHeight;
+    if (!sw || !sh) return dataUrl;
+
+    // ছোট ছবি আগে ১.৫× বড় করে নিই — বাংলা যুক্তাক্ষরে মডেলের পড়া সহজ হয়
+    const W = sw >= 1500 ? sw : Math.round(sw * 1.5);
+    const headFrac = Math.min(0.4, Math.max(0.22, 420 / sh));
+    const headH = Math.round(sh * headFrac);
+
+    const fullH = Math.round((sh / sw) * W);
+    const gap = 28;
+    const canvas = document.createElement('canvas');
+    canvas.width = W;
+    canvas.height = fullH + gap + Math.round((headH / sw) * W);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return dataUrl;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+
+    // অঞ্চল ১ — সম্পূর্ণ পাতা
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, sw, sh, 0, 0, W, fullH);
+
+    // বিভাজক — মোটা কালো দাগ (মডেল দুই অঞ্চল আলাদা করে দেখুক)
+    ctx.fillStyle = '#111111';
+    ctx.fillRect(0, fullH + 4, W, 8);
+
+    // অঞ্চল ২ — হেডার-অংশ বিবধী (একই প্রস্থে টানলে ইফেক্টিভ জুম ≥ ১.৫×)
+    ctx.drawImage(img, 0, 0, sw, headH, 0, fullH + gap, W, Math.round((headH / sw) * W));
+
+    return canvas.toDataURL('image/jpeg', 0.92);
+  } catch {
+    return dataUrl; // কম্পোজিট ব্যর্থ হলে মূল ছবিই যথেষ্ট
+  }
+}
+
 /** যাচাই-ধাপ: খসড়া প্রতিলিপিকে ছবির সাথে আবার মিলিয়ে সংশোধন (নিখুঁত হুবহু কপির জন্য) */
 export const AI_CLONE_VERIFY_SYSTEM = `You are the Verification Engine of "Bangla Publishing Studio" — the second pair of eyes in a two-pass exact page-replication pipeline.
 
@@ -119,11 +174,18 @@ You receive:
 YOUR TASK: re-read the image line-by-line at full zoom and output the CORRECTED JSON replica. Assume the draft may contain OCR misreads — especially Bengali conjuncts (ঘণ্টা/মিনিট, নির্দেশনা), Bengali vs Arabic numerals (৩ vs ৩০, ১০০ vs ১০), school/exam names, and small header/footer text.
 
 VERIFICATION METHOD (silent):
-1. Read the image independently — header, meta lines, every instruction, every question, every option, every mark bracket, every table cell.
+1. Read the image independently — header, meta lines, every instruction, every question, every option, every mark bracket, every table cell. The zoomed TOP region of the image is your ground truth for small header/meta text.
 2. Compare against the draft block-by-block, in order.
 3. FIX every mismatch: wrong words, wrong numerals, missing lines, extra lines, wrong alignment (center vs right), wrong bold/underline, wrong numbering style (১। vs 1.), wrong mark brackets [২], wrong table cells.
 4. If a whole line is missing from the draft, INSERT it at the correct position. If a line appears in the draft but NOT in the image, DELETE it.
 5. Keep the JSON shape identical to the pass-1 schema. Output the FULL corrected JSON — not a diff.
+
+HIGH-RISK BENGALI OCR CONFUSIONS — check these exhaustively:
+- Word-shape confusions: ঢাকা/জাতীয়-ধাঁচের শব্দ, ক্লাস/কুল, বার্ষিক/সাধারণ, এসএসসি-জাতীয় সংক্ষেপ, প্রশ্নে/প্রথম, নিজের/নিচের, লিখে নাও/লিখে নয়।
+- Quantity+unit pairs: "৩ ঘণ্টা" vs "৩০ মিনিট", "১০০" vs "১০", "৫০" vs "৫০০" — re-count every digit against the zoomed region.
+- Conjuncts: ন্দ/ন, র্ভ/ব, ট্ট/ট, ক্ষ/খ, জ্ঞ/ন — যুক্তাক্ষর ভাঙা-জোড়া খেয়াল করো।
+- Vowel signs: ি আগে বসে (কি), ী/ি, ে/ৈ, ু/ূ — position matters.
+- Bengali vs Arabic numerals: ১২৩ vs 123 — keep exactly as printed.
 
 ${CLONE_SCHEMA_RULES}`;
 
