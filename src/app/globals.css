@@ -4750,3 +4750,34 @@ html.dark .thesis-out-label { color: oklch(0.72 0.01 250); border-color: oklch(0
   background: color-mix(in oklab, oklch(0.98 0.003 250) 60%, transparent);
 }
 html.dark .thesis-guide-item { border-color: oklch(0.36 0.01 250); background: color-mix(in oklab, oklch(0.28 0.01 250) 55%, transparent); }
+
+/* থিসিস স্টুডিও ২ — টুলবক্স, লাইব্রেরি, ক্যাপশন-টুল, AI খসড়া */
+.thesis-toolbox {
+  border: 1px dashed oklch(0.82 0.02 250); border-radius: 12px;
+  padding: 12px 14px; display: flex; flex-direction: column; gap: 8px;
+  background: color-mix(in oklab, oklch(0.97 0.004 250) 55%, transparent);
+}
+html.dark .thesis-toolbox { border-color: oklch(0.4 0.015 250); background: color-mix(in oklab, oklch(0.26 0.012 250) 55%, transparent); }
+.thesis-chip-mini { padding: 2px 8px; font-size: 11px; border-radius: 7px; }
+.thesis-lib-list { display: flex; flex-direction: column; gap: 6px; list-style: none; margin: 0; padding: 0; }
+.thesis-lib-item {
+  display: flex; align-items: flex-start; gap: 8px;
+  border: 1px solid oklch(0.9 0.008 250); border-radius: 9px;
+  padding: 7px 9px; font-size: 12.5px; line-height: 1.6;
+  background: color-mix(in oklab, oklch(0.98 0.003 250) 65%, transparent);
+}
+html.dark .thesis-lib-item { border-color: oklch(0.36 0.01 250); background: color-mix(in oklab, oklch(0.28 0.01 250) 55%, transparent); }
+.thesis-lib-body { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.thesis-lib-del {
+  flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; border-radius: 7px; color: oklch(0.55 0.16 25);
+  transition: background .15s ease, color .15s ease;
+}
+.thesis-lib-del:hover { background: color-mix(in oklab, oklch(0.55 0.16 25) 12%, transparent); color: oklch(0.45 0.2 25); }
+.thesis-lib-empty { font-size: 12.5px; font-style: italic; opacity: .72; margin: 0; }
+.thesis-draft-notice {
+  margin: 0; font-size: 12px; line-height: 1.6; border-left: 3px solid oklch(0.72 0.13 80);
+  background: color-mix(in oklab, oklch(0.72 0.13 80) 8%, transparent);
+  padding: 7px 10px; border-radius: 0 8px 8px 0;
+}
+html.dark .thesis-draft-notice { border-left-color: oklch(0.72 0.13 80); background: color-mix(in oklab, oklch(0.72 0.13 80) 10%, transparent); }

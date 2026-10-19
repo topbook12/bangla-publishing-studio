@@ -249,3 +249,66 @@ dictInsert['thesis.guide.toc'] = { bn: 'সূচিপত্র: H1–H3 শি
 dictInsert['thesis.guide.cite'] = { bn: 'সূত্র: পুরো থিসিসে একটাই স্টাইল (APA/MLA/Harvard/Chicago/IEEE)। প্রতিটি দাবির পাশে in-text উদ্ধৃতি, শেষ পাতায় বর্ণানুক্রমিক তালিকা। "সূত্র" ট্যাব ফরম্যাট-ভুল মুছে দেয়।', hi: 'संदर्भ: पूरी थीसिस में एक ही शैली। हर दावे के साथ in-text, अंत में वर्णानुक्रमिक सूची।', en: 'Citations: ONE style throughout (APA/MLA/Harvard/Chicago/IEEE). Every claim gets an in-text citation; the final list is alphabetical. The Citations tab removes formatting mistakes.' };
 dictInsert['thesis.guide.figs'] = { bn: 'চিত্র/টেবিল: ক্রমাযুক্ত — "চিত্র ৩.২: শিরোনাম" (অধ্যায়.ক্রম)। উৎস নিচে; মূল লেখায় আগে উল্লেখ করে তবেই আনুন।', hi: 'चित्र/तालिका: क्रमांकित — "चित्र 3.2: शीर्षक"। स्रोत नीचे।', en: 'Figures/tables: numbered — "Figure 3.2: Caption" (chapter.serial). Source below; always mention in the text before it appears.' };
 dictInsert['thesis.guide.check'] = { bn: 'জমার আগে: স্বতঃস্ফূর্ত কপি-চেক (plagiarism) → সুপারভাইজারের চূড়ান্ত স্বাক্ষর → রিভিউ ট্যাবের বানান-প্রুফিং → DOCX/পিডিএফ এক্সপোর্টে মার্জিন-নম্বর যাচাই।', hi: 'जमा करने से पहले: प्लेजियरिज़्म चेक → सुपरवाइज़र हस्ताक्षर → वर्तनी-प्रूफिंग → DOCX/PDF निर्यात जाँच।', en: 'Before submission: plagiarism check → supervisor sign-off → spell-proofing in the Review tab → verify margins & numbering in the DOCX/PDF export.' };
+
+// ─── থিসিস স্টুডিও ২ — নতুন ট্যাব/টুল (AI খসড়া, লাইব্রেরি, ক্যাপশন, প্রিসেট) ───
+
+dictInsert['thesis.tab.draft'] = { bn: 'AI খসড়া', hi: 'AI ड्राफ्ट', en: 'AI Draft' };
+dictInsert['thesis.draft.desc'] = { bn: 'যে অংশটি লিখবেন বেছে নিন, গবেষণার বিষয় ও মূল পয়েন্ট দিন — AI একাডেমিক রীতিতে খসড়া লিখে দেবে। খসড়াটি সম্পাদনা করে কার্সরে বসান। বানিয়ে সূত্র দেয় না — (সূত্র) স্থানধারক নিজের সূত্র দিয়ে বদলাবেন।', hi: 'जो भाग लिखना है चुनें, विषय व मुख्य बिंदु दें — AI शैक्षणिक शैली में ड्राफ्ट लिखेगा। संपादित करके कर्सर पर डालें।', en: 'Pick the section, give your research topic and key points — AI writes an academic draft. Edit it, then insert at the cursor. It never invents citations — replace the (citation) placeholders with your own sources.' };
+dictInsert['thesis.draft.section'] = { bn: 'কোন অংশ লিখবেন', hi: 'कौन-सा भाग', en: 'Which section' };
+dictInsert['thesis.draft.sec.abstract'] = { bn: 'সারসংক্ষেপ (Abstract)', hi: 'सारांश (Abstract)', en: 'Abstract' };
+dictInsert['thesis.draft.sec.intro'] = { bn: 'ভূমিকা (অধ্যায় ১)', hi: 'परिचय (अध्याय 1)', en: 'Introduction (Ch. 1)' };
+dictInsert['thesis.draft.sec.literature'] = { bn: 'সাহিত্য-পর্যালোচনা', hi: 'साहित्य-समीक्षा', en: 'Literature review' };
+dictInsert['thesis.draft.sec.method'] = { bn: 'গবেষণা পদ্ধতি', hi: 'शोध पद्धति', en: 'Methodology' };
+dictInsert['thesis.draft.sec.results'] = { bn: 'ফলাফল ও আলোচনা', hi: 'परिणाम व चर्चा', en: 'Results & discussion' };
+dictInsert['thesis.draft.sec.conclusion'] = { bn: 'উপসংহার', hi: 'निष्कर्ष', en: 'Conclusion' };
+dictInsert['thesis.draft.topic'] = { bn: 'গবেষণার বিষয় (খালি রাখলে থিসিসের শিরোনাম)', hi: 'शोध विषय (खाली = थीसिस शीर्षक)', en: 'Research topic (blank = thesis title)' };
+dictInsert['thesis.draft.topic.ph'] = { bn: 'যেমন: পদ্মা নদীর পানির গুণমান…', hi: 'जैसे: पद्मा नदी के जल की गुणवत्ता…', en: 'e.g. Water quality of the Padma River…' };
+dictInsert['thesis.draft.points'] = { bn: 'মূল পয়েন্ট (প্রতি লাইনে একটি — ঐচ্ছিক)', hi: 'मुख्य बिंदु (प्रति पंक्ति एक — वैकल्पिक)', en: 'Key points (one per line — optional)' };
+dictInsert['thesis.draft.points.ph'] = { bn: 'যেমন:\nশুষ্ক মৌসুমে দূষণ বেশি\nমাছের প্রজাতি ৩৮টি থেকে ২৯টি', hi: 'जैसे:\nशुष्क मौसम में अधिक प्रदूषण\nमछली की प्रजातियाँ 38 से 29', en: 'e.g.\nPollution peaks in dry season\nFish species fell from 38 to 29' };
+dictInsert['thesis.draft.length'] = { bn: 'দৈর্ঘ্য', hi: 'लंबाई', en: 'Length' };
+dictInsert['thesis.draft.len.short'] = { bn: 'ছোট (~১৫০ শব্দ)', hi: 'छोटा (~150 शब्द)', en: 'Short (~150 words)' };
+dictInsert['thesis.draft.len.medium'] = { bn: 'মাঝারি (~৩০০ শব্দ)', hi: 'मध्यम (~300 शब्द)', en: 'Medium (~300 words)' };
+dictInsert['thesis.draft.len.long'] = { bn: 'বড় (~৬০০ শব্দ)', hi: 'बड़ा (~600 शब्द)', en: 'Long (~600 words)' };
+dictInsert['thesis.draft.generate'] = { bn: 'খসড়া লিখুন', hi: 'ड्राफ्ट लिखें', en: 'Write draft' };
+dictInsert['thesis.draft.result'] = { bn: 'খসড়া — দরকারমতো সম্পাদনা করুন', hi: 'ड्राफ्ट — आवश्यकतानुसार संपादित करें', en: 'Draft — edit as needed' };
+dictInsert['thesis.draft.insert'] = { bn: 'কার্সরে বসান', hi: 'कर्सर पर डालें', en: 'Insert at cursor' };
+dictInsert['thesis.draft.done'] = { bn: 'খসড়া তৈরি — পড়ে সম্পাদনা করে বসান', hi: 'ड्राफ्ट तैयार — पढ़कर संपादित करें', en: 'Draft ready — review, edit, then insert' };
+dictInsert['thesis.draft.inserted'] = { bn: 'খসড়া কার্সরে বসানো হয়েছে', hi: 'ड्राफ्ट कर्सर पर डाला गया', en: 'Draft inserted at cursor' };
+dictInsert['thesis.draft.err.noTopic'] = { bn: 'গবেষণার বিষয় দিন — কী নিয়ে লিখবে?', hi: 'शोध विषय दें — किस पर लिखें?', en: 'Give the research topic first' };
+dictInsert['thesis.draft.err.empty'] = { bn: 'AI খালি উত্তর দিয়েছে — আবার চেষ্টা করুন', hi: 'AI ने खाली उत्तर दिया — फिर कोशिश करें', en: 'AI returned an empty answer — try again' };
+dictInsert['thesis.draft.notice'] = { bn: 'মনে রাখুন: AI-লিখিত অংশ পড়ে-মিলিয়ে নিজের ভাষায় সম্পাদনা করুন; (সূত্র) স্থানধারক বদলে আসল তথ্যসূত্র দিন। AI বানিয়ে সূত্র দেয় না — তবু যাচাই আপনার দায়িত্ব।', hi: 'ध्यान दें: AI-लिखित भाग पढ़कर संपादित करें; (संदर्भ) प्लेसहोल्डर बदलें।', en: 'Remember: review and rewrite AI drafts in your own voice; replace every (citation) placeholder with real sources. AI does not invent references — but verifying is your responsibility.' };
+
+dictInsert['thesis.cite.library'] = { bn: 'সূত্র-লাইব্রেরি', hi: 'संदर्भ-लाइब्रेरी', en: 'Citation library' };
+dictInsert['thesis.cite.libDesc'] = { bn: 'এন্ট্রি জমা রাখুন — শেষে এক ক্লিকে পুরো তালিকা তথ্যসূত্র পাতায় বসে যাবে: APA/MLA/Harvard/Chicago-তে বর্ণানুক্রমে, IEEE-তে [1], [2] ক্রমে। এক থিসিসে এক স্টাইল রাখুন।', hi: 'प्रविष्टियाँ सहेजें — बाद में एक क्लिक में पूरी सूची डालें।', en: 'Keep entries here — then insert the whole list onto the References page in one click: alphabetical for APA/MLA/Harvard/Chicago, [1],[2] order for IEEE. Use ONE style per thesis.' };
+dictInsert['thesis.cite.addLib'] = { bn: 'লাইব্রেরিতে যোগ', hi: 'लाइब्रेरी में जोड़ें', en: 'Add to library' };
+dictInsert['thesis.cite.libEmpty'] = { bn: 'লাইব্রেরি খালি — উপরে এন্ট্রি বানিয়ে "লাইব্রেরিতে যোগ" চাপুন। লাইব্রেরি ব্রাউজারে জমা থাকে।', hi: 'लाइब्रेरी खाली है — ऊपर प्रविष्टि बनाकर जोड़ें।', en: 'Library is empty — build an entry above and press "Add to library". The library is saved in your browser.' };
+dictInsert['thesis.cite.libSaved'] = { bn: 'লাইব্রেরিতে যোগ হয়েছে — এখন {n}টি', hi: 'लाइब्रेरी में जुड़ा — अब {n}', en: 'Added to library — {n} entries now' };
+dictInsert['thesis.cite.libInserted'] = { bn: '{n}টি এন্ট্রি তালিকা হিসেবে বসানো হয়েছে', hi: '{n} प्रविष्टि सूची के रूप में डाली गई', en: '{n} entries inserted as a list' };
+dictInsert['thesis.cite.libInsertAll'] = { bn: 'সব তালিকা হিসেবে বসান ({n})', hi: 'सब सूची के रूप में डालें ({n})', en: 'Insert all as list ({n})' };
+dictInsert['thesis.cite.libCopyAll'] = { bn: 'সব কপি', hi: 'सब कॉपी', en: 'Copy all' };
+dictInsert['thesis.cite.libClear'] = { bn: 'খালি করুন', hi: 'खाली करें', en: 'Clear' };
+dictInsert['thesis.cite.libRemove'] = { bn: 'এই এন্ট্রি মুছুন', hi: 'यह प्रविष्टि हटाएँ', en: 'Remove this entry' };
+
+dictInsert['thesis.capt.title'] = { bn: 'চিত্র/টেবিল ক্যাপশন যোগ করুন', hi: 'चित्र/तालिका कैप्शन जोड़ें', en: 'Add figure/table captions' };
+dictInsert['thesis.capt.desc'] = { bn: 'কার্সরে স্ট্যান্ডার্ড নম্বরযুক্ত ক্যাপশন বসে — "চিত্র ৩.১: বিবরণ (উৎস)"। চিত্র/টেবিলের ঠিক নিচে কার্সর রেখে বসান; ক্রম নং স্বয়ংক্রিয় বাড়ে।', hi: 'कर्सर पर मानक क्रमांकित कैप्शन जुड़ता है — "चित्र 3.1: विवरण (स्रोत)"।', en: 'Inserts a standard numbered caption at the cursor — "Figure 3.1: Caption (Source)". Place the cursor right under the figure/table; the serial auto-increments.' };
+dictInsert['thesis.capt.kind'] = { bn: 'ধরন', hi: 'प्रकार', en: 'Kind' };
+dictInsert['thesis.capt.figure'] = { bn: 'চিত্র', hi: 'चित्र', en: 'Figure' };
+dictInsert['thesis.capt.table'] = { bn: 'টেবিল', hi: 'तालिका', en: 'Table' };
+dictInsert['thesis.capt.chapter'] = { bn: 'অধ্যায়', hi: 'अध्याय', en: 'Chapter' };
+dictInsert['thesis.capt.serial'] = { bn: 'ক্রম', hi: 'क्रम', en: 'Serial' };
+dictInsert['thesis.capt.text'] = { bn: 'ক্যাপশনের লেখা', hi: 'कैप्शन का टेक्स्ट', en: 'Caption text' };
+dictInsert['thesis.capt.text.ph'] = { bn: 'যেমন: মৌসুমভেদে পানির pH-এর তুলনা', hi: 'जैसे: मौसम अनुसार pH तुलना', en: 'e.g. Seasonal comparison of water pH' };
+dictInsert['thesis.capt.source'] = { bn: 'উৎস (ঐচ্ছিক)', hi: 'स्रोत (वैकल्पिक)', en: 'Source (optional)' };
+dictInsert['thesis.capt.source.ph'] = { bn: 'যেমন: নিজস্ব পর্যবেক্ষণ, ২০২৫', hi: 'जैसे: स्वयं का अवलोकन, 2025', en: 'e.g. Field survey, 2026' };
+dictInsert['thesis.capt.insert'] = { bn: 'ক্যাপশন বসান', hi: 'कैप्शन डालें', en: 'Insert caption' };
+dictInsert['thesis.capt.inserted'] = { bn: 'ক্যাপশন বসানো হয়েছে — ক্রম নং বেড়েছে', hi: 'कैप्शन डाला गया — क्रम बढ़ा', en: 'Caption inserted — serial incremented' };
+
+dictInsert['thesis.fDate'] = { bn: 'জমার তারিখ (শিরোনাম পাতায়)', hi: 'जमा तिथि (शीर्षक पेज पर)', en: 'Submission date (title page)' };
+dictInsert['thesis.fDate.ph'] = { bn: 'যেমন: মার্চ ২০২৬ / March 2026', hi: 'जैसे: मार्च 2026', en: 'e.g. March 2026' };
+dictInsert['thesis.fDedication'] = { bn: 'উৎসর্গের লেখা (খালি = স্থানধারক)', hi: 'समर्पण का टेक्स्ट (खाली = प्लेसहोल्डर)', en: 'Dedication text (blank = placeholder)' };
+dictInsert['thesis.fDedication.ph'] = { bn: 'যেমন: মা-বাবাকে', hi: 'जैसे: माता-पिता को', en: 'e.g. To my parents' };
+dictInsert['thesis.opt.dedication'] = { bn: 'উৎসর্গপত্র', hi: 'समर्पण-पत्र', en: 'Dedication' };
+dictInsert['thesis.univ.quick'] = { bn: 'দ্রুত পূরণ — বিশ্ববিদ্যালয়', hi: 'त्वरित भरण — विश्वविद्यालय', en: 'Quick fill — universities' };
+dictInsert['thesis.example'] = { bn: 'উদাহরণ দিয়ে পূরণ', hi: 'उदाहरण से भरें', en: 'Fill with example' };
+dictInsert['thesis.example.filled'] = { bn: 'উদাহরণ-তথ্য বসানো হয়েছে — দেখে নিজের তথ্য বদলান', hi: 'उदाहरण जानकारी भरी गई — अपनी जानकारी दें', en: 'Example details filled — replace them with yours' };
+dictInsert['thesis.guide.tools'] = { bn: 'স্টুডিওর টুল: "সূত্র" ট্যাবের লাইব্রেরিতে এন্ট্রি জমা রাখুন — শেষে এক ক্লিকে সাজানো তথ্যসূত্র-তালিকা; "AI খসড়া" ট্যাব একাডেমিক খসড়া লিখে দেয় (সম্পাদনা করে নিন); নির্মাণ-ট্যাবের ক্যাপশন-টুল "চিত্র ৩.১" নম্বর ঠিক রাখে।', hi: 'स्टूडियो टूल: लाइब्रेरी, AI ड्राफ्ट, कैप्शन-टूल।', en: 'Studio tools: the Citations library saves entries — one click gives you the sorted reference list; the AI Draft tab writes academic drafts you then edit; the caption tool keeps "Figure 3.1" numbering straight.' };

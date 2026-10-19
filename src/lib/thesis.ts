@@ -37,9 +37,14 @@ export interface ThesisMeta {
   session: string;
   supervisor: string;
   degreeName: string;
+  /** জমার তারিখ — শিরোনাম পাতার নিচে (যেমন: মার্চ ২০২৫ / March 2025) */
+  date: string;
+  /** উৎসর্গপত্রের লেখা (খালি হলে স্ট্যান্ডার্ড স্থানধারক) */
+  dedicationText: string;
 }
 
 export interface ThesisOptions {
+  dedication: boolean;
   declaration: boolean;
   certificate: boolean;
   acknowledgment: boolean;
@@ -54,6 +59,7 @@ export interface ThesisOptions {
 }
 
 export const DEFAULT_THESIS_OPTIONS: ThesisOptions = {
+  dedication: false,
   declaration: true,
   certificate: true,
   acknowledgment: true,
@@ -113,6 +119,10 @@ interface L10n {
   figLabel: string; // "চিত্র" / "Figure"
   tblLabel: string; // "টেবিল" / "Table"
   writeHere: string;
+  dedication: string;
+  dedicationDefault: string;
+  dateLabel: string;
+  sourceLabel: string;
 }
 
 const BN: L10n = {
@@ -166,6 +176,10 @@ const BN: L10n = {
   figLabel: 'চিত্র',
   tblLabel: 'টেবিল',
   writeHere: 'এখানে লিখুন…',
+  dedication: 'উৎসর্গপত্র',
+  dedicationDefault: 'যাঁদের ভালোবাসা, ত্যাগ ও দোয়ায় আমি আজকের পথ পেয়েছি —\nমা-বাবাকে',
+  dateLabel: 'জমার তারিখ',
+  sourceLabel: 'উৎস',
 };
 
 const EN: L10n = {
@@ -219,6 +233,10 @@ const EN: L10n = {
   figLabel: 'Figure',
   tblLabel: 'Table',
   writeHere: 'Write here…',
+  dedication: 'Dedication',
+  dedicationDefault: 'To my parents —\nwhose love, sacrifice and prayers lit every step of this journey',
+  dateLabel: 'Date of submission',
+  sourceLabel: 'Source',
 };
 
 const L = (lang: ThesisLang): L10n => (lang === 'en' ? EN : BN);
@@ -477,6 +495,7 @@ function titlePage(meta: ThesisMeta): ThesisPage {
   if (meta.supervisor.trim()) parts.push(C(`<b>${esc(Lx.under)}</b><br><b>${esc(Lx.supervisorLabel)}:</b> ${esc(meta.supervisor.trim())}`));
   if (meta.session.trim()) parts.push(C(`<b>${esc(Lx.sessionLabel)}:</b> ${esc(meta.session.trim())}`));
   if (meta.university.trim()) parts.push(C(`<b>${esc(meta.university.trim())}</b>`));
+  if (meta.date.trim()) parts.push(C(`<span style="color:#374151;">${esc(meta.date.trim())}</span>`));
   return { html: parts.join(''), noChrome: true, numberRestart: { from: 1, format: 'roman' } };
 }
 
@@ -494,6 +513,25 @@ function signRow(label: string, dateLabel: string): string {
 
 function tocPage(lang: ThesisLang): ThesisPage {
   return { html: tocInsertHtml([], L(lang).toc), noChrome: false };
+}
+
+function dedicationPage(meta: ThesisMeta): ThesisPage {
+  const Lx = L(meta.lang);
+  const text = meta.dedicationText.trim() || Lx.dedicationDefault;
+  const lines = text.split('\n').map((ln) => C(`<i>${esc(ln)}</i>`)).join('');
+  return {
+    html: [CH(Lx.dedication), '<div style="margin-top:3em;"></div>', lines].join(''),
+    noChrome: false,
+  };
+}
+
+/** চিত্র/টেবিল ক্যাপশন — "চিত্র ৩.১: বিবরণ (উৎস)" কেন্দ্রীভূত */
+export function captionHtml(kind: 'figure' | 'table', chapter: number, serial: number, caption: string, lang: ThesisLang, source?: string): string {
+  const Lx = L(lang);
+  const label = kind === 'figure' ? Lx.figLabel : Lx.tblLabel;
+  const cap = caption.trim() || (lang === 'en' ? 'Caption text…' : 'ক্যাপশনের লেখা…');
+  const src = source?.trim();
+  return `<p style="text-align:center;margin-top:0.5em;"><b>${esc(label)} ${num(chapter, lang)}.${num(serial, lang)}:</b> ${esc(cap)}${src ? ` <span style="color:#6b7280;">(${esc(Lx.sourceLabel)}: ${esc(src)})</span>` : ''}</p>`;
 }
 
 function listsPage(lang: ThesisLang): ThesisPage {
@@ -562,6 +600,7 @@ export function buildThesisPages(meta: ThesisMeta, opts: ThesisOptions): ThesisP
 
   pages.push(titlePage(meta));
 
+  if (opts.dedication) pages.push(dedicationPage(meta));
   if (opts.declaration) pages.push(singleDocPage(Lx.declaration, Lx.declarationBody, signRow(Lx.declSign, Lx.declDate)));
   if (opts.certificate) pages.push(singleDocPage(Lx.certificate, Lx.certificateBody, signRow(`${Lx.supervisorLabel}: ${meta.supervisor || '…'}`, Lx.declDate)));
   if (opts.acknowledgment) pages.push(singleDocPage(Lx.acknowledgment, Lx.ackBody));
@@ -804,3 +843,69 @@ export function thesisFormatPreset(lang: ThesisLang): {
 
 /** বাঁধাই-স্ট্যান্ডার্ড মার্জিন (বাম ১.৫", বাকি ১") — ইঞ্চি এককে */
 export const THESIS_MARGINS = { top: 1, bottom: 1, left: 1.5, right: 1, gutter: 0 };
+
+// ─── সূত্র-লাইব্রেরি (Citation Library) ───
+
+/**
+ * লাইব্রেরির সব এন্ট্রি থিসিস-স্ট্যান্ডার্ড ক্রমে সাজিয়ে তালিকা-HTML প্যারার অ্যারে দেয়।
+ *  - APA/MLA/Harvard/Chicago: লেখকের নাম অনুযায়ী বর্ণানুক্রম (বাংলা-সচেতন locale)
+ *  - IEEE: উদ্ধৃতি-ক্রম (তালিকার ক্রম) — [1], [2]… নম্বর-উপসর্গ (IEEE-স্ট্যান্ডার্ড)
+ */
+export function formatReferenceLibrary(entries: CiteEntry[]): string[] {
+  const valid = entries.filter((e) => e.title.trim() && e.year.trim());
+  if (valid.length === 0) return [];
+  if (valid[0].style === 'ieee') {
+    return valid.map((e, i) => `<p style="padding-left:2.5em;text-indent:-2.5em;">[${i + 1}] ${formatReference(e)}</p>`);
+  }
+  const sorted = [...valid].sort((x, y) => x.authors.trim().localeCompare(y.authors.trim(), 'bn'));
+  return sorted.map((e) => `<p style="padding-left:2.5em;text-indent:-2.5em;">${formatReference(e)}</p>`);
+}
+
+// ─── বিশ্ববিদ্যালয় দ্রুত-পূরণ (প্রিসেট) ───
+
+export const BD_UNIVERSITIES: Array<{ id: string; name: string; bn: string }> = [
+  { id: 'du', name: 'University of Dhaka', bn: 'ঢাকা বিশ্ববিদ্যালয়' },
+  { id: 'nu', name: 'National University, Bangladesh', bn: 'জাতীয় বিশ্ববিদ্যালয়' },
+  { id: 'ru', name: 'University of Rajshahi', bn: 'রাজশাহী বিশ্ববিদ্যালয়' },
+  { id: 'cu', name: 'University of Chittagong', bn: 'চট্টগ্রাম বিশ্ববিদ্যালয়' },
+  { id: 'ju', name: 'Jahangirnagar University', bn: 'জাহাঙ্গীরনগর বিশ্ববিদ্যালয়' },
+  { id: 'bu', name: 'Bangladesh Agricultural University', bn: 'বাংলাদেশ কৃষি বিশ্ববিদ্যালয়' },
+  { id: 'buet', name: 'Bangladesh University of Engineering and Technology', bn: 'বাংলাদেশ প্রকৌশল বিশ্ববিদ্যালয় (বুয়েট)' },
+  { id: 'bsmrmu', name: 'Bangabandhu Sheikh Mujibur Rahman Maritime University', bn: 'বঙ্গবন্ধু শেখ মুজিবুর রহমান মেরিটাইম বিশ্ববিদ্যালয়' },
+];
+
+// ─── উদাহরণ-মেটা (এক ক্লিকে ফিল্ড পূরণ — ট্রাই করার জন্য) ───
+
+export function exampleMeta(lang: ThesisLang, discipline: ThesisDiscipline): ThesisMeta {
+  return lang === 'en'
+    ? {
+        lang, level: 'masters',
+        discipline,
+        title: discipline === 'business'
+          ? 'Impact of Mobile Banking on Rural Financial Inclusion: Evidence from Bangladesh'
+          : discipline === 'arts'
+            ? 'Folk Songs of the Padma Basin: A Study of Continuity and Change'
+            : 'Water Quality and Fish Diversity of the Padma River: A Seasonal Assessment',
+        university: 'University of Dhaka',
+        department: discipline === 'business' ? 'Management' : discipline === 'arts' ? 'Bangla' : 'Zoology',
+        author: 'Md. Rahim Uddin', roll: '2023-MZ-045', session: '2022–23',
+        supervisor: 'Prof. Dr. Salma Khatun', degreeName: '',
+        date: 'March 2026',
+        dedicationText: 'To my parents —\nwhose love and sacrifice lit every step of this journey',
+      }
+    : {
+        lang, level: 'masters',
+        discipline,
+        title: discipline === 'business'
+          ? 'মোবাইল ব্যাংকিং ও পল্লি আর্থিক অন্তর্ভুক্তি: বাংলাদেশের প্রেক্ষাপট'
+          : discipline === 'arts'
+            ? 'পদ্মা অববাহিকার লোকগান: ধারাবাহিকতা ও পরিবর্তনের একটি পাঠ'
+            : 'পদ্মা নদীর পানির গুণমান ও মাছের বৈচিত্র্য: একটি মৌসুমি মূল্যায়ন',
+        university: 'ঢাকা বিশ্ববিদ্যালয়',
+        department: discipline === 'business' ? 'ব্যবস্থাপনা' : discipline === 'arts' ? 'বাংলা' : 'প্রাণিবিদ্যা',
+        author: 'মো. রহিম উদ্দিন', roll: '২০২৩-প্রা-০৪৫', session: '২০২২–২৩',
+        supervisor: 'প্রফেসর ড. সালমা খাতুন', degreeName: '',
+        date: 'মার্চ ২০২৬',
+        dedicationText: 'মা-বাবাকে —\nযাঁর ভালোবাসা, ত্যাগ ও দোয়ায় আমি আজকের পথ পেয়েছি',
+      };
+}
