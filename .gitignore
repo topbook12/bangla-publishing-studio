@@ -73,4 +73,5 @@ server.log
 
 # scratch verification artifacts (local only)
 /scratch/
-upload/
+/upload/
+/e2e-shots/

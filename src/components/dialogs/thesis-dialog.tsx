@@ -268,8 +268,11 @@ export function ThesisDialog() {
       };
       const pages = buildThesisPages(meta, opts);
 
+      // ডকুমেন্ট-স্তরের অ্যাকশন — সম্পূর্ণ কাঠামো সবসময় ডকুমেন্টের শেষে যোগ হয়।
+      // activePageId-এর পরে বসালে মাঝ-ডকুমেন্টে কাঠামো ঢুকে চলমান লেখা দু-ভাগ হয়ে
+      // যায় (যেমন: রেফারেন্স ও পরিশিষ্টের মাঝে) — তাই শেষ পাতার পরেই বসানো নিরাপদ।
       const s = useEditorStore.getState();
-      let after = s.activePageId ?? s.pages[s.pages.length - 1]?.id ?? null;
+      let after = s.pages[s.pages.length - 1]?.id ?? null;
       const firstId = (() => {
         const id = s.addPage(after, pages[0].html);
         s.updatePage(id, { noChrome: pages[0].noChrome, numberRestart: pages[0].numberRestart ?? null });

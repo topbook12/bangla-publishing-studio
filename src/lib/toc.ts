@@ -50,7 +50,10 @@ export function updateTocNodes(editors: Editor[], entries: TocEntry[], title: st
       if (node.type.name === 'tocBlock') {
         // ম্যানুয়াল সূচি — ব্যবহারকারীর লেখা এন্ট্রি স্বয়ংক্রিয় ইঞ্জিন কখনো বদলাবে না
         if (node.attrs.manual !== true) {
-          tr.setNodeMarkup(pos, undefined, { entries, title });
+          // টাইটেল প্রতি-ব্লকে নিজেরটাই থাকে (থিসিস-স্টুডিও একই ডকুমেন্টে বাংলা
+          // 'সূচিপত্র' + ইংরেজি 'Table of Contents' রাখতে পারে) — প্যারামিটারটি
+          // কেবল খালি-টাইটেল ব্লকের ফলব্যাক
+          tr.setNodeMarkup(pos, undefined, { entries, title: (node.attrs.title as string) || title });
           found = true;
         }
       }
