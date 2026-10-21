@@ -459,55 +459,122 @@ function esc(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+/**
+ * থিসিস-ডিজাইন টোকেন — গভীর একাডেমিক সবুজ-কালি (অ্যাপ-ব্র্যান্ডের সাথে মানানসই,
+ * প্রিন্ট-বান্ধব)। সব রং span-মার্কে বসে — এডিটর পার্সার p/h1-এর ইনলাইন color
+ * ফেলে দেয়, span-style টিকে থাকে; তাই প্রতিটি রঙিন লেখা span-এ মোড়ানো।
+ */
+const THESIS_ACCENT = '#0f5d40';
+const THESIS_SOFT = '#6b7280';
+
+const spanAcc = (inner: string) => `<span style="color:${THESIS_ACCENT};">${inner}</span>`;
+const spanSoft = (inner: string) => `<span style="color:${THESIS_SOFT};">${inner}</span>`;
+
 /** কেন্দ্রীভূত প্যারা — সরাসরি ইনপুট কেবল অভ্যন্তরীণ/esc-কৃত স্ট্রিং (esc আবার চালায় না) */
-const C = (s: string) => `<p style="text-align:center;">${s}</p>`;
-const CH = (s: string, extra = '') => `<h1 style="text-align:center;${extra}">${esc(s)}</h1>`;
+const C = (s: string, extra = '') => `<p style="text-align:center;${extra}">${s}</p>`;
+
+/** আলংকারিক রুল — এডিটরের fancy-divider নোড (single/double/flourish রেন্ডার হয়) */
+const rule = (style: 'single' | 'double' | 'flourish' = 'double') =>
+  `<hr class="fancy-divider" data-style="${style}">`;
+
+/** সামনের-অংশের শিরোনাম — বর্ণ-ফাঁকসহ কেন্দ্র-শিরোনাম + নিচে সরু রুল (প্রিমিয়াম ফ্রন্ট-ম্যাটার) */
+function fmHeading(title: string): string {
+  return [
+    `<h1 style="text-align:center; letter-spacing:2.5px; margin-bottom:0.15em;">${spanAcc(`<strong>${esc(title)}</strong>`)}</h1>`,
+    rule('single'),
+  ].join('');
+}
+
+/** সুপারিশ/নোট-ধাঁচের নরম তির্যক পঙক্তি — span-রং (p-রং এডিটরে পড়ে যায়) */
+function softItalic(text: string): string {
+  return `<p style="margin:0.4em 0;"><em>${spanSoft(esc(text))}</em></p>`;
+}
 
 function hintPara(hint: string): string {
-  return `<p style="text-align:center;color:#8a8f98;font-style:italic;font-size:0.92em;">— ${esc(hint)} —</p>`;
+  return `<p style="text-align:center; margin:0.1em 0 0.9em;"><em>${spanSoft(`— ${esc(hint)} —`)}</em></p>`;
 }
 
 function sectionHeading(num_: number, secNum: number, title: string, lang: ThesisLang): string {
-  return `<h2>${num(num_, lang)}.${num(secNum, lang)} ${esc(title)}</h2>`;
+  return `<h2><span style="color:${THESIS_ACCENT};">${esc(num(num_, lang) + '.' + num(secNum, lang))}</span> ${esc(title)}</h2>`;
 }
 
 // ─── পাতা-নির্মাতা ───
+
+/** শিরোনাম-পাতার দুই-স্তম্ভ মেটা-টেবিল (বাঁ: গবেষক, ডান: সুপারভাইজার) */
+function titleMetaTable(left: string[], right: string[]): string {
+  const cell = (label: string, rows: string[]) =>
+    `<td data-border="none" style="border:none; width:50%; vertical-align:top; padding:0 12px">` +
+    `<p style="text-align:center; margin:0 0 0.25em; letter-spacing:1.5px;">${spanSoft(esc(label))}</p>` +
+    rows.map((r) => `<p style="text-align:center; margin:0.1em 0; font-size:1.05em;">${r}</p>`).join('') +
+    `</td>`;
+  return `<table style="width:100%; margin-top:0.6em;"><tr>${cell('', left)}${cell('', right)}</tr></table>`;
+}
 
 function titlePage(meta: ThesisMeta): ThesisPage {
   const Lx = L(meta.lang);
   const en = meta.lang === 'en';
   const parts: string[] = [];
   if (meta.university.trim()) {
-    parts.push(`<h1 style="text-align:center;font-size:1.5em;">${esc(meta.university.trim())}</h1>`);
+    parts.push(
+      `<h1 style="text-align:center; letter-spacing:1px; margin:0.2em 0 0.1em;">` +
+      spanAcc(esc(meta.university.trim())) + `</h1>`,
+    );
   }
   if (meta.department.trim()) {
-    parts.push(C(`${esc(Lx.deptLabel)} ${esc(meta.department.trim())}`));
+    parts.push(C(`<span style="font-size:1.02em; letter-spacing:0.5px;">${esc(Lx.deptLabel)} ${esc(meta.department.trim())}</span>`, 'margin:0.1em 0;'));
   }
-  parts.push('<hr>');
-  parts.push(C(esc(en ? docKind(meta).toUpperCase() : docKind(meta))));
-  parts.push(`<h1 style="text-align:center;font-size:1.35em;line-height:1.45;">${esc(meta.title || (en ? 'Thesis Title Goes Here' : 'থিসিসের শিরোনাম এখানে'))}</h1>`);
-  parts.push(C(esc(Lx.submitted)));
-  parts.push(C(esc(degreeLine(meta))));
-  parts.push('<hr>');
-  if (meta.author.trim()) parts.push(C(`<b>${esc(Lx.by)}:</b> ${esc(meta.author.trim())}`));
-  if (meta.roll.trim()) parts.push(C(`<b>${esc(Lx.rollLabel)}:</b> ${esc(meta.roll.trim())}`));
-  parts.push('<hr>');
-  if (meta.supervisor.trim()) parts.push(C(`<b>${esc(Lx.under)}</b><br><b>${esc(Lx.supervisorLabel)}:</b> ${esc(meta.supervisor.trim())}`));
-  if (meta.session.trim()) parts.push(C(`<b>${esc(Lx.sessionLabel)}:</b> ${esc(meta.session.trim())}`));
-  if (meta.university.trim()) parts.push(C(`<b>${esc(meta.university.trim())}</b>`));
-  if (meta.date.trim()) parts.push(C(`<span style="color:#374151;">${esc(meta.date.trim())}</span>`));
+  parts.push(rule('flourish'));
+  // ডকুমেন্ট-ধরন — বর্ণ-ফাঁকসহ ছোট লেবেল
+  parts.push(
+    C(`<span style="letter-spacing:2.5px; font-size:0.85em;"><strong>${esc(en ? docKind(meta).toUpperCase() : docKind(meta))}</strong></span>`, 'margin:0.8em 0 0.2em;'),
+  );
+  // মূল শিরোনাম
+  parts.push(
+    `<h1 style="text-align:center; line-height:1.5; margin:0.15em 0.6em 0.3em;">` +
+    `<strong>${esc(meta.title || (en ? 'Thesis Title Goes Here' : 'থিসিসের শিরোনাম এখানে'))}</strong></h1>`,
+  );
+  parts.push(C(`<em>${spanSoft(esc(Lx.submitted))}</em>`, 'margin:0.4em 0 0.1em;'));
+  parts.push(C(`<strong><span style="color:${THESIS_ACCENT}; font-size:1.08em;">${esc(degreeLine(meta))}</span></strong>`, 'margin:0.1em 0;'));
+  parts.push(rule('double'));
+  // গবেষক ও সুপারভাইজার — দুই-স্তম্ভ ভারসাম্য
+  const leftCol: string[] = [];
+  if (meta.author.trim()) leftCol.push(`<strong>${esc(meta.author.trim())}</strong>`);
+  if (meta.roll.trim()) leftCol.push(spanSoft(esc(`${Lx.rollLabel}: ${meta.roll.trim()}`)));
+  const rightCol: string[] = [];
+  if (meta.supervisor.trim()) rightCol.push(`<strong>${esc(meta.supervisor.trim())}</strong>`);
+  if (meta.session.trim()) rightCol.push(spanSoft(esc(`${Lx.sessionLabel}: ${meta.session.trim()}`)));
+  if (leftCol.length || rightCol.length) {
+    parts.push(
+      titleMetaTable(
+        leftCol.length ? leftCol : ['&nbsp;'],
+        rightCol.length ? rightCol : ['&nbsp;'],
+      ),
+    );
+  }
+  // নিচের ব্লক — প্রতিষ্ঠান ও তারিখ
+  const bottom: string[] = [];
+  if (meta.university.trim()) bottom.push(C(`<strong>${esc(meta.university.trim())}</strong>`, 'margin:0.9em 0 0.05em;'));
+  if (meta.date.trim()) bottom.push(C(spanAcc(esc(meta.date.trim())), 'margin:0.05em 0;'));
+  if (bottom.length) parts.push(rule('single'), ...bottom);
   return { html: parts.join(''), noChrome: true, numberRestart: { from: 1, format: 'roman' } };
 }
 
 function singleDocPage(title: string, bodyParas: string[], extra?: string): ThesisPage {
-  return { html: [CH(title), ...bodyParas.map((p) => `<p>${p}</p>`), ...(extra ? [extra] : [])].join(''), noChrome: false };
+  return {
+    html: [
+      fmHeading(title),
+      ...bodyParas.map((p) => `<p style="text-align:justify; margin:0.55em 0;">${p}</p>`),
+      ...(extra ? [extra] : []),
+    ].join(''),
+    noChrome: false,
+  };
 }
 
 function signRow(label: string, dateLabel: string): string {
   return [
-    '<p style="text-align:right;margin-top:2em;">____________________</p>',
-    `<p style="text-align:right;"><b>${esc(label)}</b></p>`,
-    `<p style="text-align:right;">${esc(dateLabel)}: ………………………</p>`,
+    '<p style="text-align:right; margin-top:2.4em;">______________________</p>',
+    `<p style="text-align:right; margin:0;"><strong>${esc(label)}</strong></p>`,
+    `<p style="text-align:right; margin:0;"><em>${spanSoft(`${esc(dateLabel)}: ………………`)}</em></p>`,
   ].join('');
 }
 
@@ -518,9 +585,14 @@ function tocPage(lang: ThesisLang): ThesisPage {
 function dedicationPage(meta: ThesisMeta): ThesisPage {
   const Lx = L(meta.lang);
   const text = meta.dedicationText.trim() || Lx.dedicationDefault;
-  const lines = text.split('\n').map((ln) => C(`<i>${esc(ln)}</i>`)).join('');
+  const lines = text.split('\n').map((ln) => C(`<em>${esc(ln)}</em>`, 'margin:0.35em 0;')).join('');
   return {
-    html: [CH(Lx.dedication), '<div style="margin-top:3em;"></div>', lines].join(''),
+    html: [
+      `<p style="text-align:center; margin:2.2em 0 0.1em; letter-spacing:2px;">${spanAcc(`<strong><span style="font-size:0.9em;">${esc(Lx.dedication)}</span></strong>`)}</p>`,
+      rule('flourish'),
+      '<div style="margin-top:2.2em;"></div>',
+      lines,
+    ].join(''),
     noChrome: false,
   };
 }
@@ -531,21 +603,21 @@ export function captionHtml(kind: 'figure' | 'table', chapter: number, serial: n
   const label = kind === 'figure' ? Lx.figLabel : Lx.tblLabel;
   const cap = caption.trim() || (lang === 'en' ? 'Caption text…' : 'ক্যাপশনের লেখা…');
   const src = source?.trim();
-  return `<p style="text-align:center;margin-top:0.5em;"><b>${esc(label)} ${num(chapter, lang)}.${num(serial, lang)}:</b> ${esc(cap)}${src ? ` <span style="color:#6b7280;">(${esc(Lx.sourceLabel)}: ${esc(src)})</span>` : ''}</p>`;
+  return `<p style="text-align:center; margin-top:0.5em;"><strong>${esc(label)} ${num(chapter, lang)}.${num(serial, lang)}:</strong> ${esc(cap)}${src ? ` <em>${spanSoft(`(${esc(Lx.sourceLabel)}: ${esc(src)})`)}</em>` : ''}</p>`;
 }
 
 function listsPage(lang: ThesisLang): ThesisPage {
   const Lx = L(lang);
   return {
     html: [
-      CH(Lx.figures),
-      `<p style="color:#8a8f98;font-style:italic;">${esc(Lx.listsNote)}</p>`,
-      `<p>${esc(Lx.figLabel)} ${num(1, lang)}: …………………………… ${esc(lang === 'en' ? 'p.' : 'পৃষ্ঠা')} …</p>`,
-      `<p>${esc(Lx.figLabel)} ${num(2, lang)}: …………………………… ${esc(lang === 'en' ? 'p.' : 'পৃষ্ঠা')} …</p>`,
-      CH(Lx.tables),
-      `<p style="color:#8a8f98;font-style:italic;">${esc(Lx.listsNote)}</p>`,
-      `<p>${esc(Lx.tblLabel)} ${num(1, lang)}: …………………………… ${esc(lang === 'en' ? 'p.' : 'পৃষ্ঠা')} …</p>`,
-      `<p>${esc(Lx.tblLabel)} ${num(2, lang)}: …………………………… ${esc(lang === 'en' ? 'p.' : 'পৃষ্ঠা')} …</p>`,
+      fmHeading(Lx.figures),
+      softItalic(Lx.listsNote),
+      `<p style="margin:0.5em 0;">${esc(Lx.figLabel)} ${num(1, lang)}: …………………………… ${esc(lang === 'en' ? 'p.' : 'পৃষ্ঠা')} …</p>`,
+      `<p style="margin:0.5em 0;">${esc(Lx.figLabel)} ${num(2, lang)}: …………………………… ${esc(lang === 'en' ? 'p.' : 'পৃষ্ঠা')} …</p>`,
+      fmHeading(Lx.tables),
+      softItalic(Lx.listsNote),
+      `<p style="margin:0.5em 0;">${esc(Lx.tblLabel)} ${num(1, lang)}: …………………………… ${esc(lang === 'en' ? 'p.' : 'পৃষ্ঠা')} …</p>`,
+      `<p style="margin:0.5em 0;">${esc(Lx.tblLabel)} ${num(2, lang)}: …………………………… ${esc(lang === 'en' ? 'p.' : 'পৃষ্ঠা')} …</p>`,
     ].join(''),
     noChrome: false,
   };
@@ -558,7 +630,7 @@ function abbreviationsPage(lang: ThesisLang): ThesisPage {
     .join('');
   return {
     html: [
-      CH(Lx.abbreviations),
+      fmHeading(Lx.abbreviations),
       `<table><tbody><tr><th>${esc(Lx.abbrHead[0])}</th><th>${esc(Lx.abbrHead[1])}</th></tr>${rows}</tbody></table>`,
     ].join(''),
     noChrome: false,
@@ -568,9 +640,13 @@ function abbreviationsPage(lang: ThesisLang): ThesisPage {
 function chapterPage(meta: ThesisMeta, ch: ThesisChapter): ThesisPage {
   const Lx = L(meta.lang);
   const parts: string[] = [
-    CH(`${Lx.chapter} ${num(ch.num, meta.lang)}: ${ch.title}`),
+    // অধ্যায়-ওপেনার — বর্ণ-ফাঁকসহ ছোট লেবেল + বড় শিরোনাম + ডাবল রুল
+    C(`<span style="letter-spacing:3px; font-size:0.88em;"><strong>${esc(Lx.chapter)} ${num(ch.num, meta.lang)}</strong></span>`, 'margin:1em 0 0.1em;'),
+    `<h1 style="text-align:center; margin:0.1em 0 0.2em;">${esc(ch.title)}</h1>`,
+    rule('double'),
   ];
   ch.sections.forEach((s, i) => {
+    parts.push(`<div style="margin-top:0.5em;"></div>`);
     parts.push(sectionHeading(ch.num, i + 1, s.title, meta.lang));
     parts.push(hintPara(s.hint));
   });
@@ -580,7 +656,11 @@ function chapterPage(meta: ThesisMeta, ch: ThesisChapter): ThesisPage {
 function referencesPage(lang: ThesisLang): ThesisPage {
   const Lx = L(lang);
   return {
-    html: [CH(Lx.references), `<p style="color:#8a8f98;font-style:italic;">${esc(Lx.referencesNote)}</p>`, `<p>${esc(Lx.referenceSample)}</p>`].join(''),
+    html: [
+      fmHeading(Lx.references),
+      softItalic(Lx.referencesNote),
+      `<p style="padding-left:2.5em; text-indent:-2.5em; margin:0.6em 0;">${esc(Lx.referenceSample)}</p>`,
+    ].join(''),
     noChrome: false,
   };
 }
@@ -588,7 +668,7 @@ function referencesPage(lang: ThesisLang): ThesisPage {
 function appendixPage(lang: ThesisLang): ThesisPage {
   const Lx = L(lang);
   return {
-    html: [CH(Lx.appendix), `<p style="color:#8a8f98;font-style:italic;">${esc(Lx.appendixNote)}</p>`].join(''),
+    html: [fmHeading(Lx.appendix), softItalic(Lx.appendixNote)].join(''),
     noChrome: false,
   };
 }
@@ -607,9 +687,9 @@ export function buildThesisPages(meta: ThesisMeta, opts: ThesisOptions): ThesisP
   if (opts.abstract) {
     pages.push({
       html: [
-        CH(Lx.abstract),
-        `<p style="color:#8a8f98;font-style:italic;">${esc(Lx.abstractBody)}</p>`,
-        `<p><b>${esc(Lx.keywords)}:</b> ${esc(meta.lang === 'en' ? 'keyword 1; keyword 2; keyword 3' : 'কীওয়ার্ড ১; কীওয়ার্ড ২; কীওয়ার্ড ৩')}</p>`,
+        fmHeading(Lx.abstract),
+        softItalic(Lx.abstractBody),
+        `<p style="margin:0.7em 0;"><strong>${esc(Lx.keywords)}:</strong> ${esc(meta.lang === 'en' ? 'keyword 1; keyword 2; keyword 3' : 'কীওয়ার্ড ১; কীওয়ার্ড ২; কীওয়ার্ড ৩')}</p>`,
       ].join(''),
       noChrome: false,
     });

@@ -1149,6 +1149,50 @@ export const AdvancedTypography = Extension.create({
               return v ? { style: `background-color: ${v}` } : {};
             },
           },
+          // প্যারার লেখার রং — টেমপ্লেট/পেস্ট থেকে আসা <p style="color:…">
+          // নীরবে হারিয়ে যেত; শেডিং-এর মতোই রাউন্ড-ট্রিপে টিকে থাকে
+          textColor: {
+            default: null,
+            parseHTML: (el) => el.style.color || null,
+            renderHTML: (attrs) => {
+              const v = (attrs as { textColor?: string | null }).textColor;
+              return v ? { style: `color: ${v}` } : {};
+            },
+          },
+          // প্যারা-নিচের রুল (Word-এর paragraph border) — রেজিউমে-সেকশন শিরোনামের
+          // border-bottom রাউন্ড-ট্রিপে টিকে থাকে (রং + মোটা + ধরন + ফাঁক)
+          borderBottomColor: {
+            default: null,
+            parseHTML: (el) => el.style.borderBottomColor || null,
+            renderHTML: (attrs) => {
+              const v = (attrs as { borderBottomColor?: string | null }).borderBottomColor;
+              return v ? { style: `border-bottom-color: ${v}` } : {};
+            },
+          },
+          borderBottomWidth: {
+            default: null,
+            parseHTML: (el) => el.style.borderBottomWidth || null,
+            renderHTML: (attrs) => {
+              const v = (attrs as { borderBottomWidth?: string | null }).borderBottomWidth;
+              return v ? { style: `border-bottom-width: ${v}` } : {};
+            },
+          },
+          borderBottomStyle: {
+            default: null,
+            parseHTML: (el) => el.style.borderBottomStyle || null,
+            renderHTML: (attrs) => {
+              const v = (attrs as { borderBottomStyle?: string | null }).borderBottomStyle;
+              return v ? { style: `border-bottom-style: ${v}` } : {};
+            },
+          },
+          paddingBottom: {
+            default: null,
+            parseHTML: (el) => el.style.paddingBottom || null,
+            renderHTML: (attrs) => {
+              const v = (attrs as { paddingBottom?: string | null }).paddingBottom;
+              return v ? { style: `padding-bottom: ${v}` } : {};
+            },
+          },
         },
       },
       {
@@ -1201,6 +1245,7 @@ export const AdvancedTypography = Extension.create({
         const cleared = {
           wordSpacing: null, letterSpacing: null, spaceBefore: null, spaceAfter: null,
           firstLineIndent: null, indentLeft: null, indentRight: null, shading: null,
+          textColor: null, borderBottomColor: null, borderBottomWidth: null, borderBottomStyle: null, paddingBottom: null,
         };
         commands.updateAttributes('paragraph', cleared);
         commands.updateAttributes('heading', cleared);
