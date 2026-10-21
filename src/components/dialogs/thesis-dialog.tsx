@@ -29,7 +29,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useUiStore } from '@/lib/ui-store';
 import { useEditorStore } from '@/lib/store';
-import { getEditor } from '@/lib/editor-registry';
+import { getEditor, insertBlocksAtCursor } from '@/lib/editor-registry';
 import { toast } from 'sonner';
 import { useT } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
@@ -232,17 +232,8 @@ export function ThesisDialog() {
       toast.error(tt('ai.noEditor'));
       return false;
     }
-    try {
-      ed.chain().focus().insertContent(html).run();
-      return true;
-    } catch {
-      try {
-        ed.chain().focus().insertContentAt(ed.state.doc.content.size, html).run();
-        return true;
-      } catch {
-        return false;
-      }
-    }
+    // Word-অনুরূপ: প্রথম ব্লকের শুরুতে বসালে ফাঁকা শিরোনাম না রেখে ব্লকের আগে বসে
+    return insertBlocksAtCursor(ed, html);
   };
 
   // ── থিসিস কাঠামো নির্মাণ ──

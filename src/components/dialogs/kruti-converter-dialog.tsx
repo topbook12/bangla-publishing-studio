@@ -18,7 +18,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useUiStore } from '@/lib/ui-store';
 import { useEditorStore } from '@/lib/store';
-import { getEditor } from '@/lib/editor-registry';
+import { getEditor, insertBlocksAtCursor } from '@/lib/editor-registry';
 import { convertKruti, KRUTI_SAMPLE, type KrutiDirection } from '@/lib/kruti';
 import { useT } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
@@ -89,7 +89,8 @@ export function KrutiConverterDialog() {
       .split('\n')
       .map((line) => `<p>${escapeHtml(line) || '<br>'}</p>`)
       .join('');
-    ed.chain().focus().insertContent(html).run();
+    // Word-অনুরূপ: প্রথম ব্লকের শুরুতে বসালে ফাঁকা শিরোনাম না রেখে ব্লকের আগে বসে
+    insertBlocksAtCursor(ed, html);
     toast.success(tt('kruti.inserted'));
     close();
   };
