@@ -1,23 +1,24 @@
 /**
  * ডকুমেন্ট স্টুডিও (Document Studio) — UI অভিধান
- * প্রশ্নপত্র/সাজেশনের পাশাপাশি ২৯ ধরনের প্রথাসিদ্ধ বাংলাদেশি ডকুমেন্ট-নকশা।
+ * প্রশ্নপত্র/সাজেশনের পাশাপাশি ৫২ ধরনের বিশ্বমানের ডকুমেন্ট-নকশা
+ * (৯ বৈশ্বিক ক্যাটাগরি + বাংলাদেশ-ভারত আঞ্চলিক সংগ্রহ)।
  */
 
 export const dictDocumentStudio = {
   // ── Insert ট্যাবে এন্ট্রি ──
   'ds.entry': { bn: 'ডকুমেন্ট', hi: 'दस्तावेज़', en: 'Document' },
   'ds.entry.tip': {
-    bn: 'ডকুমেন্ট স্টুডিও — সনদ, দরখাস্ত, দলিল, ইনভয়েস, রুটিন, পোস্টারসহ ২৯ ফরম্যাট',
-    hi: 'दस्तावेज़ स्टूडियो — 29 प्रारूप',
-    en: 'Document Studio — 29 ready formats: certificates, applications, deeds, invoices…',
+    bn: 'ডকুমেন্ট স্টুডিও — রেজিউমে, চিঠি, ইনভয়েস, চুক্তি, সনদ, রুটিন, পোস্টারসহ ৫২ ফরম্যাট',
+    hi: 'दस्तावेज़ स्टूडियो — 52 प्रारूप',
+    en: 'Document Studio — 52 ready formats: resumes, letters, invoices, contracts, certificates…',
   },
 
   // ── ডায়ালগ শিরোনাম ──
   'ds.title': { bn: 'ডকুমেন্ট স্টুডিও', hi: 'दस्तावेज़ स्टूडियो', en: 'Document Studio' },
   'ds.desc': {
-    bn: 'প্রশ্নপত্র-সাজেশনের পাশাপাশি সনদ, দরখাস্ত, দলিল, অফিস-পত্র, ব্যবসা, শিক্ষা, অনুষ্ঠান, চিকিৎসা ও প্রচার — ৯ ক্যাটাগরিতে ২৯টি বাংলাদেশ-প্রথার প্রস্তুত নকশা। ফরম পূরণ করুন, প্রিভিউ দেখুন, পাতায় বসান।',
-    hi: '29 प्रारूप — प्रमाणपत्र, आवेदन, दस्तावेज़, कार्यालय, व्यापार, शिक्षा, अनुष्ठान, चिकित्सा व प्रचार।',
-    en: '29 ready-made Bangladesh-format documents across 9 categories — fill the form, preview, insert.',
+    bn: 'রেজিউমে-ক্যারিয়ার, ব্যবসা-অফিস, ইনভয়েস, আইনি-চুক্তি, সনদ-পুরস্কার, শিক্ষা, অনুষ্ঠান, চিকিৎসা ও মার্কেটিং — ৯ বৈশ্বিক ক্যাটাগরি + বাংলাদেশ-ভারত আঞ্চলিক সংগ্রহ, মোট ৫২টি প্রস্তুত নকশা। ফরম পূরণ করুন, প্রিভিউ দেখুন, পাতায় বসান।',
+    hi: '52 प्रारूप — रिज़्यूमे, कार्यालय, इनवॉइस, अनुबंध, प्रमाणपत्र, शिक्षा, अनुष्ठान, चिकित्सा, मार्केटिंग + क्षेत्रीय संग्रह।',
+    en: '52 ready-made professional documents across 9 global categories + a Bangladesh & India regional collection — fill the form, preview, insert.',
   },
 
   // ── ধাপ ──
@@ -26,15 +27,16 @@ export const dictDocumentStudio = {
   'ds.step.preview': { bn: 'প্রিভিউ ও বসানো', hi: 'प्रीव्यू व लगाना', en: 'Preview & insert' },
 
   // ── ক্যাটাগরি (fallback — DS_CATEGORY_LABELS আসল উৎস) ──
-  'ds.cat.cert': { bn: 'সনদপত্র', hi: 'प्रमाणपत्र', en: 'Certificates' },
-  'ds.cat.apply': { bn: 'হলফনামা ও দরখাস্ত', hi: 'शपथ व आवेदन', en: 'Affidavits & Applications' },
-  'ds.cat.land': { bn: 'জমি-দলিল', hi: 'भूमि-दस्तावेज', en: 'Land Deeds' },
-  'ds.cat.office': { bn: 'অফিস-প্রশাসন', hi: 'कार्यालय-प्रशासन', en: 'Office & Administration' },
-  'ds.cat.biz': { bn: 'ব্যবসা', hi: 'व्यापार', en: 'Business' },
-  'ds.cat.edu': { bn: 'শিক্ষা-প্রতিষ্ঠান', hi: 'शिक्षा-संस्था', en: 'Institutions' },
-  'ds.cat.event': { bn: 'অনুষ্ঠান', hi: 'अनुष्ठान', en: 'Events' },
-  'ds.cat.med': { bn: 'চিকিৎসা', hi: 'चिकित्सा', en: 'Medical' },
-  'ds.cat.promo': { bn: 'প্রচার-মাধ্যম', hi: 'प्रचार-माध्यम', en: 'Promotion' },
+  'ds.cat.career': { bn: 'চাকরি ও ক্যারিয়ার', hi: 'करियर', en: 'Resume & Career' },
+  'ds.cat.office': { bn: 'ব্যবসা ও অফিস', hi: 'व्यापार व कार्यालय', en: 'Business & Office' },
+  'ds.cat.finance': { bn: 'ইনভয়েস ও আর্থিক', hi: 'इनवॉइस व वित्त', en: 'Invoices & Finance' },
+  'ds.cat.legal': { bn: 'আইনি ও চুক্তি', hi: 'कानूनी व अनुबंध', en: 'Legal & Contracts' },
+  'ds.cat.cert': { bn: 'সনদ ও পুরস্কার', hi: 'प्रमाणपत्र व पुरस्कार', en: 'Certificates & Awards' },
+  'ds.cat.edu': { bn: 'শিক্ষা ও একাডেমিক', hi: 'शिक्षा', en: 'Education & Academic' },
+  'ds.cat.event': { bn: 'অনুষ্ঠান ও আমন্ত্রণ', hi: 'अनुष्ठान व निमंत्रण', en: 'Events & Invitations' },
+  'ds.cat.med': { bn: 'চিকিৎসা ও স্বাস্থ্য', hi: 'चिकित्सा व स्वास्थ्य', en: 'Health & Medical' },
+  'ds.cat.promo': { bn: 'মার্কেটিং ও প্রচার', hi: 'मार्केटिंग', en: 'Marketing & Media' },
+  'ds.cat.regional': { bn: 'বাংলাদেশ ও ভারত', hi: 'बांग्लাদेश व भारत', en: 'Bangladesh & India' },
 
   // ── ধাপ ১: বাছাই ──
   'ds.pick.search': { bn: 'নকশা খুঁজুন…', hi: 'डिज़ाइन खोजें…', en: 'Search designs…' },
@@ -74,14 +76,14 @@ export const dictDocumentStudio = {
   // ── টেমপ্লেট-স্টোরের "ডকুমেন্ট" ট্যাব ──
   'store.tab.doc': { bn: 'ডকুমেন্ট নকশা', hi: 'दस्तावेज़ डिज़ाइन', en: 'Document designs' },
   'store.doc.title': {
-    bn: 'ডকুমেন্ট স্টুডিও — প্রথাসিদ্ধ ডকুমেন্ট-নকশা',
-    hi: 'दस्तावेज़ स्टूडियो — प्रथासिद्ध डिज़ाइन',
-    en: 'Document Studio — format-accurate designs',
+    bn: 'ডকুমেন্ট স্টুডিও — বিশ্বমানের ডকুমেন্ট-নকশা',
+    hi: 'दस्तावेज़ स्टूडियो — पेशेवर डिज़ाइन',
+    en: 'Document Studio — professional document designs',
   },
   'store.doc.desc': {
-    bn: 'প্রশ্নপত্র-সাজেশনের পাশাপাশি সনদপত্র, দরখাস্ত, জমি-দলিল, অফিস-পত্র, ব্যবসা, শিক্ষা-প্রতিষ্ঠান, অনুষ্ঠান, চিকিৎসা ও প্রচার — ৯ ক্যাটাগরিতে ২৯টি বাংলাদেশ-প্রথার প্রস্তুত নকশা। ফরম পূরণ → AI সহায়তা → প্রিভিউ → পাতায় বসানো।',
-    hi: 'प्रमाणपत्र, आवेदन, भूमि-दस्तावेज़, कार्यालय, व्यापार, शिक्षा, अनुष्ठान, चिकित्सा व प्रचार — 9 श्रेणियों में 29 तैयार डिज़ाइन।',
-    en: 'Certificates, applications, land deeds, office letters, business, institutions, events, medical & promo — 29 ready designs in 9 categories. Fill form → AI assist → preview → insert.',
+    bn: 'রেজিউমে-ক্যারিয়ার, ব্যবসা-অফিস, ইনভয়েস-আর্থিক, আইনি-চুক্তি, সনদ-পুরস্কার, শিক্ষা, অনুষ্ঠান, চিকিৎসা ও মার্কেটিং — ৯ বৈশ্বিক ক্যাটাগরি + বাংলাদেশ-ভারত আঞ্চলিক সংগ্রহ, মোট ৫২টি প্রস্তুত নকশা। ফরম পূরণ → AI সহায়তা → প্রিভিউ → পাতায় বসানো।',
+    hi: 'रिज़्यूमे, कार्यालय, इनवॉइस, अनुबंध, प्रमाणपत्र, शिक्षा, अनुष्ठान, चिकित्सा, मार्केटिंग — 9 वैश्विक श्रेणियाँ + क्षेत्रीय संग्रह, कुल 52 डिज़ाइन।',
+    en: 'Resume & career, business & office, invoices, legal & contracts, certificates, education, events, medical & marketing — 9 global categories + a Bangladesh & India regional collection, 52 ready designs. Fill form → AI assist → preview → insert.',
   },
   'store.doc.cta': { bn: 'ডকুমেন্ট স্টুডিও খুলুন', hi: 'दस्तावेज़ स्टूडियो खोलें', en: 'Open Document Studio' },
 

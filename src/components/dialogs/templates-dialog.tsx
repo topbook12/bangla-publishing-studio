@@ -84,6 +84,12 @@ function GenreIcon({ genre, size = 11, className }: { genre: BlueprintGenre; siz
  * প্রয়োগ-ব্যর্থতার জেনেরিক বার্তা — dict-এ টেমপ্লেট-প্রয়োগের জেনেরিক error-কী নেই,
  * তাই ভাষা-অনুযায়ী ফলব্যাক (bn/hi/en — অর্কেস্ট্রেটর-অনুমোদিত হার্ডকোড)।
  */
+/** ত্রিভাষিক লেবেল-পাঠ — বর্তমান ভাষায় (bn/hi/en) */
+function tx3(v: { bn: string; hi: string; en: string } | undefined, lang: 'bn' | 'hi' | 'en'): string {
+  if (!v) return '';
+  return v[lang] || v.bn;
+}
+
 function applyFailMsg(): string {
   const lang = getLang();
   if (lang === 'en') return 'Could not apply — please try again';
@@ -191,6 +197,7 @@ function BlueprintCard({ bp, onStart, onInsert }: {
 }) {
   const tt = useT();
   const nf = useFmtNum();
+  const lang = useLangStore((s) => s.lang);
   const genre = BLUEPRINT_GENRE_META[bp.genre];
   const paper = bp.settings.paperSize ? getPaperPreset(bp.settings.paperSize) : null;
 
@@ -206,7 +213,7 @@ function BlueprintCard({ bp, onStart, onInsert }: {
           style={{ backgroundColor: bp.accent }}
         >
           <GenreIcon genre={bp.genre} size={11} />
-          {genre.label}
+          {tx3(genre.label, lang)}
         </span>
         <span className="absolute right-2 top-2 z-10 rounded-full border border-border bg-white/95 px-2 py-0.5 text-[10px] font-medium text-slate-600 shadow-sm">
           {tt('store.bp.pageCount').split('{n}').join(nf(bp.pages.length))}
@@ -214,8 +221,8 @@ function BlueprintCard({ bp, onStart, onInsert }: {
       </div>
 
       <div>
-        <p className="text-sm font-semibold leading-tight">{bp.name}</p>
-        <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{bp.desc}</p>
+        <p className="text-sm font-semibold leading-tight">{tx3(bp.name, lang)}</p>
+        <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{tx3(bp.desc, lang)}</p>
       </div>
 
       {/* সেটআপ-চিপ: কাগজ · ফন্ট · সাইজ */}
@@ -227,7 +234,7 @@ function BlueprintCard({ bp, onStart, onInsert }: {
 
       <p className="text-[10px] leading-snug text-muted-foreground/80">
         <Sparkles size={10} className="mr-1 inline-block" aria-hidden="true" />
-        {bp.tags.join(' · ')}
+        {bp.tags.map((tg) => tx3(tg, lang)).join(' · ')}
       </p>
 
       <div className="mt-auto flex gap-1.5">
@@ -261,6 +268,7 @@ function TemplateCard({ tpl, onPick, onReplace, canReplace }: {
 }) {
   const tt = useT();
   const nf = useFmtNum();
+  const lang = useLangStore((s) => s.lang);
   const rows = templatePreviewRows(tpl.kind);
   return (
     <div className="group relative flex flex-col gap-2 rounded-xl border border-border bg-card p-3 transition hover:border-primary hover:shadow-md">
@@ -268,15 +276,15 @@ function TemplateCard({ tpl, onPick, onReplace, canReplace }: {
         type="button"
         onClick={() => onPick(tpl)}
         className="flex flex-col gap-2 rounded-lg text-left focus-visible:outline-2 focus-visible:outline-ring"
-        aria-label={tt('dlg1.tpl.ariaAdd').split('{name}').join(tpl.name)}
+        aria-label={tt('dlg1.tpl.ariaAdd').split('{name}').join(tx3(tpl.name, lang))}
       >
         <SheetPreview html={tpl.html} className="h-48" />
         <div>
           <p className="flex items-center gap-1.5 text-sm font-semibold leading-tight">
             <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: tpl.accent }} />
-            {tpl.name}
+            {tx3(tpl.name, lang)}
           </p>
-          <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{tpl.desc}</p>
+          <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{tx3(tpl.desc, lang)}</p>
         </div>
       </button>
       <TooltipProvider delayDuration={250}>
@@ -290,7 +298,7 @@ function TemplateCard({ tpl, onPick, onReplace, canReplace }: {
                 'absolute right-2 top-2 z-10 flex items-center gap-1 rounded-md border border-border bg-white/95 px-1.5 py-1 text-[10px] font-medium text-slate-600 shadow-sm transition',
                 canReplace ? 'hover:border-primary hover:text-primary' : 'cursor-not-allowed opacity-40',
               )}
-              aria-label={tt('dlg1.tpl.ariaReplace').split('{name}').join(tpl.name)}
+              aria-label={tt('dlg1.tpl.ariaReplace').split('{name}').join(tx3(tpl.name, lang))}
             >
               <Replace size={11} /> {tt('dlg1.tpl.thisPage')}
             </button>
@@ -397,7 +405,7 @@ export function TemplatesDialog() {
         const finalPages = cover ? [cover, ...pages] : pages;
         s.replaceBook(finalPages, blueprintSettingsPatch(bp));
         primeEmptyTocs(finalPages.map((p) => p.id));
-        toast.success(tt('store.bp.toastStarted').split('{name}').join(bp.name), {
+        toast.success(tt('store.bp.toastStarted').split('{name}').join(tx3(bp.name, lang)), {
           description: tt('store.bp.toastStartedDesc'),
         });
         close();
@@ -423,7 +431,7 @@ export function TemplatesDialog() {
         after = id;
       }
       primeEmptyTocs(newIds);
-      toast.success(tt('store.bp.toastInserted').split('{name}').join(bp.name), {
+      toast.success(tt('store.bp.toastInserted').split('{name}').join(tx3(bp.name, lang)), {
         description: tt('store.bp.toastInsertedDesc'),
       });
       close();
@@ -445,7 +453,7 @@ export function TemplatesDialog() {
       s.updatePage(newId2, { flowLock: true });
       s.setActivePage(newId2);
       primeEmptyTocs([newId2]);
-      toast.success(tt('dlg1.tpl.toastAdded').split('{name}').join(tpl.name), {
+      toast.success(tt('dlg1.tpl.toastAdded').split('{name}').join(tx3(tpl.name, lang)), {
         description: tt('dlg1.tpl.toastAddedDesc'),
       });
       close();
@@ -469,7 +477,7 @@ export function TemplatesDialog() {
       s.updatePage(pageId, { flowLock: true });
       s.setActivePage(pageId);
       primeEmptyTocs([pageId]);
-      toast.success(tt('dlg1.tpl.toastReplaced').split('{name}').join(replaceTarget.name));
+      toast.success(tt('dlg1.tpl.toastReplaced').split('{name}').join(tx3(replaceTarget.name, lang)));
       setReplaceTarget(null);
       close();
       void mountFitAndReveal(pageId);
@@ -489,20 +497,20 @@ export function TemplatesDialog() {
     return BOOK_BLUEPRINTS.filter((bp) => {
       if (!searching && genre !== 'all' && bp.genre !== genre) return false;
       if (!q) return true;
-      const hay = `${bp.name} ${bp.desc} ${bp.tags.join(' ')} ${genreMeta[bp.genre].label}`.toLowerCase();
+      const hay = `${tx3(bp.name, lang)} ${tx3(bp.desc, lang)} ${bp.tags.map((tg) => tx3(tg, lang)).join(' ')} ${tx3(genreMeta[bp.genre].label, lang)}`.toLowerCase();
       return hay.includes(q);
     });
-  }, [query, genre, searching, genreMeta]);
+  }, [query, genre, searching, genreMeta, lang]);
 
   const filteredTpls = useMemo(() => {
     const q = query.trim().toLowerCase();
     return PAGE_TEMPLATES.filter((t) => {
       if (!searching && cat !== 'all' && t.category !== cat) return false;
       if (!q) return true;
-      const hay = `${t.name} ${t.desc} ${TEMPLATE_CATEGORY_LABELS[t.category]}`.toLowerCase();
+      const hay = `${tx3(t.name, lang)} ${tx3(t.desc, lang)} ${tx3(TEMPLATE_CATEGORY_LABELS[t.category], lang)}`.toLowerCase();
       return hay.includes(q);
     });
-  }, [query, cat, searching]);
+  }, [query, cat, searching, lang]);
 
   const totalCount = BOOK_BLUEPRINTS.length + PAGE_TEMPLATES.length;
 
@@ -611,7 +619,7 @@ export function TemplatesDialog() {
                       ) : (
                         <>
                           <GenreIcon genre={g} size={11} className="mr-0.5 inline-block align-[-1px] opacity-80" />
-                          {genreMeta[g].label}
+                          {tx3(genreMeta[g].label, lang)}
                         </>
                       )}
                       <span className="ml-1 opacity-70">({nf(count)})</span>
@@ -638,7 +646,7 @@ export function TemplatesDialog() {
                           : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
                       )}
                     >
-                      {c === 'all' ? tt('dlg1.tpl.all') : TEMPLATE_CATEGORY_LABELS[c as TemplateCategory]}
+                      {c === 'all' ? tt('dlg1.tpl.all') : tx3(TEMPLATE_CATEGORY_LABELS[c as TemplateCategory], lang)}
                       <span className="ml-1 opacity-70">({nf(count)})</span>
                     </button>
                   );
@@ -752,7 +760,7 @@ export function TemplatesDialog() {
           <AlertDialogHeader>
             <AlertDialogTitle>{tt('store.bp.confirmTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              {tt('store.bp.confirmDesc').split('{name}').join(startBp?.name ?? '')}
+              {tt('store.bp.confirmDesc').split('{name}').join(startBp ? tx3(startBp.name, lang) : '')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -770,7 +778,7 @@ export function TemplatesDialog() {
           <AlertDialogHeader>
             <AlertDialogTitle>{tt('dlg1.tpl.confirmTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              {tt('dlg1.tpl.confirmDesc').split('{name}').join(replaceTarget?.name ?? '')}
+              {tt('dlg1.tpl.confirmDesc').split('{name}').join(replaceTarget ? tx3(replaceTarget.name, lang) : '')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

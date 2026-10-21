@@ -1,8 +1,9 @@
 /**
  * ডকুমেন্ট স্টুডিও — ৩ ধাপের উইজার্ড (Document Studio wizard)
  * ──────────────────────────────────────────────────────────────────
- *  ধাপ ১ নকশা: ৯ ক্যাটাগরিতে ২৯টি বাংলাদেশ-প্রথার ডকুমেন্ট — সনদ, দরখাস্ত,
- *    দলিল, অফিস-পত্র, ইনভয়েস, রুটিন, আমন্ত্রণ, পর্চা, পোস্টার…
+ *  ধাপ ১ নকশা: ১০ ক্যাটাগরিতে ৫২টি বিশ্বমানের ডকুমেন্ট — রেজিউমে-ক্যারিয়ার,
+ *    অফিস-পত্র, ইনভয়েস, চুক্তি, সনদ, শিক্ষা, আমন্ত্রণ, চিকিৎসা, প্রচার +
+ *    বাংলাদেশ-ভারত আঞ্চলিক সংগ্রহ (সনদ, দলিল, দরখাস্ত)।
  *  ধাপ ২ তথ্য: টেমপ্লেট-ভিত্তিক ডাইনামিক ফরম + AI দিয়ে-পূরণ (সংক্ষিপ্ত
  *    বর্ণনা থেকে ঘরগুলো পূরণ) + সাজ-বিকল্প (কালি-প্যালেট)।
  *  ধাপ ৩ প্রিভিউ: সাদা A4-প্রতিরূপে জীবন্ত প্রিভিউ — নতুন পাতায় বসানো বা
@@ -57,15 +58,16 @@ const SHEET_H = 1123;
 
 /** ক্যাটাগরি → lucide আইকন (গ্রিড কার্ডের বাঁ-চিহ্ন) */
 const CAT_ICONS: Record<DsCategory, string> = {
-  cert: '🏅',
-  apply: '✍️',
-  land: '🗺️',
+  career: '📄',
   office: '🏛️',
-  biz: '🧾',
+  finance: '🧾',
+  legal: '⚖️',
+  cert: '🏅',
   edu: '🎓',
   event: '🎉',
   med: '🩺',
   promo: '📣',
+  regional: '🌏',
 };
 
 /** তথ্য-ফরমের এক ঘর */
@@ -226,10 +228,10 @@ export function DocumentStudioDialog() {
         'USER BRIEF (what the user needs — extract names, addresses, dates, amounts and every detail):',
         aiBrief.trim(),
         '',
-        'Fill every field you can from the brief. For fields not mentioned, write a realistic, useful Bangla value fitting the document (sample-style), EXCEPT amounts/ID numbers/reference numbers — leave those as "" if unknown. Keep table values as "cell | cell" rows, one row per line.',
+        'Fill every field you can from the brief. For fields not mentioned, write a realistic, useful value fitting the document in the template\u2019s language (sample-style), EXCEPT amounts/ID numbers/reference numbers — leave those as "" if unknown. Keep table values as "cell | cell" rows, one row per line.',
         'Return ONLY JSON: {"values": {"fieldId": "value"}}',
       ].join('\n'),
-      system: 'You are the document-fill assistant of Bangla Publishing Studio, expert in Bangladeshi official documents (সনদ, দরখাস্ত, দলিল, ইনভয়েস). You fill forms precisely in correct formal Bangla, matching Bangladesh office/land/business document conventions. Return ONLY valid JSON — no markdown fences, no commentary.',
+      system: 'You are the document-fill assistant of Bangla Publishing Studio — expert in worldwide professional documents (resumes, cover letters, business letters, invoices, quotations, contracts, agreements, certificates, meeting minutes, lesson plans, newsletters) and in Bangladeshi/Indian regional documents (সনদ, দরখাস্ত, দলিল, রসিদ). You fill forms precisely in correct formal language matching each document\'s conventions (Bangla for Bangla templates, English for global templates). Return ONLY valid JSON — no markdown fences, no commentary.',
     });
     setAiBusy(false);
     if (!(res.ok && res.text)) {

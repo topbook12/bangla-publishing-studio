@@ -22,21 +22,27 @@ import { buildCalloutHtml, buildColumnsHtml, buildDesignBoxHtml, buildTocHtml } 
 
 export type TemplateCategory = 'title' | 'front' | 'toc' | 'author' | 'chapter' | 'special';
 
-export const TEMPLATE_CATEGORY_LABELS: Record<TemplateCategory, string> = {
-  title: 'শিরোনাম পাতা',
-  front: 'প্রারম্ভিক পাতা',
-  toc: 'সূচিপত্র',
-  author: 'লেখক পরিচিতি',
-  chapter: 'অধ্যায় সূচনা',
-  special: 'বিশেষ পাতা',
+/** ত্রিভাষিক লেবেল (bn/hi/en) — টেমপ্লেট-গ্যালারি বিশ্বজনীন */
+export interface TplT3 { bn: string; hi: string; en: string }
+export const tplL3 = (bn: string, hi: string, en: string): TplT3 => ({ bn, hi, en });
+type T3 = TplT3;
+const L3 = tplL3;
+
+export const TEMPLATE_CATEGORY_LABELS: Record<TemplateCategory, T3> = {
+  title: L3('শিরোনাম পাতা', 'शीर्षक पृष्ठ', 'Title Pages'),
+  front: L3('প্রারম্ভিক পাতা', 'प्रारंभिक पृष्ठ', 'Front Matter'),
+  toc: L3('সূচিপত্র', 'विषय-सूची', 'Table of Contents'),
+  author: L3('লেখক পরিচিতি', 'लेखक परिचय', 'Author Bio'),
+  chapter: L3('অধ্যায় সূচনা', 'अध्याय प्रारंभ', 'Chapter Openers'),
+  special: L3('বিশেষ পাতা', 'विशेष पृष्ठ', 'Special Pages'),
 };
 
 export const TEMPLATE_CATEGORY_ORDER: TemplateCategory[] = ['title', 'front', 'toc', 'author', 'chapter', 'special'];
 
 export interface PageTemplate {
   id: string;
-  name: string;
-  desc: string;
+  name: T3;
+  desc: T3;
   /** কার্ড প্রিভিউয়ের অ্যাকসেন্ট রং */
   accent: string;
   category: TemplateCategory;
@@ -55,8 +61,8 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
   // ═══════════════════════ শিরোনাম পাতা ═══════════════════════
   {
     id: 'title-classic',
-    name: 'ক্লাসিক অলংকৃত',
-    desc: 'রয়্যাল মেরুন-গোল্ড প্রামাণ্য শিরোনাম পাতা — অলংকরণ সারি, বড় শিরোনাম ও প্রকাশনী লাইন',
+    name: L3('ক্লাসিক অলংকৃত', 'क्लासिक अलंकृत', 'Classic Ornate'),
+    desc: L3('রয়্যাল মেরুন-গোল্ড প্রামাণ্য শিরোনাম পাতা — অলংকরণ সারি, বড় শিরোনাম ও প্রকাশনী লাইন', 'रॉयल मरून-गोल्ड प्रमाणिक शीर्षक पृष्ठ — सजावटी पंक्ति, बड़ा शीर्षक और प्रकाशक लाइन', 'Royal Maroon-Gold Authentic Title Page — Ornament row, large title, and publisher line'),
     accent: '#7f1d1d',
     category: 'title',
     kind: 'title',
@@ -78,8 +84,8 @@ ${TIP_NOTE}
   },
   {
     id: 'title-modern',
-    name: 'মডার্ন মিনিমাল',
-    desc: 'সমসাময়িক ডিজাইন — গাঢ় টিল রেখা, বিশাল শিরোনাম ও নিঃশব্দ ব্যবধানে লেখক পরিচয়',
+    name: L3('মডার্ন মিনিমাল', 'मॉडर्न मिनिमल', 'Modern Minimal'),
+    desc: L3('সমসাময়িক ডিজাইন — গাঢ় টিল রেখা, বিশাল শিরোনাম ও নিঃশব্দ ব্যবধানে লেখক পরিচয়', 'समकालीन डिज़ाइन — गहरी टिल लाइन, विशाल शीर्षक और शांत अंतराल में लेखक परिचय', 'Contemporary Design — Bold Tilt Lines, Massive Title and Silent Spacing for Author Bio'),
     accent: '#134e4a',
     category: 'title',
     kind: 'title',
@@ -99,8 +105,8 @@ ${sp(3)}
   },
   {
     id: 'title-academic',
-    name: 'একাডেমিক সহায়িকা',
-    desc: 'কোচিং/শিক্ষা প্রতিষ্ঠানের বইয়ের জন্য — প্রাতিষ্ঠানিক ব্যান্ড, কোর্স ও শ্রেণি তথ্যসহ',
+    name: L3('একাডেমিক সহায়িকা', 'एकाडेमिक सहायिका', 'Academic Handbook'),
+    desc: L3('কোচিং/শিক্ষা প্রতিষ্ঠানের বইয়ের জন্য — প্রাতিষ্ঠানিক ব্যান্ড, কোর্স ও শ্রেণি তথ্যসহ', 'कोचिंग/शिक्षा प्रतिष्ठान के लिए — प्रातिष्ठानिक बैंड, कोर्स और कक्षा जानकारी के साथ', 'For Coaching/Educational Institution Books — With Institutional Band, Course and Class Information'),
     accent: '#14532d',
     category: 'title',
     kind: 'title',
@@ -125,8 +131,8 @@ ${TIP_NOTE}
   },
   {
     id: 'title-royal-frame',
-    name: 'রাজকীয় ফ্রেম',
-    desc: 'দ্বি-স্তর অলংকৃত ফ্রেমে বাঁধা রাজকীয় শিরোনাম — স্মারকগ্রন্থ ও উপহার সংস্করণের জন্য',
+    name: L3('রাজকীয় ফ্রেম', 'राजकीय फ़्रेम', 'Royal Frame'),
+    desc: L3('দ্বি-স্তর অলংকৃত ফ্রেমে বাঁধা রাজকীয় শিরোনাম — স্মারকগ্রন্থ ও উপহার সংস্করণের জন্য', 'दो-स्तरीय सजावटी फ्रेम में बंधा शाही शीर्षक — स्मारक पुस्तक और उपहार संस्करण के लिए', 'Royal Title in Two-Tier Ornate Frame — For Memorial Books and Gift Editions'),
     accent: '#9f1239',
     category: 'title',
     kind: 'title',
@@ -156,8 +162,8 @@ ${TIP_NOTE}
   // ═══════════════════════ প্রারম্ভিক পাতা ═══════════════════════
   {
     id: 'half-title',
-    name: 'হাফ টাইটেল',
-    desc: 'শুধু বইয়ের নাম — প্রকাশনী-শৈলী নীরব, মার্জিত প্রথম পাতা',
+    name: L3('হাফ টাইটেল', 'आधा शीर्षक', 'Half Title'),
+    desc: L3('শুধু বইয়ের নাম — প্রকাশনী-শৈলী নীরব, মার্জিত প্রথম পাতা', 'सिर्फ पुस्तक का नाम — प्रकाशक-शैली शांत, सुंदर पहला पृष्ठ', 'Just the Book Title — Publisher-style quiet, elegant first page'),
     accent: '#78716c',
     category: 'front',
     kind: 'half',
@@ -170,8 +176,8 @@ ${sp(3)}
   },
   {
     id: 'copyright',
-    name: 'কপিরাইট / কলোফোন',
-    desc: 'স্বত্ব সংরক্ষণ, সংস্করণ, মুদ্রণ ও মূল্য তথ্যের সেপিয়া-ধাঁচের প্রমিত কলোফোন পাতা',
+    name: L3('কপিরাইট / কলোফোন', 'कॉपीराइट / कॉलोफोन', 'Copyright / Colophon'),
+    desc: L3('স্বত্ব সংরক্ষণ, সংস্করণ, মুদ্রণ ও মূল্য তথ্যের সেপিয়া-ধাঁচের প্রমিত কলোফোন পাতা', 'कॉपीराइट, संस्करण, प्रिंटिंग और मूल्य जानकारी का सेपिया-शैली का मानक कॉलोफोन पृष्ठ', 'Standard Colophon Page in Sepia Style with Copyright, Edition, Printing and Price Information'),
     accent: '#5d4037',
     category: 'front',
     kind: 'copyright',
@@ -188,8 +194,8 @@ ${TIP_NOTE}
   },
   {
     id: 'dedication',
-    name: 'উৎসর্গ পাতা',
-    desc: 'প্লাম-গোল্ড আবেগী উৎসর্গ — মাঝবরাবর ছোট, ইটালিক লেখা ও অলংকরণ দিয়ে ঘেরা',
+    name: L3('উৎসর্গ পাতা', 'उत्सर्ग पृष्ठ', 'Dedication Page'),
+    desc: L3('প্লাম-গোল্ড আবেগী উৎসর্গ — মাঝবরাবর ছোট, ইটালিক লেখা ও অলংকরণ দিয়ে ঘেরা', 'प्लम-गोल्ड भावुक समर्पण — मध्य में छोटा, इटैलिक लेखा और सजावट से��रा', 'Plum-Gold Emotional Dedication — Centered small, italic text and decorative border'),
     accent: '#701a75',
     category: 'front',
     kind: 'dedication',
@@ -205,8 +211,8 @@ ${sp(3)}
   },
   {
     id: 'epigraph',
-    name: 'উদ্ধৃতি পাতা',
-    desc: 'বইয়ের শুরুর অনুপ্রেরণামূলক উক্তি — গাঢ় টিল ছায়া-বক্সে কবিতা বা বাণীর একান্ত পাতা',
+    name: L3('উদ্ধৃতি পাতা', 'उद्धरण पृष्ठ', 'Quote Page'),
+    desc: L3('বইয়ের শুরুর অনুপ্রেরণামূলক উক্তি — গাঢ় টিল ছায়া-বক্সে কবিতা বা বাণীর একান্ত পাতা', 'पुस्तक की शुरुआत का प्रेरणादायक उद्धरण — गहरे टीले छाया-बॉक्स में कविता या वाणी का एकांत पृष्ठ', 'Book\'s Inspirational Quote — Dark teal shadow box with poem or saying on a dedicated page'),
     accent: '#134e4a',
     category: 'front',
     kind: 'dedication',
@@ -224,8 +230,8 @@ ${sp(4)}
   },
   {
     id: 'preface',
-    name: 'ভূমিকা / প্রস্তাবনা',
-    desc: 'ফরেস্ট-গ্রিন শিরোনাম, ইনডেন্ট-ধাঁচের পাঠ্য ও স্বাক্ষরব্লকসহ ভূমিকা পাতা',
+    name: L3('ভূমিকা / প্রস্তাবনা', 'परिचय / प्रस्तावना', 'Introduction / Preface'),
+    desc: L3('ফরেস্ট-গ্রিন শিরোনাম, ইনডেন্ট-ধাঁচের পাঠ্য ও স্বাক্ষরব্লকসহ ভূমিকা পাতা', 'फॉरेस्ट-ग्रीन शीर्षक, इंडेंट-शैली का पाठ और हस्ताक्षर ब्लॉक के साथ परिचय पृष्ठ', 'Forest-Green Title, indented-style text and signature block with introduction page'),
     accent: '#14532d',
     category: 'front',
     kind: 'preface',
@@ -245,8 +251,8 @@ ${sp(1)}
   },
   {
     id: 'acknowledgment',
-    name: 'কৃতজ্ঞতা স্বীকার',
-    desc: 'সেপিয়া শৈলীর কৃতজ্ঞতা পাতা — সহযোগী, পরামর্শদাতা ও প্রিয়জনদের আন্তরিক স্মরণ',
+    name: L3('কৃতজ্ঞতা স্বীকার', 'कृतज्ञता स्वीकार', 'Acknowledgement'),
+    desc: L3('সেপিয়া শৈলীর কৃতজ্ঞতা পাতা — সহযোগী, পরামর্শদাতা ও প্রিয়জনদের আন্তরিক স্মরণ', 'सेपिया स्टाइल कृतज्ञता पृष्ठ — सहयोगी, सलाहकार और प्रियजनों का ईमानदार स्मरण', 'Sepia-Style Acknowledgments Page — Heartfelt Remembrance of Associates, Advisors, and Loved Ones'),
     accent: '#7c2d12',
     category: 'front',
     kind: 'preface',
@@ -265,8 +271,8 @@ ${sp(1)}
   },
   {
     id: 'certificate',
-    name: 'সনদপত্র',
-    desc: 'দ্বি-স্তর রাজকীয় ফ্রেমে অলংকৃত সনদ — প্রশংসাপত্র, কোর্স সম্পন্নকরণ বা অর্জনের প্রত্যয়নপত্র',
+    name: L3('সনদপত্র', 'प्रमाण पत्र', 'Certificates'),
+    desc: L3('দ্বি-স্তর রাজকীয় ফ্রেমে অলংকৃত সনদ — প্রশংসাপত্র, কোর্স সম্পন্নকরণ বা অর্জনের প্রত্যয়নপত্র', 'दो-स्तरीय शाही फ्रेम में सजावटी प्रमाण-पत्र — प्रशंसापत्र, कोर्स पूर्णता या प्राप्ति का प्रमाण-पत्र', 'Decorated Certificate in Two-Tier Royal Frame — For Certificates of Appreciation, Course Completion or Achievement'),
     accent: '#9f1239',
     category: 'front',
     kind: 'copyright',
@@ -299,8 +305,8 @@ ${TIP_NOTE}
   },
   {
     id: 'declaration',
-    name: 'ঘোষণাপত্র',
-    desc: 'গাঢ় ব্যান্ড-শিরোনামে লেখকের আনুষ্ঠানিক ঘোষণা — মৌলিকতা স্বীকার, স্বত্ব দাবি ও স্বাক্ষর',
+    name: L3('ঘোষণাপত্র', 'घोषणापत्र', 'Announcement'),
+    desc: L3('গাঢ় ব্যান্ড-শিরোনামে লেখকের আনুষ্ঠানিক ঘোষণা — মৌলিকতা স্বীকার, স্বত্ব দাবি ও স্বাক্ষর', 'गाढ़ा बैंड-शीर्षक में लेखक का औपचारिक घोषणा — मौलिकता स्वीकार, कॉपीराइट दावा और हस्ताक्षर', 'Author\'s Formal Declaration with Dark Band-Header — Acknowledgement of Originality, Copyright Claim and Signature'),
     accent: '#292524',
     category: 'front',
     kind: 'preface',
@@ -324,8 +330,8 @@ ${buildDesignBoxHtml(
   // ═══════════════════════ সূচিপত্র ═══════════════════════
   {
     id: 'toc-classic',
-    name: 'ক্লাসিক সূচিপত্র',
-    desc: 'অলংকরণ সারি ও ডাবল-লাইন শিরোনামসহ ঐতিহ্যবাহী সূচিপত্র — হেডিং থেকে স্বয়ংক্রিয় হালনাগাদ',
+    name: L3('ক্লাসিক সূচিপত্র', 'क्लासिक सूचीपत्र', 'Classic Table of Contents'),
+    desc: L3('অলংকরণ সারি ও ডাবল-লাইন শিরোনামসহ ঐতিহ্যবাহী সূচিপত্র — হেডিং থেকে স্বয়ংক্রিয় হালনাগাদ', 'अलंकरण पंक्ति और डबल-लाइन शीर्षक के साथ पारंपरिक सूची — शीर्षक से स्वचालित अपडेट', 'Traditional Index with Ornament Row and Double-Line Headings — Auto-update from Headings'),
     accent: '#7f1d1d',
     category: 'toc',
     kind: 'toc',
@@ -341,8 +347,8 @@ ${TIP_NOTE}
   },
   {
     id: 'toc-modern',
-    name: 'মডার্ন ব্যান্ড সূচিপত্র',
-    desc: 'গাঢ় টিল ব্যান্ড-হেডারে আধুনিক সূচিপত্র — ছায়া-পিল শিরোনাম ও প্রশস্ত ফাঁকা জায়গা',
+    name: L3('মডার্ন ব্যান্ড সূচিপত্র', 'मॉडर्न बैंड सूचीपत्र', 'Modern Band Index'),
+    desc: L3('গাঢ় টিল ব্যান্ড-হেডারে আধুনিক সূচিপত্র — ছায়া-পিল শিরোনাম ও প্রশস্ত ফাঁকা জায়গা', 'गाढ़ा टील बैंड-हेडर में आधुनिक सूचीपत्र — छाया-पील शीर्षक और चौड़ी खाली जगह', 'Modern Table of Contents with Dark Teal Band-Header — Shadow-Peel Titles and Wide Empty Space'),
     accent: '#0f766e',
     category: 'toc',
     kind: 'toc',
@@ -358,8 +364,8 @@ ${TIP_NOTE}
   },
   {
     id: 'toc-detailed',
-    name: 'বিস্তারিত দুই-স্তর সূচিপত্র',
-    desc: 'অধ্যায় ও উপ-অধ্যায় দেখানোর গোল্ড-সেপিয়া বিস্তারিত সূচিপত্র — গাইড/সহায়িকার জন্য',
+    name: L3('বিস্তারিত দুই-স্তর সূচিপত্র', 'विस्तृत दो-स्तरीय सूची', 'Detailed Two-Level Index'),
+    desc: L3('অধ্যায় ও উপ-অধ্যায় দেখানোর গোল্ড-সেপিয়া বিস্তারিত সূচিপত্র — গাইড/সহায়িকার জন্য', 'अध्याय और उप-अध्याय दिखाने के लिए गोल्ड-सेपिया विस्तृत सूची — गाइड/सहायिका के लिए', 'Gold-Sepia Detailed Index Showing Chapters and Subchapters — For Guide/Handbook'),
     accent: '#a16207',
     category: 'toc',
     kind: 'toc',
@@ -378,8 +384,8 @@ ${TIP_NOTE}
   // ═══════════════════════ লেখক পরিচিতি ═══════════════════════
   {
     id: 'author-bio',
-    name: 'ছবি-সহ পরিচিতি',
-    desc: 'সোনালি ফ্রেমে ছবির ঘর, নাম-পদবি ও ইনডেন্ট-ধাঁচের জীবনীসহ পূর্ণাঙ্গ লেখক পাতা',
+    name: L3('ছবি-সহ পরিচিতি', 'चित्र-सहित परिचय', 'Introduction with Photo'),
+    desc: L3('সোনালি ফ্রেমে ছবির ঘর, নাম-পদবি ও ইনডেন্ট-ধাঁচের জীবনীসহ পূর্ণাঙ্গ লেখক পাতা', 'सोने के फ्रेम में फोटो घर, नाम-पदवी और इंडेंट-शैली की जीवनी वाला पूर्ण लेखक पृष्ठ', 'Complete Author Page with Photo Frame in Gold, Name-Title and Indent-Style Biography'),
     accent: '#0f766e',
     category: 'author',
     kind: 'bio',
@@ -406,8 +412,8 @@ ${sp(1)}`,
   },
   {
     id: 'author-bio-simple',
-    name: 'সংক্ষিপ্ত পরিচিতি',
-    desc: 'ছবি ছাড়া নীরব মার্জিত পরিচিতি — কেন্দ্রীয় নাম, পদবি ও অথৈ দুই-তিন লাইনের জীবনী',
+    name: L3('সংক্ষিপ্ত পরিচিতি', 'संक्षिप्त परिचय', 'Brief Introduction'),
+    desc: L3('ছবি ছাড়া নীরব মার্জিত পরিচিতি — কেন্দ্রীয় নাম, পদবি ও অথৈ দুই-তিন লাইনের জীবনী', 'चित्र के बिना नीरब शान्त परिचय — केंद्रीय नाम, पदवी और अथै दो-तीन लाइन की जीवनी', 'Quiet Elegant Introduction Without Photo — Central Name, Title and a Quiet Two-Three Line Biography'),
     accent: '#44403c',
     category: 'author',
     kind: 'bio',
@@ -427,8 +433,8 @@ ${sp(3)}
   // ═══════════════════════ অধ্যায় সূচনা ═══════════════════════
   {
     id: 'chapter-opener',
-    name: 'অধ্যায় সূচনা + শেখার তালিকা',
-    desc: 'বড় বাংলা সংখ্যা, অলংকরণ রেখা ও “এ অধ্যায়ে শিখবে” বক্স — গাইড বইয়ের জন্য',
+    name: L3('অধ্যায় সূচনা + শেখার তালিকা', 'अध्याय शुरुआत + सीखने की सूची', 'Chapter Start + Learning List'),
+    desc: L3('বড় বাংলা সংখ্যা, অলংকরণ রেখা ও “এ অধ্যায়ে শিখবে” বক্স — গাইড বইয়ের জন্য', 'बड़ा बंगाली अंक, सजावटी रेखा और \'इस अध्याय में सीखें\' बॉक्स — गाइड पुस्तक के लिए', 'Large Bengali numeral, decorative line and \'What You\'ll Learn\' box — For guide books'),
     accent: '#7f1d1d',
     category: 'chapter',
     kind: 'chapter',
@@ -446,8 +452,8 @@ ${buildCalloutHtml('concept', 'এ অধ্যায়ে শিখবে', '<
   },
   {
     id: 'chapter-minimal',
-    name: 'নিরীক্ষা অধ্যায় সূচনা',
-    desc: 'বিশাল হালকা সংখ্যা ও নীরব শিরোনাম — উপন্যাস/সাহিত্যের অধ্যায় পাতা',
+    name: L3('নিরীক্ষা অধ্যায় সূচনা', 'निरीक्षा अध्याय शुरुआत', 'Inspection Chapter Start'),
+    desc: L3('বিশাল হালকা সংখ্যা ও নীরব শিরোনাম — উপন্যাস/সাহিত্যের অধ্যায় পাতা', 'विशाल हल्का अंक और शांत शीर्षक — उपन्यास/साहित्य का अध्याय पृष्ठ', 'Large light numeral and quiet title — Novel/literature chapter page'),
     accent: '#292524',
     category: 'chapter',
     kind: 'chapter',
@@ -464,8 +470,8 @@ ${sp(3)}
   // ═══════════════════════ বিশেষ পাতা ═══════════════════════
   {
     id: 'about-book',
-    name: 'এই বইয়ের ভেতরে',
-    desc: 'ফরেস্ট-গ্রিন ব্যবহারবিধি পাতা — বইয়ের বৈশিষ্ট্য, আইকন ব্যাখ্যা ও পাঠ পরিকল্পনা',
+    name: L3('এই বইয়ের ভেতরে', 'इस पुस्तक के अंदर', 'Inside This Book'),
+    desc: L3('ফরেস্ট-গ্রিন ব্যবহারবিধি পাতা — বইয়ের বৈশিষ্ট্য, আইকন ব্যাখ্যা ও পাঠ পরিকল্পনা', 'फॉरेस्ट-ग्रीन उपयोग निर्देश पृष्ठ — पुस्तक की विशेषताएं, आइकन स्पष्टीकरण और पाठ योजना', 'Forest-Green Usage Page — Book features, icon explanations and lesson plan'),
     accent: '#14532d',
     category: 'special',
     kind: 'preface',
@@ -482,8 +488,8 @@ ${buildCalloutHtml('warning', 'আইকন পরিচিতি', '<p>💡 ট
   },
   {
     id: 'appendix',
-    name: 'পরিশিষ্ট',
-    desc: 'ছায়া-বক্সে সাজানো সংযুক্তি সেকশন — টেবিল, চার্ট বা ফর্মুলা রাখার পরিশিষ্ট পাতা',
+    name: L3('পরিশিষ্ট', 'परिशिष्ट', 'Appendix'),
+    desc: L3('ছায়া-বক্সে সাজানো সংযুক্তি সেকশন — টেবিল, চার্ট বা ফর্মুলা রাখার পরিশিষ্ট পাতা', 'छाया-बॉक्स में व्यवस्थित संलग्न अनुभाग — तालिका, चार्ट या सूत्र के लिए परिशिष्ट पृष्ठ', 'Shadow-boxed Attachment Section — Appendix Page for Tables, Charts or Formulas'),
     accent: '#57534e',
     category: 'special',
     kind: 'chapter',
@@ -506,8 +512,8 @@ ${buildDesignBoxHtml(
   },
   {
     id: 'back-colophon',
-    name: 'শেষ পাতা (বই সম্পর্কে)',
-    desc: 'অলংকৃত বিদায়ী পাতা — আরও বইয়ের তালিকা ও প্রকাশনীর যোগাযোগ তথ্য',
+    name: L3('শেষ পাতা (বই সম্পর্কে)', 'अंतिम पृष्ठ (किताब के बारे में)', 'About the Book'),
+    desc: L3('অলংকৃত বিদায়ী পাতা — আরও বইয়ের তালিকা ও প্রকাশনীর যোগাযোগ তথ্য', 'अलंकृत विदाई पृष्ठ — अधिक किताबों की सूची और प्रकाशन की संपर्क जानकारी', 'Ornamented Back Page — More Books List and Publisher Contact Info'),
     accent: '#7f1d1d',
     category: 'special',
     kind: 'copyright',
@@ -528,8 +534,8 @@ ${TIP_NOTE}
   },
   {
     id: 'exam-2col',
-    name: 'প্রশ্নপত্র (দুই কলাম)',
-    desc: 'পরীক্ষার প্রশ্নপত্র ধাঁচ — শিরোনাম-ব্যানার সহ প্রশ্নগুলো দুই কলামে, মাঝে রেখা; লেখা স্বয়ংক্রিয়ভাবে কলামে বয়ে যায়',
+    name: L3('প্রশ্নপত্র (দুই কলাম)', 'प्रश्नपत्र (दो स्तंभ)', 'Question Paper (Two Columns)'),
+    desc: L3('পরীক্ষার প্রশ্নপত্র ধাঁচ — শিরোনাম-ব্যানার সহ প্রশ্নগুলো দুই কলামে, মাঝে রেখা; লেখা স্বয়ংক্রিয়ভাবে কলামে বয়ে যায়', 'परीक्षा प्रश्नपत्र डिज़ाइन — शीर्षक-बैनर के साथ प्रश्न दो स्तंभों में, बीच में रेखा; लेखा स्वचालित रूप से स्तंभ में बहता है', 'Exam Paper Template — Title-banner with questions in two columns, with a line in between; text automatically flows between columns'),
     accent: '#334155',
     category: 'special',
     kind: 'preface',
@@ -558,8 +564,8 @@ ${TIP_NOTE}
   },
   {
     id: 'magazine-3col',
-    name: 'ম্যাগাজিন পাতা (তিন কলাম)',
-    desc: 'স্কুল-ম্যাগাজিন/সংবাদপত্র ধাঁচ — মাস্টহেড শিরোনাম ও তিন কলাম লেখা; নিউজলেটার, দেয়াল-পত্রিকায়ও ব্যবহারযোগ্য',
+    name: L3('ম্যাগাজিন পাতা (তিন কলাম)', 'मैगज़ीन पृष्ठ (तीन स्तंभ)', 'Magazine Page (Three Columns)'),
+    desc: L3('স্কুল-ম্যাগাজিন/সংবাদপত্র ধাঁচ — মাস্টহেড শিরোনাম ও তিন কলাম লেখা; নিউজলেটার, দেয়াল-পত্রিকায়ও ব্যবহারযোগ্য', 'स्कूल-मैगज़ीन/समाचार पत्र शैली — मास्टहेड शीर्षक और तीन कॉलम लेखन; न्यूज़लेटर, दीवार-पत्रिका में भी उपयोगी', 'School-Magazine/Newspaper Style — Masthead Title and Three-Column Writing; Also Suitable for Newsletters, Wall Newspapers'),
     accent: '#9f1239',
     category: 'special',
     kind: 'preface',

@@ -50,19 +50,22 @@ export type BlueprintGenre =
   | 'magazine'
   | 'islamic';
 
-export const BLUEPRINT_GENRE_META: Record<BlueprintGenre, { label: string; emoji: string }> = {
-  literature: { label: 'সাহিত্য', emoji: '📖' },
-  poetry: { label: 'কবিতা', emoji: '🪶' },
-  textbook: { label: 'পাঠ্যবই', emoji: '🎓' },
-  science: { label: 'বিজ্ঞান', emoji: '🔬' },
-  children: { label: 'শিশু', emoji: '🧸' },
-  cooking: { label: 'রান্না', emoji: '🍳' },
-  history: { label: 'ইতিহাস-জীবনী', emoji: '🏛️' },
-  coaching: { label: 'কোচিং-সহায়িকা', emoji: '📝' },
-  journal: { label: 'ডায়েরি-জার্নাল', emoji: '📔' },
-  report: { label: 'প্রতিবেদন', emoji: '📊' },
-  magazine: { label: 'ম্যাগাজিন', emoji: '🗞️' },
-  islamic: { label: 'ইসলামিক', emoji: '🕌' },
+export interface BpT3 { bn: string; hi: string; en: string }
+const L3 = (bn: string, hi: string, en: string): BpT3 => ({ bn, hi, en });
+
+export const BLUEPRINT_GENRE_META: Record<BlueprintGenre, { label: BpT3; emoji: string }> = {
+  literature: { label: { bn: 'সাহিত্য', hi: 'साहित्य', en: 'Literature' }, emoji: '📖' },
+  poetry: { label: { bn: 'কবিতা', hi: 'कविता', en: 'Poetry' }, emoji: '🪶' },
+  textbook: { label: { bn: 'পাঠ্যবই', hi: 'पाठ्यपुस्तक', en: 'Textbooks' }, emoji: '🎓' },
+  science: { label: { bn: 'বিজ্ঞান', hi: 'विज्ञान', en: 'Science' }, emoji: '🔬' },
+  children: { label: { bn: 'শিশু', hi: 'बच्चों', en: 'Children' }, emoji: '🧸' },
+  cooking: { label: { bn: 'রান্না', hi: 'পाकশास्त्र', en: 'Cooking' }, emoji: '🍳' },
+  history: { label: { bn: 'ইতিহাস-জীবনী', hi: 'इतिहास-जीवनी', en: 'History & Bio' }, emoji: '🏛️' },
+  coaching: { label: { bn: 'কোচিং-সহায়িকা', hi: 'कोचिंग-गाइड', en: 'Coaching & Guide' }, emoji: '📝' },
+  journal: { label: { bn: 'ডায়েরি-জার্নাল', hi: 'डायरी-जर्नल', en: 'Diary & Journal' }, emoji: '📔' },
+  report: { label: { bn: 'প্রতিবেদন', hi: 'प्रतिवेदन', en: 'Reports' }, emoji: '📊' },
+  magazine: { label: { bn: 'ম্যাগাজিন', hi: 'मैगज़ीन', en: 'Magazines' }, emoji: '🗞️' },
+  islamic: { label: { bn: 'ইসলামিক', hi: 'इस्लामिक', en: 'Islamic' }, emoji: '🕌' },
 };
 
 /** ব্লুপ্রিন্ট প্রয়োগের দুই মোড */
@@ -94,13 +97,13 @@ export interface BookBlueprintPage {
 
 export interface BookBlueprint {
   id: string;
-  name: string;
-  desc: string;
+  name: BpT3;
+  desc: BpT3;
   /** কার্ড প্রিভিউয়ের অ্যাকসেন্ট */
   accent: string;
   genre: BlueprintGenre;
   /** কার্ডে দেখানো ছোট বৈশিষ্ট্য-ট্যাগ (কী কী পাতা আসবে) */
-  tags: string[];
+  tags: BpT3[];
   settings: BookBlueprintSettings;
   pages: BookBlueprintPage[];
 }
@@ -163,11 +166,11 @@ const layeredFrame = (inner: string, outerColor: string, innerColor: string) =>
 
 const novel: BookBlueprint = {
   id: 'bp-novel',
-  name: 'উপন্যাস — নীরব ক্লাসিক',
-  desc: 'সাহিত্যের বইয়ের চিরায়ত ডিজাইন — সিরিফ টাইপ, মেরুন-সোনালি সংযত অলংকরণ, ড্রপ-ক্যাপসহ অধ্যায় সূচনা',
+  name: L3('উপন্যাস — নীরব ক্লাসিক', 'उपन्यास — नीरब क्लासिक', 'Novel — Silent Classic'),
+  desc: L3('সাহিত্যের বইয়ের চিরায়ত ডিজাইন — সিরিফ টাইপ, মেরুন-সোনালি সংযত অলংকরণ, ড্রপ-ক্যাপসহ অধ্যায় সূচনা', 'साहित्य की किताब का क्लासिक डिज़ाइन — सेरिफ फॉन्ट, मैरून-सोने का शानदार आर्टवर्क, ड्रॉप-कैप्स वाले अध्याय शुरुआत', 'Classic Literature Book Design — Serif Type, Maroon-Gold Ornate Decoration, Drop-Caps Chapter Openers'),
   accent: '#7f1d1d',
   genre: 'literature',
-  tags: ['হাফ-টাইটেল', 'শিরোনাম পাতা', 'কপিরাইট', 'সূচিপত্র', 'অধ্যায় সূচনা', 'নমুনা অধ্যায়'],
+  tags: [L3('হাফ-টাইটেল', 'आधा-शीर्षक', 'Half-Title'), L3('শিরোনাম পাতা', 'शीर्षक पृष्ठ', 'Title Page'), L3('কপিরাইট', 'कॉपीराइट', 'Copyright'), L3('সূচিপত্র', 'सूचीपत्र', 'Index'), L3('অধ্যায় সূচনা', 'अध्याय शुरुआत', 'Chapter Start'), L3('নমুনা অধ্যায়', 'नमूना अध्याय', 'Sample Chapter')],
   settings: {
     paperSize: 'demy-octavo',
     defaultFont: 'Tiro Bangla',
@@ -251,11 +254,11 @@ ${TIP_NOTE}
 
 const guide: BookBlueprint = {
   id: 'bp-guide',
-  name: 'সহায়িকা — একাডেমিক প্রো',
-  desc: 'কোচিং/স্কুল গাইড বইয়ের পূর্ণ সেটআপ — গাঢ় টিল-সোনালি প্যালেট, ব্যান্ড-শিরোনাম, কলআউট আর MCQ-বান্ধব কাঠামো',
+  name: L3('সহায়িকা — একাডেমিক প্রো', 'सहायिका — एकाडेमिक प्रो', 'Handbook — Academic Pro'),
+  desc: L3('কোচিং/স্কুল গাইড বইয়ের পূর্ণ সেটআপ — গাঢ় টিল-সোনালি প্যালেট, ব্যান্ড-শিরোনাম, কলআউট আর MCQ-বান্ধব কাঠামো', 'कोचिंग/स्कूल गाइड बुक का पूर्ण सेटअप — गाढ़ा टील-सुनहरी पैलेट, बैंड-शीर्षक, कॉलआउट और MCQ-अनुकूल संरचना', 'Full Setup for Coaching/School Guide Book — Dark Teal-Gold Palette, Band-Header, Callout and MCQ-Friendly Layout'),
   accent: '#115e59',
   genre: 'coaching',
-  tags: ['প্রতিষ্ঠান শিরোনাম', 'কপিরাইট', 'সূচিপত্র', 'অধ্যায় + শেখার তালিকা', 'নমুনা পাঠ', 'শেষ পাতা'],
+  tags: [L3('প্রতিষ্ঠান শিরোনাম', 'संस्था शीर्षक', 'Institution Title'), L3('কপিরাইট', 'कॉपीराइट', 'Copyright'), L3('সূচিপত্র', 'सूचीपत्र', 'Index'), L3('অধ্যায় + শেখার তালিকা', 'अध्याय + सीखने की सूची', 'Chapter + Learning List'), L3('নমুনা পাঠ', 'नमूना पाठ', 'Sample Text'), L3('শেষ পাতা', 'अंतिम पृष्ठ', 'Last Page')],
   settings: {
     paperSize: 'a4',
     defaultFont: 'Hind Siliguri',
@@ -344,11 +347,11 @@ ${cap('প্রতিষ্ঠানের নাম · ঠিকানা · �
 
 const poetry: BookBlueprint = {
   id: 'bp-poetry',
-  name: 'কবিতা সংকলন — চন্মনী',
-  desc: 'হাওয়াদার কবিতার বই — ক্রিম কাগজ, বেগুনি-সোনালি অলংকরণ, কেন্দ্রিভূত স্তবক আর প্রশস্ত শ্বাসপ্রশ্বাসের ফাঁকা জায়গা',
+  name: L3('কবিতা সংকলন — চন্মনী', 'कविता संकलन — चन्मनी', 'Poetry Collection — Chamanee'),
+  desc: L3('হাওয়াদার কবিতার বই — ক্রিম কাগজ, বেগুনি-সোনালি অলংকরণ, কেন্দ্রিভূত স্তবক আর প্রশস্ত শ্বাসপ্রশ্বাসের ফাঁকা জায়গা', 'हावड़ा कविता की किताब — क्रीम पेपर, बैंगनी-सोने का आर्टवर्क, केंद्रित स्तबक और चौड़ी सांसों की खाली जगह', 'Howrah Poetry Book — Cream Paper, Purple-Gold Ornamentation, Centered Stanzas and Wide Breathing Space'),
   accent: '#86198f',
   genre: 'poetry',
-  tags: ['হাফ-টাইটেল', 'শিরোনাম পাতা', 'কপিরাইট', 'সূচিপত্র', 'কবিতা পাতা', 'উৎসর্গ'],
+  tags: [L3('হাফ-টাইটেল', 'आधा-शीर्षक', 'Half-Title'), L3('শিরোনাম পাতা', 'शीर्षक पृष्ठ', 'Title Page'), L3('কপিরাইট', 'कॉपीराइट', 'Copyright'), L3('সূচিপত্র', 'सूचीपत्र', 'Index'), L3('কবিতা পাতা', 'कविता पृष्ठ', 'Poem Page'), L3('উৎসর্গ', 'उत्सर्ग', 'Dedication')],
   settings: {
     paperSize: 'a5',
     paperColor: 'cream',
@@ -431,11 +434,11 @@ ${TIP_NOTE}
 
 const textbook: BookBlueprint = {
   id: 'bp-textbook',
-  name: 'পাঠ্যবই — মানসম্মত ক্লাসরুম',
-  desc: 'শিক্ষাপ্রতিষ্ঠানের পূর্ণাঙ্গ পাঠ্যবই — বন-সবুজ প্যালেট, শেখার-তালিকা, সূত্র-কলআউট, অনুশীলনীসহ ক্লাসরুম-প্রস্তুত কাঠামো',
+  name: L3('পাঠ্যবই — মানসম্মত ক্লাসরুম', 'पाठ्यपुस्तक — मानक कक्षा', 'Textbook — Standard Classroom'),
+  desc: L3('শিক্ষাপ্রতিষ্ঠানের পূর্ণাঙ্গ পাঠ্যবই — বন-সবুজ প্যালেট, শেখার-তালিকা, সূত্র-কলআউট, অনুশীলনীসহ ক্লাসরুম-প্রস্তুত কাঠামো', 'शैक्षणिक संस्था का पूर्ण पाठ्यपुस्तक — जंगल-हरा रंग योजना, सीखने की सूची, स्रोत-कलाउट, और अभ्यास के साथ कक्षा-तैयार संरचना', 'Complete Textbook for Educational Institutions — Forest-green palette, learning-list, source-callout, and exercise-ready classroom structure'),
   accent: '#166534',
   genre: 'textbook',
-  tags: ['প্রতিষ্ঠান শিরোনাম', 'প্রকাশনা তথ্য', 'বিষয়সূচি', 'অধ্যায় + শেখার-তালিকা', 'নমুনা পাঠ + অনুশীলনী', 'শেষ পাতা'],
+  tags: [L3('প্রতিষ্ঠান শিরোনাম', 'संस्था शीर्षक', 'Institution Title'), L3('প্রকাশনা তথ্য', 'प्रकाशन जानकारी', 'Publication Information'), L3('বিষয়সূচি', 'विषय सूची', 'Contents'), L3('অধ্যায় + শেখার-তালিকা', 'अध्याय + सीखने की सूची', 'Chapter + Learning List'), L3('নমুনা পাঠ + অনুশীলনী', 'नमूना पाठ + अभ्यास', 'Sample Text + Exercise'), L3('শেষ পাতা', 'अंतिम पृष्ठ', 'Last Page')],
   settings: {
     paperSize: 'a4',
     defaultFont: 'Hind Siliguri',
@@ -523,11 +526,11 @@ ${cap('বিদ্যানিকেতন উচ্চ বিদ্যাল�
 
 const science: BookBlueprint = {
   id: 'bp-science',
-  name: 'বিজ্ঞান — পরীক্ষা প্রস্তুতি',
-  desc: 'পরীক্ষা-কেন্দ্রিক বিজ্ঞানের বই — পাথর-কালি ও সোনালি-তাম্রের গম্ভীর প্যালেট, সূত্র, SI এককের টেবিল আর ভুলের সতর্কতা',
+  name: L3('বিজ্ঞান — পরীক্ষা প্রস্তুতি', 'विज्ञान — परीक्षा तैयारी', 'Science — Exam Preparation'),
+  desc: L3('পরীক্ষা-কেন্দ্রিক বিজ্ঞানের বই — পাথর-কালি ও সোনালি-তাম্রের গম্ভীর প্যালেট, সূত্র, SI এককের টেবিল আর ভুলের সতর্কতা', 'परीक्षा-केंद्रित विज्ञान की किताब — पत्थर-काला और सुनहरा-ताम्बे की गहरी पैलेट, सूत्र, SI इकाइयों की तालिका और गलतियों की चेतावनी', 'Exam-Focused Science Book — Stone-Black and Gold-Copper Deep Palette, Formulas, SI Units Table and Common Mistakes Warning'),
   accent: '#b45309',
   genre: 'science',
-  tags: ['শিরোনাম পাতা', 'বিষয়সূচি', 'অধ্যায় + মূল ধারণা', 'সূত্র + SI একক টেবিল', 'পরীক্ষার ভুল-সতর্কতা', 'শেষ পাতা'],
+  tags: [L3('শিরোনাম পাতা', 'शीर्षक पृष्ठ', 'Title Page'), L3('বিষয়সূচি', 'विषय सूची', 'Contents'), L3('অধ্যায় + মূল ধারণা', 'अध्याय + मुख्य अवधारणा', 'Chapter + Main Concept'), L3('সূত্র + SI একক টেবিল', 'स्रोत + SI इकाई तालिका', 'Sources + SI Units Table'), L3('পরীক্ষার ভুল-সতর্কতা', 'परीक्षा चेतावनी', 'Exam Warning'), L3('শেষ পাতা', 'अंतिम पृष्ठ', 'Last Page')],
   settings: {
     paperSize: 'a4',
     defaultFont: 'Kalpurush',
@@ -600,11 +603,11 @@ ${cap('লেখকের নাম · প্রকাশনীর নাম', C
 
 const children: BookBlueprint = {
   id: 'bp-children',
-  name: 'শিশু কিতাব — রঙিন গল্প',
-  desc: 'ছোট্টদের বড় বড় অক্ষরে রঙিন গল্পের বই — উষ্ণ কমলা-সোনালি রং, মজার ডিজাইন-বক্স, ছবির ফ্রেম আর গল্প-বীজের পাতা',
+  name: L3('শিশু কিতাব — রঙিন গল্প', 'बच्चों की किताब — रंगीन कहानी', 'Children\'s Book — Colorful Story'),
+  desc: L3('ছোট্টদের বড় বড় অক্ষরে রঙিন গল্পের বই — উষ্ণ কমলা-সোনালি রং, মজার ডিজাইন-বক্স, ছবির ফ্রেম আর গল্প-বীজের পাতা', 'बच्चों के लिए बड़े अक्षरों में रंगीन कहानी की किताब — गर्म नारंगी-सुनहरा रंग, मजेदार डिज़ाइन-बॉक्स, तस्वीर का फ्रेम और कहानी-बीज का पृष्ठ', 'Colorful Story Book for Kids with Big Letters — Warm Orange-Gold Color, Fun Design-Box, Picture Frame and Story-Starter Page'),
   accent: '#ea580c',
   genre: 'children',
-  tags: ['রঙিন শিরোনাম পাতা', 'গল্প পাতা + ছবির ফ্রেম', 'শেকড়ে শেখা', 'গল্প-বীজ', 'শেষ পাতা'],
+  tags: [L3('রঙিন শিরোনাম পাতা', 'रंगीन शीर्षक पृष्ठ', 'Color Title Page'), L3('গল্প পাতা + ছবির ফ্রেম', 'गल्प पृष्ठ + चित्र फ्रेम', 'Story Page + Image Frame'), L3('শেকড়ে শেখা', 'जड़ों में सीखें', 'Learning from Roots'), L3('গল্প-বীজ', 'गल्प-बीज', 'Story Seed'), L3('শেষ পাতা', 'अंतिम पृष्ठ', 'Last Page')],
   settings: {
     paperSize: 'a5',
     defaultFont: 'Baloo Da 2',
@@ -675,11 +678,11 @@ ${sp(2)}
 
 const cooking: BookBlueprint = {
   id: 'bp-cooking',
-  name: 'রান্নার বই — স্বাদের সংকলন',
-  desc: 'ঘরোয়া রেসিপির বই — টেরাকোটা-সোনালি উষ্ণতা, ফলক-ফ্রেমের শিরোনাম, উপকরণ-বক্স আর ধাপে ধাপে প্রণালি',
+  name: L3('রান্নার বই — স্বাদের সংকলন', 'रसोई पुस्तक — स्वादों का संकलन', 'Cookbook — A Collection of Flavors'),
+  desc: L3('ঘরোয়া রেসিপির বই — টেরাকোটা-সোনালি উষ্ণতা, ফলক-ফ্রেমের শিরোনাম, উপকরণ-বক্স আর ধাপে ধাপে প্রণালি', 'घरेलू रेसिपी की किताब — टेराकोटा-सुनहरी गर्मी, बोर्ड-फ्रेम शीर्षक, सामग्री-बॉक्स और चरण-दर-चरण प्रक्रिया', 'Homemade Recipe Book — Terracotta-Gold Warmth, Board-Frame Titles, Ingredient-Box and Step-by-Step Method'),
   accent: '#c2410c',
   genre: 'cooking',
-  tags: ['শিরোনাম পাতা', 'রান্নার তালিকা', 'রেসিপি: উপকরণ + প্রণালি', 'দ্বিতীয় রেসিপি', 'রান্নাঘরের কথা'],
+  tags: [L3('শিরোনাম পাতা', 'शीर्षक पृष्ठ', 'Title Page'), L3('রান্নার তালিকা', 'रेसिपी सूची', 'Recipe List'), L3('রেসিপি: উপকরণ + প্রণালি', 'रेसिपी: सामग्री + विधि', 'Recipe: Ingredients + Method'), L3('দ্বিতীয় রেসিপি', 'दूसरी रेसिपी', 'Second Recipe'), L3('রান্নাঘরের কথা', 'रसोई के बारे में', 'About the Kitchen')],
   settings: {
     paperSize: 'a5',
     defaultFont: 'Anek Bangla',
@@ -757,11 +760,11 @@ ${TIP_NOTE}
 
 const history: BookBlueprint = {
   id: 'bp-history',
-  name: 'ইতিহাস ও জীবনী — ঐতিহ্যবাহী',
-  desc: 'মহিমাময় ইতিহাস-গ্রন্থের ডিজাইন — ক্রিম কাগজে সেপিয়া-ব্রঞ্জ কালি, স্তরিত ফলক-ফ্রেম, সময়রেখার টেবিল আর প্রামাণ্য উদ্ধৃতি',
+  name: L3('ইতিহাস ও জীবনী — ঐতিহ্যবাহী', 'इतिहास और जीवनी — पारंपरिक', 'History and Biography — Traditional'),
+  desc: L3('মহিমাময় ইতিহাস-গ্রন্থের ডিজাইন — ক্রিম কাগজে সেপিয়া-ব্রঞ্জ কালি, স্তরিত ফলক-ফ্রেম, সময়রেখার টেবিল আর প্রামাণ্য উদ্ধৃতি', 'भव्य इतिहास-पुस्तक डिज़ाइन — क्रीम कागज़ पर सेपिया-ब्राउन रंग, स्तरित फ़्रेम, टाइमलाइन टेबल और प्रमाणित उद्धरण', 'Majestic History Book Design — Sepia-brown ink on cream paper, layered frame, timeline table, and authentic citations'),
   accent: '#7c2d12',
   genre: 'history',
-  tags: ['ফলক-শিরোনাম পাতা', 'সূচিপত্র', 'পরিচ্ছেদ সূচনা', 'সময়রেখার টেবিল', 'শেষ পাতা'],
+  tags: [L3('ফলক-শিরোনাম পাতা', 'प्लेट-शीर्षक पृष्ठ', 'Plaque Title Page'), L3('সূচিপত্র', 'सूचीपत्र', 'Index'), L3('পরিচ্ছেদ সূচনা', 'अध्याय शुरुआत', 'Section Start'), L3('সময়রেখার টেবিল', 'समयरेखा तालिका', 'Timeline Table'), L3('শেষ পাতা', 'अंतिम पृष्ठ', 'Last Page')],
   settings: {
     paperSize: 'demy-octavo',
     paperColor: 'cream',
@@ -837,11 +840,11 @@ ${cap('প্রকাশনীর নাম · ঢাকা', C.muted, 10, 2)}
 
 const journal: BookBlueprint = {
   id: 'bp-journal',
-  name: 'ডায়েরি ও জার্নাল — আমার খাতা',
-  desc: 'লেখার অভ্যাস গড়ার ব্যক্তিগত খাতা — কোমল জলপাই-সবুজ ছোঁয়া, বিন্দু-রেখার শোভা, অভ্যাস-ট্র্যাকার আর সাপ্তাহিক প্রতিফলন',
+  name: L3('ডায়েরি ও জার্নাল — আমার খাতা', 'डायरी और जर्नल — मेरा खाता', 'Diary and Journal — My Notebook'),
+  desc: L3('লেখার অভ্যাস গড়ার ব্যক্তিগত খাতা — কোমল জলপাই-সবুজ ছোঁয়া, বিন্দু-রেখার শোভা, অভ্যাস-ট্র্যাকার আর সাপ্তাহিক প্রতিফলন', 'लेखन अभ्यास बनाने के लिए निजी डायरी — नरम जैतून-हरा छाप, बिंदु-रेखा सजावट, अभ्यास-ट्रैकर और साप्ताहिक प्रतिबिंब', 'Personal Notebook for Building Writing Habits — Soft olive-green touch, dotted line decoration, habit-tracker, and weekly reflection'),
   accent: '#4d7c0f',
   genre: 'journal',
-  tags: ['নরম শিরোনাম পাতা', 'কীভাবে লিখবে', 'অভ্যাস খাতা', 'সাপ্তাহিক প্রতিফলন', 'শেষ পাতা'],
+  tags: [L3('নরম শিরোনাম পাতা', 'नरम शीर्षक पृष्ठ', 'Soft Title Page'), L3('কীভাবে লিখবে', 'कैसे लिखेंगे', 'How to Write'), L3('অভ্যাস খাতা', 'अभ्यास कार्यपुस्तिका', 'Practice Workbook'), L3('সাপ্তাহিক প্রতিফলন', 'साप्ताहिक प्रतिफलन', 'Weekly Reflection'), L3('শেষ পাতা', 'अंतिम पृष्ठ', 'Last Page')],
   settings: {
     paperSize: 'a5',
     defaultFont: 'Mina',
@@ -911,11 +914,11 @@ ${TIP_NOTE}
 
 const report: BookBlueprint = {
   id: 'bp-report',
-  name: 'প্রতিবেদন — পেশাদার গবেষণা',
-  desc: 'গবেষণা ও মূল্যায়নের আনুষ্ঠানিক প্রতিবেদন — পাথর-কালি ও তাম্র-সোনার দৃঢ় প্যালেট, নির্বাহী সারসংক্ষেপ আর তথ্য-টেবিল',
+  name: L3('প্রতিবেদন — পেশাদার গবেষণা', 'रिपोर्ट — व्यावसायिक शोध', 'Report — Professional Research'),
+  desc: L3('গবেষণা ও মূল্যায়নের আনুষ্ঠানিক প্রতিবেদন — পাথর-কালি ও তাম্র-সোনার দৃঢ় প্যালেট, নির্বাহী সারসংক্ষেপ আর তথ্য-টেবিল', 'अनुसंधान और मूल्यांकन का औपचारिक रिपोर्ट — पत्थर-काली और ताम्र-सुनहरी ठोस पैलेट, कार्यकारी सारांश और डेटा-टेबल', 'Formal Report of Research and Evaluation — Stone-Black and Copper-Gold Solid Palette, Executive Summary and Data-Tables'),
   accent: '#44403c',
   genre: 'report',
-  tags: ['আনুষ্ঠানিক শিরোনাম পাতা', 'নির্বাহী সারসংক্ষেপ', 'বিষয়সূচি', 'তথ্য-টেবিলসহ ফলাফল', 'সুপারিশ', 'শেষ পাতা'],
+  tags: [L3('আনুষ্ঠানিক শিরোনাম পাতা', 'आधिकारिक शीर्षक पृष्ठ', 'Formal Title Page'), L3('নির্বাহী সারসংক্ষেপ', 'कार्यकारी सारांश', 'Executive Summary'), L3('বিষয়সূচি', 'विषय सूची', 'Contents'), L3('তথ্য-টেবিলসহ ফলাফল', 'डेटा-टेबल के साथ परिणाम', 'Results with Data Tables'), L3('সুপারিশ', 'सिफारिश', 'Recommendation'), L3('শেষ পাতা', 'अंतिम पृष्ठ', 'Last Page')],
   settings: {
     paperSize: 'a4',
     defaultFont: 'Noto Sans Bengali',
@@ -1001,11 +1004,11 @@ ${cap('প্রস্তুতকর্তা · যাচাইকারী ·
 
 const magazine: BookBlueprint = {
   id: 'bp-magazine',
-  name: 'ম্যাগাজিন — সাহিত্য পত্রিকা',
-  desc: 'পত্রিকার মস্তহেড থেকে কবিতা-কোণ — মেরুন-সোনালি সাহসী মস্তহেড, সম্পাদকীয়, গল্প আর পাঠকের লেখা পাঠানোর তথ্যসহ পূর্ণাঙ্গ সংখ্যা',
+  name: L3('ম্যাগাজিন — সাহিত্য পত্রিকা', 'मैगज़ीन — साहित्य पत्रिका', 'Magazine — Literary Journal'),
+  desc: L3('পত্রিকার মস্তহেড থেকে কবিতা-কোণ — মেরুন-সোনালি সাহসী মস্তহেড, সম্পাদকীয়, গল্প আর পাঠকের লেখা পাঠানোর তথ্যসহ পূর্ণাঙ্গ সংখ্যা', 'पत्रिका के मुखपृष्ठ से कविता-कोण — गहरा-सुनहरा बहादुर मुखपृष्ठ, संपादकीय, कहानी और पाठक के लेख भेजने की जानकारी के साथ पूर्णांग संख्या', 'From Magazine Masthead to Poetry Corner — Maroon-Gold Bold Masthead, Editorial, Stories and Information for Reader Submissions in Full Issue'),
   accent: '#9f1239',
   genre: 'magazine',
-  tags: ['মস্তহেড পাতা', 'সম্পাদকীয়', 'এ সংখ্যায়', 'গল্প', 'কবিতা-কোণ', 'লেখা পাঠাও'],
+  tags: [L3('মস্তহেড পাতা', 'मुखपृष्ठ', 'Masthead Page'), L3('সম্পাদকীয়', 'संपादकीय', 'Editorial'), L3('এ সংখ্যায়', 'इस संख्या में', 'In this Issue'), L3('গল্প', 'गल्प', 'Story'), L3('কবিতা-কোণ', 'कविता-कोण', 'Poetry Corner'), L3('লেখা পাঠাও', 'लेख भेजें', 'Submit Writing')],
   settings: {
     paperSize: 'letter',
     defaultFont: 'Anek Bangla',
@@ -1088,11 +1091,11 @@ ${cap('পত্রিকার নাম · ইমেইল · ঠিকান�
 
 const islamic: BookBlueprint = {
   id: 'bp-islamic',
-  name: 'ইসলামিক — নূর সংকলন',
-  desc: 'প্রশান্ত ইসলামিক সংকলন — ক্রিম কাগজে সবুজ-সোনালি জ্যামিতিক শোভা, স্তরিত ফ্রেমের শিরোনাম, দোয়া-হাদিসের কলআউট',
+  name: L3('ইসলামিক — নূর সংকলন', 'इस्लामिक — नूर संकलन', 'Islamic — Noor Collection'),
+  desc: L3('প্রশান্ত ইসলামিক সংকলন — ক্রিম কাগজে সবুজ-সোনালি জ্যামিতিক শোভা, স্তরিত ফ্রেমের শিরোনাম, দোয়া-হাদিসের কলআউট', 'शांत इस्लामिक संकलन — क्रीम पेपर पर हरा-सुनहरा ज्यामितिक शोभा, स्तरित फ्रेम का शीर्षक, दुआ-हदीस का हाइलाइट', 'Tranquil Islamic Collection — Cream paper with green-gold geometric embellishments, layered frame title, dua-hadith callout'),
   accent: '#166534',
   genre: 'islamic',
-  tags: ['বিসমিল্লাহ শিরোনাম পাতা', 'সূচিপত্র', 'পরিচ্ছেদ পাতা', 'দোয়া ও হাদিস', 'ফজিলত', 'দোয়ার শেষ পাতা'],
+  tags: [L3('বিসমিল্লাহ শিরোনাম পাতা', 'बिस्मिल्लाह शीर्षक पृष्ठ', 'Bismillah Title Page'), L3('সূচিপত্র', 'सूचीपत्र', 'Index'), L3('পরিচ্ছেদ পাতা', 'अध्याय पृष्ठ', 'Section Page'), L3('দোয়া ও হাদিস', 'दुआ और हदीस', 'Duas and Hadiths'), L3('ফজিলত', 'फज़ीलत', 'Fazilat'), L3('দোয়ার শেষ পাতা', 'दुआ का अंतिम पृष्ठ', 'Final Duas Page')],
   settings: {
     paperSize: 'demy-octavo',
     paperColor: 'cream',
