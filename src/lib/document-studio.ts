@@ -3329,7 +3329,7 @@ const BUSINESS_CARD_TPL: DsTemplate = {
     const back = buildDesignBoxHtml(
       { variant: 'shaded', border: P.border, fill: P.band, bstyle: 'solid', bwidth: 1 },
       [
-        pc(`<strong style="font-size:22pt; letter-spacing:2px">${esc(mono)}</strong>`, `color:${P.head}`, 'margin-top:0.4em'),
+        pc(`<strong style="font-size:22pt; letter-spacing:2px">${esc(mono)}</strong>`, `color:${P.head}; margin-top:0.4em`),
         pc(`<span style="font-size:11pt; letter-spacing:0.8px">${esc(V(v, 'company'))}</span>`, `color:${P.ink}`),
         V(v, 'tagline') ? pc(`<em style="font-size:9pt; color:${P.soft}">${esc(V(v, 'tagline'))}</em>`, 'margin-bottom:0.3em') : '',
       ].join(''),
