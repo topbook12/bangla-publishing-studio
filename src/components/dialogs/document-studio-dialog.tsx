@@ -1,7 +1,7 @@
 /**
  * ডকুমেন্ট স্টুডিও — ৩ ধাপের উইজার্ড (Document Studio wizard)
  * ──────────────────────────────────────────────────────────────────
- *  ধাপ ১ নকশা: ১০ ক্যাটাগরিতে ৫২টি বিশ্বমানের ডকুমেন্ট — রেজিউমে-ক্যারিয়ার,
+ *  ধাপ ১ নকশা: ১০ ক্যাটাগরিতে ৫৫টি বিশ্বমানের ডকুমেন্ট — রেজিউমে-ক্যারিয়ার,
  *    অফিস-পত্র, ইনভয়েস, চুক্তি, সনদ, শিক্ষা, আমন্ত্রণ, চিকিৎসা, প্রচার +
  *    বাংলাদেশ-ভারত আঞ্চলিক সংগ্রহ (সনদ, দলিল, দরখাস্ত)।
  *  ধাপ ২ তথ্য: টেমপ্লেট-ভিত্তিক ডাইনামিক ফরম + AI দিয়ে-পূরণ (সংক্ষিপ্ত
@@ -18,7 +18,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Check, ChevronLeft, ChevronRight, CircleAlert, FileText, Loader2, Replace,
-  Search, Sparkles, Wand2, ZoomIn, ZoomOut,
+  Search, SearchX, Sparkles, Wand2, ZoomIn, ZoomOut,
 } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
@@ -33,7 +33,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useUiStore } from '@/lib/ui-store';
 import { useEditorStore } from '@/lib/store';
 import {
-  buildDsHtml, dsDefaultValues, dsPreviewInline, DS_CATEGORY_LABELS, DS_CATEGORY_ORDER,
+  buildDsHtml, dsDefaultValues, dsDemoValues, dsPreviewInline, DS_CATEGORY_LABELS, DS_CATEGORY_ORDER,
   DS_STYLES, DS_TEMPLATES, dsTemplateById,
   type DsCategory, type DsTemplate, type DsValues,
 } from '@/lib/document-studio';
@@ -55,6 +55,10 @@ const STEPS: Array<{ id: Step; key: string }> = [
 /** প্রিভিউ-শীটের ভার্চুয়াল প্রস্থ (px) — A4-প্রতিরূপ */
 const SHEET_W = 794;
 const SHEET_H = 1123;
+
+/** জনপ্রিয় নকশা — গ্যালারির শীর্ষে ফিচার্ড-স্ট্রিপ (ওয়ার্ড/ক্যানভা-প্রথা) */
+const POPULAR_IDS = ['resume-modern', 'invoice', 'official-letter', 'award', 'letterhead', 'calendar-month', 'invitation', 'press-release'] as const;
+const POPULAR_SET = new Set<string>(POPULAR_IDS);
 
 /** ক্যাটাগরি → lucide আইকন (গ্রিড কার্ডের বাঁ-চিহ্ন) */
 const CAT_ICONS: Record<DsCategory, string> = {
@@ -117,11 +121,11 @@ function FieldControl({ field, values, onChange, disabled }: {
   );
 }
 
-/** নকশা-কার্ডের মিনি-থাম্ব — আসল HTML-এর স্কেল-ডাউন ক্রপ (কাঁচা-রেন্ডার — p-স্টাইলসহ) */
+/** নকশা-কার্ডের মিনি-থাম্ব — আসল HTML-এর স্কেল-ডাউন ক্রপ (নমুনা-মানে ভরা) */
 function DesignThumb({ html }: { html: string }) {
   const inner = useMemo(() => dsPreviewInline(html), [html]);
   return (
-    <div className="relative h-28 overflow-hidden rounded-md border border-border bg-white" aria-hidden="true">
+    <div className="relative h-32 overflow-hidden rounded-md border border-border bg-white" aria-hidden="true">
       <div
         className="ds-sheet pointer-events-none absolute left-0 top-0 origin-top-left select-none"
         style={{ width: 560, transform: 'scale(0.42)', padding: '10px 20px 0', minHeight: 0 }}
@@ -129,6 +133,18 @@ function DesignThumb({ html }: { html: string }) {
       />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t from-white to-transparent" />
     </div>
+  );
+}
+
+/** সাজ-প্যালেটের রঙ-বিন্দু (কার্ড-ফুটার) */
+function StyleDots({ tpl }: { tpl: DsTemplate }) {
+  const dots = DS_STYLES.filter((s) => tpl.styles.includes(s.id)).slice(0, 5);
+  return (
+    <span className="flex items-center gap-1" aria-hidden="true">
+      {dots.map((s) => (
+        <span key={s.id} className="h-2 w-2 rounded-full border border-black/10" style={{ background: s.P.border }} />
+      ))}
+    </span>
   );
 }
 
@@ -181,16 +197,18 @@ export function DocumentStudioDialog() {
   };
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    // NFC-স্বাভাবিকীকরণ — বাংলা/হিন্দি কিবোর্ডের ভাঙা-জোড়া অক্ষরও মেলে
+    const norm = (s: string) => s.normalize('NFC').toLowerCase();
+    const q = norm(query.trim());
     return DS_TEMPLATES.filter((t) => {
       if (cat !== 'all' && t.category !== cat) return false;
       if (!q) return true;
       return (
-        t.name.bn.toLowerCase().includes(q)
-        || t.name.en.toLowerCase().includes(q)
-        || t.name.hi.toLowerCase().includes(q)
-        || t.desc.bn.toLowerCase().includes(q)
-        || t.desc.en.toLowerCase().includes(q)
+        norm(t.name.bn).includes(q)
+        || norm(t.name.en).includes(q)
+        || norm(t.name.hi).includes(q)
+        || norm(t.desc.bn).includes(q)
+        || norm(t.desc.en).includes(q)
       );
     });
   }, [query, cat]);
@@ -198,6 +216,46 @@ export function DocumentStudioDialog() {
   const previewHtml = useMemo(
     () => (tpl ? buildDsHtml(tpl, values, lang, styleId) : ''),
     [tpl, values, lang, styleId],
+  );
+
+  /** থাম্বনেইল-HTML ক্যাশ — নমুনা-মানে ভরা প্রিভিউ (ভাষা বদলালে নতুন করে) */
+  const thumbCache = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const t of DS_TEMPLATES) {
+      map.set(t.id, buildDsHtml(t, dsDemoValues(t, lang), lang, t.defaultStyle));
+    }
+    return map;
+  }, [lang]);
+
+  const popular = useMemo(
+    () => POPULAR_IDS.map((id) => dsTemplateById(id)).filter((t): t is DsTemplate => Boolean(t)),
+    [],
+  );
+
+  /** নকশা-কার্ড — ভরা-থাম্বনেইল + জনপ্রিয়-ব্যাজ + সাজ-বিন্দু (ক্যানভা-প্রথা) */
+  const renderCard = (t: DsTemplate) => (
+    <button
+      key={t.id} type="button"
+      className={cn(
+        'group relative flex h-full flex-col gap-1.5 rounded-lg border border-border bg-card p-2 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-primary hover:shadow-md focus-visible:outline-2 focus-visible:outline-ring',
+        tplId === t.id && 'border-primary ring-1 ring-ring',
+      )}
+      onClick={() => pickTemplate(t)}
+      aria-label={t.name[lang] || t.name.en}
+    >
+      {POPULAR_SET.has(t.id) ? (
+        <span className="absolute -top-1.5 right-1.5 z-10 rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-semibold text-amber-800 shadow-sm dark:bg-amber-900/70 dark:text-amber-200">
+          {tt('ds.pick.badgePopular')}
+        </span>
+      ) : null}
+      <DesignThumb html={thumbCache.get(t.id) ?? ''} />
+      <span className="text-[12.5px] font-semibold leading-tight">{t.name[lang] || t.name.en}</span>
+      <span className="line-clamp-2 text-[10.5px] leading-snug text-muted-foreground">{t.desc[lang] || t.desc.en}</span>
+      <span className="flex items-center justify-between pt-0.5">
+        <StyleDots tpl={t} />
+        <span className="text-[9px] font-medium text-primary opacity-0 transition-opacity group-hover:opacity-80" aria-hidden="true">{tt('ds.pick.next')}</span>
+      </span>
+    </button>
   );
 
   const effScale = fitScale * zoom;
@@ -231,7 +289,7 @@ export function DocumentStudioDialog() {
         'Fill every field you can from the brief. For fields not mentioned, write a realistic, useful value fitting the document in the template\u2019s language (sample-style), EXCEPT amounts/ID numbers/reference numbers — leave those as "" if unknown. Keep table values as "cell | cell" rows, one row per line.',
         'Return ONLY JSON: {"values": {"fieldId": "value"}}',
       ].join('\n'),
-      system: 'You are the document-fill assistant of Bangla Publishing Studio — expert in worldwide professional documents (resumes, cover letters, business letters, invoices, quotations, contracts, agreements, certificates, meeting minutes, lesson plans, newsletters) and in Bangladeshi/Indian regional documents (সনদ, দরখাস্ত, দলিল, রসিদ). You fill forms precisely in correct formal language matching each document\'s conventions (Bangla for Bangla templates, English for global templates). Return ONLY valid JSON — no markdown fences, no commentary.',
+      system: 'You are the document-fill assistant of Bangla Publishing Studio — expert in worldwide professional documents (resumes, cover letters, business letters, invoices, quotations, purchase orders, contracts, agreements, NDAs, certificates, meeting minutes, project proposals, calendars, lesson plans, brochures, newsletters, business cards) and in Bangladeshi/Indian regional documents (সনদ, দরখাস্ত, দলিল, রসিদ). You fill forms precisely in correct formal language matching each document\'s conventions (Bangla for Bangla templates, English for global templates). Return ONLY valid JSON — no markdown fences, no commentary.',
     });
     setAiBusy(false);
     if (!(res.ok && res.text)) {
@@ -316,6 +374,13 @@ export function DocumentStudioDialog() {
     toast.info(tt('ds.toast.datesReset'));
   };
 
+  /** নমুনা-মানে ফরম পূরণ — ব্যবহারকারী সম্পাদনা করে নিজের তথ্য বসাবে */
+  const loadSample = () => {
+    if (!tpl) return;
+    setValues(dsDemoValues(tpl, lang));
+    toast.success(tt('ds.toast.sampleLoaded'));
+  };
+
   const styleOpts = tpl ? DS_STYLES.filter((s) => tpl.styles.includes(s.id)) : [];
 
   return (
@@ -378,6 +443,20 @@ export function DocumentStudioDialog() {
             </div>
 
             <div className="max-h-[54dvh] overflow-y-auto pr-1">
+              {/* ফিচার্ড-স্ট্রিপ — জনপ্রিয় নকশা (ওয়ার্ড/ক্যানভা-প্রথা) */}
+              {cat === 'all' && !query.trim() ? (
+                <div className="mb-4">
+                  <p className="ai-field-label mb-1.5 flex items-center gap-1.5">
+                    <Sparkles size={13} aria-hidden="true" /> {tt('ds.pick.popular')}
+                  </p>
+                  <div className="flex gap-2 overflow-x-auto pb-1.5">
+                    {popular.map((t) => (
+                      <div key={t.id} className="w-40 shrink-0">{renderCard(t)}</div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
               {[...byCat.entries()].map(([category, tpls]) => (
                 <div key={category} className="mb-4">
                   <p className="ai-field-label mb-1.5 flex items-center gap-1.5">
@@ -386,29 +465,18 @@ export function DocumentStudioDialog() {
                     <span className="text-[10px] font-normal opacity-60">{tt('ds.pick.count').replace('{n}', nf(tpls.length))}</span>
                   </p>
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                    {tpls.map((t) => {
-                      const sample = buildDsHtml(t, {}, lang, t.defaultStyle);
-                      return (
-                        <button
-                          key={t.id} type="button"
-                          className={cn(
-                            'group flex flex-col gap-1.5 rounded-lg border border-border bg-card p-2 text-left transition hover:border-primary hover:shadow-md focus-visible:outline-2 focus-visible:outline-ring',
-                            tplId === t.id && 'border-primary ring-1 ring-ring',
-                          )}
-                          onClick={() => pickTemplate(t)}
-                          aria-label={t.name[lang] || t.name.en}
-                        >
-                          <DesignThumb html={sample} />
-                          <span className="text-[12.5px] font-semibold leading-tight">{t.name[lang] || t.name.en}</span>
-                          <span className="line-clamp-2 text-[10.5px] leading-snug text-muted-foreground">{t.desc[lang] || t.desc.en}</span>
-                        </button>
-                      );
-                    })}
+                    {tpls.map((t) => renderCard(t))}
                   </div>
                 </div>
               ))}
               {filtered.length === 0 ? (
-                <p className="py-8 text-center text-sm text-muted-foreground">{tt('ds.pick.search')}</p>
+                <div className="flex flex-col items-center gap-2 py-10 text-center">
+                  <SearchX size={26} className="text-muted-foreground/60" aria-hidden="true" />
+                  <p className="text-sm text-muted-foreground">{tt('ds.pick.empty')}</p>
+                  <Button variant="outline" size="sm" onClick={() => { setQuery(''); setCat('all'); }}>
+                    {tt('ds.pick.showAll')}
+                  </Button>
+                </div>
               ) : null}
             </div>
           </section>
@@ -428,6 +496,7 @@ export function DocumentStudioDialog() {
                       className={cn('qp-scale-btn', styleId === s.id && 'qp-scale-on')}
                       onClick={() => setStyleId(s.id)}
                     >
+                      <span className="inline-block h-2 w-2 rounded-full border border-black/10" style={{ background: s.P.border }} aria-hidden="true" />
                       {s.name[lang] || s.name.en}
                     </button>
                   ))}
@@ -471,6 +540,9 @@ export function DocumentStudioDialog() {
               <div className="flex flex-wrap justify-end gap-2">
                 <Button variant="ghost" onClick={resetDates} disabled={aiBusy} title={tt('ds.fill.reset')}>
                   <Sparkles size={13} aria-hidden="true" /> {tt('ds.fill.reset')}
+                </Button>
+                <Button variant="ghost" onClick={loadSample} disabled={aiBusy} title={tt('ds.fill.sampleTip')}>
+                  <Wand2 size={13} aria-hidden="true" /> {tt('ds.fill.loadSample')}
                 </Button>
                 <Button onClick={() => setStep(3)} disabled={aiBusy}>
                   {tt('ds.fill.preview')} <ChevronRight size={14} aria-hidden="true" />

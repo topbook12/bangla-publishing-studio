@@ -1,6 +1,6 @@
 /**
  * ডকুমেন্ট স্টুডিও (Document Studio) — UI অভিধান
- * প্রশ্নপত্র/সাজেশনের পাশাপাশি ৫২ ধরনের বিশ্বমানের ডকুমেন্ট-নকশা
+ * প্রশ্নপত্র/সাজেশনের পাশাপাশি ৫৫ ধরনের বিশ্বমানের ডকুমেন্ট-নকশা
  * (৯ বৈশ্বিক ক্যাটাগরি + বাংলাদেশ-ভারত আঞ্চলিক সংগ্রহ)।
  */
 
@@ -8,17 +8,17 @@ export const dictDocumentStudio = {
   // ── Insert ট্যাবে এন্ট্রি ──
   'ds.entry': { bn: 'ডকুমেন্ট', hi: 'दस्तावेज़', en: 'Document' },
   'ds.entry.tip': {
-    bn: 'ডকুমেন্ট স্টুডিও — রেজিউমে, চিঠি, ইনভয়েস, চুক্তি, সনদ, রুটিন, পোস্টারসহ ৫২ ফরম্যাট',
-    hi: 'दस्तावेज़ स्टूडियो — 52 प्रारूप',
-    en: 'Document Studio — 52 ready formats: resumes, letters, invoices, contracts, certificates…',
+    bn: 'ডকুমেন্ট স্টুডিও — রেজিউমে, চিঠি, ইনভয়েস, চুক্তি, সনদ, রুটিন, ক্যালেন্ডার, পোস্টারসহ ৫৫ ফরম্যাট',
+    hi: 'दस्तावेज़ स्टूडियो — 55 प्रारूप',
+    en: 'Document Studio — 55 ready formats: resumes, letters, invoices, contracts, calendars, certificates…',
   },
 
   // ── ডায়ালগ শিরোনাম ──
   'ds.title': { bn: 'ডকুমেন্ট স্টুডিও', hi: 'दस्तावेज़ स्टूडियो', en: 'Document Studio' },
   'ds.desc': {
-    bn: 'রেজিউমে-ক্যারিয়ার, ব্যবসা-অফিস, ইনভয়েস, আইনি-চুক্তি, সনদ-পুরস্কার, শিক্ষা, অনুষ্ঠান, চিকিৎসা ও মার্কেটিং — ৯ বৈশ্বিক ক্যাটাগরি + বাংলাদেশ-ভারত আঞ্চলিক সংগ্রহ, মোট ৫২টি প্রস্তুত নকশা। ফরম পূরণ করুন, প্রিভিউ দেখুন, পাতায় বসান।',
-    hi: '52 प्रारूप — रिज़्यूमे, कार्यालय, इनवॉइस, अनुबंध, प्रमाणपत्र, शिक्षा, अनुष्ठान, चिकित्सा, मार्केटिंग + क्षेत्रीय संग्रह।',
-    en: '52 ready-made professional documents across 9 global categories + a Bangladesh & India regional collection — fill the form, preview, insert.',
+    bn: 'রেজিউমে-ক্যারিয়ার, ব্যবসা-অফিস, ইনভয়েস, আইনি-চুক্তি, সনদ-পুরস্কার, শিক্ষা, অনুষ্ঠান, চিকিৎসা ও মার্কেটিং — ৯ বৈশ্বিক ক্যাটাগরি + বাংলাদেশ-ভারত আঞ্চলিক সংগ্রহ, মোট ৫৫টি প্রস্তুত নকশা। ফরম পূরণ করুন, প্রিভিউ দেখুন, পাতায় বসান।',
+    hi: '55 प्रारूप — रिज़्यूमे, कार्यालय, इनवॉइस, अनुबंध, प्रमाणपत्र, शिक्षा, अनुष्ठान, चिकित्सा, मार्केटिंग + क्षेत्रीय संग्रह।',
+    en: '55 ready-made professional documents across 9 global categories + a Bangladesh & India regional collection — fill the form, preview, insert.',
   },
 
   // ── ধাপ ──
@@ -44,6 +44,11 @@ export const dictDocumentStudio = {
   'ds.pick.all': { bn: 'সব ক্যাটাগরি', hi: 'सभी श्रेणियाँ', en: 'All categories' },
   'ds.pick.next': { bn: 'তথ্য দিন →', hi: 'जानकारी भरें →', en: 'Fill details →' },
   'ds.pick.tip': { bn: 'নকশায় ক্লিক করে চালু করুন', hi: 'डिज़ाइन पर क्लिक करें', en: 'Click a design to select' },
+  'ds.pick.popular': { bn: 'জনপ্রিয় নকশা', hi: 'लोकप्रिय डिज़ाइन', en: 'Popular designs' },
+  'ds.pick.badgePopular': { bn: 'জনপ্রিয়', hi: 'लोकप्रिय', en: 'Popular' },
+  'ds.pick.empty': { bn: 'কোনো নকশা মেলেনি — অন্য শব্দে খুঁজুন', hi: 'कोई डिज़ाइन नहीं मिला', en: 'No designs match — try different words' },
+  'ds.pick.showAll': { bn: 'সব নকশা দেখুন', hi: 'सभी डिज़ाइन देखें', en: 'Show all designs' },
+  'ds.pick.styles': { bn: '{n} সাজ', hi: '{n} शैलियाँ', en: '{n} styles' },
 
   // ── ধাপ ২: তথ্য ──
   'ds.fill.style': { bn: 'সাজ', hi: 'शैली', en: 'Style' },
@@ -59,11 +64,14 @@ export const dictDocumentStudio = {
   },
   'ds.fill.ai.go': { bn: 'পূরণ করুন', hi: 'भरें', en: 'Fill' },
   'ds.fill.reset': { bn: 'তারিখ রিসেট', hi: 'तारीख रीसेट', en: 'Reset dates' },
+  'ds.fill.loadSample': { bn: 'নমুনা পূরণ', hi: 'नमूना भरें', en: 'Load sample' },
+  'ds.fill.sampleTip': { bn: 'নমুনা-মানে ফরম ভরে যাবে — তারপর নিজের তথ্য বসান', hi: 'नमूना मान भरें', en: 'Fills the form with sample values you can edit' },
   'ds.fill.back': { bn: '← নকশা বদল', hi: '← डिज़ाइन बदलें', en: '← Change design' },
   'ds.fill.preview': { bn: 'প্রিভিউ →', hi: 'प्रीव्यू →', en: 'Preview →' },
   'ds.toast.aiFilled': { bn: 'AI ফরম পূরণ করেছে — একবার দেখে নিন', hi: 'AI ने फॉर्म भर दिया', en: 'AI filled the form — please review' },
   'ds.err.aiFail': { bn: 'AI পূরণ করতে পারেনি — হাতে লিখে দিন', hi: 'AI भरने में विफल', en: 'AI fill failed — type manually' },
   'ds.toast.datesReset': { bn: 'তারিখ-ঘরগুলো আজকের তারিখে রিসেট হয়েছে', hi: 'तारीखें रीसेट', en: 'Date fields reset to today' },
+  'ds.toast.sampleLoaded': { bn: 'নমুনা-মান বসানো হয়েছে — এবার নিজের তথ্য দিন', hi: 'नमूना मान भरे गए', en: 'Sample values loaded — now edit in your details' },
 
   // ── ধাপ ৩: প্রিভিউ ──
   'ds.prev.insertNew': { bn: 'নতুন পাতায় বসান', hi: 'नए पृष्ठ पर लगाएँ', en: 'Insert as new page' },
@@ -81,9 +89,9 @@ export const dictDocumentStudio = {
     en: 'Document Studio — professional document designs',
   },
   'store.doc.desc': {
-    bn: 'রেজিউমে-ক্যারিয়ার, ব্যবসা-অফিস, ইনভয়েস-আর্থিক, আইনি-চুক্তি, সনদ-পুরস্কার, শিক্ষা, অনুষ্ঠান, চিকিৎসা ও মার্কেটিং — ৯ বৈশ্বিক ক্যাটাগরি + বাংলাদেশ-ভারত আঞ্চলিক সংগ্রহ, মোট ৫২টি প্রস্তুত নকশা। ফরম পূরণ → AI সহায়তা → প্রিভিউ → পাতায় বসানো।',
-    hi: 'रिज़्यूमे, कार्यालय, इनवॉइस, अनुबंध, प्रमाणपत्र, शिक्षा, अनुष्ठान, चिकित्सा, मार्केटिंग — 9 वैश्विक श्रेणियाँ + क्षेत्रीय संग्रह, कुल 52 डिज़ाइन।',
-    en: 'Resume & career, business & office, invoices, legal & contracts, certificates, education, events, medical & marketing — 9 global categories + a Bangladesh & India regional collection, 52 ready designs. Fill form → AI assist → preview → insert.',
+    bn: 'রেজিউমে-ক্যারিয়ার, ব্যবসা-অফিস, ইনভয়েস-আর্থিক, আইনি-চুক্তি, সনদ-পুরস্কার, শিক্ষা, অনুষ্ঠান, চিকিৎসা ও মার্কেটিং — ৯ বৈশ্বিক ক্যাটাগরি + বাংলাদেশ-ভারত আঞ্চলিক সংগ্রহ, মোট ৫৫টি প্রস্তুত নকশা। ফরম পূরণ → AI সহায়তা → প্রিভিউ → পাতায় বসানো।',
+    hi: 'रिज़्यूमे, कार्यालय, इनवॉइस, अनुबंध, प्रमाणपत्र, शिक्षा, अनुष्ठान, चिकित्सा, मार्केटिंग — 9 वैश्विक श्रेणियाँ + क्षेत्रीय संग्रह, कुल 55 डिज़ाइन।',
+    en: 'Resume & career, business & office, invoices, legal & contracts, certificates, education, events, medical & marketing — 9 global categories + a Bangladesh & India regional collection, 55 ready designs. Fill form → AI assist → preview → insert.',
   },
   'store.doc.cta': { bn: 'ডকুমেন্ট স্টুডিও খুলুন', hi: 'दस्तावेज़ स्टूडियो खोलें', en: 'Open Document Studio' },
 

@@ -4,7 +4,7 @@
  * প্রশ্নপত্র ও সাজেশনের পাশাপাশি বিশ্বমানের পেশাদার ডকুমেন্ট-সংগ্রহ —
  * রেজিউমে ও ক্যারিয়ার, ব্যবসা-অফিস, ইনভয়েস-আর্থিক, আইনি-চুক্তি, সনদ-পুরস্কার,
  * শিক্ষা, অনুষ্ঠান, চিকিৎসা, মার্কেটিং — ৯টি বৈশ্বিক ক্যাটাগরি + একটি
- * আঞ্চলিক সংগ্রহ (বাংলাদেশ ও ভারত) = ১০ ক্যাটাগরিতে ৫২টি ফরম্যাট-নির্ভুল নকশা।
+ * আঞ্চলিক সংগ্রহ (বাংলাদেশ ও ভারত) = ১০ ক্যাটাগরিতে ৫৫টি ফরম্যাট-নির্ভুল নকশা।
  *
  * বৈশ্বিক মান (MS Word / Google Docs / Canva-র ক্যাটাগরি-প্রথা অনুসরণে):
  *  - Resume & Career, Business & Office, Invoices & Finance, Legal & Contracts,
@@ -247,6 +247,587 @@ export function dsDefaultValues(tpl: DsTemplate, lang: Lang): DsValues {
   const out: DsValues = {};
   for (const f of tpl.fields) {
     if (f.kind === 'date') out[f.id] = dsToday(lang);
+  }
+  return out;
+}
+
+// ═════════════════════════ ডেমো-মান (গ্যালারি-নমুনা) ═════════════════════════
+/**
+ * থাম্বনেইল-প্রিভিউ ও "নমুনা পূরণ" বোতামের জন্য বাস্তবধর্মী নমুনা-মান।
+ * দুই স্তর: ফিল্ড-id → মান (সাঝা) + টেমপ্লেট-id → ফিল্ড-id → মান (বিশেষ)।
+ * ক্যানভা/ওয়ার্ড-গ্যালারির মতো থাম্বনেইল যেন পূরণ-করা আসল দলিলের মতো দেখায়।
+ */
+
+const DEMO_TAKA = L3('১৮,৫০০ টাকা', '₹18,500', 'BDT 18,500');
+
+/** সাঝা ফিল্ড-id → নমুনা (তিন ভাষায়) */
+const DS_DEMO: Record<string, T3> = {
+  // ব্যক্তি
+  name: L3('মোঃ রাকিব হাসান', 'राकिब हसन', 'Rakib Hasan'),
+  father: L3('মোঃ আব্দুল করিম', 'अब्दुल करीम', 'Abdul Karim'),
+  mother: L3('মোসা. রহিমা বেগম', 'रहीमा बेगम', 'Rahima Begum'),
+  husband: L3('মোঃ সাইফুল ইসলাম', 'सैफुल इस्लाम', 'Saiful Islam'),
+  age: L3('৩২', '32', '32'),
+  sex: L3('মহিলা', 'महिला', 'Female'),
+  village: L3('উত্তরপাড়া', 'उत्तरपाड़ा', 'Uttarpara'),
+  post: L3('মিরপুর', 'मीरपुर', 'Mirpur'),
+  upazila: L3('সদর', 'सदर', 'Sadar'),
+  district: L3('ঢাকা', 'ढाका', 'Dhaka'),
+  address: L3('১২/এ, কলেজ রোড, মিরপুর, ঢাকা', '12/ए, कॉलेज रोड, मीरपुर', '12/A, College Road, Mirpur, Dhaka'),
+  income: DEMO_TAKA,
+  // যোগাযোগ
+  phone: L3('+৮৮০ ১৭১২-৩৪৫৬৭৮', '+91 98765 43210', '+880 1712-345678'),
+  email: L3('rakib@example.com', 'rakib@example.com', 'rakib@example.com'),
+  website: L3('www.topbook.example', 'www.topbook.example', 'www.topbook.example'),
+  // প্রতিষ্ঠান
+  office: L3('টপবুক পাবলিকেশন্স', 'टॉपबुक पब्लिकेशन्स', 'Topbook Publications'),
+  shop: L3('নূরানী ট্রেডার্স', 'नूरानी ट्रेडर्स', 'Noorani Traders'),
+  institution: L3('আদর্শ উচ্চ বিদ্যালয়', 'आदर्श उच्च विद्यालय', 'Adarsha High School'),
+  clinic: L3('শাপলা ক্লিনিক', 'शपला क्लिनिक', 'Shapla Clinic'),
+  tagline: L3('জ্ঞানে জাতি গড়ি', 'ज्ञान से राष्ट्र निर्माण', 'Building the nation through knowledge'),
+  regNo: L3('ট্রেড লাইসেন্স নং ট্র্যাড-০৯১২', 'पंजीकरण सं. TRD-0912', 'Trade licence no. TRD-0912'),
+  // নম্বর-তারিখ
+  refNo: L3('৫১২/টিপি/২০২৫', '512/TP/2025', 'TP-2025-512'),
+  invoiceNo: L3('ইনভ-০০৮৭', 'INV-0087', 'INV-0087'),
+  quoteNo: L3('কোট-০৪৩', 'QT-043', 'QT-043'),
+  receiptNo: L3('রসিদ-২৯৮', 'RCP-298', 'RCP-298'),
+  poNo: L3('পিও-২০২৫-১৬', 'PO-2025-16', 'PO-2025-16'),
+  deathDate: L3('১২ ফেব্রুয়ারি ২০২৪', '12 फरवरी 2024', '12 February 2024'),
+  // পদ-প্রতিষ্ঠান (ক্যারিয়ার)
+  headline: L3('সিনিয়র সফটওয়্যার ইঞ্জিনিয়ার', 'वरिष्ठ सॉफ्टवेयर इंजीनियर', 'Senior Software Engineer'),
+  position: L3('সিনিয়র সফটওয়্যার ইঞ্জিনিয়ার', 'वरिष्ठ सॉफ्टवेयर इंजीनियर', 'Senior Software Engineer'),
+  department: L3('প্রকৌশল বিভাগ', 'इंजीनियरिंग विभाग', 'Engineering'),
+  company: L3('ডাটাসফট লিমিটেড', 'डाटासॉफ्ट लिमिटेड', 'DataSoft Limited'),
+  recipient: L3('নিয়োগ ব্যবস্থাপক', 'हायरिंग मैनेजर', 'Hiring Manager'),
+  candidate: L3('মোঃ রাকিব হাসান', 'राकिब हसन', 'Rakib Hasan'),
+  employee: L3('মোঃ রাকিব হাসান', 'राकिब हसन', 'Rakib Hasan'),
+  employer: L3('ডাটাসফট লিমিটেড', 'डाटासॉफ्ट लिमिटेड', 'DataSoft Limited'),
+  partyA: L3('টপবুক পাবলিকেশন্স (প্রকাশক)', 'टॉपबुक (पक्षकार-क)', 'Topbook Publications (Disclosing Party)'),
+  partyB: L3('নূরানী ট্রেডার্স (প্রাপক)', 'नूरानी ट्रेडर्स (पक्षकार-ख)', 'Noorani Traders (Receiving Party)'),
+  landlord: L3('মোঃ শফিকুর রহমান', 'शफ़ीकुर रहमान', 'Shafiqur Rahman'),
+  tenant: L3('মোসা. নাসরিন আক্তার', 'नसरीन अख्तर', 'Nasrin Akhter'),
+  donor: L3('মোঃ আব্দুল করিম', 'अब्दुल करीम', 'Abdul Karim'),
+  donee: L3('মোঃ রাকিব হাসান', 'राकिब हसन', 'Rakib Hasan'),
+  // সভা-অনুষ্ঠান
+  to: L3('সকল বিভাগীয় প্রধান', 'सभी विभाग प्रमुख', 'All department heads'),
+  from: L3('প্রশাসন বিভাগ', 'प्रशासन विभाग', 'Administration'),
+  meetingTitle: L3('মাসিক সমন্বয় সভা', 'मासिक समन्वय बैठक', 'Monthly Coordination Meeting'),
+  chair: L3('পরিচালক (প্রশাসন)', 'निदेशक (प्रशासन)', 'Director (Admin)'),
+  time: L3('সকাল ১০টা', 'सुबह 10 बजे', '10:00 AM'),
+  venue: L3('প্রতিষ্ঠানের মিলনায়তন', 'सभागृह', 'Institution auditorium'),
+  guest: L3('প্রধান অতিথি: জেলা প্রশাসক', 'मुख्य अतिथि', 'Chief Guest: District Commissioner'),
+  host: L3('জনাব আব্দুল করিম ও পরিবার', 'अब्दुल करीम एवं परिवार', 'Mr. & Mrs. Abdul Karim'),
+  bride: L3('মোসা. শিরিন আক্তার', 'शिरीन अख्तर', 'Shirin Akhter'),
+  brideGuard: L3('কন্যার পিতা: মোঃ আব্দুল করিম', 'कन्या के पिता', 'Daughter of Mr. Abdul Karim'),
+  groom: L3('মোঃ রাকিব হাসান', 'राकिब हसन', 'Rakib Hasan'),
+  groomGuard: L3('বরের পিতা: মোঃ সাইফুল ইসলাম', 'वर के पिता', 'Son of Mr. Saiful Islam'),
+  // শিক্ষা
+  className: L3('নবম শ্রেণি', 'कक्षा 9', 'Class 9'),
+  section: L3('ক', 'A', 'A'),
+  roll: L3('০৭', '07', '07'),
+  examName: L3('অর্ধবার্ষিক মূল্যায়ন — ২০২৫', 'अर्धवार्षिक मूल्यांकन — 2025', 'Half-Yearly Assessment — 2025'),
+  gpa: L3('৪.৮৯', '4.89', '4.89'),
+  division: L3('প্রথম বিভাগ', 'प्रथम श्रेणी', 'First division'),
+  student: L3('মোসা. জান্নাতুল ফেরদৌস', 'जन्नतुल फरदौस', 'Jannatul Ferdous'),
+  teacherName: L3('মোসা. নাসরিন আক্তার', 'नसरीन अख्तर', 'Nasrin Akhter'),
+  subject: L3('সহযোগিতা ও অনুমোদন প্রসঙ্গে', 'सहयोग एवं अनुमोदन हेतु', 'Regarding collaboration & approval'),
+  attendance: L3('৯৬%', '96%', '96%'),
+  result: L3('উত্তীর্ণ (A গ্রেড)', 'उत्तीर्ण (ग्रेड A)', 'Passed (Grade A)'),
+  conduct: L3('সন্তোষজনক', 'संतोषजनक', 'Satisfactory'),
+  effective: L3('১ জানুয়ারি ২০২৬', '1 जनवरी 2026', '1 January 2026'),
+  duration: L3('৪৫ মিনিট', '45 मिनट', '45 minutes'),
+  // চিকিৎসা
+  doctor: L3('ডা. ফারহানা ইয়াসমিন', 'डॉ. फरहाना यासमीन', 'Dr. Farhana Yasmin'),
+  degrees: L3('এমবিবিএস (ঢামেক), বিসিএস (স্বাস্থ্য)', 'एमबीबीएस, बीसीएस', 'MBBS (DMC), BCS (Health)'),
+  designation: L3('উপ-পরিচালক (চিকিৎসা)', 'उप-निदेशक (चिकित्सा)', 'Deputy Director (Medical)'),
+  bmdc: L3('এ-৪৫৩২১', 'A-45321', 'A-45321'),
+  chamber: L3('শাপলা ক্লিনিক, রুম-৩০২, স্টেশন রোড, ঢাকা\nসন্ধ্যা ৫টা–রাত ৯টা (শুক্রবার বন্ধ)', 'शपला क्लिनिक', 'Shapla Clinic, Room 302, Station Road, Dhaka\n5 PM – 9 PM (Friday closed)'),
+  patient: L3('মোসা. জান্নাতুল ফেরদৌস', 'जन्नतुल फरदौस', 'Jannatul Ferdous'),
+  weight: L3('৫৮ কেজি', '58 किग्रा', '58 kg'),
+  bp: L3('১২০/৮০ মিমিহি', '120/80 mmHg', '120/80 mmHg'),
+  next: L3('৭ দিন পর পুনরায় দেখা দিন', '7 दिन बाद पुनः आएँ', 'Review after 7 days'),
+  // স্বাক্ষর
+  sign1Name: L3('মোঃ শফিকুর রহমান', 'शफ़ीकुर रहमान', 'Shafiqur Rahman'),
+  sign2Name: L3('মোসা. নাসরিন আক্তার', 'नसरीन अख्तर', 'Nasrin Akhter'),
+  sign1Title: L3('চেয়ারম্যান', 'अध्यक्ष', 'Chairman'),
+  sign2Title: L3('সচিব', 'सचिव', 'Secretary'),
+  witness1: L3('মোঃ আব্দুল জলিল', 'अब्दुल जलील', 'Abdul Jalil'),
+  witness2: L3('মোঃ কামরুল হাসান', 'कमरुल हसन', 'Kamrul Hasan'),
+  // ক্যারিয়ার-পাঠ্য (রেজিউমে/সিভি)
+  summary: L3(
+    '৮ বছরের অভিজ্ঞতাসম্পন্ন সফটওয়্যার প্রকৌশলী — ওয়েব-প্ল্যাটফর্ম, পেমেন্ট-সিস্টেম ও দল-নেতৃত্বে দক্ষ। পরিষ্কার কোড ও ব্যবহারকারী-বান্ধব ডিজাইনে বিশ্বাসী।',
+    '8 वर्ष का अनुभवी सॉफ्टवेयर इंजीनियर — वेब-प्लेटफ़ॉर्म व टीम-नेतृत्व में दक्ष।',
+    'Software engineer with 8 years of experience across web platforms, payment systems and team leadership. Believes in clean code and user-first design.',
+  ),
+  expRows: L3(
+    'সিনিয়র সফটওয়্যার ইঞ্জিনিয়ার | ডাটাসফট লিমিটেড | ২০২১–বর্তমান | পেমেন্ট-প্ল্যাটফর্মের নেতৃত্ব\nসফটওয়্যার ইঞ্জিনিয়ার | টেকনো সফট | ২০১৮–২০২১ | ওয়েব-অ্যাপ নির্মাণ',
+    'वरिष्ठ इंजीनियर | डाटासॉफ्ट | 2021–अब | पेमेंट प्लेटफ़ॉर्म\nइंजीनियर | टेक्नो सॉफ्ट | 2018–2021 | वेब-ऐप',
+    'Senior Software Engineer | DataSoft Limited | 2021–present | Led the payments platform\nSoftware Engineer | TechnoSoft | 2018–2021 | Built web apps',
+  ),
+  eduRows: L3(
+    'বিএসসি (কম্পিউটার সায়েন্স) | ঢাকা বিশ্ববিদ্যালয় | ২০১৮\nএইচএসসি (বিজ্ঞান) | ঢাকা কলেজ | ২০১৪',
+    'बीएससी (कंप्यूटर विज्ञान) | ढाका विश्वविद्यालय | 2018',
+    'BSc Computer Science | University of Dhaka | 2018\nHSc Science | Dhaka College | 2014',
+  ),
+  skills: L3('টাইপস্ক্রিপ্ট · রিঅ্যাক্ট · নোড.জেএস\nপ্রজেক্ট ম্যানেজমেন্ট\nদল-নেতৃত্ব ও মেন্টরিং', 'टाइपस्क्रिप्ट · रिएक्ट · नोड\nप्रोजेक्ट मैनेजमेंट', 'TypeScript · React · Node.js\nProject management\nTeam leadership & mentoring'),
+  languages: L3('বাংলা — মাতৃভাষা\nইংরেজি — সাবলীল', 'हिन्दी — मातृभाषा\nअंग्रेज़ी — प्रवीण', 'Bangla — native\nEnglish — fluent'),
+  extras: L3('AWS সার্টিফাইড সলিউশন আর্কিটেক্ট (২০২৩)\nজাতীয় প্রোগ্রামিং প্রতিযোগিতা — রানার-আপ', 'AWS प्रमाणपत्र (2023)', 'AWS Certified Solutions Architect (2023)\nNational programming contest — runner-up'),
+  contactLine: L3('মোবাইল: +৮৮০ ১৭১২-৩৪৫৬৭৮ · ইমেইল: rakib@example.com · ঢাকা, বাংলাদেশ', 'मोबाइल · ईमेल · शहर', 'Phone: +880 1712-345678 · Email: rakib@example.com · Dhaka, Bangladesh'),
+  refsNote: L3('চাহিবামাত্র প্রাপ্য', 'मांग पर उपलब्ध', 'Available upon request'),
+  // টেক্সট-ধর্মী তারিখ (অনুষ্ঠান-টেমপ্লেট)
+  date: L3('১ জানুয়ারি ২০২৭', '1 जनवरी 2027', '1 January 2027'),
+  // চিঠি-চুক্তির সাঝা পাঠ্য
+  addressLines: L3('১২/এ, কলেজ রোড\nমিরপুর, ঢাকা-১২০৭', 'कॉलेज रोड\nमीरपुर', '12/A, College Road\nMirpur, Dhaka-1207'),
+  phoneEmail: L3('+৮৮০ ১৭১২-৩৪৫৬৭৮ · rakib@example.com', '+91 98765 43210 · rakib@example.com', '+880 1712-345678 · rakib@example.com'),
+  companyAddress: L3('রুম-৫০১, স্টেশন রোড\nঢাকা-১২১৬', 'स्टेशन रोड\nदिल्ली', 'Room 501, Station Road\nDhaka-1216'),
+  body: L3(
+    'বিনীত নিবেদন এই যে, আমি দীর্ঘদিন যাবৎ এ অঞ্চলের বাসিন্দা — উপর্যুক্ত বিষয়ে আপনার সদয় অনুমোদন ও সহযোগিতা প্রার্থনা করছি।',
+    'विनम्र निवेदन है कि…',
+    'I respectfully state that I am a long-standing resident of this area — your kind approval and cooperation are requested.',
+  ),
+  relation: L3(
+    'গত তিন বছর তাঁর শ্রেণি-শিক্ষক হিসাবে ঘনিষ্ঠভাবে পরিচিত — তাঁর কর্ম-নিষ্ঠা ও অধ্যয়ন-অভ্যাস আমি কাছ থেকে দেখেছি।',
+    'तीन वर्षों से उनके शिक्षक रहा हूँ।',
+    'As his/her class teacher for three years, I have seen the diligence and study habits first-hand.',
+  ),
+  qualities: L3('অধ্যবসায়ী ও কৌতূহলী শিক্ষার্থী\nগণিত ও প্রোগ্রামিংয়ে অসাধারণ দক্ষতা\nসহপাঠীদের সহযোগিতায় সবসময় এগিয়ে', 'परिश्रमी व जिज्ञासु\nगणित व प्रोग्रामिंग में उत्कृष्ट', 'Persistent and curious learner\nExceptional in mathematics and programming\nAlways ready to help classmates'),
+  closer: L3(
+    'আমি অকাতরে তাঁর জন্য সুপারিশ করছি — তিনি যে-কোনো প্রতিষ্ঠানে বিশ্বাসযোগ্যতা ও মেধা নিয়ে অবদান রাখবেন।',
+    'मैं पूर्ण विश्वास के साथ सिफ़ारिश करता हूँ।',
+    'I recommend him/her without reservation — any institution will gain a capable and trustworthy member.',
+  ),
+  contact: L3('office@example.com · +৮৮০ ১৭১২-৩৪৫৬৭৮', 'office@example.com', 'office@example.com · +880 1712-345678'),
+  lastDay: L3('৩০ ডিসেম্বর ২০২৬', '30 दिसंबर 2026', '30 December 2026'),
+  notice: L3(
+    'কোম্পানির নিয়ম-মেনে এক মাসের নোটিশ দিয়ে আমি আমার পদ থেকে পদত্যাগের অভিপ্রায় জানাচ্ছি।',
+    'एक माह की सूचना देकर त्यागपत्र।',
+    'With the company\u2019s required one month\u2019s notice, I hereby resign from my position.',
+  ),
+  gratitude: L3(
+    'এ প্রতিষ্ঠানে পাওয়া অভিজ্ঞতা ও সহযোগিতার জন্য আন্তরিক কৃতজ্ঞ — হস্তান্তর নির্বিঘ্নে সম্পন্ন করার প্রতিশ্রুতি দিচ্ছি।',
+    'कृतज्ञता व हस्तांतरण का वादा।',
+    'Grateful for the experience and support here — I commit to a smooth handover.',
+  ),
+  toWho: L3('বরাবর, উপজেলা নির্বাহী অফিসার', 'सेवा में, उपजेला अधिकारी', 'The Upazila Nirbahi Officer'),
+  deedDate: L3('২০ নভেম্বর ২০২৬', '20 नवंबर 2026', '20 November 2026'),
+  landDesc: L3(
+    'জেলা ঢাকা, উপজেলা সদর, মৌজা মিরপুর — খতিয়ান নং ৪৭, দাগ নং ৩২১, জমি ১০ শতক।',
+    'मौजा मीरपुर, दाग 321, क्षेत्रफल 10 शतक।',
+    'District Dhaka, Sadar upazila, Mirpur mauza — khatian 47, dag 321, land 10 shotok.',
+  ),
+  consideration: L3('দানমূল্য/বিবেচনা-মূল্য: ৫,০০,০০০ টাকা', 'विचार-मूल्य: ₹5,00,000', 'Consideration: BDT 5,00,000'),
+  draftsman: L3('দলিল-লেখক: মোঃ হারুন অর রশিদ', 'लेखक: हारून रशीद', 'Drafted by: Md. Harun Or Rashid'),
+  // সংবাদ
+  city: L3('ঢাকা', 'दिल्ली', 'Dhaka'),
+};
+
+/** বিশেষ টেমপ্লেট-ভিত্তিক নমুনা — ফিল্ড-অর্থ ভিন্ন হলে বা টেবিলের সারিতে */
+const DS_DEMO_SPECIAL: Record<string, Record<string, T3>> = {
+  // ── সনদ (regional) ──
+  residence: {
+    office: L3('মিরপুর ইউনিয়ন পরিষদ', 'मीरपुर यूनियन परिषद', 'Mirpur Union Parishad'),
+    body: L3('তিনি দীর্ঘদিন যাবৎ এ এলাকার সুনামধন্য, শান্তিপ্রিয় ও সৎ ব্যক্তি হিসাবে পরিচিত।', 'वे इस क्षेत्र के प्रतिष्ठित निवासी हैं।', 'He/She is a long-standing respected resident of this area.'),
+  },
+  character: {
+    office: L3('মিরপুর ইউনিয়ন পরিষদ', 'मीरपुर यूनियन परिषद', 'Mirpur Union Parishad'),
+    body: L3('তাঁর ব্যক্তিগত চরিত্র সম্পর্কে এ এলাকায় কোনো অভিযোগ নেই।', 'उनके चरित्र के बारे में कोई शिकायत नहीं है।', 'His/Her personal character is beyond reproach in this area.'),
+  },
+  unmarried: {
+    office: L3('মিরপুর ইউনিয়ন পরিষদ', 'मीरपुर यूनियन परिषद', 'Mirpur Union Parishad'),
+    body: L3('তিনি এ পর্যন্ত বিবাহবন্ধনে আবদ্ধ হননি — এমন কোনো তথ্য এ অফিসে নেই।', 'वे अविवाहित हैं।', 'Records show he/she is unmarried.'),
+  },
+  income: {
+    office: L3('মিরপুর ইউনিয়ন পরিষদ', 'मीरপुर यूनियन परिषद', 'Mirpur Union Parishad'),
+    body: L3('তাঁর ঘোষিত বার্ষিক আয়ের সূত্র: ক্ষুদ্র ব্যবসা ও কৃষি।', 'आय का स्रोत: छोटा व्यवसाय।', 'Declared income sources: small business & agriculture.'),
+  },
+  heir: {
+    body: L3('মৃত ব্যক্তি এ এলাকার স্থায়ী বাসিন্দা ছিলেন এবং তাঁর ওয়ারিশগণ নিম্নরূপ।', 'मृतक इस क्षेत्र के स्थायी निवासी थे।', 'The deceased was a permanent resident of this area.'),
+    heirs: L3(
+      'রহিমা বেগম | স্ত্রী | ৬২\nরাকিব হাসান | ছেলে | ৩৪\nশিরিন আক্তার | মেয়ে | ২৯',
+      'रहीमा बेगम | पत्नी | 62\nराकिब हसन | पुत्र | 34',
+      'Rahima Begum | Wife | 62\nRakib Hasan | Son | 34\nShirin Akhter | Daughter | 29',
+    ),
+  },
+  affidavit: {
+    court: L3('নোটারি পাবলিক, ঢাকা', 'नोटरी पब्लिक, दिल्ली', 'Notary Public, Dhaka'),
+    body: L3('আমি ঘোষণা করছি যে আমার সঠিক নাম, ঠিকানা ও পরিচয় উপরে বর্ণিত অনুযায়ী।\nআমি আরও ঘোষণা করছি যে বক্তব্যগুলো সত্য ও সঠিক।', 'मैं घोषणा करता हूँ…', 'I declare that my name and identity are as stated above.\nI further declare the statements are true.'),
+  },
+  'general-app': {
+    ask: L3('অতএব, মহোদয়ের নিকট বিনীত আবেদন, উপর্যুক্ত বিষয়ে প্রয়োজনীয় ব্যবস্থা গ্রহণের নির্দেশ প্রদান করতে আপনার মর্জি হয়।', 'अतः आवश्यक कार्रवाई की जाए।', 'I therefore request the necessary action.'),
+    signMeta: L3('পিতা: মোঃ আব্দুল করিম\nগ্রাম: উত্তরপাড়া, মিরপুর\nমোবাইল: +৮৮০ ১৭১২-৩৪৫৬৭৮', 'पिता: अब्दुल करीम', 'Father: Abdul Karim\nVillage: Uttarpara, Mirpur\nMobile: +880 1712-345678'),
+  },
+  mutation: {
+    body: L3('আমার পিতার নামে খতিয়ান-সংশোধনের জন্য সকল দলিল সংযুক্ত করা হলো।', 'खसरा संशोधन हेतु आवेदन।', 'Application for record correction with all deeds attached.'),
+    ask: L3('অতএব, মহোদয়ের নিকট বিনীত আবেদন, দাখিলা রেকর্ড সংশোধন করতে আপনার মর্জি হয়।', 'अतः रिकॉर्ड संशोधन करें।', 'I therefore request the record correction.'),
+  },
+  // ── অফিস ──
+  notice: {
+    title: L3('গুরুত্বপূর্ণ বিজ্ঞপ্তি', 'महत्वपूर्ण सूचना', 'Important Notice'),
+    body: L3('প্রতিষ্ঠানের বার্ষিক রক্ষণাবেক্ষণ-কার্যক্রমের কারণে আগামী শুক্রবার প্রতিষ্ঠান বন্ধ থাকবে।', 'रखरखाव के कारण शुक्रवार को बंद रहेगा।', 'Due to annual maintenance, the office will remain closed this Friday.'),
+    points: L3('শুক্রবার সকাল ৯টা থেকে বন্ধ\nরবিবার সকাল ১০টায় স্বাভাবিক\nজরুরি যোগাযোগ: +৮৮০ ১৭১২-৩৪৫৬৭৮', 'शुक्रवार बंद', 'Closed from 9 AM Friday\nReopens Sunday 10 AM\nEmergency: +880 1712-345678'),
+  },
+  'office-order': {
+    title: L3('অফিস আদেশ', 'कार्यालय आदेश', 'Office Order'),
+    body: L3('উপরের নির্দেশনাগুলো তাৎক্ষণিক কার্যকর করা হচ্ছে — সংশ্লিষ্ট সবাই বাধ্য থাকবেন।', 'ये निर्देश तत्काल प्रभावी हैं।', 'The above directives take immediate effect.'),
+    orders: L3('কমপ্লায়েন্স-টিম পুনর্গঠন করা হয়েছে।\nসকল শাখার রিপোর্ট প্রতি বৃহস্পতিবার জমা দিতে হবে।\nনিরাপত্তা-প্রশিক্ষণে সবার অংশগ্রহণ বাধ্যতামূলক।', 'आदेश…', 'The compliance team is restructured.\nWeekly reports due every Thursday.\nSecurity training is mandatory.'),
+  },
+  'official-letter': {
+    toBlock: L3('বরাবর\nজেলা শিক্ষা অফিসার\nজেলা প্রশাসন, ঢাকা', 'जिला शिक्षा अधिकारी', 'The District Education Officer\nDhaka District'),
+    sourceRef: L3('আপনার স্মারক নং ৪৭/শিক্ষা/২০২৫, তারিখ ১১ নভেম্বর ২০২৫', 'पत्र सं. 47/2025', 'Ref: your memo 47/Edu/2025 dated 11 Nov 2025'),
+    body: L3('আপনার আদেশের আলোকে প্রতিষ্ঠানের হালনাগাদ অবস্থা ও প্রয়োজনীয় ব্যবস্থার বিবরণ এ পত্রের সাথে প্রেরণ করা হলো — পরবর্তী নির্দেশনা প্রার্থনা করছি।', 'विवरण संलग्न है।', 'As directed, the current status and required measures are enclosed — further guidance is requested.'),
+  },
+  report: {
+    title: L3('পরিদর্শন-প্রতিবেদন', 'निरीक्षण रिपोर्ट', 'Inspection Report'),
+    intro: L3('নির্দেশিত স্থান পরিদর্শন সম্পন্ন করে প্রাপ্ত তথ্যের ভিত্তিতে এ প্রতিবেদন প্রস্তুত করা হলো।', 'निरीक्षण रिपोर्ट।', 'This report is prepared after the assigned site visit.'),
+    visit: L3('পরিদর্শনের সময়: সকাল ১১টা–দুপুর ১টা · উপস্থিত: ব্যবস্থাপক ও দুইজন কর্মকর্তা', 'समय…', 'Visit time: 11 AM–1 PM · Present: manager & two officers'),
+    findings: L3('কার্যক্রম সাধারণভাবে সন্তোষজনক, তবে সংরক্ষণ-ঘরে দুর্বল ব্যবস্থাপনা লক্ষ্য করা যায়।', 'क्रियाएँ संतोषजनक हैं।', 'Operations are generally satisfactory; storage management needs improvement.'),
+    obs: L3('নিরাপত্তা-সরঞ্জামের ব্যবহার নিয়মিত নয়।\nরেজিস্টার-হালনাগাদ দেরিতে হচ্ছে।\nকর্মীদের প্রশিক্ষণ প্রয়োজন।', 'टिप्पणियाँ…', 'Safety gear usage is inconsistent.\nRegister updates lag.\nStaff training is needed.'),
+    recs: L3('সংরক্ষণ-ঘরে মাসিক জবাবদিহি চালু করা।\nত্রৈমাসিক নিরাপত্তা-প্রশিক্ষণ আয়োজন।', 'सुझाव…', 'Introduce monthly stock reconciliation.\nHold quarterly safety training.'),
+  },
+  letterhead: {
+    name: L3('টপবুক পাবলিকেশন্স', 'टॉपबुक पब्लिकेशन्स', 'Topbook Publications'),
+    tagline: L3('বইয়ের হাতে-কলমে প্রযুক্তি', 'पुस्तक प्रौद्योगिकी', 'Craft technology for books'),
+    address: L3('১২/এ, কলেজ রোড, মিরপুর, ঢাকা-১২০৭', 'कॉलेज रोड, दिल्ली', '12/A, College Road, Mirpur, Dhaka-1207'),
+  },
+  memo: {
+    subject: L3('শীতকালীন কর্মঘণ্টা পরিবর্তন', 'शीतकालीन कार्यघंटा', 'Winter working hours change'),
+    body: L3('১ ডিসেম্বর থেকে অফিসের কর্মঘণ্টা সকাল ৯টা–বিকেল ৫টা নির্ধারিত হয়েছে। সব বিভাগ অনুগত থাকার অনুরোধ করা হলো।', 'समय बदलाव।', 'From 1 December, office hours are 9 AM–5 PM. All departments are requested to comply.'),
+  },
+  'meeting-agenda': {
+    items: L3(
+      'শুভেচ্ছা ও স্বাগত\nপূর্ববর্তী সভার কার্যবিবরণী অনুমোদন\nগত তিন মাসের অগ্রগতি পর্যালোচনা\nবাজেট ও পরবর্তী পরিকল্পনা\nযে-কোনো অন্য বিষয়',
+      'स्वागत\nपिछली बैठक के कार्यवृत्त की स्वीकृति\nप्रगति समीक्षा\nबजट व योजना\nअन्य विषय',
+      'Welcome & roll call\nApproval of previous minutes\nReview of last quarter\u2019s progress\nBudget & next plan\nAny other business',
+    ),
+    note: L3('সভায় উপস্থিতি একান্ত বাধ্যতামূলক।', 'उपस्थिति अनिवार्य है।', 'Attendance is mandatory.'),
+  },
+  'meeting-minutes': {
+    attendees: L3('মোঃ শফিকুর রহমান — সভাপতি\nনাসরিন আক্তার — সচিব\nরাকিব হাসান — প্রকৌশল\nকামরুল হাসান — বিতরণ', 'शफ़ीकुर…', 'Shafiqur Rahman — Chair\nNasrin Akhter — Secretary\nRakib Hasan — Engineering\nKamrul Hasan — Distribution'),
+    discussion: L3('প্রকাশনা-ক্যালেন্ডারের অগ্রগতি, মুদ্রণ-দর ও বিতরণ-চ্যালেঞ্জ নিয়ে বিস্তারিত আলোচনা হয়; সদস্যগণ পরবর্তী পদক্ষেপ মত করেন।', 'चर्चा…', 'Progress of the publishing calendar, printing rates and distribution challenges were discussed.'),
+    decisions: L3('মুদ্রণ-দর পুনর্নির্ধারণ করা হবে।\nতিনটি নতুন শিরোনাম জানুয়ারিতে প্রকাশ হবে।\nপ্রতি মাসের প্রথম সোমবার সমন্বয় সভা।', 'निर्णय…', 'Printing rates will be revised.\nThree new titles publish in January.\nCoordination meeting on the first Monday monthly.'),
+    nextMeeting: L3('পরবর্তী সভা: ৫ জানুয়ারি ২০২৬, সকাল ১০টা', 'अगली बैठक', 'Next meeting: 5 January 2026, 10 AM'),
+    actions: L3(
+      'মুদ্রণ-কোটেশন সংগ্রহ | প্রশাসন | ৩০ নভেম্বর\nনতুন শিরোনামের প্রুফ | সম্পাদনা | ১০ ডিসেম্বর',
+      'कोटेशन | प्रशासन | 30 नवंबर',
+      'Collect print quotations | Admin | 30 Nov\nProof new titles | Editorial | 10 Dec',
+    ),
+  },
+  // ── অর্থ-আর্থিক ──
+  invoice: {
+    buyer: L3('অমুক স্টোর\nস্টেশন রোড, মিরপুর বাজার\nঢাকা-১২১৬', 'स्टोर…', 'A. K. Store\nStation Road, Mirpur Bazar\nDhaka-1216'),
+    items: L3(
+      'টিনের ছাদ (৮ ফুট) | ১২ | ১,৪৫০ | ১৭,৪০০\nসিমেন্ট (বস্তা) | ৫ | ৪১০ | ২,০৫০\nরং (গ্যালন) | ২ | ৭৮০ | ১,৫৬০',
+      'छत | 12 | 1,450 | 17,400',
+      'Roof sheet (8 ft) | 12 | 1,450 | 17,400\nCement (bag) | 5 | 410 | 2,050\nPaint (gallon) | 2 | 780 | 1,560',
+    ),
+    discount: L3('১,০০০', '1,000', '1,000'),
+    vat: L3('৫', '5', '5'),
+    note: L3('পণ্য নেওয়ার পর কোনো অভিযোগ গ্রহণযোগ্য নয়।', 'माल लेने के बाद शिकायत नहीं।', 'No claim accepted after goods are taken away.'),
+  },
+  quotation: {
+    buyer: L3('অমুক স্টোর\nস্টেশন রোড, মিরপুর\nঢাকা-১২১৬', 'स्टोर…', 'A. K. Store\nStation Road, Mirpur\nDhaka-1216'),
+    items: L3(
+      'ওয়েবসাইট ডিজাইন ও নির্মাণ | ১ | ২৫,০০০ | ২৫,০০০\nহোস্টিং (বার্ষিক) | ১ | ৪,৫০০ | ৪,৫০০\nডোমেইন (বার্ষিক) | ১ | ১,২০০ | ১,২০০',
+      'वेबसाइट | 1 | 25,000 | 25,000',
+      'Website design & build | 1 | 25,000 | 25,000\nHosting (annual) | 1 | 4,500 | 4,500\nDomain (annual) | 1 | 1,200 | 1,200',
+    ),
+    validity: L3('এ কোটেশন ১৫ দিন পর্যন্ত বহাল থাকবে।', '15 दिन वैध।', 'This quotation is valid for 15 days.'),
+    terms: L3('অগ্রিম ৫০% — ডেলিভারিতে বাকি।\nকাজের পরিধি বাড়লে খরচ পুনর্গণনা হবে।', 'शर्तें…', '50% advance — rest on delivery.\nScope changes are re-estimated.'),
+  },
+  'purchase-order': {
+    vendor: L3('নূরানী ট্রেডার্স\nস্টেশন রোড, মিরপুর\nঢাকা-১২১৬', 'विक्रेता…', 'Noorani Traders\nStation Road, Mirpur\nDhaka-1216'),
+    shipTo: L3('টপবুক পাবলিকেশন্স\nগুদাম-২, কলেজ রোড\nঢাকা-১২০৭', 'पता…', 'Topbook Publications\nWarehouse 2, College Road\nDhaka-1207'),
+    items: L3(
+      'এ-৪ কাগজ (রিম) | ২০ | ৫২০ | ১০,৪০০\nটোনার কার্ট্রিজ | ২ | ৫,৮০০ | ১১,৬০০\nহোয়াইটবোর্ড (৪×৩) | ৩ | ২,৪০০ | ৭,২০০',
+      'कागज | 20 | 520 | 10,400',
+      'A4 paper (ream) | 20 | 520 | 10,400\nToner cartridge | 2 | 5,800 | 11,600\nWhiteboard (4×3) | 3 | 2,400 | 7,200',
+    ),
+    deliveryDate: L3('১৫ ডিসেম্বর ২০২৫-এর মধ্যে', '15 दिसंबर 2025 तक', 'By 15 December 2025'),
+    paymentTerms: L3('ডেলিভারির ১৫ দিনের মধ্যে', 'Net 15', 'Net 15'),
+  },
+  'money-receipt': {
+    payer: L3('মোঃ রাকিব হাসান', 'राकिब हसन', 'Rakib Hasan'),
+    amount: L3('৫০,০০০', '50,000', '50,000'),
+    amountWords: L3('পঞ্চাশ হাজার টাকা মাত্র', 'पचास हज़ार रुपये मात्र', 'Fifty thousand taka only'),
+    purpose: L3('বই-মুদ্রণের অগ্রিম পরিশোধ', 'मुद्रण अग्रिम', 'Advance payment for book printing'),
+    byCheque: L3('চেক নং ৪৫৩২১০, সোনালী ব্যাংক', 'चेक सं.', 'Cheque no. 453210, Sonali Bank'),
+  },
+  // ── আইনি ──
+  agreement: {
+    title: L3('সম্মতি-পত্র', 'समझौता पत्र', 'Agreement Deed'),
+    deedDate: L3('২০ নভেম্বর ২০২৫', '20 नवंबर 2025', '20 November 2025'),
+    body: L3('উভয় পক্ষ স্বেচ্ছায় ও সুস্থ-মস্তিষ্কে নিম্নোক্ত শর্তে সম্মত হইয়াছে।', 'दोनों पक्ष सहमत हैं।', 'Both parties freely agree to the following terms.'),
+    clauses: L3(
+      'এক। চুক্তি কার্যকর হইতে উভয় পক্ষ এ শর্তাবলির বাধ্য হইবে।\nদুই। কোনো শর্ত ভঙ্গ হইলে চুক্তি বাতিল গণ্য হইবে।\nতিন। বিরোধ হইলে উভয় পক্ষের সম্মতিতে সমাধান হইবে।\nচার। এ সম্মতি-পত্র দুই কপিতে লেখা, উভয় পক্ষের নিকট এক-একটি থাকিবে।',
+      'शर्तें…',
+      '1. Both parties are bound by these terms from the effective date.\n2. Breach of any term voids the agreement.\n3. Disputes are settled by mutual consent.\n4. Executed in two copies — one for each party.',
+    ),
+  },
+  'rental-agreement': {
+    title: L3('ভাড়া-চুক্তিনামা', 'किराया अनुबंध', 'Rental Agreement'),
+    deedDate: L3('১ ডিসেম্বর ২০২৫', '1 दिसंबर 2025', '1 December 2025'),
+    property: L3('রুম-৫বি, তৃতীয় তলা, ১২/এ কলেজ রোড, মিরপুর, ঢাকা', 'कमरा 5B', 'Room 5B, 3rd floor, 12/A College Road, Mirpur, Dhaka'),
+    termStart: L3('১ ডিসেম্বর ২০২৫', '1 दिसंबर 2025', '1 December 2025'),
+    termEnd: L3('৩০ নভেম্বর ২০২৬', '30 नवंबर 2026', '30 November 2026'),
+    rent: DEMO_TAKA,
+    advance: L3('৫৫,৫০০ টাকা (৩ মাসের অগ্রিম)', '₹55,500', 'BDT 55,500 (3 months advance)'),
+    clauses: L3(
+      'এক। ভাড়া প্রতি মাসের ১০ তারিখের মধ্যে পরিশোধ্য।\nদুই। বিদ্যুৎ-গ্যাস-পানির বিল ভাড়াটিয়া বহন করিবেন।\nতিন। তিন মাসের অগ্রিম-নোটিশ ছাড়া উভয় পক্ষ চুক্তি বাতিল করিতে পারিবেন না।',
+      'शर्तें…',
+      '1. Rent is due by the 10th of each month.\n2. Utilities are borne by the tenant.\n3. Either party may terminate with three months\u2019 notice.',
+    ),
+  },
+  'employment-contract': {
+    title: L3('চাকরির চুক্তি', 'रोजगार अनुबंध', 'Employment Contract'),
+    deedDate: L3('১ ডিসেম্বর ২০২৫', '1 दिसंबर 2025', '1 December 2025'),
+    startDate: L3('১৫ ডিসেম্বর ২০২৫', '15 दिसंबर 2025', '15 December 2025'),
+    salary: L3('৮৫,০০০ টাকা (মাসিক)', '₹85,000 (मासिक)', 'BDT 85,000 (monthly)'),
+    duties: L3('ওয়েব-প্ল্যাটফর্মের উন্নয়ন ও রক্ষণাবেক্ষণ; দল-পরিচালনা; প্রতিবেদন প্রস্তুত।', 'कर्तव्य…', 'Develop and maintain the web platform; lead the team; prepare reports.'),
+    clauses: L3(
+      'এক। প্রারম্ভিক চাকরির মেয়াদ এক বৎসর — পরীক্ষামূলক সময় তিন মাস।\nদুই। কনফিডেনশিয়ালিটি-শর্ত চাকরি-শেষেও বহাল থাকিবে।\nতিন। উভয় পক্ষ এক মাসের নোটিশে চুক্তি বদল করিতে পারিবে।',
+      'शर्तें…',
+      '1. Initial term is one year with a three-month probation.\n2. Confidentiality survives termination.\n3. Either party may amend with one month\u2019s notice.',
+    ),
+  },
+  nda: {
+    deedDate: L3('২০ নভেম্বর ২০২৫', '20 नवंबर 2025', '20 November 2025'),
+    purpose: L3('পাণ্ডুলিপি ও প্রকাশনা-সম্পদ সুরক্ষার জন্য গোপনীয়তা-চুক্তি।', 'गोपनीयता अनुबंध।', 'Confidentiality agreement to protect manuscripts and publishing assets.'),
+    definition: L3('গোপন তথ্য: পাণ্ডুলিপি, লেখক-চুক্তি, বিক্রয়-তথ্য, গ্রাহক-তালিকা ও আর্থিক বিবরণ।', 'गोपनीय जानकारी…', 'Confidential information: manuscripts, author contracts, sales data, client lists and financials.'),
+    obligations: L3('প্রাপক গোপন তথ্য তৃতীয় পক্ষকে দিবেন না।\nশুধু নির্ধারিত কাজে ব্যবহার করিবেন।\nচুক্তি-শেষে সব কপি ফেরত দিবেন।', 'दायित्व…', 'The recipient shall not disclose confidential information.\nUse it solely for the defined work.\nReturn all copies on termination.'),
+    term: L3('৩ বৎসর (চুক্তি-শেষেও ২ বৎসর বহাল)', '3 वर्ष', '3 years (2 years after termination)'),
+    governingLaw: L3('বাংলাদেশের প্রচলিত আইন', 'भारतीय कानून', 'Laws of Bangladesh'),
+  },
+  // ── সনদ-পুরস্কার ──
+  award: {
+    title: L3('সম্মাননা স্মারক', 'सम्मान प्रमाणपत्र', 'Award of Honour'),
+    body: L3('শিক্ষা-ক্ষেত্রে অসামান্য অবদানের জন্য এ সম্মাননা প্রদান করা হলো।', 'शिक्षा में योगदान हेतु।', 'Presented for outstanding contribution to education.'),
+    body2: L3('প্রতিষ্ঠান তাঁর প্রতি আন্তরিক কৃতজ্ঞতা ও শুভেচ্ছা জানাচ্ছে।', 'कृतज्ञता।', 'The institution extends its sincere gratitude and best wishes.'),
+  },
+  'certificate-appreciation': {
+    reason: L3('স্বেচ্ছাসেবা ও সংগঠন-দক্ষতায় বিশেষ অবদানের জন্য।', 'स्वयंसेवा हेतु।', 'For exceptional volunteer service and organisational skill.'),
+    body2: L3('আশা করি ভবিষ্যতেও তিনি একই নিষ্ঠায় কাজ চালিয়ে যাবেন।', 'आशा है…', 'We look forward to his/her continued dedication.'),
+  },
+  'certificate-participation': {
+    eventName: L3('জাতীয় প্রোগ্রামিং প্রতিযোগিতা ২০২৫', 'राष्ट्रीय प्रोग्रामिंग प्रतियोगिता', 'National Programming Contest 2025'),
+    role: L3('অংশগ্রহণকারী', 'प्रतिभागी', 'Participant'),
+    venue: L3('ঢাকা বিশ্ববিদ্যালয়', 'दिल्ली विश्वविद्यालय', 'University of Dhaka'),
+  },
+  'certificate-training': {
+    programName: L3('তথ্য-প্রযুক্তি দক্ষতা উন্নয়ন কর্মশালা', 'आईटी कौशल कार्यशाला', 'IT Skills Development Workshop'),
+    duration: L3('৩ মাসের কোর্স (৬০ ঘণ্টা)', '3 माह (60 घंटे)', '3-month course (60 hours)'),
+    topics: L3('ওয়েব-উন্নয়নের ভিত্তি\nডাটাবেজ ও সার্ভার\nপ্রজেক্ট-পোর্টফোলিও', 'विषय…', 'Web development fundamentals\nDatabases & servers\nProject portfolio'),
+  },
+  // ── শিক্ষা ──
+  'class-routine': {
+    title: L3('ক্লাস রুটিন — ২০২৬', 'कक्षा रुटीन — 2026', 'Class Routine — 2026'),
+    grid: L3(
+      '৯:০০–৯:৪৫ | বাংলা | ইংরেজি | গণিত | বিজ্ঞান | ধর্ম\n৯:৪৫–১০:৩০ | ইংরেজি | গণিত | বাংলা | আইসিটি | বিজ্ঞান\n১০:৩০–১১:১৫ | গণিত | বিজ্ঞান | ইংরেজি | বাংলা | সমাজ\n১১:১৫–১১:৩০ | টিফিন | টিফিন | টিফিন | টিফিন | টিফিন\n১১:৩০–১২:১৫ | বিজ্ঞান | ধর্ম | সমাজ | ইংরেজি | গণিত',
+      '9:00 | हिंदी | अंग्रेज़ी | गणित…',
+      '9:00–9:45 | Bangla | English | Math | Science | Religion\n9:45–10:30 | English | Math | Bangla | ICT | Science\n10:30–11:15 | Math | Science | English | Bangla | Social\n11:15–11:30 | Break | Break | Break | Break | Break\n11:30–12:15 | Science | Religion | Social | English | Math',
+    ),
+    note: L3('শিক্ষক-সভা: প্রতি শনিবার শেষ পিরিয়ডে।', 'शिक्षक सभा…', 'Staff meeting: last period every Saturday.'),
+  },
+  'exam-routine': {
+    title: L3('অর্ধবার্ষিক পরীক্ষা — ২০২৬', 'अर्धवार्षिक परीक्षा — 2026', 'Half-Yearly Examination — 2026'),
+    rows: L3(
+      '১ ডিসেম্বর | সোমবার | ১০:০০–১:০০ | বাংলা\n৩ ডিসেম্বর | বুধবার | ১০:০০–১:০০ | ইংরেজি\n৫ ডিসেম্বর | শুক্রবার | ১০:০০–১:০০ | গণিত\n৭ ডিসেম্বর | রবিবার | ১০:০০–১:০০ | বিজ্ঞান\n৯ ডিসেম্বর | মঙ্গলবার | ১০:০০–১:০০ | সমাজবিজ্ঞান',
+      '1 दिसंबर | सोमवार | हिंदी',
+      '1 Dec | Mon | 10:00–1:00 | Bangla\n3 Dec | Wed | 10:00–1:00 | English\n5 Dec | Fri | 10:00–1:00 | Mathematics\n7 Dec | Sun | 10:00–1:00 | Science\n9 Dec | Tue | 10:00–1:00 | Social Science',
+    ),
+    rules: L3('পরীক্ষা শুরুর ১৫ মিনিট পূর্বে হলে প্রবেশ করতে হবে।\nমোবাইল ফোন সম্পূর্ণ নিষিদ্ধ।\nঅ্যাডমিট কার্ড ছাড়া প্রবেশ নিষেধ।', 'नियम…', 'Enter the hall 15 minutes before the exam.\nMobile phones are strictly prohibited.\nNo entry without the admit card.'),
+  },
+  marksheet: {
+    subjects: L3(
+      'বাংলা | ১০০ | ৭৮ | A\nইংরেজি | ১০০ | ৭১ | A\nগণিত | ১০০ | ৮২ | A+\nবিজ্ঞান | ১০০ | ৭৪ | A\nবাংলাদেশ ও বিশ্বপরিচয় | ১০০ | ৮০ | A+\nধর্ম ও নৈতিক শিক্ষা | ১০০ | ৮৫ | A+',
+      'हिंदी | 100 | 78 | A',
+      'Bangla | 100 | 78 | A\nEnglish | 100 | 71 | A\nMathematics | 100 | 82 | A+\nScience | 100 | 74 | A\nSocial Studies | 100 | 80 | A+\nReligion & Ethics | 100 | 85 | A+',
+    ),
+    sign1Title: L3('শ্রেণি শিক্ষক', 'वर्ग शिक्षक', 'Class Teacher'),
+    sign2Title: L3('প্রধান শিক্ষক', 'प्रधानाचार्य', 'Headmaster'),
+  },
+  'report-card': {
+    subjects: L3(
+      'বাংলা | ১০০ | ৮১ | A+\nইংরেজি | ১০০ | ৭৪ | A\nগণিত | ১০০ | ৬৯ | A-\nবিজ্ঞান | ১০০ | ৭৭ | A\nসমাজবিজ্ঞান | ১০০ | ৮৩ | A+',
+      'हिंदी | 100 | 81 | A+',
+      'Bangla | 100 | 81 | A+\nEnglish | 100 | 74 | A\nMathematics | 100 | 69 | A-\nScience | 100 | 77 | A\nSocial Science | 100 | 83 | A+',
+    ),
+    remarks: L3('এ বছর উল্লেখযোগ্য উন্নতি — নিয়মিত অনুশীলনে আরও ভালো ফল সম্ভব।', 'उन्नति हुई है।', 'Marked improvement this year — regular practice can lift results further.'),
+    sign1Title: L3('শ্রেণি শিক্ষক', 'वर्ग शिक्षक', 'Class Teacher'),
+    sign2Title: L3('প্রধান শিক্ষক', 'प्रधानाचार्य', 'Headmaster'),
+  },
+  admission: {
+    photoLabel: L3('পাসপোর্ট সাইজ ছবি', 'पासपोर्ट फोटो', 'PP-size photo'),
+    title: L3('ভর্তি ফরম — ২০২৬', 'प्रवेश फॉर्म — 2026', 'Admission Form — 2026'),
+    fields: L3(
+      'ছাত্র/ছাত্রীর নাম\nপিতার নাম\nমাতার নাম\nজন্মতারিখ\nএনআইডি/জন্মনিবন্ধন নং\nঠিকানা\nমোবাইল\nপূর্ববর্তী প্রতিষ্ঠান',
+      'छात्र का नाम\nपिता का नाम\nमाता का नाम',
+      'Student\u2019s name\nFather\u2019s name\nMother\u2019s name\nDate of birth\nNID/Birth registration no.\nAddress\nMobile\nPrevious institution',
+    ),
+    declare: L3('আমি ঘোষণা করছি যে উপরের সব তথ্য সঠিক — কোনো তথ্য মিথ্যা প্রমাণিত হইলে ভর্তি বাতিল হবে।', 'मैं घोषणा करता हूँ…', 'I declare the above information is true; false information voids admission.'),
+    sign1Title: L3('অভিভাবক', 'अभिभावक', 'Guardian'),
+    sign2Title: L3('প্রধান শিক্ষক', 'प्रधानाचार्य', 'Headmaster'),
+  },
+  'lesson-plan': {
+    topic: L3('মাধ্যম: ছবি ও বর্ণনা — গল্প-সাজানো', 'पाठ…', 'Topic: storytelling with pictures'),
+    outcomes: L3('শিক্ষার্থী গল্পের মূল-ভাব শনাক্ত করতে পারবে।\nনিজের ভাষায় ঘটনা-ক্রম বলতে পারবে।\nদলে সক্রিয়ভাবে অংশ নেবে।', 'लक्ष्य…', 'Students will identify the main idea.\nRetell the sequence in their own words.\nParticipate actively in groups.'),
+    materials: L3('গল্পের ছবি-কার্ড\nচক/সাদা-বোর্ড\nছাত্র-নোটবই', 'सामग्री…', 'Picture story cards\nChalk/whiteboard\nStudent notebooks'),
+    stages: L3(
+      'সূচনা | পূর্ব-জ্ঞান যাচাই | ৫ মিনিট\nপ্রদর্শন | ছবি-দেখে মডেল বর্ণনা | ১০ মিনিট\nঅনুশীলন | দলীয় গল্প-সাজানো | ২০ মিনিট\nমূল্যায়ন | প্রশ্নোত্তর | ১০ মিনিট',
+      'चरण…',
+      'Warm-up | Activate prior knowledge | 5 min\nModel | Describe a picture together | 10 min\nPractice | Group story-building | 20 min\nAssess | Q&A | 10 min',
+    ),
+    assessment: L3('মুখস্থ প্রশ্নোত্তর ও নোটবই-নিরীক্ষা', 'मूल्यांकन…', 'Oral Q&A and notebook check'),
+    homework: L3('পাঁচ বাক্যে নিজের গল্প লেখা', 'गृहकार्य…', 'Write your own story in five sentences'),
+  },
+  // ── অনুষ্ঠান ──
+  invitation: {
+    title: L3('বার্ষিক সাংস্কৃতিক অনুষ্ঠান ২০২৫', 'वार्षिक सांस्कृतिक उत्सव', 'Annual Cultural Festival 2025'),
+    body: L3('প্রতিষ্ঠানের বার্ষিক সাংস্কৃতিক অনুষ্ঠানে আপনাকে স্বাগত জানাতে আমরা আনন্দিত — আপনার উপস্থিতিই আয়োজনের সার্থকতা।', 'आपका स्वागत है।', 'We are delighted to invite you to our annual cultural festival — your presence makes the event complete.'),
+    note: L3('রঙে, ছন্দে, গল্পে — একদিনের উৎসব', 'रंग, ताल, कहानी', 'Colour, rhythm, stories — a one-day festival'),
+  },
+  'wedding-card': {
+    note: L3('স্বপ্নের শুভ সংযোগে আপনাদের সাদরে আমন্ত্রণ', 'शुभ विवाह में आमंत्रण', 'With joy, we invite you to our wedding'),
+  },
+  program: {
+    title: L3('অনুষ্ঠানের ধারাবাহিক সূচি', 'कार्यक्रम सूची', 'Programme Schedule'),
+    rows: L3(
+      '১০:০০ | স্বাগত ভাষণ\n১০:১৫ | মূল আলোচনা\n১১:০০ | সাংস্কৃতিক পরিবেশনা\n১২:৩০ | পুরস্কার বিতরণ\n১:০০ | শেষ-ভাষণ ও দোয়া',
+      '10:00 | स्वागत',
+      '10:00 | Welcome address\n10:15 | Keynote\n11:00 | Cultural performance\n12:30 | Prize giving\n1:00 | Closing remarks & prayer',
+    ),
+    note: L3('সবার সময়মতো উপস্থিতি প্রত্যাশিত।', 'समय पर आएँ।', 'All are requested to arrive on time.'),
+  },
+  // ── চিকিৎসা ──
+  prescription: {
+    diagnosis: L3('ভাইরাল জ্বর ও শ্বাসকষ্ট', 'वायरल बुखार', 'Viral fever with breathing discomfort'),
+    meds: L3(
+      'প্যারাসিটামল ৫০০ মি.গ্রা. | ১+০+১ | খাবারের পরে\nঅ্যান্টাসিড জেল | ১+১+১ | খাবারের আগে\nভিটামিন-সি | ০+০+১ | রাতে',
+      'पैरासिटामोल | 1+0+1',
+      'Paracetamol 500 mg | 1+0+1 | After meals\nAntacid gel | 1+1+1 | Before meals\nVitamin C | 0+0+1 | At night',
+    ),
+    advice: L3('প্রচুর পানি পান করুন\nবিশ্রামে থাকুন\nজ্বর ৩ দিনের বেশি থাকলে যোগাযোগ করুন', 'सलाह…', 'Drink plenty of fluids\nTake rest\nCall if fever persists beyond 3 days'),
+  },
+  'medical-certificate': {
+    statement: L3('রোগীর শারীরিক পরীক্ষা ও উপসর্গের ভিত্তিতে উল্লিখিত সময়ে কর্ম/শ্রেণিতে উপস্থিত হওয়া তাঁর পক্ষে উপযুক্ত নয়।', 'रोगी अनुपस्थित रहेगा।', 'Based on examination and symptoms, attendance at work/school is not advisable during the stated period.'),
+    unfitFrom: L3('২০ নভেম্বর ২০২৫', '20 नवंबर 2025', '20 November 2025'),
+    unfitTo: L3('২৪ নভেম্বর ২০২৫', '24 नवंबर 2025', '24 November 2025'),
+    diagnosis: L3('ভাইরাল ইনফেকশন (উর্ধ্ব-শ্বাসনালি)', 'वायरल संक्रमण', 'Viral upper-respiratory infection'),
+  },
+  // ── মার্কেটিং ──
+  poster: {
+    kicker: L3('আমন্ত্রণ', 'आमंत्रण', 'Invitation'),
+    title: L3('বার্ষিক সাংস্কৃতিক অনুষ্ঠান ২০২৫', 'वार्षिक उत्सव 2025', 'Annual Cultural Festival 2025'),
+    sub: L3('রঙে, ছন্দে, গল্পে — একদিনের উৎসব', 'रंग, ताल, कहानी', 'Colour, rhythm, stories — one day of celebration'),
+    body: L3('সারা বছরের শ্রেষ্ঠ মুহূর্তগুলো এক মঞ্চে — সঙ্গীত, নৃত্য, নাটক ও পুরস্কার-বিতরণ।', 'कार्यक्रम…', 'The year\u2019s best moments on one stage — music, dance, drama and awards.'),
+    points: L3('প্রবেশ: সবার জন্য উন্মুক্ত\nসন্ধ্যা ৬টায় মূল পরিবেশনা\nখাবারের স্টল থাকবে', 'प्रवेश…', 'Entry open to all\nMain show at 6 PM\nFood stalls on site'),
+    contact: L3('+৮৮০ ১৭১২-৩৪৫৬৭৮ · hello@example.com', '+91 …', '+880 1712-345678 · hello@example.com'),
+  },
+  flyer: {
+    title: L3('শীতকালীন বই-মেলা — বিশেষ ছাড়', 'शीतकालीन बुक मेला', 'Winter Book Fair — Special Offers'),
+    sub: L3('প্রিয় বইগুলো এবার আপস-চাহিদা মূল্যে', 'छूट…', 'Favourite books at give-away prices'),
+    col1: L3('নতুন প্রকাশে ৩০% পর্যন্ত ছাড়\nপুরনো সংগ্রহে ৫০% ছাড়\nপ্রতি ১০০০ টাকায় এক উপহার', 'छाड़…', 'Up to 30% off new titles\n50% off backlist\nA gift on every 1,000 taka'),
+    col2: L3('স্বাক্ষর-অনুষ্ঠান: শুক্রবার বিকেল ৪টা\nলেখক-সংলাপ: শনিবার সন্ধ্যা ৬টা\nশিশুদের গল্প-সময়: প্রতিদিন সকাল ১১টা', 'कार्यक्रम…', 'Signing: Friday 4 PM\nAuthor talk: Saturday 6 PM\nKids\u2019 story time: daily 11 AM'),
+    priceNote: L3('মেলা চলবে ১০–২০ ডিসেম্বর', '10–20 दिसंबर', 'Fair runs 10–20 December'),
+    contact: L3('+৮৮০ ১৭১২-৩৪৫৬৭৮', 'फोन…', '+880 1712-345678'),
+  },
+  'brochure-trifold': {
+    name: L3('টপবুক পাবলিকেশন্স', 'टॉपबुक', 'Topbook Publications'),
+    tagline: L3('বইয়ের হাতে-কলমে প্রযুক্তি', 'पुस्तक प्रौद्योगिकी', 'Craft technology for books'),
+    about: L3('গত ১০ বছরে ২০০+ শিরোনাম — পাঠ্যপুস্তক থেকে সাহিত্য, প্রতিটি পাঠক-দলের জন্য নির্ভরযোগ্য প্রকাশনা।', 'परिचय…', '10 years, 200+ titles — from textbooks to literature, dependable publishing for every reader.'),
+    offerings: L3('পাঠ্যপুস্তক ও সাহায্য-সিরিজ\nশিশু-সাহিত্য\nসাধারণ জ্ঞান ও গল্প-সংকলন', 'सेवाएँ…', 'Textbooks & study series\nChildren\u2019s literature\nGeneral knowledge & story collections'),
+    features: L3('নিজস্ব মান-নিয়ন্ত্রিত মুদ্রণ\nজাতীয় বিতরণ-নেটওয়ার্ক\nঅনলাইন অর্ডার-সহায়তা', 'विशेषताएँ…', 'In-house quality printing\nNationwide distribution\nOnline order support'),
+    contactLines: L3('১২/এ, কলেজ রোড, মিরপুর, ঢাকা-১২০৭\n+৮৮০ ১৭১২-৩৪৫৬৭৮ · hello@example.com\nwww.topbook.example', 'संपर्क…', '12/A, College Road, Mirpur, Dhaka-1207\n+880 1712-345678 · hello@example.com\nwww.topbook.example'),
+  },
+  newsletter: {
+    name: L3('পাঠক-চিঠি', 'पाठक-पत्र', 'Reader\u2019s Letter'),
+    issue: L3('সংখ্যা ১২', 'अंक 12', 'Issue 12'),
+    leadHeadline: L3('নতুন শিক্ষাবর্ষে ১২টি নতুন শিরোনাম', 'नया सत्र, नई किताबें', 'Twelve new titles for the new school year'),
+    leadBody: L3('শিক্ষাবর্ষ শুরুর আগেই আমাদের সম্পাদনা-টিম শিক্ষকদের পরামর্শে ১২টি নতুন সহায়-পুস্তক প্রস্তুত করেছে — প্রতিটি শ্রেণির জন্য পরীক্ষিত অনুশীলন-কৌশল।', 'लेख…', 'Ahead of the new school year, our editorial team has prepared twelve new study guides with teachers — tested practice methods for every class.'),
+    headline2: L3('গ্রন্থাগার-অংশীদারি কর্মসূচি', 'पुस्तकालय कार्यक्रम', 'Library partnership programme'),
+    body2: L3('২০টি জেলা-গ্রন্থাগারের সাথে চুক্তি — প্রতি গ্রন্থাগারে ৫০ শিরোনামের নির্বাচিত সংগ্রহ।', 'समाचार…', 'Contracts with 20 district libraries — a curated 50-title collection each.'),
+    headline3: L3('পাঠক-পোলের ফল', 'पाठक सर्वेक्षण', 'Reader poll results'),
+    body3: L3('বছরের প্রিয় শিরোনাম নির্বাচনে ৪,২০০ জন পাঠক ভোট দিয়েছেন — ফলাফল পরের সংখ্যায়।', 'समाचार…', '4,200 readers voted for the title of the year — results in the next issue.'),
+    highlights: L3('বই-মেলা: ১০–২০ ডিসেম্বর\nলেখক-সংলাপ: শনিবার সন্ধ্যা ৬টা\nনতুন সদস্যদের জন্য বিশেষ ছাড়', 'एक नज़र में…', 'Book fair: 10–20 December\nAuthor talk: Saturday 6 PM\nSpecial discount for new members'),
+    contact: L3('সম্পাদক: নাসরিন আক্তার · newsletter@example.com', 'संपादक', 'Editor: Nasrin Akhter · newsletter@example.com'),
+  },
+  'press-release': {
+    headline: L3('টপবুক পাবলিকেশন্স জাতীয় প্রকাশনা-পুরস্কারে ভূষিত', 'टॉपबुक पुरस्कृत', 'Topbook Publications wins national publishing award'),
+    subhead: L3('শিশু-সাহিত্য-সিরিজ নির্বাচকমণ্ডলীর প্রশংসা অর্জন করেছে', 'शिशु-साहित्य श्रृंखला', 'Children\u2019s series earns jury acclaim'),
+    body1: L3('ঢাকা, ২০ নভেম্বর ২০২৫ — টপবুক পাবলিকেশন্স এ বছরের জাতীয় প্রকাশনা-পুরস্কারের সেরা শিশু-সাহিত্য-প্রকাশক হিসাবে স্বীকৃতি পেয়েছে।', 'समाचार…', 'DHAKA, 20 November 2025 — Topbook Publications has been named the year\u2019s best children\u2019s publisher in the national publishing awards.'),
+    body2: L3('নির্বাচকমণ্ডলী উল্লেখ করেছে — সিরিজের ভাষা-সরলতা, ছবি-নকশা ও শ্রেণিকক্ষে ব্যবহার-উপযোগিতা নির্ণায়ক ছিল।', 'विवरण…', 'The jury cited the series\u2019s language clarity, illustration design and classroom usability.'),
+    about: L3('টপবুক পাবলিকেশন্স গত ১০ বছরে ২০০+ শিরোনাম প্রকাশ করেছে।', 'परिचय…', 'Topbook Publications has released 200+ titles over the past decade.'),
+    contactLines: L3('প্রচার-দল: +৮৮০ ১৭১২-৩৪৫৬৭৮\npress@example.com', 'संपर्क…', 'Press desk: +880 1712-345678\npress@example.com'),
+  },
+  'resume-cover': {
+    opening: L3(
+      'ডাটাসফট লিমিটেডের ওয়েবসাইটে প্রকাশিত "সিনিয়র সফটওয়্যার ইঞ্জিনিয়ার" পদের বিজ্ঞাপন দেখে আমি আবেদন করছি — এ পদ আমার অভিজ্ঞতার সাথে হুবহু মেলে।',
+      'विज्ञापन देखकर आवेदन कर रहा हूँ।',
+      'I am writing to apply for the Senior Software Engineer position posted on DataSoft\u2019s careers page — the role matches my experience exactly.',
+    ),
+    body: L3(
+      'আট বছরের অভিজ্ঞতায় আমি ওয়েব-প্ল্যাটফর্ম ও পেমেন্ট-সিস্টেম নির্মাণ ও রক্ষণাবেক্ষণ করেছি; আপনার দলে এ অভিজ্ঞতা ও দল-নেতৃত্ব কাজে লাগবে বলে বিশ্বাস করি।',
+      'अनुभव आपकी टीम के लिए उपयोगी होगा।',
+      'Over eight years I have built and maintained web platforms and payment systems; I believe this experience and team leadership will serve your team well.',
+    ),
+    closing: L3(
+      'আমার সম্পর্কে আরও জানতে চাইলে সাক্ষাৎকারের সুযোগ দিলে কৃতজ্ঞ থাকব।',
+      'साक्षात्कार की कृपा करें।',
+      'I would welcome the opportunity to interview and tell you more.',
+    ),
+  },
+  // ── বৈশ্বিক সম্পূর্ণতা: প্রস্তাবনা/ক্যালেন্ডার ──
+  'project-proposal': {
+    projectTitle: L3('গ্রামীণ ডিজিটাল লাইব্রেরি প্রকল্প', 'ग्रामीण डिजिटल लाइब्रेरी परियोजना', 'Rural Digital Library Project'),
+    client: L3('জেলা শিক্ষা অফিস', 'जिला शिक्षा कार्यालय', 'District Education Office'),
+    preparedBy: L3('মোঃ রাকিব হাসান', 'राकिब हसन', 'Rakib Hasan'),
+    duration: L3('৬ মাস', '6 महीने', '6 months'),
+    budget: L3('৪,৫০,০০০ টাকা', '₹4,50,000', 'BDT 4,50,000'),
+    objectives: L3('পাঁচটি গ্রামে ডিজিটাল পাঠ-কোণ স্থাপন।\n৩০০ জন শিক্ষার্থীর ব্যবহার-প্রশিক্ষণ।\nস্থানীয় শিক্ষকদের ফ্যাসিলিটেটর হিসাবে গড়ে তোলা।', 'उद्देश्य…', 'Set up digital reading corners in five villages.\nTrain 300 students to use them.\nGrow local teachers into facilitators.'),
+    scope: L3('সরঞ্জাম-ক্রয়, প্রশিক্ষণ-মডিউল প্রস্তুত, তিন ধাপে স্থাপন ও ছয় মাসের পরিচর্যা — এ প্রকল্পের পুরো পরিসর এক চুক্তিতে।', 'कार्य का दायरा…', 'Equipment procurement, training-module preparation, three installation phases and six months of support — all in one contract.'),
+    deliverables: L3('প্রশিক্ষণ-মডিউল ও গাইড (বাংলা)।\nপাঁচটি পাঠ-কোণের স্থাপন ও পরীক্ষা।\nপ্রতি মাসের অগ্রগতি-প্রতিবেদন।\nশেষ-পর্যায়ের মূল্যায়ন।', 'डिलिवरेबल…', 'Training module & guide (local language).\nFive reading corners installed & tested.\nMonthly progress reports.\nEnd-of-project evaluation.'),
+    timeline: L3(
+      'প্রস্তুতি | মাস ১ | সরঞ্জাম ও স্থান-নির্বাচন\nস্থাপন | মাস ২–৩ | পাঁচটি পাঠ-কোণ চালু\nপ্রশিক্ষণ | মাস ৩–৪ | ৩০০ শিক্ষার্থী\nপরিচর্যা | মাস ৪–৬ | মাসিক প্রতিবেদন\nমূল্যায়ন | মাস ৬ | চূড়ান্ত রিপোর্ট',
+      'चरण…',
+      'Preparation | Month 1 | Sites & equipment\nInstallation | Months 2–3 | Five corners live\nTraining | Months 3–4 | 300 students\nSupport | Months 4–6 | Monthly reports\nEvaluation | Month 6 | Final report',
+    ),
+    terms: L3('অগ্রিম ৪০% — বাকি ধাপ-ভিত্তিক।\nসরঞ্জামে এক বৎসরের ওয়ারেন্টি।\nপরিবহন প্রস্তাবকের দায়িত্ব।', 'शर्तें…', '40% advance — balance per phase.\nOne-year equipment warranty.\nLogistics handled by the submitter.'),
+  },
+  'calendar-month': {
+    title: L3('কার্যক্রম ক্যালেন্ডার', 'कार्यक्रम कैलेंडर', 'Activity Calendar'),
+    events: L3(
+      '৫: সমন্বয় সভা\n১২: শিক্ষক-প্রশিক্ষণ\n২১: ফল-বিতরণ দিবস',
+      '5: समन्वय बैठक\n12: प्रशिक्षण\n21: पुरस्कार दिवस',
+      '5: Coordination meeting\n12: Teacher training\n21: Prize-giving day',
+    ),
+    note: L3('ছুটি ও পরিবর্তন প্রজ্ঞাপন অনুযায়ী হালনাগাদ হবে।', 'सूचना…', 'Holidays are updated per official notices.'),
+  },
+};
+
+/** টেবিল/টেক্সটের সাঝা ফলব্যাক (পুলে না থাকলে) */
+const DEMO_FALLBACK_PARA = L3(
+  'এ অংশে নথির মূল বক্তব্য লিখুন — টেমপ্লেটের ধাঁচ অনুযায়ী প্যারা সাজানো থাকবে।',
+  'यहाँ मुख्य विषय लिखें।',
+  'Write the document\u2019s main content here — styled to the template\u2019s convention.',
+);
+const DEMO_FALLBACK_TEXT = L3('নমুনা', 'नमूना', 'Sample');
+
+/**
+ * টেমপ্লেট + ভাষা → বাস্তবধর্মী নমুনা-মান (গ্যালারি-থাম্বনেইল ও "নমুনা পূরণ")।
+ * ক্যানভা/ওয়ার্ড-প্রথায় থাম্বনেইল যেন ভরা-দলিলের মতো দেখায়।
+ */
+export function dsDemoValues(tpl: DsTemplate, lang: Lang): DsValues {
+  const out: DsValues = {};
+  const special = DS_DEMO_SPECIAL[tpl.id] ?? {};
+  for (const f of tpl.fields) {
+    // ক্যালেন্ডারের মাস — বর্তমান মাসের নমুনা (ভাষা-ভেদে লেবেল)
+    if (tpl.id === 'calendar-month' && f.id === 'month') { out[f.id] = demoMonthLabel(lang); continue; }
+    // প্রকৃত ডেট-ফিল্ড আজকেরই — পুলের আগে (টেক্সট-ধর্মী 'date' ফিল্ড পুল থেকে নেবে)
+    if (f.kind === 'date') { out[f.id] = dsToday(lang); continue; }
+    const e = special[f.id] ?? DS_DEMO[f.id];
+    if (e) { out[f.id] = tx(lang, e); continue; }
+    if (f.kind === 'table') out[f.id] = (f.cols ?? []).map((c) => tx(lang, c)).join(' | ');
+    else if (f.kind === 'textarea') out[f.id] = tx(lang, DEMO_FALLBACK_PARA);
+    else out[f.id] = tx(lang, DEMO_FALLBACK_TEXT);
   }
   return out;
 }
@@ -2453,8 +3034,8 @@ const MEDICAL_CERT_TPL: DsTemplate = {
 const BROCHURE_TPL: DsTemplate = {
   id: 'brochure-trifold',
   category: 'promo',
-  name: L3('ত্রি-ভাঁজ ব্রশিওর', 'त्रिकोण ब्रोशर', 'Tri-fold Brochure'),
-  desc: L3('তিন-স্তম্ভ প্রচার-ব্রশিওর — পরিচিতি, সেবা-তালিকা ও যোগাযোগ-প্যানেল।', 'ब्रोशर।', 'Three-panel marketing brochure.'),
+  name: L3('ত্রি-ভাঁজ ব্রোশিওর', 'त्रिकोण ब्रोशर', 'Tri-fold Brochure'),
+  desc: L3('তিন-স্তম্ভ প্রচার-ব্রোশিওর — পরিচিতি, সেবা-তালিকা ও যোগাযোগ-প্যানেল।', 'ब्रोशर।', 'Three-panel marketing brochure.'),
   styles: ['teal', 'royal', 'green'],
   defaultStyle: 'teal',
   fields: [
@@ -2560,14 +3141,218 @@ const PRESS_RELEASE_TPL: DsTemplate = {
   ].filter(Boolean).join(''),
 };
 
+// ═════════════════════════ বৈশ্বিক সম্পূর্ণতা — প্রস্তাব/ক্যালেন্ডার/বিজনেস-কার্ড ═════════════════════════
+
+const PROJECT_PROPOSAL_TPL: DsTemplate = {
+  id: 'project-proposal',
+  category: 'office',
+  name: L3('প্রকল্প প্রস্তাবনা', 'परियोजना प्रस्ताव', 'Project Proposal'),
+  desc: L3('দরপত্র/অনুদানের প্রস্তাব — উদ্দেশ্য, পরিসর, ডেলিভারেবল, সময়সূচি-টেবিল ও বাজেট।', 'प्रस्ताव — उद्देश्य, समय-सारिणी, बजट।', 'Client-facing proposal with timeline and budget.'),
+  styles: ['classic', 'teal', 'green', 'royal'],
+  defaultStyle: 'teal',
+  fields: [
+    { id: 'office', kind: 'text', wide: true, label: L3('প্রস্তাবক প্রতিষ্ঠান', 'प्रस्तावक संस्था', 'Submitting organization') },
+    { id: 'projectTitle', kind: 'text', wide: true, label: L3('প্রকল্পের নাম', 'परियोजना का नाम', 'Project title') },
+    { id: 'client', kind: 'text', wide: true, label: L3('ক্লায়েন্ট/অনুদানদাতা', 'क्लाइंट/दाता', 'Client / funder') },
+    { id: 'preparedBy', kind: 'text', label: L3('প্রস্তুতকারী', 'प्रस्तुतकर्ता', 'Prepared by') },
+    { id: 'date', kind: 'date', label: DSB.date },
+    { id: 'duration', kind: 'text', label: L3('প্রকল্প-মেয়াদ', 'अवधि', 'Duration') },
+    { id: 'budget', kind: 'text', wide: true, label: L3('বাজেট (মোট)', 'बजट', 'Total budget') },
+    { id: 'objectives', kind: 'textarea', wide: true, rows: 4, label: L3('উদ্দেশ্য (প্রতি লাইনে একটি)', 'उद्देश्य (प्रति पंक्ति)', 'Objectives (one per line)') },
+    { id: 'scope', kind: 'textarea', wide: true, rows: 4, label: L3('কাজের পরিসর', 'कार्य का दायरा', 'Scope of work') },
+    { id: 'deliverables', kind: 'textarea', wide: true, rows: 4, label: L3('ডেলিভারেবল (প্রতি লাইনে একটি)', 'डिलिवरेबल (प्रति पंक्ति)', 'Deliverables (one per line)') },
+    {
+      id: 'timeline', kind: 'table', wide: true, rows: 5,
+      label: L3('সময়সূচি (প্রতি সারি: ধাপ | সময়কাল | ফলাফল)', 'समय-सारिणी (चरण | अवधि | परिणाम)', 'Timeline (phase | period | output)'),
+      cols: [L3('ধাপ', 'चरण', 'Phase'), L3('সময়কাল', 'अवधि', 'Period'), L3('ফলাফল', 'परिणाम', 'Output')],
+    },
+    { id: 'terms', kind: 'textarea', wide: true, rows: 3, label: L3('শর্তাবলি (প্রতি লাইনে একটি)', 'शर्तें (प्रति पंक्ति)', 'Terms (one per line)') },
+  ],
+  build: (v, lang, P) => {
+    const tl = lines(V(v, 'timeline')).map((l) => l.split('|').map((c) => c.trim()));
+    return [
+      pc(`<strong style="font-size:12.5pt; letter-spacing:0.4px">${esc(V(v, 'office'))}</strong>`, `color:${P.head}`),
+      band(V(v, 'projectTitle') || pick(lang, 'প্রকল্প প্রস্তাবনা', 'परियोजना प्रस्ताव', 'PROJECT PROPOSAL'), P),
+      `<table style="width:100%">${[
+        [V(v, 'client'), pick(lang, 'ক্লায়েন্ট/অনুদানদাতা', 'क्लाइंट', 'Client')],
+        [V(v, 'preparedBy'), pick(lang, 'প্রস্তুতকারী', 'प्रस्तुतकर्ता', 'Prepared by')],
+        [V(v, 'duration'), pick(lang, 'মেয়াদ', 'अवधि', 'Duration')],
+        [V(v, 'budget'), pick(lang, 'বাজেট', 'बजट', 'Budget')],
+      ].map(([val, lab]) => val ? `<tr><td colwidth="170" data-border="none" style="border:none; width:22%; vertical-align:top"><p style="margin:0.3em 0; font-size:10.5pt; color:${P.soft}"><strong>${esc(lab)}</strong></p></td><td data-border="none" style="border:none; vertical-align:top"><p style="margin:0.3em 0; font-size:11pt">${esc(val)}</p></td></tr>` : '').join('')}</table>`,
+      V(v, 'date') ? pc(`<span style="font-size:10pt; color:${P.soft}">${esc(V(v, 'date'))}</span>`) : '',
+      buildDividerHtml('single'),
+      lines(V(v, 'objectives')).length
+        ? secH(pick(lang, 'উদ্দেশ্যসমূহ', 'उद्देश्य', 'OBJECTIVES'), P) + `<ol style="margin:0.2em 0">${lines(V(v, 'objectives')).map((o) => `<li style="font-size:11pt; line-height:1.8">${esc(o)}</li>`).join('')}</ol>`
+        : '',
+      V(v, 'scope') ? secH(pick(lang, 'কাজের পরিসর', 'कार्य का दायरा', 'SCOPE OF WORK'), P) + `<p style="margin:0.2em 0; font-size:10.5pt; line-height:1.9; text-align:justify">${esc(V(v, 'scope'))}</p>` : '',
+      lines(V(v, 'deliverables')).length
+        ? secH(pick(lang, 'ডেলিভারেবল', 'डिलिवरेबल', 'DELIVERABLES'), P) + `<ul style="margin:0.2em 0">${lines(V(v, 'deliverables')).map((d) => `<li style="font-size:11pt; line-height:1.8">${esc(d)}</li>`).join('')}</ul>`
+        : '',
+      tl.length ? secH(pick(lang, 'সময়সূচি', 'समय-सारिणी', 'TIMELINE'), P) + `<table style="width:100%"><tr>${[pick(lang, 'ধাপ', 'चरण', 'Phase'), pick(lang, 'সময়কাল', 'अवधि', 'Period'), pick(lang, 'ফলাফল', 'परिणाम', 'Output')].map((h) => `<th style="text-align:left">${esc(h)}</th>`).join('')}</tr>${tl.map((c) => `<tr>${c.map((cell) => `<td>${esc(cell ?? '')}</td>`).join('')}</tr>`).join('')}</table>` : '',
+      lines(V(v, 'terms')).length
+        ? shadeBox(P, `<p style="margin:0.2em 0"><strong>${esc(pick(lang, 'শর্তাবলি:', 'शर्तें:', 'Terms:'))}</strong></p><ul>${lines(V(v, 'terms')).map((t) => `<li>${esc(t)}</li>`).join('')}</ul>`)
+        : '',
+      `<p style="margin-top:2em; text-align:right; font-size:10pt; color:${P.soft}">${esc(pick(lang, 'প্রস্তুতকারী', 'प्रस्तुतकर्ता', 'Prepared by'))}</p><p style="text-align:right; margin:0.3em 0 0; font-size:11pt"><strong>${esc(V(v, 'preparedBy'))}</strong></p>`,
+    ].filter(Boolean).join('');
+  },
+};
+
+/** মাস-নাম (ক্যালেন্ডার) — তিন ভাষায় */
+const DS_MONTHS: Record<Lang, string[]> = {
+  bn: ['জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'],
+  hi: ['जनवरी', 'फरवरी', 'मार्च', 'अप्रैल', 'मई', 'जून', 'जुलाई', 'अगस्त', 'सितंबर', 'अक्टूबर', 'नवंबर', 'दिसंबर'],
+  en: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+};
+
+const bnDigits = (n: number): string => String(n).replace(/\d/g, (d) => '০১২৩৪৫৬৭৮৯'[Number(d)]);
+
+/** বর্তমান মাস-লেবেল (ক্যালেন্ডারের নমুনা-মান) */
+function demoMonthLabel(lang: Lang): string {
+  const d = new Date();
+  const label = `${DS_MONTHS[lang][d.getMonth()]} ${lang === 'bn' ? bnDigits(d.getFullYear()) : d.getFullYear()}`;
+  return label;
+}
+
+/** "নভেম্বর ২০২৫" / "नवंबर 2025" / "November 2025" → {y, m} — না পড়লে বর্তমান মাস */
+function parseMonthYear(s: string): { y: number; m: number } {
+  const norm = String(s ?? '').replace(/[০-৯]/g, (d) => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
+  const ym = norm.match(/(\d{4})/);
+  const y = ym ? Number(ym[1]) : new Date().getFullYear();
+  const low = norm.toLowerCase();
+  let m = -1;
+  for (const list of [DS_MONTHS.bn, DS_MONTHS.hi, DS_MONTHS.en]) {
+    m = list.findIndex((mo) => low.includes(mo.toLowerCase()));
+    if (m >= 0) break;
+  }
+  if (m < 0) m = new Date().getMonth();
+  return { y, m };
+}
+
+const CALENDAR_TPL: DsTemplate = {
+  id: 'calendar-month',
+  category: 'office',
+  name: L3('মাসিক ক্যালেন্ডার', 'मासिक कैलेंडर', 'Monthly Calendar'),
+  desc: L3('সত্যিকারের মাস-গ্রিড — মাস-বছর লিখলেই বার-ক্যালকুলেশনসহ ক্যালেন্ডার, অনুষ্ঠান-চিহ্নসহ।', 'सही महीने का ग्रिड।', 'Real month grid — auto weekdays, event marks.'),
+  styles: ['classic', 'teal', 'green', 'royal'],
+  defaultStyle: 'classic',
+  fields: [
+    { id: 'office', kind: 'text', wide: true, label: L3('প্রতিষ্ঠান (ঐচ্ছিক)', 'संस्था', 'Organization (optional)') },
+    { id: 'title', kind: 'text', wide: true, label: L3('শিরোনাম (ঐচ্ছিক)', 'शीर्षक', 'Title (optional)'), ph: L3('কার্যক্রম ক্যালেন্ডার', 'कार्यक्रम कैलेंडर', 'Activity calendar') },
+    { id: 'month', kind: 'text', wide: true, label: L3('মাস ও বছর', 'माह व वर्ष', 'Month & year'), ph: L3('নভেম্বর ২০২৫', 'नवंबर 2025', 'November 2025') },
+    { id: 'events', kind: 'textarea', wide: true, rows: 4, label: L3('অনুষ্ঠান (প্রতি লাইনে: দিন : লেখা)', 'कार्यक्रम (दिन : विवरण)', 'Events (one per line: day : label)'), ph: L3('৫: সমন্বয় সভা\n১২: প্রশিক্ষণ', '5: सभा', '5: Team meeting') },
+    { id: 'note', kind: 'text', wide: true, label: L3('নোট (ঐচ্ছিক)', 'नोट', 'Note (optional)') },
+  ],
+  build: (v, lang, P) => {
+    const { y, m } = parseMonthYear(V(v, 'month'));
+    const firstDay = new Date(y, m, 1).getDay();
+    const daysIn = new Date(y, m + 1, 0).getDate();
+    // অনুষ্ঠান — "৫: সমন্বয় সভা" ধাঁচ
+    const evMap = new Map<number, string[]>();
+    for (const line of lines(V(v, 'events'))) {
+      const norm = line.replace(/[০-৯]/g, (d) => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
+      const em = norm.match(/^\s*(\d{1,2})\s*[:\-–]\s*(.+)$/);
+      if (em) {
+        const day = Number(em[1]);
+        if (day >= 1 && day <= daysIn) evMap.set(day, [...(evMap.get(day) ?? []), line.replace(/^\s*[০-৯\d]+\s*[:\-–]\s*/, '')]);
+      }
+    }
+    const week = lang === 'bn'
+      ? ['রবি', 'সোম', 'মঙ্গল', 'বুধ', 'বৃহঃ', 'শুক্র', 'শনি']
+      : lang === 'hi'
+        ? ['रवि', 'सोम', 'मंगल', 'बुध', 'गुरु', 'शुक्र', 'शनि']
+        : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const fmt = (n: number) => (lang === 'bn' ? bnDigits(n) : String(n));
+    const rows: string[] = [];
+    for (let r = 0; r < 6; r++) {
+      const tds: string[] = [];
+      let lastDay = 0;
+      for (let c = 0; c < 7; c++) {
+        const day = r * 7 + c - firstDay + 1;
+        if (day < 1 || day > daysIn) { tds.push('<td></td>'); continue; }
+        lastDay = day;
+        const ev = (evMap.get(day) ?? []).map((e) => `<p style="margin:0.1em 0 0; font-size:8pt; line-height:1.4; color:${P.head}">${esc(e)}</p>`).join('');
+        tds.push(`<td style="height:58px; vertical-align:top; text-align:left"><p style="margin:0.1em 0 0; font-size:10pt"><strong>${fmt(day)}</strong></p>${ev}</td>`);
+      }
+      rows.push(`<tr>${tds.join('')}</tr>`);
+      if (lastDay >= daysIn) break;
+    }
+    return [
+      V(v, 'office') ? pc(`<strong style="font-size:11.5pt; letter-spacing:0.4px">${esc(V(v, 'office'))}</strong>`, `color:${P.head}`) : '',
+      pc(`<strong style="font-size:14pt; letter-spacing:1px">${esc(V(v, 'title') || '')}</strong>`, `color:${P.head}`),
+      pc(`<span style="font-size:13pt; color:${P.soft}">${esc(V(v, 'month') || `${DS_MONTHS[lang][m]} ${lang === 'bn' ? bnDigits(y) : y}`)}</span>`),
+      buildDividerHtml('single'),
+      `<table style="width:100%"><tr>${week.map((w) => `<th style="text-align:center">${esc(w)}</th>`).join('')}</tr>${rows.join('')}</table>`,
+      lines(V(v, 'events')).length
+        ? `<p style="margin-top:0.7em; font-size:9.5pt; color:${P.soft}">${esc(pick(lang, 'অনুষ্ঠান-তালিকা:', 'कार्यक्रम:', 'Events:'))} ${lines(V(v, 'events')).map((e) => esc(e)).join(' · ')}</p>`
+        : '',
+      V(v, 'note') ? pc(`<span style="font-size:9.5pt; color:${P.soft}">${esc(V(v, 'note'))}</span>`, 'margin-top:0.4em') : '',
+    ].filter(Boolean).join('');
+  },
+};
+
+const BUSINESS_CARD_TPL: DsTemplate = {
+  id: 'business-card',
+  category: 'promo',
+  name: L3('বিজনেস কার্ড', 'विज़नेस कार्ड', 'Business Card'),
+  desc: L3('পরিচয়-পত্রিকা — সামনের পিঠে নাম-পদবি-যোগাযোগ, উল্টা পিঠে মনোগ্রাম; কার্ড-বক্স নকশা।', 'परिचय-पत्रिका।', 'Front + back visiting card design.'),
+  styles: ['classic', 'royal', 'teal', 'green'],
+  defaultStyle: 'royal',
+  fields: [
+    { id: 'company', kind: 'text', wide: true, label: L3('প্রতিষ্ঠানের নাম', 'संस्था', 'Company name') },
+    { id: 'tagline', kind: 'text', wide: true, label: L3('ট্যাগলাইন (ঐচ্ছিক)', 'टैगलाइन', 'Tagline (optional)') },
+    { id: 'name', kind: 'text', wide: true, label: L3('ব্যক্তির নাম', 'नाम', 'Person name') },
+    { id: 'position', kind: 'text', wide: true, label: L3('পদবি', 'पद', 'Position') },
+    { id: 'phone', kind: 'text', label: L3('ফোন', 'फ़ोन', 'Phone') },
+    { id: 'email', kind: 'text', label: L3('ইমেইল', 'ईमेल', 'Email') },
+    { id: 'address', kind: 'text', wide: true, label: L3('ঠিকানা', 'पता', 'Address') },
+    { id: 'website', kind: 'text', wide: true, label: L3('ওয়েবসাইট', 'वेबसाइट', 'Website') },
+  ],
+  build: (v, lang, P) => {
+    const mono = (V(v, 'company') || '●').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? '').join('');
+    const contacts = [V(v, 'phone'), V(v, 'email'), V(v, 'website')].filter(Boolean);
+    const front = buildDesignBoxHtml(
+      { variant: 'rounded', border: P.border, fill: '#ffffff', bstyle: 'solid', bwidth: 1.5 },
+      [
+        pc(`<strong style="font-size:14pt; letter-spacing:1.2px">${esc(V(v, 'company'))}</strong>`, `color:${P.head}; background:${P.band}; border-bottom:2px solid ${P.border}; padding:8px 10px`),
+        V(v, 'tagline') ? pc(`<em style="font-size:9.5pt; color:${P.soft}">${esc(V(v, 'tagline'))}</em>`, 'margin-top:0.25em') : '',
+        row2(
+          [
+            `<p style="text-align:left; margin:0.6em 0 0; font-size:12.5pt"><strong>${esc(V(v, 'name'))}</strong></p>`,
+            V(v, 'position') ? `<p style="text-align:left; margin:0.05em 0; font-size:10pt; color:${P.soft}">${esc(V(v, 'position'))}</p>` : '',
+          ].join(''),
+          contacts.map((c) => `<p style="text-align:right; margin:0.15em 0; font-size:9.5pt; color:${P.ink}">${esc(c)}</p>`).join(''),
+          55, 45,
+        ),
+        V(v, 'address') ? `<p style="margin:0.4em 0 0.3em; font-size:9pt; color:${P.soft}; border-top:1px solid ${P.border}; padding-top:4px; text-align:center">${esc(V(v, 'address'))}</p>` : '',
+      ].join(''),
+    );
+    const back = buildDesignBoxHtml(
+      { variant: 'shaded', border: P.border, fill: P.band, bstyle: 'solid', bwidth: 1 },
+      [
+        pc(`<strong style="font-size:22pt; letter-spacing:2px">${esc(mono)}</strong>`, `color:${P.head}`, 'margin-top:0.4em'),
+        pc(`<span style="font-size:11pt; letter-spacing:0.8px">${esc(V(v, 'company'))}</span>`, `color:${P.ink}`),
+        V(v, 'tagline') ? pc(`<em style="font-size:9pt; color:${P.soft}">${esc(V(v, 'tagline'))}</em>`, 'margin-bottom:0.3em') : '',
+      ].join(''),
+    );
+    return [
+      pc(`<span style="font-size:9pt; letter-spacing:2px; color:${P.soft}">${esc(pick(lang, 'সামনের পিঠ', 'सामने का पक्ष', 'FRONT'))}</span>`),
+      front,
+      `<p style="margin-top:0.5em"></p>`,
+      pc(`<span style="font-size:9pt; letter-spacing:2px; color:${P.soft}">${esc(pick(lang, 'উল্টা পিঠ', 'पीछे का पक्ष', 'BACK'))}</span>`, 'margin-top:0.6em'),
+      back,
+    ].join('');
+  },
+};
+
 // ═════════════════════════ নিবন্ধিত টেমপ্লেট ═════════════════════════
 
-/** সব টেমপ্লেট — ক্যাটাগরি-ক্রম অনুযায়ী (২৯টি) */
+/** সব টেমপ্লেট — ক্যাটাগরি-ক্রম অনুযায়ী (৫৫টি) */
 export const DS_TEMPLATES: DsTemplate[] = [
   // চাকরি ও ক্যারিয়ার (career) — বৈশ্বিক
   RESUME_MODERN_TPL, RESUME_CLASSIC_TPL, COVER_LETTER_TPL, RECOMMENDATION_TPL, RESIGNATION_TPL,
   // ব্যবসা ও অফিস (office) — বৈশ্বিক
   LETTERHEAD_TPL, MEMO_TPL, MEETING_AGENDA_TPL, MEETING_MINUTES_TPL, NOTICE_TPL, OFFICE_ORDER_TPL, OFFICIAL_LETTER_TPL, REPORT_TPL,
+  PROJECT_PROPOSAL_TPL, CALENDAR_TPL,
   // ইনভয়েস ও আর্থিক (finance) — বৈশ্বিক
   INVOICE_TPL, QUOTATION_TPL, PURCHASE_ORDER_TPL, MONEY_RECEIPT_TPL,
   // আইনি ও চুক্তি (legal) — বৈশ্বিক
@@ -2581,7 +3366,7 @@ export const DS_TEMPLATES: DsTemplate[] = [
   // চিকিৎসা ও স্বাস্থ্য (med) — বৈশ্বিক
   PRESCRIPTION_TPL, MEDICAL_CERT_TPL,
   // মার্কেটিং ও প্রচার (promo) — বৈশ্বিক
-  POSTER_TPL, FLYER_TPL, BROCHURE_TPL, NEWSLETTER_TPL, PRESS_RELEASE_TPL,
+  POSTER_TPL, FLYER_TPL, BROCHURE_TPL, BUSINESS_CARD_TPL, NEWSLETTER_TPL, PRESS_RELEASE_TPL,
   // আঞ্চলিক সংগ্রহ — বাংলাদেশ ও ভারত (regional)
   GENERAL_APP_TPL, RESIDENCE_TPL, CHARACTER_TPL, UNMARRIED_TPL, INCOME_TPL, HEIR_TPL,
   MUTATION_TPL, GIFT_TPL, PARTITION_TPL, SALE_TPL,
