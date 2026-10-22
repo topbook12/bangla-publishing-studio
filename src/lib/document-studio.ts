@@ -76,9 +76,9 @@ function row2(leftHtml: string, rightHtml: string, leftPct = 50, rightPct = 50):
   return `<table style="width:100%"><tr>${cell(leftHtml, leftPct)}${cell(rightHtml, rightPct)}</tr></table>`;
 }
 
-/** ডট-লাইন পূরণ-জায়গা (ফরমের ফাঁকা ঘর) */
-function dots(n = 18): string {
-  return `<span style="color:#94a3b8; letter-spacing:1px">${'·'.repeat(n)}</span>`;
+/** ডট-লাইন পূরণ-জায়গা (ফরমের ফাঁকা ঘর) — রং প্যালেট-সচেতন (ধূসর-স্লেট নয়) */
+function dots(n = 18, P?: DsPalette): string {
+  return `<span style="color:${P ? P.border : '#94a3b8'}; letter-spacing:1px">${'·'.repeat(n)}</span>`;
 }
 
 /** শেডেড ব্যান্ড শিরোনাম (নোটিশ/আদেশ/সনদের শিরোনাম-পটি) */
@@ -181,7 +181,10 @@ export const DS_STYLES: DsStyleOpt[] = [
 const ALL_STYLES: string[] = DS_STYLES.map((s) => s.id);
 
 function styleById(id: string, fallback = 'classic'): DsStyleOpt {
-  return DS_STYLES.find((s) => s.id === id) ?? DS_STYLES.find((s) => s.id === fallback)!;
+  // দ্বিস্তর-ফলব্যাক + শেষ ভরসা classic — ভুল styleId-তে কখনোই undefined নয়
+  return DS_STYLES.find((s) => s.id === id)
+    ?? DS_STYLES.find((s) => s.id === fallback)
+    ?? DS_STYLES[0]!;
 }
 
 // ─── টাইপ ───
@@ -911,7 +914,7 @@ function attestationBody(v: Record<string, string>, lang: Lang, P: DsPalette, op
     ),
     buildDividerHtml('double'),
     band(opts.title, P),
-    `<p style="margin-top:0.9em; line-height:1.9; text-align:justify">${esc(opts.opener)} <strong>${esc(V(v, 'name'))}</strong>${detailHtml}। ${esc(V(v, 'body'))}</p>`,
+    `<p style="margin-top:0.9em; line-height:1.9; text-align:justify">${esc(opts.opener)} <strong>${esc(V(v, 'name'))}</strong>${detailHtml}${pick(lang, '।', '।', '. ')} ${esc(V(v, 'body'))}</p>`,
     opts.tailHtml ?? '',
     `<p style="margin-top:0.7em; line-height:1.9; text-align:justify">${esc(opts.closer)}</p>`,
     buildDividerHtml('single'),
@@ -1112,7 +1115,7 @@ const AFFIDAVIT_TPL: DsTemplate = {
       `<p style="margin-top:0.9em; line-height:1.95; text-align:justify">${esc(pick(lang, 'আমি', 'मैं,', 'I,'))} <strong>${esc(V(v, 'name'))}</strong>, ${esc(pick(lang, 'পিতা/স্বামী', 'पिता/पति', 'father/husband'))} — <strong>${esc(V(v, 'father'))}</strong>${V(v, 'address') ? `, ${esc(pick(lang, 'ঠিকানা', 'पता', 'address'))} — <strong>${esc(V(v, 'address'))}</strong>` : ''}, ${esc(pick(lang, 'স্বেচ্ছায়, সুস্থ-স্বাভাবিক মস্তিষ্কে ও কারো দম্ভ/প্ররোচনা ছাড়া নিম্নোক্ত বিষয়ে হলফপূর্বক ঘোষণা করছি:', 'स्वेच्छा से, स्वस्थ मस्तिष्क से, बिना किसी प्रेरणा के, निम्नलिखित का शपथपूर्वक घोषणा करता/करती हूँ:', 'do hereby solemnly declare as follows:'))}</p>`,
       decls.length
         ? `<ol>${decls.map((d) => `<li>${esc(d)}</li>`).join('')}</ol>`
-        : `<ol><li>${dots(60)}</li></ol>`,
+        : `<ol><li>${dots(60, P)}</li></ol>`,
       `<p style="line-height:1.9; text-align:justify">${esc(pick(lang, 'উপরোক্ত ঘোষণাসমূহ সত্য; কোনো অসত্য ধরা পড়লে আমি প্রচলিত আইনানুগ দায়ভার নিতে রাজি। তদুপরি হলফপূর্বক ঘোষণা করছি।', 'उपरोक्त घोषणाएँ सत्य हैं; असत्य पाए जाने पर विधि के अधीन दायित्व ग्रहण करता हूँ।', 'The above declarations are true; I accept legal liability if found false.'))}</p>`,
       row2(
         `<p style="text-align:left; margin:0; font-size:10pt; color:${P.soft}">${esc(V(v, 'date') ? `${tx(lang, DSB.date)}: ${V(v, 'date')}` : '')}</p>`,
@@ -1568,13 +1571,13 @@ const INVOICE_TPL: DsTemplate = {
     const vatRate = toNum(V(v, 'vat'));
     const vatAmt = Math.round(((sub - disc) * vatRate) / 100);
     const total = Math.max(0, sub - disc + vatAmt);
-    const totalRow = (label: string, val: string, bold = false) =>
-      `<tr><td colspan="3" style="text-align:right${bold ? '; font-weight:700' : ''}">${esc(label)}</td><td style="text-align:right${bold ? '; font-weight:700' : ''}">${esc(val)}</td></tr>`;
+    const totalRow = (label: string, val: string, bold = false, tint = false) =>
+      `<tr><td colspan="3" style="text-align:right${bold ? '; font-weight:700' : ''}"${tint ? ` data-bg="${P.band}"` : ''}>${esc(label)}</td><td style="text-align:right${bold ? '; font-weight:700' : ''}"${tint ? ` data-bg="${P.band}"` : ''}>${esc(val)}</td></tr>`;
     return [
       pc(`<strong style="font-size:14pt; letter-spacing:0.5px">${esc(V(v, 'shop'))}</strong>`, `color:${P.head}`),
       V(v, 'address') ? pc(`<span style="font-size:10.5pt">${esc(V(v, 'address'))}</span>`) : '',
       V(v, 'phone') ? pc(`<span style="font-size:10.5pt; color:${P.soft}">${esc(V(v, 'phone'))}</span>`) : '',
-      pc(`<strong style="font-size:11.5pt">${esc(pick(lang, 'চালান / ইনভয়েস', 'चालान / इनवॉइस', 'INVOICE'))}</strong>`, `color:${P.head}`),
+      band(pick(lang, 'চালান / ইনভয়েস', 'चालान / इनवॉइस', 'INVOICE'), P),
       row2(
         `<p style="text-align:left; margin:0; font-size:10pt; color:${P.soft}">${esc(V(v, 'invoiceNo') ? `${pick(lang, 'চালান নং', 'चालान सं.', 'Invoice no.')}: ${V(v, 'invoiceNo')}` : '')}</p>`,
         `<p style="text-align:right; margin:0; font-size:10pt; color:${P.soft}">${esc(V(v, 'date') ? `${tx(lang, DSB.date)}: ${V(v, 'date')}` : '')}</p>`,
@@ -1582,7 +1585,7 @@ const INVOICE_TPL: DsTemplate = {
       V(v, 'buyer')
         ? `<div class="doc-textbox" data-variant="box" data-border="${P.border}" data-fill="transparent" data-bstyle="solid" data-bwidth="1"><p style="margin:0"><strong>${esc(pick(lang, 'প্রাপকের নাম ও ঠিকানা', 'प्रापक का नाम व पता', 'Bill to:'))}</strong></p>${lines(V(v, 'buyer')).map((l) => `<p style="margin:0.1em 0">${esc(l)}</p>`).join('')}</div>`
         : '',
-      `<table><tr><th style="text-align:left">${esc(pick(lang, 'বিবরণ', 'विवरण', 'Description'))}</th><th>${esc(pick(lang, 'পরিমাণ', 'मात्रा', 'Qty'))}</th><th style="text-align:right">${esc(pick(lang, 'দর', 'दर', 'Rate'))}</th><th style="text-align:right">${esc(pick(lang, 'টাকা', 'राशि', 'Amount'))}</th></tr>${bodyRows}${totalRow(tx(lang, DSB.total), numStr(sub, lang))}${disc ? totalRow(pick(lang, 'ছাড়', 'छूट', 'Discount'), `− ${numStr(disc, lang)}`) : ''}${vatAmt ? totalRow(`${pick(lang, 'ভ্যাট', 'वैट', 'VAT')} (${V(v, 'vat')}%)`, `+ ${numStr(vatAmt, lang)}`) : ''}${totalRow(pick(lang, 'সর্বমোট প্রদেয়', 'कुल देय', 'Grand total'), numStr(total, lang), true)}</table>`,
+      `<table><tr><th data-bg="${P.band}" style="text-align:left">${esc(pick(lang, 'বিবরণ', 'विवरण', 'Description'))}</th><th data-bg="${P.band}">${esc(pick(lang, 'পরিমাণ', 'मात्रा', 'Qty'))}</th><th data-bg="${P.band}" style="text-align:right">${esc(pick(lang, 'দর', 'दर', 'Rate'))}</th><th data-bg="${P.band}" style="text-align:right">${esc(pick(lang, 'টাকা', 'राशि', 'Amount'))}</th></tr>${bodyRows}${totalRow(tx(lang, DSB.total), numStr(sub, lang))}${disc ? totalRow(pick(lang, 'ছাড়', 'छूट', 'Discount'), `− ${numStr(disc, lang)}`) : ''}${vatAmt ? totalRow(`${pick(lang, 'ভ্যাট', 'वैट', 'VAT')} (${V(v, 'vat')}%)`, `+ ${numStr(vatAmt, lang)}`) : ''}${totalRow(pick(lang, 'সর্বমোট প্রদেয়', 'कुल देय', 'Grand total'), numStr(total, lang), true, true)}</table>`,
       `<p style="font-size:10.5pt"><strong>${tx(lang, DSB.inWords)}:</strong> ${esc(wordsTaka(total, lang))}</p>`,
       V(v, 'note') ? `<p style="font-size:10pt; color:${P.soft}">${esc(V(v, 'note'))}</p>` : '',
       `<p style="text-align:right; margin-top:1.6em; border-top:1px solid ${P.border}; display:inline-block; float:right; padding:4px 26px 0; font-size:10pt">${esc(V(v, 'sign1Name') || pick(lang, 'অনুমোদিত স্বাক্ষর', 'अनुमोदित हस्ताक्षर', 'Authorised signature'))}</p>`,
@@ -1827,23 +1830,16 @@ const AWARD_TPL: DsTemplate = {
     { id: 'date', kind: 'date', label: DSB.date },
     ...fSign2(L3('পদবি (প্রধান অতিথি)', 'पद (मुख्य अतिथि)', 'Title (chief guest)'), L3('পদবি (আয়োজক)', 'पद (आयोजक)', 'Title (organiser)')),
   ],
-  build: (v, lang, P) => {
-    const inner = [
-      pc(`<strong style="font-size:11pt; letter-spacing:2.5px">${esc(V(v, 'office'))}</strong>`, `color:${P.soft}`),
-      pc(`<span style="font-size:20pt; color:${P.head}">✦</span>`),
-      pc(`<strong style="font-size:19pt; letter-spacing:1px">${esc(V(v, 'title') || pick(lang, 'প্রশংসাপত্র', 'प्रशंसा पत्र', 'CERTIFICATE OF MERIT'))}</strong>`, `color:${P.head}`),
-      pc(`<span style="font-size:11pt; color:${P.soft}">❦ ❖ ❦</span>`),
-      `<p style="margin-top:1.1em; line-height:1.9; text-align:center; font-size:11.5pt">${esc(pick(lang, 'এই সনদ দ্বারা ঘোষিত হইতেছে যে,', 'यह प्रमाणपत्र घोषित किया जाता है कि,', 'This certificate is awarded to'))}</p>`,
-      pc(`<strong style="font-size:17pt; color:${P.head}; border-bottom:2px solid ${P.border}; padding-bottom:2px">${esc(V(v, 'name'))}</strong>`),
-      `<p style="margin-top:1em; line-height:1.95; text-align:center; font-size:11.5pt">${esc(V(v, 'body'))}</p>`,
-      V(v, 'body2') ? `<p style="line-height:1.95; text-align:center; font-size:11pt; color:${P.soft}">${esc(V(v, 'body2'))}</p>` : '',
-      V(v, 'date') ? pc(`<span style="font-size:11pt; color:${P.soft}">${esc(`${tx(lang, DSB.date)}: ${V(v, 'date')}`)}</span>`, 'margin-top:1em') : '',
-      sig2(lang, P, { t: V(v, 'sign1Title'), n: V(v, 'sign1Name'), o: '' }, { t: V(v, 'sign2Title'), n: V(v, 'sign2Name'), o: '' }),
-    ].filter(Boolean).join('');
-    // স্বর্ণ-ফ্রেম: ডাবল-বক্সের ভিতরে সরু-বক্স (নেস্টিং সমর্থিত)
-    return buildDesignBoxHtml({ variant: 'double', border: P.border, fill: 'transparent', bstyle: 'double', bwidth: 4 },
-      buildDesignBoxHtml({ variant: 'box', border: P.border, fill: 'transparent', bstyle: 'solid', bwidth: 1 }, inner));
-  },
+  build: (v, lang, P) => framedCert(lang, P, v, [
+    pc(`<strong style="font-size:11pt; letter-spacing:2.5px">${esc(V(v, 'office'))}</strong>`, `color:${P.soft}`),
+    pc(`<span style="font-size:20pt; color:${P.head}">✦</span>`),
+    pc(`<strong style="font-size:19pt; letter-spacing:1px">${esc(V(v, 'title') || pick(lang, 'প্রশংসাপত্র', 'प्रशंसा पत्र', 'CERTIFICATE OF MERIT'))}</strong>`, `color:${P.head}`),
+    pc(`<span style="font-size:11pt; color:${P.soft}">❦ ❖ ❦</span>`),
+    `<p style="margin-top:1.1em; line-height:1.9; text-align:center; font-size:11.5pt">${esc(pick(lang, 'এই সনদ দ্বারা ঘোষিত হইতেছে যে,', 'यह प्रमाणपत्र घोषित किया जाता है कि,', 'This certificate is awarded to'))}</p>`,
+    pc(`<strong style="font-size:17pt; color:${P.head}; border-bottom:2px solid ${P.border}; padding-bottom:2px">${esc(V(v, 'name'))}</strong>`),
+    `<p style="margin-top:1em; line-height:1.95; text-align:center; font-size:11.5pt">${esc(V(v, 'body'))}</p>`,
+    V(v, 'body2') ? `<p style="line-height:1.95; text-align:center; font-size:11pt; color:${P.soft}">${esc(V(v, 'body2'))}</p>` : '',
+  ]),
 };
 
 const ADMISSION_TPL: DsTemplate = {
@@ -1875,7 +1871,7 @@ const ADMISSION_TPL: DsTemplate = {
     const fieldRows = rows
       .map((label) =>
         `<tr><td colwidth="240" data-border="none" style="border:none; width:40%; vertical-align:middle"><p style="margin:0.2em 0; font-size:11pt">${esc(label)}</p></td>` +
-        `<td data-border="none" style="border:none; vertical-align:bottom"><p style="margin:0.5em 0; color:#94a3b8; letter-spacing:1px">${dots(26)}</p></td></tr>`)
+        `<td data-border="none" style="border:none; vertical-align:bottom"><p style="margin:0.5em 0; letter-spacing:1px">${dots(26, P)}</p></td></tr>`)
       .join('');
     return [
       pc(`<strong style="font-size:12.5pt; letter-spacing:0.4px">${esc(V(v, 'office'))}</strong>`, `color:${P.head}`),
@@ -1960,7 +1956,7 @@ const WEDDING_TPL: DsTemplate = {
       pc(`<strong style="font-size:11pt; letter-spacing:1.5px">${esc(V(v, 'host'))}</strong>`, `color:${P.soft}`),
       pc(`<strong style="font-size:15pt; color:${P.head}">${esc(V(v, 'bride'))}</strong>`, 'margin-top:0.9em'),
       V(v, 'brideGuard') ? pc(`<span style="font-size:10pt; color:${P.soft}">${esc(pick(lang, 'কন্যা শ্রীযুক্ত', 'कन्या', 'Daughter of'))} ${esc(V(v, 'brideGuard'))}</span>`, 'margin:0.2em 0') : '',
-      pc(`<span style="font-size:12pt; color:${P.head}">ও</span>`, 'margin:0.3em 0'),
+      pc(`<span style="font-size:12pt; color:${P.head}">${pick(lang, 'ও', 'एवं', '&')}</span>`, 'margin:0.3em 0'),
       pc(`<strong style="font-size:15pt; color:${P.head}">${esc(V(v, 'groom'))}</strong>`),
       V(v, 'groomGuard') ? pc(`<span style="font-size:10pt; color:${P.soft}">${esc(pick(lang, 'পুত্র শ্রীযুক্ত', 'पुत्र', 'Son of'))} ${esc(V(v, 'groomGuard'))}</span>`, 'margin:0.2em 0') : '',
       buildDividerHtml('flourish'),
@@ -2004,7 +2000,7 @@ const PROGRAM_TPL: DsTemplate = {
         `<p style="text-align:left; margin:0; font-size:10.5pt; color:${P.soft}">${esc(V(v, 'date') ? `${tx(lang, DSB.date)}: ${V(v, 'date')}` : '')}</p>`,
         `<p style="text-align:right; margin:0; font-size:10.5pt; color:${P.soft}">${esc(V(v, 'venue') ? `${pick(lang, 'স্থান', 'स्थान', 'Venue')}: ${V(v, 'venue')}` : '')}</p>`,
       ),
-      `<table><tr><th style="text-align:left; width:22%">${esc(pick(lang, 'সময়', 'समय', 'Time'))}</th><th style="text-align:left">${esc(pick(lang, 'পর্ব', 'पर्व', 'Programme'))}</th></tr>${rows.map((cells) => `<tr><td>${esc(cells[0] ?? '')}</td><td>${esc(cells[1] ?? '')}</td></tr>`).join('')}</table>`,
+      `<table><tr><th data-bg="${P.band}" style="text-align:left; width:22%">${esc(pick(lang, 'সময়', 'समय', 'Time'))}</th><th data-bg="${P.band}" style="text-align:left">${esc(pick(lang, 'পর্ব', 'पर्व', 'Programme'))}</th></tr>${rows.map((cells) => `<tr><td>${esc(cells[0] ?? '')}</td><td>${esc(cells[1] ?? '')}</td></tr>`).join('')}</table>`,
       V(v, 'note') ? pc(`<em style="font-size:10.5pt; color:${P.soft}">${esc(V(v, 'note'))}</em>`, 'margin-top:0.8em') : '',
     ].filter(Boolean).join('');
   },
@@ -2071,7 +2067,7 @@ const PRESCRIPTION_TPL: DsTemplate = {
       buildDividerHtml('single'),
       pc(`<strong style="font-size:13pt; color:${P.head}; font-style:italic">℞</strong>`, 'margin-top:0.4em'),
       rows.length
-        ? `<table><tr><th style="text-align:left; width:52%">${esc(pick(lang, 'ওষুধ', 'दवा', 'Medicine'))}</th><th style="text-align:center; width:22%">${esc(pick(lang, 'মাত্রা', 'मात्रा', 'Dose'))}</th><th style="text-align:left">${esc(pick(lang, 'নিয়ম', 'नियम', 'Timing'))}</th></tr>${rows.map((cells) => `<tr><td>${esc(cells[0] ?? '')}</td><td style="text-align:center">${esc(cells[1] ?? '')}</td><td>${esc(cells[2] ?? '')}</td></tr>`).join('')}</table>`
+        ? `<table><tr><th data-bg="${P.band}" style="text-align:left; width:52%">${esc(pick(lang, 'ওষুধ', 'दवा', 'Medicine'))}</th><th data-bg="${P.band}" style="text-align:center; width:22%">${esc(pick(lang, 'মাত্রা', 'मात्रा', 'Dose'))}</th><th data-bg="${P.band}" style="text-align:left">${esc(pick(lang, 'নিয়ম', 'नিয়ম', 'Timing'))}</th></tr>${rows.map((cells) => `<tr><td>${esc(cells[0] ?? '')}</td><td style="text-align:center">${esc(cells[1] ?? '')}</td><td>${esc(cells[2] ?? '')}</td></tr>`).join('')}</table>`
         : '',
       V(v, 'diagnosis') ? `<p style="font-size:10.5pt"><strong>${esc(pick(lang, 'রোগ-নির্ণয়', 'निदान', 'Diagnosis'))}:</strong> ${esc(V(v, 'diagnosis'))}</p>` : '',
       advice.length
@@ -2258,7 +2254,7 @@ const RESUME_MODERN_TPL: DsTemplate = {
         : '',
     ].join('');
     return [
-      `<p style="margin:0.1em 0; font-size:19pt; line-height:1.3"><strong>${esc(V(v, 'name'))}</strong></p>`,
+      `<p style="margin:0.1em 0; font-size:19pt; line-height:1.3"><strong style="color:${P.head}">${esc(V(v, 'name'))}</strong></p>`,
       V(v, 'headline') ? `<p style="margin:0; font-size:12pt; letter-spacing:0.6px; color:${P.soft}">${esc(V(v, 'headline'))}</p>` : '',
       contact ? `<p style="margin:0.45em 0 0.2em; font-size:9.5pt; color:${P.soft}">${esc(contact)}</p>` : '',
       buildDividerHtml('double'),
@@ -2300,6 +2296,7 @@ const RESUME_CLASSIC_TPL: DsTemplate = {
       pc(`<strong style="font-size:17pt; letter-spacing:0.8px">${esc(V(v, 'name'))}</strong>`, `color:${P.head}`),
       V(v, 'headline') ? pc(`<span style="font-size:11.5pt; color:${P.soft}">${esc(V(v, 'headline'))}</span>`) : '',
       V(v, 'contactLine') ? pc(`<span style="font-size:9.5pt; color:${P.soft}">${esc(V(v, 'contactLine'))}</span>`, 'margin-top:0.3em') : '',
+      pc(`<span style="font-size:9.5pt; color:${P.border}">❖</span>`, 'margin-top:0.15em'),
       buildDividerHtml('double'),
       V(v, 'summary') ? secH(pick(lang, 'উদ্দেশ্য', 'उद्देश্য', 'OBJECTIVE'), P) + `<p style="margin:0.2em 0; font-size:10.5pt; line-height:1.8; text-align:justify">${esc(V(v, 'summary'))}</p>` : '',
       exp.length ? secH(pick(lang, 'অভিজ্ঞতা', 'अनुभव', 'EXPERIENCE'), P) + exp.map((c) => entryRow(P, c[0] ?? '', c[1] ?? '', c[2] ?? '', c[3] ?? '')).join('') : '',
@@ -2418,7 +2415,7 @@ const RESIGNATION_TPL: DsTemplate = {
       ? `<p style="margin-top:0.9em; font-size:11pt"><strong>${esc(pick(lang, 'বিষয়: পদত্যাগ —', 'विषय: त्यागपत्र —', 'Re: Resignation from the post of'))} ${esc(V(v, 'position'))}</strong></p>`
       : '',
     `<p style="margin-top:0.9em">${esc(pick(lang, 'জনাব/মহোদয়া,', 'महोदय/महोदया,', 'Dear Sir/Madam,'))}</p>`,
-    `<p style="line-height:1.95; text-align:justify">${esc(V(v, 'notice'))}${V(v, 'lastDay') ? ` ${esc(pick(lang, 'আমার শেষ কার্যদিবস হইবে', 'मेरा अंतिम कार्य दिवस होगा', 'My last working day will be'))} <strong>${esc(V(v, 'lastDay'))}</strong>।` : ''}</p>`,
+    `<p style="line-height:1.95; text-align:justify">${esc(V(v, 'notice'))}${V(v, 'lastDay') ? ` ${esc(pick(lang, 'আমার শেষ কার্যদিবস হইবে', 'मेरा अंतिम कार्य दिवस होगा', 'My last working day will be'))} <strong>${esc(V(v, 'lastDay'))}</strong>${pick(lang, '।', '।', '.')}` : ''}</p>`,
     `<p style="line-height:1.95; text-align:justify">${esc(V(v, 'gratitude'))}</p>`,
     `<p style="text-align:right; margin-top:1.2em; font-size:10pt; color:${P.soft}">${esc(pick(lang, 'বিনীত', 'सादर', 'Sincerely'))}</p>`,
     `<p style="text-align:right; margin:0.3em 0 0; font-size:11pt"><strong>${esc(V(v, 'name'))}</strong></p>`,
@@ -2485,7 +2482,7 @@ const MEMO_TPL: DsTemplate = {
     return [
       pc(`<strong style="font-size:11pt; letter-spacing:0.5px">${esc(V(v, 'office'))}</strong>`, `color:${P.head}`),
       band(pick(lang, 'মেমোর‍্যান্ডাম', 'ज्ञापन', 'MEMORANDUM'), P),
-      `<table style="width:100%">${mRow('TO', V(v, 'to'))}${mRow('FROM', V(v, 'from'))}${mRow('DATE', V(v, 'date'))}${mRow('RE', V(v, 'subject'))}</table>`,
+      `<table style="width:100%">${mRow(pick(lang, 'প্রতি', 'सेवा में', 'TO'), V(v, 'to'))}${mRow(pick(lang, 'প্রেরক', 'प्रेषक', 'FROM'), V(v, 'from'))}${mRow(tx(lang, DSB.date), V(v, 'date'))}${mRow(pick(lang, 'বিষয়', 'विषय', 'RE'), V(v, 'subject'))}</table>`,
       buildDividerHtml('single'),
       `<p style="margin-top:0.8em; line-height:1.95; text-align:justify">${esc(V(v, 'body'))}</p>`,
       `<p style="text-align:right; margin-top:1.3em; font-size:10.5pt"><strong>${esc(V(v, 'sign1Name'))}</strong></p>`,
@@ -2566,7 +2563,7 @@ const MEETING_MINUTES_TPL: DsTemplate = {
       V(v, 'discussion') ? secH(pick(lang, 'আলোচনা', 'चर्चा', 'DISCUSSION'), P) + `<p style="margin:0.2em 0; line-height:1.9; text-align:justify">${esc(V(v, 'discussion'))}</p>` : '',
       lines(V(v, 'decisions')).length ? secH(pick(lang, 'সিদ্ধান্ত', 'निर्णय', 'DECISIONS'), P) + `<ol>${lines(V(v, 'decisions')).map((d) => `<li>${esc(d)}</li>`).join('')}</ol>` : '',
       acts.length
-        ? secH(pick(lang, 'কর্ম-তালিকা', 'कार्य सूची', 'ACTION ITEMS'), P) + `<table><tr><th style="text-align:left">${esc(pick(lang, 'কাজ', 'कार्य', 'Task'))}</th><th style="text-align:left">${esc(pick(lang, 'দায়িত্বে', 'जिम्मेदार', 'Owner'))}</th><th style="text-align:left">${esc(pick(lang, 'শেষ-তারিখ', 'समय-सीमा', 'Deadline'))}</th></tr>${acts.map((c) => `<tr><td>${esc(c[0] ?? '')}</td><td>${esc(c[1] ?? '')}</td><td>${esc(c[2] ?? '')}</td></tr>`).join('')}</table>`
+        ? secH(pick(lang, 'কর্ম-তালিকা', 'कार्य सूची', 'ACTION ITEMS'), P) + `<table><tr><th data-bg="${P.band}" style="text-align:left">${esc(pick(lang, 'কাজ', 'कार्य', 'Task'))}</th><th data-bg="${P.band}" style="text-align:left">${esc(pick(lang, 'দায়িত্বে', 'जिम्मेदार', 'Owner'))}</th><th data-bg="${P.band}" style="text-align:left">${esc(pick(lang, 'শেষ-তারিখ', 'समय-सीमा', 'Deadline'))}</th></tr>${acts.map((c) => `<tr><td>${esc(c[0] ?? '')}</td><td>${esc(c[1] ?? '')}</td><td>${esc(c[2] ?? '')}</td></tr>`).join('')}</table>`
         : '',
       V(v, 'nextMeeting') ? `<p style="margin-top:0.8em; font-size:10.5pt"><strong>${esc(pick(lang, 'পরবর্তী সভা', 'अगली बैठक', 'Next meeting'))}:</strong> ${esc(V(v, 'nextMeeting'))}</p>` : '',
       sig2(lang, P, { t: pick(lang, 'সভাপতি', 'अध्यक्ष', 'Chairperson'), n: V(v, 'sign1Name'), o: '' }, { t: pick(lang, 'সচিব', 'सचिव', 'Secretary'), n: V(v, 'sign2Name'), o: '' }),
@@ -2678,9 +2675,9 @@ const PURCHASE_ORDER_TPL: DsTemplate = {
     return [
       pc(`<strong style="font-size:13.5pt; letter-spacing:0.5px">${esc(V(v, 'shop'))}</strong>`, `color:${P.head}`),
       V(v, 'address') ? pc(`<span style="font-size:10.5pt">${esc(V(v, 'address'))}</span>`) : '',
-      pc(`<strong style="font-size:11.5pt">${esc(pick(lang, 'ক্রয়াদেশ', 'क्रय आदेश', 'PURCHASE ORDER'))}</strong>`, `color:${P.head}`),
+      band(pick(lang, 'ক্রয়াদেশ', 'क्रय आदेश', 'PURCHASE ORDER'), P),
       row2(
-        `<p style="text-align:left; margin:0; font-size:10pt; color:${P.soft}">${esc(V(v, 'poNo') ? `PO: ${V(v, 'poNo')}` : '')}</p>`,
+        `<p style="text-align:left; margin:0; font-size:10pt; color:${P.soft}">${esc(V(v, 'poNo') ? `${pick(lang, 'ক্রয়াদেশ নং', 'क्रय आदेश सं.', 'PO')}: ${V(v, 'poNo')}` : '')}</p>`,
         `<p style="text-align:right; margin:0; font-size:10pt; color:${P.soft}">${esc(V(v, 'date') ? `${tx(lang, DSB.date)}: ${V(v, 'date')}` : '')}</p>`,
       ),
       row2(
@@ -2885,7 +2882,7 @@ const CERT_PARTICIPATION_TPL: DsTemplate = {
     pc(`<span style="font-size:11pt; color:${P.soft}">❦ ❖ ❦</span>`),
     `<p style="margin-top:1.1em; line-height:1.9; text-align:center; font-size:11.5pt">${esc(pick(lang, 'এই মর্মে প্রত্যয়িত করা হচ্ছে যে,', 'यह प्रमाणित किया जाता है कि,', 'This is to certify that'))}</p>`,
     pc(`<strong style="font-size:17pt; color:${P.head}; border-bottom:2px solid ${P.border}; padding-bottom:2px">${esc(V(v, 'name'))}</strong>`),
-    `<p style="margin-top:1em; line-height:1.95; text-align:center; font-size:11.5pt">${esc(pick(lang, 'নিম্নোক্ত অনুষ্ঠানে সম্মানের সাথে অংশগ্রহণ করিয়াছেন —', 'निम्नलिखित अनुष्ठान में सम्मानपूर्वक भाग लिया —', 'has honourably participated in'))} <strong>${esc(V(v, 'eventName'))}</strong>${V(v, 'role') ? ` ${esc(pick(lang, '— ভূমিকা:', '— भूमिका:', 'as'))} <strong>${esc(V(v, 'role'))}</strong>` : ''}.</p>`,
+    `<p style="margin-top:1em; line-height:1.95; text-align:center; font-size:11.5pt">${esc(pick(lang, 'নিম্নোক্ত অনুষ্ঠানে সম্মানের সাথে অংশগ্রহণ করিয়াছেন —', 'निम्नलिखित अनुष्ठान में सम्मानपूर्वक भाग लिया —', 'has honourably participated in'))} <strong>${esc(V(v, 'eventName'))}</strong>${V(v, 'role') ? ` ${esc(pick(lang, '— ভূমিকা:', '— भूमिका:', 'as'))} <strong>${esc(V(v, 'role'))}</strong>` : ''}${pick(lang, '।', '।', '.')}</p>`,
     V(v, 'venue') ? pc(`<span style="font-size:10.5pt; color:${P.soft}">${esc(V(v, 'venue'))}</span>`, 'margin-top:0.4em') : '',
   ]),
 };
@@ -2915,7 +2912,7 @@ const CERT_TRAINING_TPL: DsTemplate = {
       pc(`<span style="font-size:11pt; color:${P.soft}">❦ ❖ ❦</span>`),
       `<p style="margin-top:1.1em; line-height:1.9; text-align:center; font-size:11.5pt">${esc(pick(lang, 'এই মর্মে প্রত্যয়িত করা হচ্ছে যে,', 'यह प्रमाणित किया जाता है कि,', 'This is to certify that'))}</p>`,
       pc(`<strong style="font-size:17pt; color:${P.head}; border-bottom:2px solid ${P.border}; padding-bottom:2px">${esc(V(v, 'name'))}</strong>`),
-      `<p style="margin-top:1em; line-height:1.95; text-align:center; font-size:11.5pt">${esc(pick(lang, 'সফলতার সাথে সমাপ্ত করিয়াছেন —', 'ने सफलतापूर्वक पूर्ण किया —', 'has successfully completed'))} <strong>${esc(V(v, 'programName'))}</strong>${V(v, 'duration') ? ` (${esc(V(v, 'duration'))})` : ''}.</p>`,
+      `<p style="margin-top:1em; line-height:1.95; text-align:center; font-size:11.5pt">${esc(pick(lang, 'সফলতার সাথে সমাপ্ত করিয়াছেন —', 'ने सफलतापूर्वक पूर्ण किया —', 'has successfully completed'))} <strong>${esc(V(v, 'programName'))}</strong>${V(v, 'duration') ? ` (${esc(V(v, 'duration'))})` : ''}${pick(lang, '।', '।', '.')}</p>`,
       topics.length ? `<ul style="margin-top:0.6em">${topics.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>` : '',
     ]);
   },
@@ -2963,7 +2960,7 @@ const LESSON_PLAN_TPL: DsTemplate = {
       lines(V(v, 'outcomes')).length ? secH(pick(lang, 'শেখার-লক্ষ্য', 'शिक्षण लक्ष्य', 'LEARNING OUTCOMES'), P) + `<ol>${lines(V(v, 'outcomes')).map((o) => `<li>${esc(o)}</li>`).join('')}</ol>` : '',
       lines(V(v, 'materials')).length ? secH(pick(lang, 'উপকরণ', 'सामग्री', 'MATERIALS'), P) + `<ul>${lines(V(v, 'materials')).map((m) => `<li>${esc(m)}</li>`).join('')}</ul>` : '',
       stages.length
-        ? secH(pick(lang, 'কার্যক্রম', 'गतिविधि', 'PROCEDURE'), P) + `<table><tr><th style="text-align:left">${esc(pick(lang, 'ধাপ', 'चरण', 'Stage'))}</th><th style="text-align:left">${esc(pick(lang, 'কার্যক্রম', 'गतिविधि', 'Activity'))}</th><th style="text-align:left">${esc(pick(lang, 'সময়', 'समय', 'Time'))}</th></tr>${stages.map((c) => `<tr><td>${esc(c[0] ?? '')}</td><td>${esc(c[1] ?? '')}</td><td>${esc(c[2] ?? '')}</td></tr>`).join('')}</table>`
+        ? secH(pick(lang, 'কার্যক্রম', 'गतिविधि', 'PROCEDURE'), P) + `<table><tr><th data-bg="${P.band}" style="text-align:left">${esc(pick(lang, 'ধাপ', 'चरण', 'Stage'))}</th><th data-bg="${P.band}" style="text-align:left">${esc(pick(lang, 'কার্যক্রম', 'गतिविधि', 'Activity'))}</th><th data-bg="${P.band}" style="text-align:left">${esc(pick(lang, 'সময়', 'समय', 'Time'))}</th></tr>${stages.map((c) => `<tr><td>${esc(c[0] ?? '')}</td><td>${esc(c[1] ?? '')}</td><td>${esc(c[2] ?? '')}</td></tr>`).join('')}</table>`
         : '',
       V(v, 'assessment') ? secH(pick(lang, 'মূল্যায়ন', 'मूल्यांकन', 'ASSESSMENT'), P) + `<p style="margin:0.2em 0; line-height:1.9; text-align:justify">${esc(V(v, 'assessment'))}</p>` : '',
       V(v, 'homework') ? shadeBox(P, `<p style="margin:0.2em 0"><strong>${esc(pick(lang, 'বাড়ির কাজ:', 'गृहकार्य:', 'Homework:'))}</strong> ${esc(V(v, 'homework'))}</p>`) : '',
@@ -3042,9 +3039,12 @@ const MEDICAL_CERT_TPL: DsTemplate = {
     { id: 'unfitTo', kind: 'text', label: L3('অনুপস্থিতি শেষ', 'अवकाश समाप्ति', 'Unfit until') },
     { id: 'diagnosis', kind: 'text', wide: true, label: L3('রোগ-নির্ণয় (ঐচ্ছিক)', 'निदान (वैकल्पिक)', 'Diagnosis (optional)') },
   ],
-  build: (v, lang, P) => [
+  build: (v, lang, P) => buildDesignBoxHtml(
+    // চিকিৎসা-সনদও সনদ-পরিবারেরই সদস্য — প্যালেট-বর্ডার ফ্রেমে মর্যাদাপূর্ণ উপস্থাপনা
+    { variant: 'box', border: P.border, fill: 'transparent', bstyle: 'solid', bwidth: 2 },
+    [
     pc(`<strong style="font-size:12.5pt; letter-spacing:0.4px">${esc(V(v, 'clinic'))}</strong>`, `color:${P.head}`),
-    buildDividerHtml('single'),
+    pc(`<span style="font-size:11pt; color:${P.soft}">❦</span>`),
     row2(
       `<p style="text-align:left; margin:0; font-size:10.5pt"><strong>${esc(V(v, 'doctor'))}</strong></p><p style="margin:0.05em 0; font-size:9.5pt; color:${P.soft}">${esc(V(v, 'degrees'))}</p>`,
       `<p style="text-align:right; margin:0; font-size:10pt; color:${P.soft}">${esc(V(v, 'date') ? `${tx(lang, DSB.date)}: ${V(v, 'date')}` : '')}</p>`,
@@ -3054,12 +3054,13 @@ const MEDICAL_CERT_TPL: DsTemplate = {
       metaRow(pick(lang, 'রোগীর নাম', 'रोगी', 'Patient'), V(v, 'patient')) + metaRow(pick(lang, 'বয়স', 'उम्र', 'Age'), V(v, 'age')),
       metaRow(pick(lang, 'লিঙ্গ', 'लिंग', 'Sex'), V(v, 'sex')),
     )),
-    `<p style="margin-top:0.9em; line-height:1.95; text-align:justify">${esc(pick(lang, 'এই মর্মে প্রত্যয়িত করা হচ্ছে যে, আমি', 'यह प्रमाणित किया जाता है कि, मैंने', 'This is to certify that I have examined'))} <strong>${esc(V(v, 'patient'))}</strong>${esc(pick(lang, '-কে পরীক্ষা করিয়াছি এবং পরিদৃষ্টে তাঁর অবস্থা —', 'को देखा है और उनकी स्थिति —', ', and in my opinion'))} <strong>${esc(V(v, 'statement'))}</strong>${V(v, 'unfitFrom') || V(v, 'unfitTo') ? ` ${esc(pick(lang, 'তিনি অক্ষম আছেন', 'वे अनुपस्थित रहेंगे', 'He/She is unfit'))} <strong>${esc(V(v, 'unfitFrom'))}</strong> — <strong>${esc(V(v, 'unfitTo'))}</strong>।` : ''}</p>`,
+    `<p style="margin-top:0.9em; line-height:1.95; text-align:justify">${esc(pick(lang, 'এই মর্মে প্রত্যয়িত করা হচ্ছে যে, আমি', 'यह प्रमाणित किया जाता है कि, मैंने', 'This is to certify that I have examined'))} <strong>${esc(V(v, 'patient'))}</strong>${esc(pick(lang, '-কে পরীক্ষা করিয়াছি এবং পরিদৃষ্টে তাঁর অবস্থা —', 'को देखा है और उनकी स्थिति —', ', and in my opinion'))} <strong>${esc(V(v, 'statement'))}</strong>${V(v, 'unfitFrom') || V(v, 'unfitTo') ? ` ${esc(pick(lang, 'তিনি অক্ষম আছেন', 'वे अनुपस्थित रहेंगे', 'He/She is unfit'))} <strong>${esc(V(v, 'unfitFrom'))}</strong> — <strong>${esc(V(v, 'unfitTo'))}</strong>${pick(lang, '।', '।', '.')}` : ''}</p>`,
     V(v, 'diagnosis') ? shadeBox(P, `<p style="margin:0.2em 0"><strong>${esc(pick(lang, 'রোগ-নির্ণয়:', 'निदान:', 'Diagnosis:'))}</strong> ${esc(V(v, 'diagnosis'))}</p>`) : '',
     `<p style="text-align:right; margin-top:1.6em; font-size:10pt; color:${P.soft}">${esc(pick(lang, 'চিকিৎসকের স্বাক্ষর ও মোহর', 'डॉक्टर के हस्ताक्षर व मुहर', 'Doctor\u2019s signature & seal'))}</p>`,
     `<p style="text-align:right; margin:0.3em 0 0; font-size:11pt"><strong>${esc(V(v, 'doctor'))}</strong></p>`,
     V(v, 'regNo') ? `<p style="text-align:right; margin:0; font-size:9.5pt; color:${P.soft}">${esc(pick(lang, 'নিবন্ধন নং', 'पंजीकरण सं.', 'Reg. no.'))}: ${esc(V(v, 'regNo'))}</p>` : '',
-  ].filter(Boolean).join(''),
+    ].filter(Boolean).join(''),
+  ),
 };
 
 // ═════════════════════════ মার্কেটিং — নতুন (promo) ═════════════════════════
@@ -3344,7 +3345,7 @@ const BUSINESS_CARD_TPL: DsTemplate = {
     const mono = (V(v, 'company') || '●').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? '').join('');
     const contacts = [V(v, 'phone'), V(v, 'email'), V(v, 'website')].filter(Boolean);
     const front = buildDesignBoxHtml(
-      { variant: 'rounded', border: P.border, fill: '#ffffff', bstyle: 'solid', bwidth: 1.5 },
+      { variant: 'rounded', border: P.border, fill: 'transparent', bstyle: 'solid', bwidth: 1.5 },
       [
         pc(`<strong style="font-size:14pt; letter-spacing:1.2px">${esc(V(v, 'company'))}</strong>`, `color:${P.head}; background:${P.band}; border-bottom:2px solid ${P.border}; padding:8px 10px`),
         V(v, 'tagline') ? pc(`<em style="font-size:9.5pt; color:${P.soft}">${esc(V(v, 'tagline'))}</em>`, 'margin-top:0.25em') : '',

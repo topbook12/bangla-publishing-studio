@@ -581,7 +581,7 @@ ${buildCalloutHtml('concept', 'মূল ধারণা', '<ul><li>দ্রু
 <p>সমান সময় ব্যবধানে সমান দূরত্ব অতিক্রম করলে তাকে সমবেগ বলে। ব্যাখ্যা এখানে লিখুন — এই পাতা ফ্লো-পাতা।</p>
 ${buildCalloutHtml('formula', 'সূত্র', '<p style="text-align:center"><strong>s = vt</strong></p><p style="text-align:center">দূরত্ব = বেগ × সময়</p>')}
 <h2 style="color:${C.ink}">২.২ একক ও পরিমাপ</h2>
-<table><tr><th style="text-align:left; background:rgba(180,83,9,0.10)">রাশি</th><th style="text-align:left; background:rgba(180,83,9,0.10)">SI একক</th></tr><tr><td>দৈর্ঘ্য</td><td>মিটার (m)</td></tr><tr><td>ভর</td><td>কিলোগ্রাম (kg)</td></tr><tr><td>সময়</td><td>সেকেন্ড (s)</td></tr><tr><td>বল</td><td>নিউটন (N)</td></tr></table>
+<table><tbody><tr><th style="text-align:left; background:rgba(180,83,9,0.10)">রাশি</th><th style="text-align:left; background:rgba(180,83,9,0.10)">SI একক</th></tr><tr><td>দৈর্ঘ্য</td><td>মিটার (m)</td></tr><tr><td>ভর</td><td>কিলোগ্রাম (kg)</td></tr><tr><td>সময়</td><td>সেকেন্ড (s)</td></tr><tr><td>বল</td><td>নিউটন (N)</td></tr></tbody></table>
 ${buildCalloutHtml('warning', 'পরীক্ষার সাধারণ ভুল', '<p>বেগ km/h থেকে m/s-এ রূপান্তরে ৫/১৮ দিয়ে গুণ করা ভুলো না — এখানেই সবচেয়ে বেশি নম্বর কাটা যায়।</p>')}
 ${TIP_NOTE}
 `.trim(),
@@ -818,7 +818,7 @@ ${cap('পরিচ্ছেদ ১', C.sepiaGold, 12, 6)}
       html: `
 <h2 style="color:${C.sepia}">সময়রেখা</h2>
 <p>এই পরিচ্ছেদের প্রধান ঘটনাগুলো এক নজরে — নিজের তথ্য দিয়ে টেবিলটা পূরণ করুন।</p>
-<table><tr><th style="text-align:left; background:rgba(146,112,44,0.12)">সাল</th><th style="text-align:left; background:rgba(146,112,44,0.12)">ঘটনা</th></tr><tr><td>১৬০০</td><td>এই স্থানের প্রথম প্রামাণ্য উল্লেখ</td></tr><tr><td>১৭৫৭</td><td>একটি নির্ণায়ক ঘটনা</td></tr><tr><td>১৮৫৭</td><td>আন্দোলনের উত্থান</td></tr><tr><td>১৯৪৭</td><td>পরিবর্তনের সাল</td></tr></table>
+<table><tbody><tr><th style="text-align:left; background:rgba(146,112,44,0.12)">সাল</th><th style="text-align:left; background:rgba(146,112,44,0.12)">ঘটনা</th></tr><tr><td>১৬০০</td><td>এই স্থানের প্রথম প্রামাণ্য উল্লেখ</td></tr><tr><td>১৭৫৭</td><td>একটি নির্ণায়ক ঘটনা</td></tr><tr><td>১৮৫৭</td><td>আন্দোলনের উত্থান</td></tr><tr><td>১৯৪৭</td><td>পরিবর্তনের সাল</td></tr></tbody></table>
 <blockquote style="text-align:center; color:${C.muted}">ইতিহাস শুধু তারিখ নয় — তারিখের ভেতরের মানুষটিই ইতিহাস।</blockquote>
 ${TIP_NOTE}
 `.trim(),
@@ -880,7 +880,7 @@ ${buildCalloutHtml('note', 'শুরুর নিয়ম', '<ul><li>দিন
       html: `
 <h2 style="text-align:center; color:#3f6212">অভ্যাস খাতা</h2>
 <p style="text-align:center">যে কাজটি প্রতিদিন করেছ, তালিকায় টিক দাও —</p>
-<table><tr><th style="text-align:left; background:rgba(77,124,15,0.10)">দিন</th><th style="text-align:left; background:rgba(77,124,15,0.10)">কাজ</th><th style="background:rgba(77,124,15,0.10)">✓</th></tr><tr><td>সোমবার</td><td>সকালে হাঁটা</td><td></td></tr><tr><td>মঙ্গলবার</td><td>বই পড়া</td><td></td></tr><tr><td>বুধবার</td><td>পানি ৮ গ্লাস</td><td></td></tr><tr><td>বৃহস্পতিবার</td><td>নতুন শব্দ শেখা</td><td></td></tr><tr><td>শুক্রবার</td><td>দাওয়াতে পড়া</td><td></td></tr></table>
+<table><tbody><tr><th style="text-align:left; background:rgba(77,124,15,0.10)">দিন</th><th style="text-align:left; background:rgba(77,124,15,0.10)">কাজ</th><th style="background:rgba(77,124,15,0.10)">✓</th></tr><tr><td>সোমবার</td><td>সকালে হাঁটা</td><td></td></tr><tr><td>মঙ্গলবার</td><td>বই পড়া</td><td></td></tr><tr><td>বুধবার</td><td>পানি ৮ গ্লাস</td><td></td></tr><tr><td>বৃহস্পতিবার</td><td>নতুন শব্দ শেখা</td><td></td></tr><tr><td>শুক্রবার</td><td>দাওয়াতে পড়া</td><td></td></tr></tbody></table>
 <p style="text-align:center"><span style="font-size:10pt; color:${C.soft}">সপ্তাহ শেষে পাঁচটির কয়টি পূরণ হলো, গুনে নাও</span></p>
 `.trim(),
     },
@@ -888,12 +888,11 @@ ${buildCalloutHtml('note', 'শুরুর নিয়ম', '<ul><li>দিন
       html: `
 <h2 style="text-align:center; color:#3f6212">সপ্তাহের প্রতিফলন</h2>
 <p style="text-align:center"><em>এই সপ্তাহে আমি শিখলাম —</em></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
-<p></p>
+<p style="text-align:center"><span style="color:#a8a29e; letter-spacing:1px">· ─────────────── · ─────────────── ·</span></p>
+<p style="text-align:center"><span style="color:#a8a29e; letter-spacing:1px">· ─────────────── · ─────────────── ·</span></p>
+<p style="text-align:center"><span style="color:#a8a29e; letter-spacing:1px">· ─────────────── · ─────────────── ·</span></p>
+<p style="text-align:center"><span style="color:#a8a29e; letter-spacing:1px">· ─────────────── · ─────────────── ·</span></p>
+<p style="text-align:center"><span style="font-size:10pt; color:#4d7c0f; letter-spacing:3px">✦</span></p>
 <hr class="fancy-divider" data-style="dotted" />
 <p style="text-align:center"><em>আগামী সপ্তাহে আমার একটি ছোট প্রতিশ্রুতি —</em></p>
 `.trim(),
@@ -970,7 +969,7 @@ ${buildTocHtml('[]', 'বিষয়সূচি')}
 <h2 style="color:${C.ink}">৩. তথ্য উপস্থাপন</h2>
 <h3 style="color:${C.stone}">৩.১ মূল তথ্য</h3>
 <p>টেবিলের তথ্যের সংক্ষিপ্ত ব্যাখ্যা এখানে লিখুন — এই পাতা ফ্লো-পাতা।</p>
-<table><tr><th style="text-align:left; background:rgba(41,37,36,0.07)">বিষয়</th><th style="text-align:left; background:rgba(41,37,36,0.07)">সংখ্যা</th><th style="text-align:left; background:rgba(41,37,36,0.07)">মন্তব্য</th></tr><tr><td>জরিপে অংশগ্রহণ</td><td>৫০০ জন</td><td>লক্ষ্যমাত্রা পূরণ</td></tr><tr><td>ইতিবাচক মত</td><td>৬৮%</td><td>গত বছরের চেয়ে বেশি</td></tr><tr><td>সমস্যা জানিয়েছেন</td><td>২২%</td><td>বেশিরভাগ পরিবহন</td></tr><tr><td>পুনরায় অংশ নেবেন</td><td>৮১%</td><td>আস্থার সংকেত</td></tr></table>
+<table><tbody><tr><th style="text-align:left; background:rgba(41,37,36,0.07)">বিষয়</th><th style="text-align:left; background:rgba(41,37,36,0.07)">সংখ্যা</th><th style="text-align:left; background:rgba(41,37,36,0.07)">মন্তব্য</th></tr><tr><td>জরিপে অংশগ্রহণ</td><td>৫০০ জন</td><td>লক্ষ্যমাত্রা পূরণ</td></tr><tr><td>ইতিবাচক মত</td><td>৬৮%</td><td>গত বছরের চেয়ে বেশি</td></tr><tr><td>সমস্যা জানিয়েছেন</td><td>২২%</td><td>বেশিরভাগ পরিবহন</td></tr><tr><td>পুনরায় অংশ নেবেন</td><td>৮১%</td><td>আস্থার সংকেত</td></tr></tbody></table>
 <h3 style="color:${C.stone}">৩.২ পর্যবেক্ষণ</h3>
 <p>পর্যবেক্ষণের ব্যাখ্যা — সংখ্যার পেছনের কারণটি এখানে ব্যাখ্যা করুন।</p>
 ${TIP_NOTE}

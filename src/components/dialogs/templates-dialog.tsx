@@ -181,7 +181,7 @@ function blueprintSettingsPatch(bp: BookBlueprint): Partial<DocumentSettings> {
       leftText: b.headerLeft ?? '',
       centerText: b.headerCenter ?? '',
       rightText: b.headerRight ?? '',
-      accentColor: b.accentColor ?? '#334155',
+      accentColor: b.accentColor ?? '#7f1d1d',
       fontSize: 9,
     });
     patch.header = mk(b.headerStyle);

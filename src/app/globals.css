@@ -4709,64 +4709,65 @@ html.dark .qp-stat-warn { color: #fbbf24; }
   .qp-page-guide { display: none !important; }
 }
 
-/* ═══════════ থিসিস স্টুডিও (Thesis Studio) ═══════════ */
+/* ═══════════ থিসিস স্টুডিও (Thesis Studio) ═══════════
+   রং-সংযোগ: গভীর এমারেল্ড ব্র্যান্ড (var(--primary)) + পুরনো সোনা — নীল/হিউ-২৫০ নয় */
 
 .thesis-chip {
   display: inline-flex; align-items: center; gap: 4px;
-  border: 1px solid oklch(0.87 0.01 250); border-radius: 9999px;
+  border: 1px solid oklch(0.87 0.012 110); border-radius: 9999px;
   padding: 3px 11px; font-size: 12.5px; line-height: 1.45;
-  background: color-mix(in oklab, oklch(0.98 0.003 250) 70%, transparent);
+  background: color-mix(in oklab, oklch(0.98 0.006 110) 70%, transparent);
   color: inherit; cursor: pointer; transition: background 0.15s, border-color 0.15s;
   min-height: 28px;
 }
-.thesis-chip:hover { background: color-mix(in oklab, oklch(0.62 0.1 250) 12%, transparent); }
+.thesis-chip:hover { background: color-mix(in oklab, var(--primary) 12%, transparent); border-color: color-mix(in oklab, var(--primary) 45%, oklch(0.87 0.012 110)); }
 .thesis-chip-on {
-  background: color-mix(in oklab, oklch(0.62 0.1 250) 22%, transparent);
-  border-color: oklch(0.62 0.1 250); font-weight: 600;
+  background: color-mix(in oklab, var(--primary) 18%, transparent);
+  border-color: var(--primary); color: color-mix(in oklab, var(--primary) 85%, black); font-weight: 600;
 }
-html.dark .thesis-chip { border-color: oklch(0.38 0.01 250); background: color-mix(in oklab, oklch(0.28 0.01 250) 60%, transparent); }
-html.dark .thesis-chip-on { border-color: oklch(0.72 0.09 250); background: color-mix(in oklab, oklch(0.55 0.09 250) 26%, transparent); }
+html.dark .thesis-chip { border-color: oklch(0.36 0.015 110); background: color-mix(in oklab, oklch(0.27 0.012 110) 60%, transparent); }
+html.dark .thesis-chip-on { border-color: var(--primary); background: color-mix(in oklab, var(--primary) 30%, transparent); color: oklch(0.9 0.06 165); }
 
 .thesis-out {
-  border: 1px solid oklch(0.87 0.01 250); border-radius: 10px;
-  background: color-mix(in oklab, oklch(0.97 0.005 250) 60%, transparent);
+  border: 1px solid oklch(0.87 0.012 110); border-radius: 10px;
+  background: color-mix(in oklab, oklch(0.975 0.008 110) 60%, transparent);
   overflow: hidden;
 }
 .thesis-out-label {
-  font-size: 11px; font-weight: 600; color: oklch(0.5 0.02 250);
-  padding: 5px 10px 4px; border-bottom: 1px solid oklch(0.9 0.008 250);
+  font-size: 11px; font-weight: 600; color: color-mix(in oklab, var(--primary) 72%, black);
+  padding: 5px 10px 4px; border-bottom: 1px solid oklch(0.9 0.012 110);
   text-transform: uppercase; letter-spacing: 0.03em;
 }
 .thesis-out-body { padding: 8px 10px; font-size: 13px; line-height: 1.65; min-height: 44px; }
 .thesis-out-sm { min-width: 128px; }
 .thesis-out-sm .thesis-out-body { font-size: 12.5px; }
-html.dark .thesis-out { border-color: oklch(0.38 0.01 250); background: color-mix(in oklab, oklch(0.28 0.01 250) 55%, transparent); }
-html.dark .thesis-out-label { color: oklch(0.72 0.01 250); border-color: oklch(0.36 0.01 250); }
+html.dark .thesis-out { border-color: oklch(0.36 0.015 110); background: color-mix(in oklab, oklch(0.27 0.012 110) 55%, transparent); }
+html.dark .thesis-out-label { color: oklch(0.78 0.07 165); border-color: oklch(0.34 0.015 110); }
 
 .thesis-guide-item {
   display: flex; gap: 8px; align-items: flex-start;
-  border: 1px solid oklch(0.9 0.008 250); border-radius: 10px;
+  border: 1px solid oklch(0.9 0.012 110); border-radius: 10px;
   padding: 9px 11px; font-size: 13px; line-height: 1.65;
-  background: color-mix(in oklab, oklch(0.98 0.003 250) 60%, transparent);
+  background: color-mix(in oklab, oklch(0.98 0.006 110) 60%, transparent);
 }
-html.dark .thesis-guide-item { border-color: oklch(0.36 0.01 250); background: color-mix(in oklab, oklch(0.28 0.01 250) 55%, transparent); }
+html.dark .thesis-guide-item { border-color: oklch(0.34 0.015 110); background: color-mix(in oklab, oklch(0.27 0.012 110) 55%, transparent); }
 
 /* থিসিস স্টুডিও ২ — টুলবক্স, লাইব্রেরি, ক্যাপশন-টুল, AI খসড়া */
 .thesis-toolbox {
-  border: 1px dashed oklch(0.82 0.02 250); border-radius: 12px;
+  border: 1px dashed oklch(0.8 0.05 80); border-radius: 12px;
   padding: 12px 14px; display: flex; flex-direction: column; gap: 8px;
-  background: color-mix(in oklab, oklch(0.97 0.004 250) 55%, transparent);
+  background: color-mix(in oklab, oklch(0.97 0.015 90) 55%, transparent);
 }
-html.dark .thesis-toolbox { border-color: oklch(0.4 0.015 250); background: color-mix(in oklab, oklch(0.26 0.012 250) 55%, transparent); }
+html.dark .thesis-toolbox { border-color: oklch(0.42 0.06 80); background: color-mix(in oklab, oklch(0.26 0.02 90) 55%, transparent); }
 .thesis-chip-mini { padding: 2px 8px; font-size: 11px; border-radius: 7px; }
 .thesis-lib-list { display: flex; flex-direction: column; gap: 6px; list-style: none; margin: 0; padding: 0; }
 .thesis-lib-item {
   display: flex; align-items: flex-start; gap: 8px;
-  border: 1px solid oklch(0.9 0.008 250); border-radius: 9px;
+  border: 1px solid oklch(0.9 0.012 110); border-radius: 9px;
   padding: 7px 9px; font-size: 12.5px; line-height: 1.6;
-  background: color-mix(in oklab, oklch(0.98 0.003 250) 65%, transparent);
+  background: color-mix(in oklab, oklch(0.98 0.006 110) 65%, transparent);
 }
-html.dark .thesis-lib-item { border-color: oklch(0.36 0.01 250); background: color-mix(in oklab, oklch(0.28 0.01 250) 55%, transparent); }
+html.dark .thesis-lib-item { border-color: oklch(0.34 0.015 110); background: color-mix(in oklab, oklch(0.27 0.012 110) 55%, transparent); }
 .thesis-lib-body { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .thesis-lib-del {
   flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center;
@@ -4775,6 +4776,35 @@ html.dark .thesis-lib-item { border-color: oklch(0.36 0.01 250); background: col
 }
 .thesis-lib-del:hover { background: color-mix(in oklab, oklch(0.55 0.16 25) 12%, transparent); color: oklch(0.45 0.2 25); }
 .thesis-lib-empty { font-size: 12.5px; font-style: italic; opacity: .72; margin: 0; }
+
+/* ব্র্যান্ড-অ্যাকসেন্ট আইকন ও গণনা-ব্যাজ — emerald-বিকল্প (ব্র্যান্ড-সংগত) */
+.thesis-accent-ico { color: var(--primary); }
+html.dark .thesis-accent-ico { color: oklch(0.78 0.09 165); }
+.thesis-count-badge {
+  margin-left: 4px; display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 16px; padding: 0 5px; border-radius: 9999px;
+  background: var(--primary); color: var(--primary-foreground);
+  font-size: 10px; font-weight: 700; line-height: 1;
+}
+
+/* মিশ্র-স্টাইল লাইব্রেরি-সতর্কতা — সোনালি অ্যাম্বার */
+.thesis-mixed-warn {
+  margin: 0; font-size: 12px; font-weight: 600; line-height: 1.55;
+  color: color-mix(in oklab, oklch(0.55 0.12 75) 80%, black);
+  border-left: 3px solid oklch(0.72 0.13 80);
+  background: color-mix(in oklab, oklch(0.72 0.13 80) 10%, transparent);
+  padding: 6px 10px; border-radius: 0 8px 8px 0;
+}
+html.dark .thesis-mixed-warn { color: oklch(0.82 0.1 80); }
+
+/* ট্যাব-বার স্টিকি — লম্বা নির্মাণ-ট্যাবে স্ক্রলেও ট্যাব চোখের সামনে থাকে */
+.thesis-dialog .ai-tabs {
+  position: sticky; top: 0; z-index: 10;
+  background: var(--card, var(--background));
+  box-shadow: 0 6px 10px -8px rgb(0 0 0 / 0.14);
+  border-radius: 0 0 10px 10px;
+}
+
 .thesis-draft-notice {
   margin: 0; font-size: 12px; line-height: 1.6; border-left: 3px solid oklch(0.72 0.13 80);
   background: color-mix(in oklab, oklch(0.72 0.13 80) 8%, transparent);

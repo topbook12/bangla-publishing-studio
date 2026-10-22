@@ -52,7 +52,7 @@ export interface PageTemplate {
 }
 
 const TIP_NOTE =
-  '<p class="tpl-hint" style="text-align:center"><span style="font-size:9pt; color:#94a3b8">প্লেসহোল্ডার লেখাগুলো মুছে নিজের তথ্য লিখুন</span></p>';
+  '<p class="tpl-hint" style="text-align:center"><span style="font-size:9pt; color:#a8a29e">প্লেসহোল্ডার লেখাগুলো মুছে নিজের তথ্য লিখুন</span></p>';
 
 /** উল্লম্ব স্পেসার — পাতার মাঝবরাবর নামানোর জন্য */
 const sp = (n: number) => Array.from({ length: n }, () => '<p style="text-align:center"></p>').join('\n');
@@ -133,13 +133,13 @@ ${TIP_NOTE}
     id: 'title-royal-frame',
     name: L3('রাজকীয় ফ্রেম', 'राजकीय फ़्रेम', 'Royal Frame'),
     desc: L3('দ্বি-স্তর অলংকৃত ফ্রেমে বাঁধা রাজকীয় শিরোনাম — স্মারকগ্রন্থ ও উপহার সংস্করণের জন্য', 'दो-स्तरीय सजावटी फ्रेम में बंधा शाही शीर्षक — स्मारक पुस्तक और उपहार संस्करण के लिए', 'Royal Title in Two-Tier Ornate Frame — For Memorial Books and Gift Editions'),
-    accent: '#9f1239',
+    accent: '#7f1d1d',
     category: 'title',
     kind: 'title',
     html: `
 ${sp(1)}
 ${buildDesignBoxHtml(
-  { variant: 'double', border: '#9f1239', fill: 'transparent', bstyle: 'double', bwidth: 5 },
+  { variant: 'double', border: '#7f1d1d', fill: 'transparent', bstyle: 'double', bwidth: 5 },
   `${sp(1)}
 ${buildDesignBoxHtml(
   { variant: 'box', border: 'rgba(159,18,57,0.35)', fill: 'rgba(159,18,57,0.03)', bstyle: 'solid', bwidth: 1 },
@@ -273,13 +273,13 @@ ${sp(1)}
     id: 'certificate',
     name: L3('সনদপত্র', 'प्रमाण पत्र', 'Certificates'),
     desc: L3('দ্বি-স্তর রাজকীয় ফ্রেমে অলংকৃত সনদ — প্রশংসাপত্র, কোর্স সম্পন্নকরণ বা অর্জনের প্রত্যয়নপত্র', 'दो-स्तरीय शाही फ्रेम में सजावटी प्रमाण-पत्र — प्रशंसापत्र, कोर्स पूर्णता या प्राप्ति का प्रमाण-पत्र', 'Decorated Certificate in Two-Tier Royal Frame — For Certificates of Appreciation, Course Completion or Achievement'),
-    accent: '#9f1239',
+    accent: '#7f1d1d',
     category: 'front',
     kind: 'copyright',
     html: `
 ${sp(1)}
 ${buildDesignBoxHtml(
-  { variant: 'double', border: '#9f1239', fill: 'transparent', bstyle: 'double', bwidth: 5 },
+  { variant: 'double', border: '#7f1d1d', fill: 'transparent', bstyle: 'double', bwidth: 5 },
   `${sp(1)}
 ${buildDesignBoxHtml(
   { variant: 'box', border: 'rgba(159,18,57,0.30)', fill: 'rgba(159,18,57,0.02)', bstyle: 'solid', bwidth: 1 },
@@ -341,7 +341,7 @@ ${sp(1)}
 <h1 style="text-align:center; color:#7f1d1d; letter-spacing:3px">সূচিপত্র</h1>
 <p style="text-align:center"><span style="font-size:9pt; color:#78716c; letter-spacing:4px">অধ্যায় ও পৃষ্ঠা নম্বর</span></p>
 <hr class="fancy-divider" data-style="double" />
-${buildTocHtml('[]', '')}
+${buildTocHtml('[]', 'সূচিপত্র')}
 ${TIP_NOTE}
 `.trim(),
   },
@@ -358,7 +358,7 @@ ${buildDesignBoxHtml(
   '<h1 style="text-align:center; color:#134e4a; letter-spacing:3px"><span style="font-size:22pt">সূচিপত্র</span></h1><p style="text-align:center"><span style="font-size:9pt; color:#0f766e; letter-spacing:4px">বিষয়সূচি ও পৃষ্ঠা নম্বর</span></p>',
 )}
 <p style="text-align:center"></p>
-${buildTocHtml('[]', '')}
+${buildTocHtml('[]', 'সূচিপত্র')}
 ${TIP_NOTE}
 `.trim(),
   },
@@ -371,10 +371,10 @@ ${TIP_NOTE}
     kind: 'toc',
     html: `
 <p style="text-align:center"><span style="font-size:10pt; color:#a16207; letter-spacing:4px">✦ ✦ ✦</span></p>
-<h1 style="text-align:center; color:#92702c; letter-spacing:3px">বিস্তারিত সূচিপত্র</h1>
+<h1 style="text-align:center; color:#a16207; letter-spacing:3px">বিস্তারিত সূচিপত্র</h1>
 <p style="text-align:center"><span style="font-size:9pt; color:#78716c; letter-spacing:3px">অধ্যায়, উপ-অধ্যায় ও পৃষ্ঠা নম্বর</span></p>
 <hr class="fancy-divider" data-style="flourish" />
-${buildTocHtml('[]', '')}
+${buildTocHtml('[]', 'বিস্তারিত সূচিপত্র')}
 <p style="text-align:center"></p>
 ${buildCalloutHtml('note', 'স্বয়ংক্রিয় হালনাগাদ', '<p>H1 = অধ্যায়, H2/H3 = উপ-বিষয় — হেডিং দিলেই সূচিতে ঢুকে যাবে। Design → Update Table of Contents চাপুন।</p>')}
 ${TIP_NOTE}
@@ -490,7 +490,7 @@ ${buildCalloutHtml('warning', 'আইকন পরিচিতি', '<p>💡 ট
     id: 'appendix',
     name: L3('পরিশিষ্ট', 'परिशिष्ट', 'Appendix'),
     desc: L3('ছায়া-বক্সে সাজানো সংযুক্তি সেকশন — টেবিল, চার্ট বা ফর্মুলা রাখার পরিশিষ্ট পাতা', 'छाया-बॉक्स में व्यवस्थित संलग्न अनुभाग — तालिका, चार्ट या सूत्र के लिए परिशिष्ट पृष्ठ', 'Shadow-boxed Attachment Section — Appendix Page for Tables, Charts or Formulas'),
-    accent: '#57534e',
+    accent: '#a16207',
     category: 'special',
     kind: 'chapter',
     html: `
@@ -498,13 +498,13 @@ ${buildCalloutHtml('warning', 'আইকন পরিচিতি', '<p>💡 ট
 <h1 style="text-align:center; color:#44403c; letter-spacing:3px">পরিশিষ্ট</h1>
 <hr class="fancy-divider" data-style="dotted" />
 ${buildDesignBoxHtml(
-  { variant: 'box', border: '#a8a29e', fill: 'rgba(120,113,108,0.05)', bstyle: 'solid', bwidth: 1 },
+  { variant: 'box', border: '#c2a45c', fill: 'rgba(161,98,7,0.04)', bstyle: 'solid', bwidth: 1 },
   `<p style="text-align:center"><span style="font-size:11pt; color:#57534e; letter-spacing:2px"><strong>পরিশিষ্ট ক — শিরোনাম</strong></span></p>
 <p style="text-indent:2em">এখানে অতিরিক্ত তথ্য, টেবিল, চার্ট বা ফর্মুলা যোগ করুন…</p>`,
 )}
 <p style="text-align:center"></p>
 ${buildDesignBoxHtml(
-  { variant: 'box', border: '#a8a29e', fill: 'rgba(120,113,108,0.05)', bstyle: 'solid', bwidth: 1 },
+  { variant: 'box', border: '#c2a45c', fill: 'rgba(161,98,7,0.04)', bstyle: 'solid', bwidth: 1 },
   `<p style="text-align:center"><span style="font-size:11pt; color:#57534e; letter-spacing:2px"><strong>পরিশিষ্ট খ — শিরোনাম</strong></span></p>
 <p style="text-indent:2em">দ্বিতীয় সংযুক্তি — প্রয়োজনীয় তথ্য বা সারণি এখানে দিন…</p>`,
 )}
@@ -536,14 +536,14 @@ ${TIP_NOTE}
     id: 'exam-2col',
     name: L3('প্রশ্নপত্র (দুই কলাম)', 'प्रश्नपत्र (दो स्तंभ)', 'Question Paper (Two Columns)'),
     desc: L3('পরীক্ষার প্রশ্নপত্র ধাঁচ — শিরোনাম-ব্যানার সহ প্রশ্নগুলো দুই কলামে, মাঝে রেখা; লেখা স্বয়ংক্রিয়ভাবে কলামে বয়ে যায়', 'परीक्षा प्रश्नपत्र डिज़ाइन — शीर्षक-बैनर के साथ प्रश्न दो स्तंभों में, बीच में रेखा; लेखा स्वचालित रूप से स्तंभ में बहता है', 'Exam Paper Template — Title-banner with questions in two columns, with a line in between; text automatically flows between columns'),
-    accent: '#334155',
+    accent: '#292524',
     category: 'special',
     kind: 'preface',
     html: `
-<p style="text-align:center"><span style="font-size:10pt; color:#475569; letter-spacing:1px">শিক্ষা প্রতিষ্ঠানের নাম · শাখা</span></p>
-<h1 style="text-align:center; color:#1e293b; letter-spacing:1px"><span style="font-size:22pt">ষষ্ঠ শ্রেণি গণিত মিট</span></h1>
-<p style="text-align:center"><span style="font-size:10pt; color:#64748b">সময়: ২ ঘণ্টা ৩০ মিনিট &nbsp;·&nbsp; পূর্ণমান: ১০০</span></p>
-<p style="text-align:center; margin-top:6px"><span style="background:#334155; color:#ffffff; padding:4px 56px; font-size:12pt; letter-spacing:3px; border-radius:3px"><strong>অতিসংক্ষিপ্ত প্রশ্ন</strong></span></p>
+<p style="text-align:center"><span style="font-size:10pt; color:#78716c; letter-spacing:1px">শিক্ষা প্রতিষ্ঠানের নাম · শাখা</span></p>
+<h1 style="text-align:center; color:#292524; letter-spacing:1px"><span style="font-size:22pt">ষষ্ঠ শ্রেণি গণিত মিট</span></h1>
+<p style="text-align:center"><span style="font-size:10pt; color:#78716c">সময়: ২ ঘণ্টা ৩০ মিনিট &nbsp;·&nbsp; পূর্ণমান: ১০০</span></p>
+<p style="text-align:center; margin-top:6px"><span style="background:#292524; color:#ffffff; padding:4px 56px; font-size:12pt; letter-spacing:3px; border-radius:3px"><strong>অতিসংক্ষিপ্ত প্রশ্ন</strong></span></p>
 ${buildColumnsHtml({ count: 2, gap: 26, rule: true }, `
 <p><strong>১.</strong> একটি বর্গাকার বাগানের ক্ষেত্রফল ২৫৬০০ বর্গমিটার।</p>
 <p style="padding-left:1.5em">ক. প্রতিটি বাহের দৈর্ঘ্য কত?</p>

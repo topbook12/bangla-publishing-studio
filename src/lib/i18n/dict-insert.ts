@@ -215,6 +215,7 @@ dictInsert['thesis.opt.applyFormat'] = { bn: 'স্ট্যান্ডার�
 dictInsert['thesis.generate'] = { bn: 'সম্পূর্ণ থিসিস কাঠামো তৈরি করুন', hi: 'पूरी थीसिस संरचना बनाएँ', en: 'Generate full thesis structure' };
 dictInsert['thesis.toast.built'] = { bn: 'থিসিস কাঠামো তৈরি — {n}টি পাতা যোগ হয়েছে। পাতায় লিখলেই সূচিপত্র ও পৃষ্ঠা-নম্বর স্বয়ংক্রিয় হবে।', hi: 'थीसिस संरचना तैयार — {n} पेज जुड़े। लिखने पर सूची व पृष्ठ-संख्या स्वतः अपडेट होगी।', en: 'Thesis skeleton built — {n} pages added. TOC and page numbers update automatically as you write.' };
 dictInsert['thesis.err.noTitle'] = { bn: 'থিসিসের শিরোনাম দিন — শিরোনাম পাতায় বসবে', hi: 'थीसिस शीर्षक दें — शीर्षक पेज पर जाएगा', en: 'Enter the thesis title — it goes on the title page' };
+dictInsert['thesis.err.generate'] = { bn: 'থিসিস নির্মাণে সমস্যা হয়েছে — কিছু পাতা তৈরি হয়ে থাকলে সেগুলো রয়ে গেছে; আবার চেষ্টা করুন', hi: 'थीसिस बनाने में समस्या — दोबारा प्रयास करें', en: 'Thesis generation failed — please try again' };
 
 dictInsert['thesis.cite.desc'] = { bn: 'সূত্রের তথ্য দিন — নির্বাচিত স্টাইলে নিখুঁত এন্ট্রি তৈরি হবে। তালিকা-এন্ট্রি তথ্যসূত্র পাতায়, পাঠ্য-উদ্ধৃতি লেখার ভেতরে বসান।', hi: 'संदर्भ की जानकारी दें — चुनी गई शैली में सटीक प्रविष्टि बनेगी।', en: 'Enter the source details — a precise entry is generated in the chosen style. Insert the list entry into your References page, the in-text citation into your prose.' };
 dictInsert['thesis.cite.style'] = { bn: 'স্টাইল', hi: 'शैली', en: 'Style' };
@@ -287,6 +288,8 @@ dictInsert['thesis.cite.libInserted'] = { bn: '{n}টি এন্ট্রি �
 dictInsert['thesis.cite.libInsertAll'] = { bn: 'সব তালিকা হিসেবে বসান ({n})', hi: 'सब सूची के रूप में डालें ({n})', en: 'Insert all as list ({n})' };
 dictInsert['thesis.cite.libCopyAll'] = { bn: 'সব কপি', hi: 'सब कॉपी', en: 'Copy all' };
 dictInsert['thesis.cite.libClear'] = { bn: 'খালি করুন', hi: 'खाली करें', en: 'Clear' };
+dictInsert['thesis.cite.libClearConfirm'] = { bn: 'নিশ্চিত? আবার চাপুন — সব মুছে যাবে', hi: 'पक्का? फिर दबाएँ — सब हट जाएगा', en: 'Sure? Click again — all will be cleared' };
+dictInsert['thesis.cite.libMixed'] = { bn: 'লাইব্রেরিতে একাধিক স্টাইল মিশে আছে — এক থিসিসে এক স্টাইল রাখুন (মিশ্র তালিকা পরীক্ষকে আপত্তি করায়)', hi: 'लाइब्रेरी में एकाधिक स्टाइल मिश्रित हैं — एक थीसिस में एक स्टाइल रखें', en: 'The library mixes multiple styles — use ONE style per thesis (mixed lists draw examiner objections)' };
 dictInsert['thesis.cite.libRemove'] = { bn: 'এই এন্ট্রি মুছুন', hi: 'यह प्रविष्टि हटाएँ', en: 'Remove this entry' };
 
 dictInsert['thesis.capt.title'] = { bn: 'চিত্র/টেবিল ক্যাপশন যোগ করুন', hi: 'चित्र/तालिका कैप्शन जोड़ें', en: 'Add figure/table captions' };

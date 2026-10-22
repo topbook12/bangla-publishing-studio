@@ -460,14 +460,17 @@ function esc(s: string): string {
 }
 
 /**
- * থিসিস-ডিজাইন টোকেন — গভীর একাডেমিক সবুজ-কালি (অ্যাপ-ব্র্যান্ডের সাথে মানানসই,
- * প্রিন্ট-বান্ধব)। সব রং span-মার্কে বসে — এডিটর পার্সার p/h1-এর ইনলাইন color
- * ফেলে দেয়, span-style টিকে থাকে; তাই প্রতিটি রঙিন লেখা span-এ মোড়ানো।
+ * থিসিস-ডিজাইন টোকেন — রয়্যাল মেরুন + পুরনো সোনা (ক্রিম-কাগজের fancy-divider
+ * ফ্লারিশের মেরুন-রক্তের সাথে হুবহু এক; বিশ্ববিদ্যালয়-ক্রেস্টের ক্লাসিক রং)।
+ * সব রং span-মার্কে বসে — এডিটর পার্সার p/h1-এর ইনলাইন color ফেলে দেয়,
+ * span-style টিকে থাকে; তাই প্রতিটি রঙিন লেখা span-এ মোড়ানো।
  */
-const THESIS_ACCENT = '#0f5d40';
-const THESIS_SOFT = '#6b7280';
+export const THESIS_ACCENT = '#7f1d1d';
+export const THESIS_GOLD = '#a16207';
+const THESIS_SOFT = '#78716c';
 
 const spanAcc = (inner: string) => `<span style="color:${THESIS_ACCENT};">${inner}</span>`;
+const spanGold = (inner: string) => `<span style="color:${THESIS_GOLD};">${inner}</span>`;
 const spanSoft = (inner: string) => `<span style="color:${THESIS_SOFT};">${inner}</span>`;
 
 /** কেন্দ্রীভূত প্যারা — সরাসরি ইনপুট কেবল অভ্যন্তরীণ/esc-কৃত স্ট্রিং (esc আবার চালায় না) */
@@ -495,19 +498,23 @@ function hintPara(hint: string): string {
 }
 
 function sectionHeading(num_: number, secNum: number, title: string, lang: ThesisLang): string {
-  return `<h2><span style="color:${THESIS_ACCENT};">${esc(num(num_, lang) + '.' + num(secNum, lang))}</span> ${esc(title)}</h2>`;
+  return `<h2 style="margin-top:0.7em;"><span style="color:${THESIS_ACCENT};">${esc(num(num_, lang) + '.' + num(secNum, lang))}</span> ${esc(title)}</h2>`;
 }
 
 // ─── পাতা-নির্মাতা ───
 
-/** শিরোনাম-পাতার দুই-স্তম্ভ মেটা-টেবিল (বাঁ: গবেষক, ডান: সুপারভাইজার) */
+/**
+ * শিরোনাম-পাতার দুই-স্তম্ভ মেটা-টেবিল (বাঁ: গবেষক, ডান: সুপারভাইজার)।
+ * এডিটর-চুক্তি: সেলের style-padding পার্সার ফেলে দেয়, তাই মাঝে ফাঁকা
+ * স্পেসার-সেল (১০%) — colwidth অ্যাট্রিবিউটই স্তম্ভ-প্রস্থের প্রকৃত বাহক।
+ */
 function titleMetaTable(left: string[], right: string[]): string {
-  const cell = (label: string, rows: string[]) =>
-    `<td data-border="none" style="border:none; width:50%; vertical-align:top; padding:0 12px">` +
-    `<p style="text-align:center; margin:0 0 0.25em; letter-spacing:1.5px;">${spanSoft(esc(label))}</p>` +
+  const cell = (rows: string[]) =>
+    `<td colwidth="270" data-border="none" style="border:none; width:45%; vertical-align:top">` +
     rows.map((r) => `<p style="text-align:center; margin:0.1em 0; font-size:1.05em;">${r}</p>`).join('') +
     `</td>`;
-  return `<table style="width:100%; margin-top:0.6em;"><tr>${cell('', left)}${cell('', right)}</tr></table>`;
+  const gap = `<td colwidth="60" data-border="none" style="border:none; width:10%"></td>`;
+  return `<table style="width:100%; margin-top:0.6em;"><tr>${cell(left)}${gap}${cell(right)}</tr></table>`;
 }
 
 /** উল্লম্ব স্পেসার — শিরোনাম-পাতার বিষয়বস্তু পুরো A4-উচ্চতায় ছড়িয়ে দিতে */
@@ -517,6 +524,8 @@ function titlePage(meta: ThesisMeta): ThesisPage {
   const Lx = L(meta.lang);
   const en = meta.lang === 'en';
   const parts: string[] = [];
+  // শীর্ষ সোনালি আলংকার — ক্রেস্ট-শৈলীর উদ্বোধন
+  parts.push(C(`<span style="color:${THESIS_GOLD}; letter-spacing:5px; font-size:0.95em;">❦ ✦ ❦</span>`, 'margin:0.35em 0 0.3em;'));
   if (meta.university.trim()) {
     parts.push(
       `<h1 style="text-align:center; letter-spacing:1px; margin:0.2em 0 0.1em;">` +
@@ -527,9 +536,9 @@ function titlePage(meta: ThesisMeta): ThesisPage {
     parts.push(C(`<span style="font-size:1.02em; letter-spacing:0.5px;">${esc(Lx.deptLabel)} ${esc(meta.department.trim())}</span>`, 'margin:0.1em 0;'));
   }
   parts.push(rule('flourish'));
-  // ডকুমেন্ট-ধরন — বর্ণ-ফাঁকসহ ছোট লেবেল
+  // ডকুমেন্ট-ধরন — বর্ণ-ফাঁকসহ ছোট সোনালি লেবেল
   parts.push(
-    C(`<span style="letter-spacing:2.5px; font-size:0.85em;"><strong>${esc(en ? docKind(meta).toUpperCase() : docKind(meta))}</strong></span>`, 'margin:0.8em 0 0.2em;'),
+    C(`<span style="letter-spacing:2.5px; font-size:0.85em; color:${THESIS_GOLD};"><strong>${esc(en ? docKind(meta).toUpperCase() : docKind(meta))}</strong></span>`, 'margin:0.8em 0 0.2em;'),
   );
   // মূল শিরোনাম
   parts.push(
@@ -558,7 +567,7 @@ function titlePage(meta: ThesisMeta): ThesisPage {
   // নিচের ব্লক — প্রতিষ্ঠান ও তারিখ পাতার একদম নিচে (উদার শ্বাস-প্রশ্বাস)
   const bottom: string[] = [];
   if (meta.university.trim()) bottom.push(C(`<strong>${esc(meta.university.trim())}</strong>`, 'margin:0.9em 0 0.05em;'));
-  if (meta.date.trim()) bottom.push(C(spanAcc(esc(meta.date.trim())), 'margin:0.05em 0;'));
+  if (meta.date.trim()) bottom.push(C(spanGold(esc(meta.date.trim())), 'margin:0.05em 0;'));
   if (bottom.length) parts.push(vsp(5), rule('single'), ...bottom);
   return { html: parts.join(''), noChrome: true, numberRestart: { from: 1, format: 'roman' } };
 }
@@ -576,7 +585,7 @@ function singleDocPage(title: string, bodyParas: string[], extra?: string): Thes
 
 function signRow(label: string, dateLabel: string): string {
   return [
-    '<p style="text-align:right; margin-top:2.4em;">______________________</p>',
+    `<p style="text-align:right; margin-top:2.4em;"><span style="color:${THESIS_SOFT};">______________________</span></p>`,
     `<p style="text-align:right; margin:0;"><strong>${esc(label)}</strong></p>`,
     `<p style="text-align:right; margin:0;"><em>${spanSoft(`${esc(dateLabel)}: ………………`)}</em></p>`,
   ].join('');
@@ -594,7 +603,8 @@ function dedicationPage(meta: ThesisMeta): ThesisPage {
     html: [
       `<p style="text-align:center; margin:2.2em 0 0.1em; letter-spacing:2px;">${spanAcc(`<strong><span style="font-size:0.9em;">${esc(Lx.dedication)}</span></strong>`)}</p>`,
       rule('flourish'),
-      '<div style="margin-top:2.2em;"></div>',
+      // এডিটর-চুক্তি: খালি <div> স্কিমা-বাইরে ফেলে যায় — <p> স্পেসারই বাহক
+      vsp(2),
       lines,
     ].join(''),
     noChrome: false,
@@ -607,21 +617,28 @@ export function captionHtml(kind: 'figure' | 'table', chapter: number, serial: n
   const label = kind === 'figure' ? Lx.figLabel : Lx.tblLabel;
   const cap = caption.trim() || (lang === 'en' ? 'Caption text…' : 'ক্যাপশনের লেখা…');
   const src = source?.trim();
-  return `<p style="text-align:center; margin-top:0.5em;"><strong>${esc(label)} ${num(chapter, lang)}.${num(serial, lang)}:</strong> ${esc(cap)}${src ? ` <em>${spanSoft(`(${esc(Lx.sourceLabel)}: ${esc(src)})`)}</em>` : ''}</p>`;
+  return `<p style="text-align:center; margin-top:0.5em;"><strong><span style="color:${THESIS_ACCENT};">${esc(label)} ${num(chapter, lang)}.${num(serial, lang)}:</span></strong> ${esc(cap)}${src ? ` <em>${spanSoft(`(${esc(Lx.sourceLabel)}: ${esc(src)})`)}</em>` : ''}</p>`;
 }
 
 function listsPage(lang: ThesisLang): ThesisPage {
   const Lx = L(lang);
+  const pw = lang === 'en' ? 'p.' : 'পৃষ্ঠা';
+  // সারি — নম্বর (মেরুন) + ডট-লিডার + পৃষ্ঠা-ঘর
+  const li = (label: string, n: number) =>
+    `<p style="margin:0.5em 0;"><strong>${spanAcc(`${esc(label)} ${num(n, lang)}`)}</strong>${spanSoft(':')} ` +
+    `<span style="color:${THESIS_SOFT}; letter-spacing:1px;">………………</span>` +
+    `<span style="color:${THESIS_SOFT};"> (${esc(pw)} …)</span></p>`;
   return {
     html: [
       fmHeading(Lx.figures),
       softItalic(Lx.listsNote),
-      `<p style="margin:0.5em 0;">${esc(Lx.figLabel)} ${num(1, lang)}: …………………………… ${esc(lang === 'en' ? 'p.' : 'পৃষ্ঠা')} …</p>`,
-      `<p style="margin:0.5em 0;">${esc(Lx.figLabel)} ${num(2, lang)}: …………………………… ${esc(lang === 'en' ? 'p.' : 'পৃষ্ঠা')} …</p>`,
+      li(Lx.figLabel, 1),
+      li(Lx.figLabel, 2),
+      C(`<span style="color:${THESIS_GOLD}; letter-spacing:4px; font-size:0.85em;">✦ ✦ ✦</span>`, 'margin:0.9em 0;'),
       fmHeading(Lx.tables),
       softItalic(Lx.listsNote),
-      `<p style="margin:0.5em 0;">${esc(Lx.tblLabel)} ${num(1, lang)}: …………………………… ${esc(lang === 'en' ? 'p.' : 'পৃষ্ঠা')} …</p>`,
-      `<p style="margin:0.5em 0;">${esc(Lx.tblLabel)} ${num(2, lang)}: …………………………… ${esc(lang === 'en' ? 'p.' : 'পৃষ্ঠা')} …</p>`,
+      li(Lx.tblLabel, 1),
+      li(Lx.tblLabel, 2),
     ].join(''),
     noChrome: false,
   };
@@ -635,7 +652,7 @@ function abbreviationsPage(lang: ThesisLang): ThesisPage {
   return {
     html: [
       fmHeading(Lx.abbreviations),
-      `<table><tbody><tr><th>${esc(Lx.abbrHead[0])}</th><th>${esc(Lx.abbrHead[1])}</th></tr>${rows}</tbody></table>`,
+      `<table style="width:100%"><tbody><tr><th data-bg="rgba(127,29,29,0.07)">${esc(Lx.abbrHead[0])}</th><th data-bg="rgba(127,29,29,0.07)">${esc(Lx.abbrHead[1])}</th></tr>${rows}</tbody></table>`,
     ].join(''),
     noChrome: false,
   };
@@ -644,13 +661,12 @@ function abbreviationsPage(lang: ThesisLang): ThesisPage {
 function chapterPage(meta: ThesisMeta, ch: ThesisChapter): ThesisPage {
   const Lx = L(meta.lang);
   const parts: string[] = [
-    // অধ্যায়-ওপেনার — বর্ণ-ফাঁকসহ ছোট লেবেল + বড় শিরোনাম + ডাবল রুল
-    C(`<span style="letter-spacing:3px; font-size:0.88em;"><strong>${esc(Lx.chapter)} ${num(ch.num, meta.lang)}</strong></span>`, 'margin:1em 0 0.1em;'),
+    // অধ্যায়-ওপেনার — সোনালি বর্ণ-ফাঁকসহ ছোট লেবেল + বড় শিরোনাম + ডাবল রুল
+    C(`<span style="letter-spacing:3px; font-size:0.88em; color:${THESIS_GOLD};"><strong>${esc(Lx.chapter)} ${num(ch.num, meta.lang)}</strong></span>`, 'margin:1em 0 0.1em;'),
     `<h1 style="text-align:center; margin:0.1em 0 0.2em;">${esc(ch.title)}</h1>`,
     rule('double'),
   ];
   ch.sections.forEach((s, i) => {
-    parts.push(`<div style="margin-top:0.5em;"></div>`);
     parts.push(sectionHeading(ch.num, i + 1, s.title, meta.lang));
     parts.push(hintPara(s.hint));
   });
@@ -746,6 +762,39 @@ export const EMPTY_CITE: CiteEntry = {
 
 const J = (s: string) => s.trim(); // join helper
 
+/** p./pp. — এক-পৃষ্ঠা হলে p., ব্যাপ্তি/বহু-পৃষ্ঠা হলে pp. (APA/MLA-রীতি) */
+const ppFmt = (pg: string) =>
+  /[-–—,]/.test(pg) ? `pp. ${pg}` : `p. ${pg}`;
+
+/**
+ * IEEE-লেখক — "Rahman, Aziz" → "A. Rahman" (initials-first, IEEE-স্ট্যান্ডার্ড)।
+ * লেখক-বিভাজক: & / ও / এবং / and / ; — কমা লেখক-বিভাজক নয়, "নাম, নাম" জোটের
+ * অংশ (নইলে "রহমান, আ." ভেঙে "রহমান" + "আ." হয়ে যেত)।
+ */
+function ieeeAuthors(a: string): string {
+  const clean = a
+    .replace(/\s*&\s*/g, ' and ')
+    .replace(/\s+ও\s+/g, ' and ')
+    .replace(/\s+এবং\s+/g, ' and ')
+    .replace(/\s+एवं\s+/g, ' and ');
+  return clean
+    .split(/\s*(?:and|;)\s*/)
+    .map((one) => {
+      const seg = one.trim();
+      if (!seg) return seg;
+      const m = seg.match(/^(.{2,}?),\s*(.+)$/); // "Last, First[.]"
+      if (m) {
+        const last = m[1].trim();
+        const first = m[2].trim().replace(/\.$/, '');
+        const initials = first.split(/\s+/).filter(Boolean).map((w) => `${w[0].toUpperCase()}.`).join(' ');
+        return initials ? `${initials} ${last}` : last;
+      }
+      return seg;
+    })
+    .filter(Boolean)
+    .join(', ');
+}
+
 /**
  * পূর্ণ তালিকা-এন্ট্রি (Reference list entry) ফরম্যাট করে।
  * সব ফিল্ড পূর্ণ না থাকলেও যথাসম্ভব সঠিক আউটপুট দেয়।
@@ -766,30 +815,32 @@ export function formatReference(e: CiteEntry): string {
   const d = esc2(e.doi);
   const ed = esc2(e.edition);
   const pubPlace = pl && p ? `${pl}: ${p}` : p || pl;
-  const volIssue = v && i ? `${v}(${i})` : v || (i ? `(${i})` : '');
   const link = d ? `https://doi.org/${d}` : u;
   /** ফরম্যাট-নির্ভুলতা — শেষে ব্যবহারকারীর বসানো দাঁড়ি বাদ (প্রতিটি স্টাইল নিজের দাঁড়ি নিজেই বসায়, নইলে "এ.." যুগল-দাঁড়ি হয়) */
   const nd = (s: string) => s.trim().replace(/\.+$/, '');
 
   switch (e.style) {
     case 'apa': {
-      // বই: Author. (Year). Title (ed.). Place: Publisher.
-      // জার্নাল: Author. (Year). Title. Journal, Vol(Issue), pages. doi
+      // APA 7 — বই: Author. (Year). Title (ed.). Publisher. (স্থান বাদ — APA 7 রীতি)
+      // জার্নাল: Author. (Year). Title. Journal, Vol(Issue), pages. doi — ভলিউম ইটালিক
       const parts: string[] = [];
       if (a) parts.push(`${a} `);
-      parts.push(`(${y}). `);
-      if (e.type === 'journal' || e.type === 'newspaper') {
+      parts.push(`(${y || 'n.d.'}). `);
+      if (e.type === 'journal') {
         parts.push(`${nd(t)}. `);
-        if (c) parts.push(`<i>${nd(c)}</i>${volIssue ? `, ${volIssue}` : ''}${pg ? `, ${pg}` : ''}. `);
+        if (c) parts.push(`<i>${nd(c)}${v ? `, ${v}` : ''}</i>${i ? `(${i})` : ''}${pg ? `, ${pg}` : ''}. `);
+      } else if (e.type === 'newspaper') {
+        parts.push(`${nd(t)}. `);
+        if (c) parts.push(`<i>${nd(c)}</i>${pg ? `, ${ppFmt(pg)}. ` : '. '}`);
       } else {
-        parts.push(`<i>${nd(t)}</i>${ed ? ` (${ed})` : ''}. `);
-        if (pubPlace) parts.push(`${pubPlace}. `);
+        parts.push(`<i>${nd(t)}</i>${ed ? ` (${ed} ed.)` : ''}. `);
+        if (p) parts.push(`${p}. `);
       }
       if (link) parts.push(link);
       return parts.join('').trim();
     }
     case 'mla': {
-      // বই: Author. Title. Publisher, Year.
+      // MLA 9 — বই: Author. Title. Publisher, Year. (স্থান বাদ — MLA 8+ রীতি)
       // জার্নাল: Author. "Title." Journal, vol. V, no. I, Year, pp.
       const parts: string[] = [];
       if (a) parts.push(`${nd(a)}. `);
@@ -799,20 +850,21 @@ export function formatReference(e: CiteEntry): string {
         if (v) parts.push(`vol. ${v}, `);
         if (i) parts.push(`no. ${i}, `);
         if (y) parts.push(`${y}, `);
-        if (pg) parts.push(`pp. ${pg}. `);
+        if (pg) parts.push(`${ppFmt(pg)}. `);
       } else {
         parts.push(`<i>${nd(t)}</i>. `);
-        if (pubPlace) parts.push(`${pubPlace}, `);
+        if (ed) parts.push(`${ed} ed., `);
+        if (p) parts.push(`${p}, `);
         if (y) parts.push(`${y}. `);
       }
       if (link && e.type === 'website') parts.push(`${link}${e.accessed ? `, accessed ${e.accessed}` : ''}.`);
       return parts.join('').trim().replace(/\s{2,}/g, ' ');
     }
     case 'harvard': {
-      // বই: Author (Year) Title. Place: Publisher.
+      // Harvard — বই: Author (Year) Title. Edition. Place: Publisher.
       const parts: string[] = [];
       if (a) parts.push(`${a} `);
-      parts.push(`(${y}) `);
+      parts.push(`(${y || 'n.d.'}) `);
       if (e.type === 'journal' || e.type === 'newspaper') {
         parts.push(`'${nd(t)}', `);
         if (c) parts.push(`<i>${nd(c)}</i>`);
@@ -821,7 +873,8 @@ export function formatReference(e: CiteEntry): string {
         if (pg) parts.push(`, pp. ${pg}`);
         parts.push('. ');
       } else {
-        parts.push(`<i>${nd(t)}</i>${ed ? ` (${ed})` : ''}. `);
+        parts.push(`<i>${nd(t)}</i>. `);
+        if (ed) parts.push(`${ed} ed. `);
         if (pubPlace) parts.push(`${pubPlace}. `);
       }
       if (link) parts.push(`${link}${e.accessed ? ` (Accessed ${e.accessed})` : ''}`);
@@ -847,9 +900,10 @@ export function formatReference(e: CiteEntry): string {
       return parts.join('').trim().replace(/\s{2,}/g, ' ');
     }
     case 'ieee': {
-      // [1] A. Rahman, Title, ed. Place: Publisher, Year.
+      // [1] A. Rahman, Title, ed. Place: Publisher, Year. — লেখক initials-first
       const parts: string[] = [];
-      if (a) parts.push(`${a}, `);
+      const ia = a ? ieeeAuthors(a) : '';
+      if (ia) parts.push(`${ia}, `);
       if (e.type === 'journal' || e.type === 'newspaper') {
         parts.push(`"${nd(t)}," `);
         if (c) parts.push(`<i>${nd(c)}</i>`);
@@ -874,26 +928,29 @@ export function formatReference(e: CiteEntry): string {
   }
 }
 
-/** পাঠ্যের ভেতরের উদ্ধৃতি (in-text citation) — প্লেইন-টেক্সট আউটপুট (esc-কৃত) */
-export function formatInText(e: CiteEntry): string {
+/** পাঠ্যের ভেতরের উদ্ধৃতি (in-text citation) — প্লেইন-টেক্সট আউটপুট (esc-কৃত)
+ *  IEEE-তে refNumber দিলে [n] সেটাই বসে (লাইব্রেরি-ক্রম); না দিলে [1]। */
+export function formatInText(e: CiteEntry, refNumber?: number): string {
   const a = J(e.authors);
   const y = J(e.year);
   const pg = J(e.pages);
-  const firstAuthor = a.split(/,|ও|&|and/)[0]?.trim() || a;
+  // শব্দ-সীমাসহ বিভাজক — "Orlando"-র ভেতরের "and" বা "ওয়াহিদ"-এর "ও" কাটবে না
+  const firstAuthor = a.split(/\s*[,;]\s*|\s+ও\s+|\s*&\s*|\s+and\s+/i)[0]?.trim() || a;
   const shortPg = pg.split(/[-–—,]/)[0]?.trim() || '';
   const built = (() => {
     switch (e.style) {
       case 'apa':
         return `(${firstAuthor}${y ? `, ${y}` : ''}${shortPg ? `, p. ${shortPg}` : ''})`;
       case 'mla':
-        return `(${firstAuthor}${shortPg ? ` ${shortPg}` : y ? `, ${y}` : ''})`;
+        // MLA-তে পাতা না থাকলে কেবল লেখক — বছর in-text-এ বসে না (MLA 9-রীতি)
+        return `(${firstAuthor}${shortPg ? ` ${shortPg}` : ''})`;
       case 'harvard':
         return `(${firstAuthor}${y ? `, ${y}` : ''}${shortPg ? `, p. ${shortPg}` : ''})`;
       case 'chicago':
         return `(${firstAuthor}${y ? ` ${y}` : ''}${shortPg ? `, ${shortPg}` : ''})`;
       case 'ieee': {
-        // IEEE পাঠ্যে সংখ্যা-রেফারেন্স — ক্রম ব্যবহারকারীর তালিকা অনুযায়ী; ডিফল্ট [১]
-        return '[1]';
+        // IEEE পাঠ্যে সংখ্যা-রেফারেন্স — লাইব্রেরি-ক্রম অনুযায়ী [n]
+        return `[${refNumber ?? 1}]`;
       }
     }
   })();
@@ -941,15 +998,32 @@ export const THESIS_MARGINS = { top: 1, bottom: 1, left: 1.5, right: 1, gutter: 
  * লাইব্রেরির সব এন্ট্রি থিসিস-স্ট্যান্ডার্ড ক্রমে সাজিয়ে তালিকা-HTML প্যারার অ্যারে দেয়।
  *  - APA/MLA/Harvard/Chicago: লেখকের নাম অনুযায়ী বর্ণানুক্রম (বাংলা-সচেতন locale)
  *  - IEEE: উদ্ধৃতি-ক্রম (তালিকার ক্রম) — [1], [2]… নম্বর-উপসর্গ (IEEE-স্ট্যান্ডার্ড)
+ *  - মিশ্র-স্টাইল লাইব্রেরিতে প্রতিটি এন্ট্রি নিজের স্টাইলেই ফরম্যাট হয় (এক স্টাইলের
+ *    গ্যারান্টি UI-সতর্কতার দায়িত্ব — ইঞ্জিন ডেটা নষ্ট করবে না)।
  */
 export function formatReferenceLibrary(entries: CiteEntry[]): string[] {
   const valid = entries.filter((e) => e.title.trim() && e.year.trim());
   if (valid.length === 0) return [];
-  if (valid[0].style === 'ieee') {
+  const styles = new Set(valid.map((e) => e.style));
+  if (styles.size === 1 && valid[0].style === 'ieee') {
     return valid.map((e, i) => `<p style="padding-left:2.5em;text-indent:-2.5em;">[${i + 1}] ${formatReference(e)}</p>`);
+  }
+  if (styles.size > 1) {
+    let n = 0;
+    return valid.map((e) =>
+      e.style === 'ieee'
+        ? `<p style="padding-left:2.5em;text-indent:-2.5em;">[${++n}] ${formatReference(e)}</p>`
+        : `<p style="padding-left:2.5em;text-indent:-2.5em;">${formatReference(e)}</p>`,
+    );
   }
   const sorted = [...valid].sort((x, y) => x.authors.trim().localeCompare(y.authors.trim(), 'bn'));
   return sorted.map((e) => `<p style="padding-left:2.5em;text-indent:-2.5em;">${formatReference(e)}</p>`);
+}
+
+/** লাইব্রেরিতে একাধিক স্টাইল মিশে আছে কি? (UI-সতর্কতার জন্য) */
+export function citeLibMixed(entries: CiteEntry[]): boolean {
+  const valid = entries.filter((e) => e.title.trim() && e.year.trim());
+  return new Set(valid.map((e) => e.style)).size > 1;
 }
 
 // ─── বিশ্ববিদ্যালয় দ্রুত-পূরণ (প্রিসেট) ───

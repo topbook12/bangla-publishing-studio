@@ -64,12 +64,12 @@ export interface DocBoxAttrs {
 
 /** প্রতিটি ভ্যারিয়েন্টের ডিফল্ট চেহারা */
 export const DOC_BOX_PRESETS: Record<DocBoxVariant, Omit<DocBoxAttrs, 'variant'>> = {
-  box: { border: '#475569', fill: 'transparent', bstyle: 'solid', bwidth: 2 },
-  rounded: { border: '#4f46e5', fill: 'rgba(79,70,229,0.05)', bstyle: 'solid', bwidth: 2 },
+  box: { border: '#78716c', fill: 'transparent', bstyle: 'solid', bwidth: 2 },
+  rounded: { border: '#7f1d1d', fill: 'rgba(127,29,29,0.05)', bstyle: 'solid', bwidth: 2 },
   pill: { border: '#0d9488', fill: 'rgba(13,148,136,0.07)', bstyle: 'solid', bwidth: 2 },
   dashed: { border: '#d97706', fill: 'transparent', bstyle: 'dashed', bwidth: 2 },
   double: { border: '#b91c1c', fill: 'transparent', bstyle: 'double', bwidth: 4 },
-  shaded: { border: '#64748b', fill: 'rgba(100,116,139,0.10)', bstyle: 'solid', bwidth: 1 },
+  shaded: { border: '#a8a29e', fill: 'rgba(120,113,108,0.10)', bstyle: 'solid', bwidth: 1 },
   circle: { border: '#c026d3', fill: 'rgba(192,38,211,0.05)', bstyle: 'solid', bwidth: 2 },
 };
 

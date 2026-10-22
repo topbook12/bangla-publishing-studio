@@ -18,6 +18,9 @@ export function scanTocEntries(pages: PageData[], settings: DocumentSettings): T
   const parser = new DOMParser();
   pages.forEach((page, index) => {
     if (page.kind === 'cover' || !page.html) return;
+    // শিরোনাম-পাতা (noChrome — থিসিস/বইয়ের টাইটেল-পেজ) তালিকায় আসবে না —
+    // নইলে বিশ্ববিদ্যালয়ের নাম ও থিসিসের শিরোনামই সূচিতে ঢুকে যেত
+    if (page.noChrome) return;
     // সূচিপত্র-পাতা নিজে তালিকায় আসবে না (নইলে "সূচিপত্র" শিরোনামটাই সূচিতে ঢুকে যেত)
     if (page.html.includes('toc-block')) return;
     const doc = parser.parseFromString(`<div>${page.html}</div>`, 'text/html');

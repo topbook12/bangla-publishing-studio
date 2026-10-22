@@ -35,8 +35,8 @@ import { useT } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { callAi } from '@/lib/ai-client';
 import {
-  buildThesisPages, thesisFormatPreset, THESIS_MARGINS,
-  DEFAULT_THESIS_OPTIONS, formatReference, formatInText, formatReferenceLibrary,
+  buildThesisPages, thesisFormatPreset, THESIS_MARGINS, THESIS_ACCENT,
+  DEFAULT_THESIS_OPTIONS, formatReference, formatInText, formatReferenceLibrary, citeLibMixed,
   EMPTY_CITE, CITE_STYLE_NAMES, CITE_TYPE_NAMES, BD_UNIVERSITIES, exampleMeta, captionHtml,
 } from '@/lib/thesis';
 import { refreshTocsNow } from '@/lib/toc';
@@ -64,21 +64,24 @@ const STRUCTURE: Array<{ id: keyof ThesisOptions; key: string }> = [
   { id: 'appendix', key: 'thesis.opt.appendix' },
 ];
 
-const CITE_FIELDS: Array<{ id: keyof CiteEntry; key: string; ph?: string }> = [
+/** সূত্র-ফিল্ড — types দেওয়া থাকলে শুধু সেই ধরনের ফরমেই দেখায় (Website-এ Edition নয়) */
+const CITE_FIELDS: Array<{ id: keyof CiteEntry; key: string; ph?: string; types?: CiteType[] }> = [
   { id: 'authors', key: 'thesis.cite.fAuthors', ph: 'thesis.cite.fAuthors.ph' },
   { id: 'year', key: 'thesis.cite.fYear' },
   { id: 'title', key: 'thesis.cite.fTitle' },
-  { id: 'container', key: 'thesis.cite.fContainer' },
-  { id: 'publisher', key: 'thesis.cite.fPublisher' },
-  { id: 'place', key: 'thesis.cite.fPlace' },
-  { id: 'volume', key: 'thesis.cite.fVolume' },
-  { id: 'issue', key: 'thesis.cite.fIssue' },
-  { id: 'pages', key: 'thesis.cite.fPages' },
-  { id: 'edition', key: 'thesis.cite.fEdition' },
-  { id: 'doi', key: 'thesis.cite.fDoi' },
-  { id: 'url', key: 'thesis.cite.fUrl' },
-  { id: 'accessed', key: 'thesis.cite.fAccessed' },
+  { id: 'container', key: 'thesis.cite.fContainer', types: ['journal', 'website', 'newspaper'] },
+  { id: 'publisher', key: 'thesis.cite.fPublisher', types: ['book', 'thesis', 'report'] },
+  { id: 'place', key: 'thesis.cite.fPlace', types: ['book', 'thesis', 'report'] },
+  { id: 'volume', key: 'thesis.cite.fVolume', types: ['journal'] },
+  { id: 'issue', key: 'thesis.cite.fIssue', types: ['journal'] },
+  { id: 'pages', key: 'thesis.cite.fPages', types: ['book', 'journal', 'newspaper'] },
+  { id: 'edition', key: 'thesis.cite.fEdition', types: ['book'] },
+  { id: 'doi', key: 'thesis.cite.fDoi', types: ['journal', 'report'] },
+  { id: 'url', key: 'thesis.cite.fUrl', types: ['journal', 'website', 'newspaper', 'report'] },
+  { id: 'accessed', key: 'thesis.cite.fAccessed', types: ['website'] },
 ];
+
+const citeFieldsFor = (t: CiteType) => CITE_FIELDS.filter((f) => !f.types || f.types.includes(t));
 
 const GUIDE_ITEMS: Array<{ icon: typeof Check; key: string }> = [
   { icon: ScrollText, key: 'thesis.guide.margins' },
@@ -181,13 +184,22 @@ export function ThesisDialog() {
   const [dedicationText, setDedicationText] = useState('');
   const [opts, setOpts] = useState<ThesisOptions>({ ...DEFAULT_THESIS_OPTIONS });
   const [busy, setBusy] = useState(false);
+  const [libClearArmed, setLibClearArmed] = useState(false);
 
   // ── সূত্র-স্টেট + লাইব্রেরি (localStorage-এ টেকে) ──
   const [cite, setCite] = useState<CiteEntry>({ ...EMPTY_CITE });
   const [lib, setLib] = useState<CiteEntry[]>([]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      setLibClearArmed(false);
+      return;
+    }
+    // নতুন সেশন — ক্ষণস্থায়ী অবস্থা রিসেট (মেটা-ফিল্ড টিকে থাকে — সুবিধা)
+    setCapSerial('1');
+    setCapText('');
+    setCapSource('');
+    setDraftOut('');
     try {
       const raw = localStorage.getItem(LIB_KEY);
       if (raw) {
@@ -206,8 +218,20 @@ export function ThesisDialog() {
 
   const citeValid = cite.title.trim().length > 0 && cite.year.trim().length > 0;
   const refHtml = useMemo(() => (citeValid ? formatReference(cite) : ''), [cite, citeValid]);
-  const inText = useMemo(() => (citeValid ? formatInText(cite) : ''), [cite, citeValid]);
+  const libHasCite = useMemo(
+    () => lib.findIndex((e) => e.style === cite.style && e.title.trim() === cite.title.trim() && e.year.trim() === cite.year.trim()),
+    [lib, cite],
+  );
+  // IEEE in-text — লাইব্রেরিতে থাকলে সেই ক্রম-নম্বর, নইলে পরের নম্বর-প্রিভিউ
+  const inText = useMemo(() => {
+    if (!citeValid) return '';
+    const n = cite.style === 'ieee'
+      ? (libHasCite >= 0 ? libHasCite + 1 : lib.filter((e) => e.title.trim() && e.year.trim()).length + 1)
+      : undefined;
+    return formatInText(cite, n);
+  }, [cite, citeValid, lib, libHasCite]);
   const libHtml = useMemo(() => formatReferenceLibrary(lib), [lib]);
+  const libMixed = useMemo(() => citeLibMixed(lib), [lib]);
 
   const patchCite = (id: keyof CiteEntry, v: string) => setCite((prev) => ({ ...prev, [id]: v }));
 
@@ -265,13 +289,12 @@ export function ThesisDialog() {
       // প্রথম-ব্যবহারের অতিথি-পাতা (স্বাগতম-নির্দেশনা বা ফাঁকা প্রথম পাতা) এখনো
       // অস্পৃশ্য থাকলে সরিয়ে ফেলুন — থিসিসটি যেন পুরো ডকুমেন্ট হয়; নইলে অটো-সূচিপত্র
       // স্বাগতম-পাতার শিরোনামও তুলে নেয় এবং রানিং-হেডার/পৃষ্ঠা-স্কিম মিশে যায়।
-      // (শেষ-পাতা-একমাত্র পাতা হলে deletePage আটকে দেয়, তাই কাঠামো ঢোকানোর
-      // পরে মুছতে হবে।)
+      // (কাঠামো ঢোকানোর পরে ডকুমেন্টে ১৫+ পাতা থাকে — তাই deletePage আটকাবে না।)
       const firstPage = s.pages[0];
       const firstUntouched = firstPage
         && (firstPage.html.includes('বাংলা পাবলিশিং স্টুডিওতে স্বাগতম')
           || firstPage.html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim() === '');
-      const welcomePageId = s.pages.length === 1 && firstUntouched ? firstPage.id : null;
+      const welcomePageId = firstPage && firstUntouched ? firstPage.id : null;
 
       // ডকুমেন্ট-স্তরের অ্যাকশন — সম্পূর্ণ কাঠামো সম্পূর্ণ ডকুমেন্টের শেষে যোগ হয়।
       // activePageId-এর পরে বসালে মাঝ-ডকুমেন্টে কাঠামো ঢুকে চলমান লেখা দু-ভাগ হয়ে
@@ -304,7 +327,7 @@ export function ThesisDialog() {
       if (st.settings.header.enabled) {
         const shortTitle = meta.title.length > 68 ? `${meta.title.slice(0, 66).trimEnd()}…` : meta.title;
         st.updateSettings({
-          header: { ...st.settings.header, leftText: '', centerText: '', rightText: shortTitle, accentColor: '#0f5d40' },
+          header: { ...st.settings.header, leftText: '', centerText: '', rightText: shortTitle, accentColor: THESIS_ACCENT },
         });
       }
 
@@ -322,6 +345,10 @@ export function ThesisDialog() {
         document.querySelector(`[data-page-index="${idx}"]`)?.scrollIntoView({ block: 'start' });
         void ensurePageEditorMounted(firstId);
       }
+    } catch (err) {
+      // অর্ধনির্মিত কাঠামো + নীরব ব্যর্থতা নয় — ব্যবহারকারী জানুক, লগ থাকুক
+      console.error('[thesis] generate failed:', err);
+      toast.error(tt('thesis.err.generate'));
     } finally {
       setBusy(false);
     }
@@ -370,12 +397,17 @@ export function ThesisDialog() {
   const insertAllLib = () => {
     if (libHtml.length === 0) return;
     if (insertAtCursor(libHtml.join(''))) {
-      toast.success(tt('thesis.cite.libInserted').replace('{n}', String(lib.length)));
+      // গণনা ফিল্টার-পরবর্তী সত্যিকারের সংখ্যা — lib.length নয় (অসম্পূর্ণ এন্ট্রি বাদ যায়)
+      toast.success(tt('thesis.cite.libInserted').replace('{n}', String(libHtml.length)));
       close();
     }
   };
 
   // ── AI খসড়া তৈরি ──
+  // সেকশন বদলালে পুরনো খসড়া পর্দায় থেকে গেলে ভুল অংশ ঢোকার ঝুঁকি — পরিষ্কার করুন
+  useEffect(() => {
+    setDraftOut('');
+  }, [draftSection, draftLen]);
   const generateDraft = async () => {
     const topic = (draftTopic.trim() || title.trim());
     if (!topic) {
@@ -524,7 +556,7 @@ export function ThesisDialog() {
                     <button
                       key={u.id}
                       type="button"
-                      className={cn('thesis-chip thesis-chip-mini', university === univName(u) && 'thesis-chip-on')}
+                      className={cn('thesis-chip thesis-chip-mini', (university === u.name || university === u.bn) && 'thesis-chip-on')}
                       onClick={() => setUniversity(univName(u))}
                       disabled={busy}
                       title={u.name}
@@ -607,7 +639,7 @@ export function ThesisDialog() {
             {/* ── দ্রুত সরঞ্জাম: চিত্র/টেবিল ক্যাপশন ── */}
             <div className="thesis-toolbox">
               <p className="ai-result-title">
-                <Tag size={14} className="text-emerald-600" aria-hidden="true" />
+                <Tag size={14} className="thesis-accent-ico" aria-hidden="true" />
                 {tt('thesis.capt.title')}
               </p>
               <p className="ai-setup-desc">{tt('thesis.capt.desc')}</p>
@@ -649,6 +681,7 @@ export function ThesisDialog() {
                       variant="outline"
                       size="sm"
                       className="shrink-0"
+                      disabled={busy}
                       onClick={() => {
                         const html = captionHtml(capKind, Math.max(1, Number(capChapter) || 1), Math.max(1, Number(capSerial) || 1), capText, lang, capSource);
                         if (insertAtCursor(html)) {
@@ -695,7 +728,7 @@ export function ThesisDialog() {
             </div>
 
             <div className="grid gap-2 sm:grid-cols-2">
-              {CITE_FIELDS.map((f) => (
+              {citeFieldsFor(cite.type).map((f) => (
                 <div key={f.id}>
                   <label className="ai-field-label mb-1 block" htmlFor={`cite-${f.id}`}>{tt(f.key)}</label>
                   <Input id={`cite-${f.id}`} value={String(cite[f.id] ?? '')} onChange={(e) => patchCite(f.id, e.target.value)} placeholder={f.ph ? tt(f.ph) : undefined} />
@@ -740,13 +773,16 @@ export function ThesisDialog() {
             {/* ── সূত্র-লাইব্রেরি ── */}
             <div className="thesis-toolbox">
               <p className="ai-result-title">
-                <BookMarked size={14} className="text-emerald-600" aria-hidden="true" />
+                <BookMarked size={14} className="thesis-accent-ico" aria-hidden="true" />
                 {tt('thesis.cite.library')}
                 {lib.length > 0 ? (
-                  <span className="ml-1 rounded-full bg-emerald-600 px-1.5 py-px text-[10px] font-bold text-white">{lib.length}</span>
+                  <span className="thesis-count-badge">{lib.length}</span>
                 ) : null}
               </p>
               <p className="ai-setup-desc">{tt('thesis.cite.libDesc')}</p>
+              {libMixed ? (
+                <p className="thesis-mixed-warn">⚠ {tt('thesis.cite.libMixed')}</p>
+              ) : null}
               {lib.length === 0 ? (
                 <p className="thesis-lib-empty">{tt('thesis.cite.libEmpty')}</p>
               ) : (
@@ -769,8 +805,21 @@ export function ThesisDialog() {
               )}
               {lib.length > 0 ? (
                 <div className="flex flex-wrap justify-end gap-2">
-                  <Button variant="ghost" size="sm" onClick={() => persistLib([])}>
-                    <Eraser size={13} aria-hidden="true" /> {tt('thesis.cite.libClear')}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={cn(libClearArmed && 'text-red-700 dark:text-red-400')}
+                    onClick={() => {
+                      if (!libClearArmed) {
+                        setLibClearArmed(true);
+                        window.setTimeout(() => setLibClearArmed(false), 3000);
+                        return;
+                      }
+                      setLibClearArmed(false);
+                      persistLib([]);
+                    }}
+                  >
+                    <Eraser size={13} aria-hidden="true" /> {libClearArmed ? tt('thesis.cite.libClearConfirm') : tt('thesis.cite.libClear')}
                   </Button>
                   <Button variant="outline" size="sm" onClick={() => copyText(libHtml.join('').replace(/<[^>]+>/g, '\n').trim(), libHtml.join(''))}>
                     <Copy size={13} aria-hidden="true" /> {tt('thesis.cite.libCopyAll')}
@@ -837,7 +886,7 @@ export function ThesisDialog() {
             {draftOut ? (
               <div className="grid gap-2">
                 <p className="ai-result-title">
-                  <Wand2 size={14} className="text-emerald-600" aria-hidden="true" />
+                  <Wand2 size={14} className="thesis-accent-ico" aria-hidden="true" />
                   {tt('thesis.draft.result')}
                 </p>
                 <Textarea
@@ -864,7 +913,7 @@ export function ThesisDialog() {
         {tab === 'guide' ? (
           <section aria-label={tt('thesis.tab.guide')} className="flex flex-col gap-2">
             <p className="ai-result-title">
-              <GraduationCap size={14} className="text-emerald-600" aria-hidden="true" />
+              <GraduationCap size={14} className="thesis-accent-ico" aria-hidden="true" />
               {tt('thesis.guide.title')}
             </p>
             <ul className="thesis-guide max-h-96 list-none space-y-2 overflow-y-auto pr-1">
