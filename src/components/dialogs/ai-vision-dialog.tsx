@@ -18,11 +18,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   BadgeCheck, BookPlus, CircleAlert, Copy, Image as ImageIcon, ListChecks,
-  Loader2, PenLine, ScanEye, Sparkles, Trash2, Type, Wand2, X,
+  Loader2, PenLine, ScanEye, Sparkles, Trash2, Type, X,
 } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
+import { PHero } from '@/components/premium';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useUiStore } from '@/lib/ui-store';
@@ -420,16 +421,19 @@ export function AiVisionDialog() {
   return (
     <Dialog open={open} onOpenChange={(v) => !v && close()}>
       <DialogContent className="ai-dialog max-h-[92dvh] overflow-y-auto sm:max-w-3xl">
-        <DialogHeader className="ai-set-head">
-          <DialogTitle className="flex items-center gap-2">
-            <span className="ai-head-tile" aria-hidden="true"><Wand2 size={16} /></span>
-            {tt('ai.vision.title')}
-            {resultDemo ? <span className="ai-demo-badge">{tt('ai.demo.badge')}</span> : null}
-          </DialogTitle>
+        <DialogHeader className="sr-only">
+          <DialogTitle>{tt('ai.vision.title')}</DialogTitle>
           <DialogDescription>
             {tab === 'clone' ? tt('ai.clone.desc') : tt('ai.vision.desc')}
           </DialogDescription>
         </DialogHeader>
+        <PHero
+          tone="fuchsia"
+          icon={ScanEye}
+          title={tt('ai.vision.title')}
+          desc={tab === 'clone' ? tt('ai.clone.desc') : tt('ai.vision.desc')}
+          badge={resultDemo ? <span className="ai-demo-badge">{tt('ai.demo.badge')}</span> : null}
+        />
 
         {tabBar}
 

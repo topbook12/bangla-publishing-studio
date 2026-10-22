@@ -21,8 +21,9 @@
  *  - ফরম্যাট-নির্ভুলতা প্রথম: আন্তর্জাতিক চিঠি/চুক্তি/রেজিউমের পেশাদার ধাঁচ,
  *    ইউনিয়ন-সনদের "প্রত্যয়িত করা হচ্ছে যে" ভাষা, দরখাস্তের "বিনীত নিবেদক"
  *    পদ্ধতি, ইনভয়েসে কথায়-টাকা — প্রতিটি নকশা সেই প্রথার আসল ধাঁচে।
- *  - এক কালি-প্যালেট প্রথা — রয়্যাল মেরুন+গোল্ড, বন-সবুজ, গাঢ় টিল, সেপিয়া —
- *    নীল/ইন্ডিগো প্রাইমারি নয়। প্রিন্ট-ফার্স্ট ডিজাইন।
+ *  - এক কালি-প্যালেট প্রথা — রয়্যাল মেরুন+গোল্ড, বন-সবুজ, গাঢ় টিল, সেপিয়া +
+ *    অরোরা ব্র্যান্ড-লাইন (ভায়োলেট/অর্কিড/রোজউড/জেড) — নীল/ইন্ডিগো প্রাইমারি নয়।
+ *    প্রিন্ট-ফার্স্ট ডিজাইন — সব শিরোনাম-রং সাদা কাগজে 5:1+ কনট্রাস্ট।
  *  - ব্যবহারকারীর লেখা সব মান escape করা — কোনো raw HTML সন্নিবেশ নয়।
  */
 
@@ -162,6 +163,11 @@ const P_PLUM: DsPalette = { ink: '#37223a', head: '#6b2151', soft: '#7d6b83', ba
 const P_OLIVE: DsPalette = { ink: '#2c331f', head: '#4d5e23', soft: '#7a7a5c', band: 'rgba(77,94,35,0.09)', border: '#c2703d' };
 const P_ESPRESSO: DsPalette = { ink: '#33261d', head: '#5d3a22', soft: '#8a6d58', band: 'rgba(93,58,34,0.08)', border: '#b4632f' };
 const P_GRAPHITE: DsPalette = { ink: '#27272a', head: '#3f3f46', soft: '#71717a', band: 'rgba(63,63,70,0.06)', border: '#b8860b' };
+// ─── অরোরা ব্র্যান্ড-লাইন — ব্র্যান্ডের রয়্যাল-ভায়োলেট→অর্কিড ফাক্সিয়া + প্রিমিয়াম দুই-সুর (Aurora Studio) ───
+const P_AURORA: DsPalette = { ink: '#3b2a5e', head: '#6d28d9', soft: '#8b7fa8', band: 'rgba(109,40,217,0.07)', border: '#a78bfa' };
+const P_ORCHID: DsPalette = { ink: '#4a1f42', head: '#a21caf', soft: '#97718f', band: 'rgba(162,28,175,0.07)', border: '#d8b4fe' };
+const P_ROSEWOOD: DsPalette = { ink: '#43222a', head: '#9f1239', soft: '#96696f', band: 'rgba(159,18,57,0.07)', border: '#c98a7e' };
+const P_JADE: DsPalette = { ink: '#1d3b31', head: '#047857', soft: '#6f8a7d', band: 'rgba(4,120,87,0.08)', border: '#c9a962' };
 
 /** সাজ-বিকল্প — প্রতিটি টেমপ্লেট এর মধ্য থেকে বেছে নেয় */
 export const DS_STYLES: DsStyleOpt[] = [
@@ -175,9 +181,13 @@ export const DS_STYLES: DsStyleOpt[] = [
   { id: 'olive', name: L3('অলিভ ও টেরাকোটা', 'ऑलिव व टेराकोटा', 'Olive & terracotta'), P: P_OLIVE },
   { id: 'espresso', name: L3('এসপ্রেসো ও কপার', 'एस्प्रेसो व कॉपर', 'Espresso & copper'), P: P_ESPRESSO },
   { id: 'graphite', name: L3('গ্রাফাইট ও গোল্ড', 'ग्रेफाइट व गोल्ड', 'Graphite & gold'), P: P_GRAPHITE },
+  { id: 'aurora', name: L3('অরোরা ভায়োলেট', 'ऑरोरा वायलेट', 'Aurora violet'), P: P_AURORA },
+  { id: 'orchid', name: L3('অর্কিড ফাক্সিয়া', 'ऑर्किड फ़्यूशिया', 'Orchid fuchsia'), P: P_ORCHID },
+  { id: 'rosewood', name: L3('রোজউড ও রোজ-গোল্ড', 'रोज़वुड व रोज़-गोल्ड', 'Rosewood & rose-gold'), P: P_ROSEWOOD },
+  { id: 'jade', name: L3('জেড ও শ্যাম্পেন', 'जेड व शैम्पेन', 'Jade & champagne'), P: P_JADE },
 ];
 
-/** পুরো প্যালেট-গ্যালারি — প্রতিটি টেমপ্লেট দশটি কিউরেটেড রং-সংযোগ পায় */
+/** পুরো প্যালেট-গ্যালারি — প্রতিটি টেমপ্লেট চৌদ্দটি কিউরেটেড রং-সংযোগ পায় */
 const ALL_STYLES: string[] = DS_STYLES.map((s) => s.id);
 
 function styleById(id: string, fallback = 'classic'): DsStyleOpt {

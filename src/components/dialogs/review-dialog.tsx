@@ -5,10 +5,11 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { BookPlus, Search, X } from 'lucide-react';
+import { BookPlus, PenLine, Search, X } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
+import { PHero } from '@/components/premium';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -70,12 +71,13 @@ export function ReviewDialog() {
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) { close(); setScanned(false); } }}>
       <DialogContent className="max-h-[88vh] max-w-xl overflow-y-auto">
-        <DialogHeader>
+        <DialogHeader className="sr-only">
           <DialogTitle>{tt('dlg2.review.title')}</DialogTitle>
           <DialogDescription>
             {tt('dlg2.review.desc')}
           </DialogDescription>
         </DialogHeader>
+        <PHero tone="rose" icon={PenLine} title={tt('dlg2.review.title')} desc={tt('dlg2.review.desc')} />
 
         <Tabs defaultValue="spell">
           <TabsList className="w-full">

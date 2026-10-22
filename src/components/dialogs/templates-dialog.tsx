@@ -17,13 +17,15 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ArrowDownToLine, Baby, BookMarked, BookOpen, Briefcase, Feather, FileStack, FileText, FlaskConical,
-  GraduationCap, Landmark, LayoutTemplate, Moon, Newspaper, Palette, PenLine, Replace, Search,
-  Sparkles, UtensilsCrossed,
+  ArrowDownToLine, Award, Baby, Bookmark, BookMarked, BookOpen, Briefcase, Building2, Feather,
+  FileStack, FileText, FlaskConical, GraduationCap, HeartPulse, Landmark, LayoutTemplate, List,
+  Megaphone, Moon, Newspaper, Palette, PartyPopper, PenLine, Receipt, Replace, Scale, Search,
+  Sparkles, UtensilsCrossed, type LucideIcon,
 } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
+import { PHero, PPill, PSection, PTile, type PTone } from '@/components/premium';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -41,7 +43,7 @@ import {
   type BlueprintGenre, type BookBlueprint,
 } from '@/lib/book-templates';
 import { getPaperPreset, fontStackOf } from '@/lib/paper';
-import { DS_CATEGORY_LABELS, DS_CATEGORY_ORDER, DS_TEMPLATES } from '@/lib/document-studio';
+import { DS_CATEGORY_LABELS, DS_CATEGORY_ORDER, DS_TEMPLATES, type DsCategory } from '@/lib/document-studio';
 import { newId } from '@/lib/dexie';
 import { ensurePageEditorMounted, fitTemplatePage } from '@/components/editor/page-ops';
 import { primeTocEntriesInHtml } from '@/lib/toc';
@@ -60,7 +62,7 @@ const SHEET_WIDTH = 620;
  * আইকন বর্তমান টেক্সটের রংই ধার করে (চিপ active হলে primary-foreground)।
  * নতুন ধাঁচ যোগ হলে ফলব্যাক BookOpen।
  */
-const GENRE_ICONS: Record<BlueprintGenre, React.ComponentType<{ size?: number; className?: string; 'aria-hidden'?: boolean | 'true' | 'false' }>> = {
+const GENRE_ICONS: Record<BlueprintGenre, LucideIcon> = {
   literature: BookOpen,
   poetry: Feather,
   textbook: GraduationCap,
@@ -73,6 +75,31 @@ const GENRE_ICONS: Record<BlueprintGenre, React.ComponentType<{ size?: number; c
   report: Briefcase,
   magazine: Newspaper,
   islamic: Moon,
+};
+
+/** ধাঁচ → Aurora টোন — কার্ড-টাইলের গ্রেডিয়েন্ট (প্রিভিউ-ওভারলে চিপ টেমপ্লেটের নিজস্ব accent ধরে রাখে) */
+const GENRE_TONES: Record<BlueprintGenre, PTone> = {
+  literature: 'violet', poetry: 'pink', textbook: 'cyan', science: 'teal', children: 'lime',
+  cooking: 'orange', history: 'amber', coaching: 'emerald', journal: 'purple', report: 'slate',
+  magazine: 'rose', islamic: 'emerald',
+};
+
+/** পাতার টেমপ্লেট ক্যাটাগরি → Aurora টোন ও আইকন — কার্ডের রঙিন টাইল */
+const TPL_CAT_TONES: Record<TemplateCategory, PTone> = {
+  title: 'violet', front: 'cyan', toc: 'teal', author: 'orange', chapter: 'emerald', special: 'fuchsia',
+};
+const TPL_CAT_ICONS: Record<TemplateCategory, LucideIcon> = {
+  title: FileText, front: BookMarked, toc: List, author: PenLine, chapter: Bookmark, special: Award,
+};
+
+/** ডকুমেন্ট-স্টুডিও ক্যাটাগরি → Aurora টোন ও আইকন */
+const DS_CAT_TONES: Record<DsCategory, PTone> = {
+  career: 'teal', office: 'slate', finance: 'emerald', legal: 'cyan', cert: 'amber',
+  edu: 'violet', event: 'fuchsia', med: 'rose', promo: 'orange', regional: 'lime',
+};
+const DS_CAT_ICONS: Record<DsCategory, LucideIcon> = {
+  career: Briefcase, office: Building2, finance: Receipt, legal: Scale, cert: Award,
+  edu: GraduationCap, event: PartyPopper, med: HeartPulse, promo: Megaphone, regional: Landmark,
 };
 
 function GenreIcon({ genre, size = 11, className }: { genre: BlueprintGenre; size?: number; className?: string }) {
@@ -202,7 +229,7 @@ function BlueprintCard({ bp, onStart, onInsert }: {
   const paper = bp.settings.paperSize ? getPaperPreset(bp.settings.paperSize) : null;
 
   return (
-    <div className="group relative flex flex-col gap-2.5 rounded-xl border border-border bg-card p-3 transition hover:border-primary hover:shadow-md">
+    <div className="group relative flex flex-col gap-2.5 rounded-xl border border-border bg-card p-3 transition duration-200 hover:-translate-y-0.5 hover:border-primary hover:shadow-lg hover:shadow-primary/10">
       {/* স্তূপ-প্রিভিউ: পেছনে দুটি সরে যাওয়া পাতা, সামনে আসল HTML প্রিভিউ */}
       <div className="bp-preview-stack h-48">
         <div className="bp-preview-page left-2.5 top-1.5" style={{ transform: 'rotate(-2.4deg)' }} />
@@ -215,14 +242,17 @@ function BlueprintCard({ bp, onStart, onInsert }: {
           <GenreIcon genre={bp.genre} size={11} />
           {tx3(genre.label, lang)}
         </span>
-        <span className="absolute right-2 top-2 z-10 rounded-full border border-border bg-white/95 px-2 py-0.5 text-[10px] font-medium text-slate-600 shadow-sm">
+        <span className="absolute right-2 top-2 z-10 rounded-full border border-border bg-background/95 px-2 py-0.5 text-[10px] font-medium text-muted-foreground shadow-sm backdrop-blur-sm">
           {tt('store.bp.pageCount').split('{n}').join(nf(bp.pages.length))}
         </span>
       </div>
 
-      <div>
-        <p className="text-sm font-semibold leading-tight">{tx3(bp.name, lang)}</p>
-        <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{tx3(bp.desc, lang)}</p>
+      <div className="flex items-start gap-2">
+        <PTile tone={GENRE_TONES[bp.genre]} icon={GENRE_ICONS[bp.genre]} size="sm" className="mt-0.5" />
+        <div className="min-w-0">
+          <p className="text-sm font-semibold leading-tight">{tx3(bp.name, lang)}</p>
+          <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{tx3(bp.desc, lang)}</p>
+        </div>
       </div>
 
       {/* সেটআপ-চিপ: কাগজ · ফন্ট · সাইজ */}
@@ -271,7 +301,7 @@ function TemplateCard({ tpl, onPick, onReplace, canReplace }: {
   const lang = useLangStore((s) => s.lang);
   const rows = templatePreviewRows(tpl.kind);
   return (
-    <div className="group relative flex flex-col gap-2 rounded-xl border border-border bg-card p-3 transition hover:border-primary hover:shadow-md">
+    <div className="group relative flex flex-col gap-2 rounded-xl border border-border bg-card p-3 transition duration-200 hover:-translate-y-0.5 hover:border-primary hover:shadow-lg hover:shadow-primary/10">
       <button
         type="button"
         onClick={() => onPick(tpl)}
@@ -281,7 +311,7 @@ function TemplateCard({ tpl, onPick, onReplace, canReplace }: {
         <SheetPreview html={tpl.html} className="h-48" />
         <div>
           <p className="flex items-center gap-1.5 text-sm font-semibold leading-tight">
-            <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: tpl.accent }} />
+            <PTile tone={TPL_CAT_TONES[tpl.category]} icon={TPL_CAT_ICONS[tpl.category]} size="sm" className="shrink-0" />
             {tx3(tpl.name, lang)}
           </p>
           <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{tx3(tpl.desc, lang)}</p>
@@ -295,7 +325,7 @@ function TemplateCard({ tpl, onPick, onReplace, canReplace }: {
               onClick={() => onReplace(tpl)}
               disabled={!canReplace}
               className={cn(
-                'absolute right-2 top-2 z-10 flex items-center gap-1 rounded-md border border-border bg-white/95 px-1.5 py-1 text-[10px] font-medium text-slate-600 shadow-sm transition',
+                'absolute right-2 top-2 z-10 flex items-center gap-1 rounded-md border border-border bg-background/95 px-1.5 py-1 text-[10px] font-medium text-muted-foreground shadow-sm backdrop-blur-sm transition',
                 canReplace ? 'hover:border-primary hover:text-primary' : 'cursor-not-allowed opacity-40',
               )}
               aria-label={tt('dlg1.tpl.ariaReplace').split('{name}').join(tx3(tpl.name, lang))}
@@ -518,16 +548,24 @@ export function TemplatesDialog() {
     <>
       <Dialog open={open} onOpenChange={(v) => !v && close()}>
         <DialogContent className="flex max-h-[90vh] max-w-5xl flex-col overflow-hidden p-0 sm:max-w-5xl">
-          <DialogHeader className="border-b px-5 pb-3 pt-4">
-            <DialogTitle className="flex flex-wrap items-center gap-2">
-              <LayoutTemplate size={17} className="text-primary" aria-hidden="true" />
-              {tt('store.title')}
-              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
-                {tt('store.badge').split('{n}').join(nf(totalCount))}
-              </span>
-            </DialogTitle>
+          {/* অ্যাক্সেসিবল নাম/বিবরণ sr-only-তে — দৃশ্যমান শিরোনাম এখন প্রিমিয়াম হিরো-প্যানেল */}
+          <DialogHeader className="sr-only">
+            <DialogTitle>{tt('store.title')}</DialogTitle>
             <DialogDescription>{tt('store.desc')}</DialogDescription>
           </DialogHeader>
+          <div className="px-5 pt-4">
+            <PHero
+              tone="fuchsia"
+              icon={LayoutTemplate}
+              title={tt('store.title')}
+              desc={tt('store.desc')}
+              badge={(
+                <PPill tone="info">
+                  {tt('store.badge').split('{n}').join(nf(totalCount))}
+                </PPill>
+              )}
+            />
+          </div>
 
           {/* ট্যাব + সার্চ */}
           <div className="space-y-2 border-b px-5 py-3">
@@ -661,10 +699,12 @@ export function TemplatesDialog() {
               /* ডকুমেন্ট স্টুডিও — প্রথাসিদ্ধ ডকুমেন্ট-নকশার ক্যাটালগ */
               <div className="flex flex-col gap-3 pb-3">
                 <div className="flex flex-col gap-2 rounded-xl border border-primary/30 bg-primary/5 p-4">
-                  <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                    <FileText size={15} className="text-primary" aria-hidden="true" />
-                    {tt('store.doc.title')}
-                  </p>
+                  <PSection
+                    tone="purple"
+                    icon={FileText}
+                    title={tt('store.doc.title')}
+                    count={`(${nf(DS_TEMPLATES.length)})`}
+                  />
                   <p className="text-[12px] leading-relaxed text-muted-foreground">{tt('store.doc.desc')}</p>
                   <div className="flex flex-wrap gap-1.5">
                     {DS_CATEGORY_ORDER.map((c) => (
@@ -690,12 +730,15 @@ export function TemplatesDialog() {
                 </div>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
                   {DS_TEMPLATES.map((t) => (
-                    <div key={t.id} className="flex flex-col gap-1 rounded-lg border border-border bg-card p-2.5">
-                      <p className="text-[12.5px] font-semibold leading-tight">{t.name[lang] ?? t.name.bn}</p>
-                      <p className="text-[10.5px] leading-snug text-muted-foreground">{t.desc[lang] ?? t.desc.bn}</p>
-                      <p className="mt-auto text-[9.5px] uppercase tracking-wide text-muted-foreground/70">
-                        {DS_CATEGORY_LABELS[t.category][lang] ?? DS_CATEGORY_LABELS[t.category].bn}
-                      </p>
+                    <div key={t.id} className="flex items-start gap-2 rounded-lg border border-border bg-card p-2.5">
+                      <PTile tone={DS_CAT_TONES[t.category]} icon={DS_CAT_ICONS[t.category]} size="sm" className="mt-0.5" />
+                      <div className="flex min-w-0 flex-1 flex-col gap-1">
+                        <p className="text-[12.5px] font-semibold leading-tight">{t.name[lang] ?? t.name.bn}</p>
+                        <p className="text-[10.5px] leading-snug text-muted-foreground">{t.desc[lang] ?? t.desc.bn}</p>
+                        <p className="mt-auto text-[9.5px] uppercase tracking-wide text-muted-foreground/70">
+                          {DS_CATEGORY_LABELS[t.category][lang] ?? DS_CATEGORY_LABELS[t.category].bn}
+                        </p>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -704,10 +747,13 @@ export function TemplatesDialog() {
               filteredBps.length === 0 ? (
                 <p className="py-12 text-center text-sm text-muted-foreground">{tt('store.noresult')}</p>
               ) : (
-                <div className="grid grid-cols-1 gap-3 pb-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {filteredBps.map((bp) => (
-                    <BlueprintCard key={bp.id} bp={bp} onStart={setStartBp} onInsert={applyInsert} />
-                  ))}
+                <div className="flex flex-col gap-2.5 pb-3 pt-3">
+                  <PSection tone="amber" icon={BookOpen} title={tt('store.tab.book')} count={`(${nf(filteredBps.length)})`} />
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {filteredBps.map((bp) => (
+                      <BlueprintCard key={bp.id} bp={bp} onStart={setStartBp} onInsert={applyInsert} />
+                    ))}
+                  </div>
                 </div>
               )
             ) : (
@@ -715,16 +761,19 @@ export function TemplatesDialog() {
                 {filteredTpls.length === 0 ? (
                   <p className="py-12 text-center text-sm text-muted-foreground">{tt('store.noresult')}</p>
                 ) : (
-                  <div className="grid grid-cols-1 gap-3 pb-1 sm:grid-cols-2 lg:grid-cols-3">
-                    {filteredTpls.map((tpl) => (
-                      <TemplateCard
-                        key={tpl.id}
-                        tpl={tpl}
-                        onPick={pick}
-                        onReplace={() => setReplaceTarget(tpl)}
-                        canReplace={canReplace}
-                      />
-                    ))}
+                  <div className="flex flex-col gap-2.5 pb-1 pt-3">
+                    <PSection tone="teal" icon={FileStack} title={tt('store.tab.page')} count={`(${nf(filteredTpls.length)})`} />
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      {filteredTpls.map((tpl) => (
+                        <TemplateCard
+                          key={tpl.id}
+                          tpl={tpl}
+                          onPick={pick}
+                          onReplace={() => setReplaceTarget(tpl)}
+                          canReplace={canReplace}
+                        />
+                      ))}
+                    </div>
                   </div>
                 )}
                 <p className="flex items-center justify-center gap-1.5 pb-3 text-center text-[11px] text-muted-foreground">

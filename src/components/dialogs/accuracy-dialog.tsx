@@ -18,6 +18,7 @@ import {
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
+import { PHero } from '@/components/premium';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Progress } from '@/components/ui/progress';
@@ -280,15 +281,11 @@ export function AccuracyDialog() {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-h-[90dvh] max-w-2xl overflow-y-auto" role="dialog" aria-label={tt('acc.title')}>
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300" aria-hidden="true">
-              <ShieldCheck size={16} />
-            </span>
-            {tt('acc.title')}
-          </DialogTitle>
+        <DialogHeader className="sr-only">
+          <DialogTitle>{tt('acc.title')}</DialogTitle>
           <DialogDescription>{tt('acc.desc')}</DialogDescription>
         </DialogHeader>
+        <PHero tone="emerald" icon={BadgeCheck} title={tt('acc.title')} desc={tt('acc.desc')} />
 
         {/* স্ক্রিন-রিডার ঘোষণা — প্রগতিশীল ফলে সমস্যা-সংখ্যা জানায় */}
         <div aria-live="polite" role="status" className="sr-only">{liveMsg}</div>

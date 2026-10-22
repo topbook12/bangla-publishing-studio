@@ -9,6 +9,7 @@ import { Copy, FilePlus2, FolderOpen, Trash2 } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
+import { PHero } from '@/components/premium';
 import { Button } from '@/components/ui/button';
 import { useEditorStore } from '@/lib/store';
 import { useUiStore } from '@/lib/ui-store';
@@ -40,12 +41,18 @@ export function ProjectsDialog() {
   return (
     <Dialog open={open} onOpenChange={(v) => !v && close()}>
       <DialogContent className="max-w-xl">
-        <DialogHeader>
+        <DialogHeader className="sr-only">
           <DialogTitle>{tt('dlg1.projects.title')}</DialogTitle>
           <DialogDescription>
             {tt('dlg1.projects.desc').split('{n}').join(nf(projects.length))}
           </DialogDescription>
         </DialogHeader>
+        <PHero
+          tone="violet"
+          icon={FolderOpen}
+          title={tt('dlg1.projects.title')}
+          desc={tt('dlg1.projects.desc').split('{n}').join(nf(projects.length))}
+        />
 
         <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
           {projects.length === 0 ? (

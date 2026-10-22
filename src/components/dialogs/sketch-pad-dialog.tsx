@@ -21,11 +21,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Circle, Eraser, Loader2, Minus, MousePointer2, Pencil, Redo2, ScanText, Sparkles,
-  Square, Undo2, ArrowRight, Wand2, ImagePlus, Trash2, Type, X,
+  Square, Undo2, ArrowRight, Brush, Wand2, ImagePlus, Trash2, Type, X,
 } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
+import { PHero } from '@/components/premium';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -439,13 +440,11 @@ export function SketchPadDialog() {
   return (
     <Dialog open={open} onOpenChange={(v) => !v && close()}>
       <DialogContent className="sketch-dialog max-h-[94dvh] overflow-y-auto sm:max-w-5xl">
-        <DialogHeader className="ai-set-head">
-          <DialogTitle className="flex items-center gap-2">
-            <span className="ai-head-tile" aria-hidden="true"><Pencil size={16} /></span>
-            {tt('sketch.title')}
-          </DialogTitle>
+        <DialogHeader className="sr-only">
+          <DialogTitle>{tt('sketch.title')}</DialogTitle>
           <DialogDescription>{tt('sketch.desc')}</DialogDescription>
         </DialogHeader>
+        <PHero tone="rose" icon={Brush} title={tt('sketch.title')} desc={tt('sketch.desc')} />
 
         {/* টুলবার */}
         <div className="flex flex-wrap items-center gap-2" role="toolbar" aria-label={tt('sketch.title')}>

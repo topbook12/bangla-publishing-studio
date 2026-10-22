@@ -11,11 +11,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   BadgeCheck, CircleAlert, Copy, Eye, EyeOff, ExternalLink, KeyRound,
-  ListChecks, Loader2, Search, ShieldCheck, Sparkles, Trash2, Video,
+  ListChecks, Loader2, Search, Settings2, ShieldCheck, Trash2, Video,
 } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
+import { PHero } from '@/components/premium';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -169,10 +170,16 @@ export function AiSettingsDialog() {
   return (
     <Dialog open={open} onOpenChange={(v) => !v && close()}>
       <DialogContent className="ai-set-dialog max-h-[92dvh] overflow-y-auto sm:max-w-2xl">
-        <DialogHeader className="ai-set-head">
-          <DialogTitle className="flex items-center gap-2">
-            <span className="ai-head-tile" aria-hidden="true"><Sparkles size={16} /></span>
-            {tt('ai.set.title')}
+        <DialogHeader className="sr-only">
+          <DialogTitle>{tt('ai.set.title')}</DialogTitle>
+          <DialogDescription>{tt('ai.set.desc')}</DialogDescription>
+        </DialogHeader>
+        <PHero
+          tone="fuchsia"
+          icon={Settings2}
+          title={tt('ai.set.title')}
+          desc={tt('ai.set.desc')}
+          badge={(
             <span
               className={cn('ai-state-pill', configured && 'ai-state-pill-on')}
               role="status"
@@ -180,9 +187,8 @@ export function AiSettingsDialog() {
               <BadgeCheck size={12} aria-hidden="true" />
               {configured ? tt('ai.set.state.on') : tt('ai.set.state.off')}
             </span>
-          </DialogTitle>
-          <DialogDescription>{tt('ai.set.desc')}</DialogDescription>
-        </DialogHeader>
+          )}
+        />
 
         {/* প্রোভাইডার বাছাই — প্রিমিয়াম কার্ড গ্রিড */}
         <section aria-label={tt('ai.set.provider')}>

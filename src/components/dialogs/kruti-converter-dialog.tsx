@@ -11,10 +11,11 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeftRight, ClipboardCopy, Eraser, FileInput, Replace } from 'lucide-react';
+import { ArrowLeftRight, ClipboardCopy, Eraser, FileInput, Languages } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
+import { PHero } from '@/components/premium';
 import { Button } from '@/components/ui/button';
 import { useUiStore } from '@/lib/ui-store';
 import { useEditorStore } from '@/lib/store';
@@ -113,13 +114,11 @@ export function KrutiConverterDialog() {
   return (
     <Dialog open={open} onOpenChange={(v) => !v && close()}>
       <DialogContent className="kruti-dialog max-h-[92dvh] overflow-y-auto sm:max-w-3xl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Replace size={17} className="text-primary" />
-            {tt('kruti.title')}
-          </DialogTitle>
+        <DialogHeader className="sr-only">
+          <DialogTitle>{tt('kruti.title')}</DialogTitle>
           <DialogDescription>{tt('kruti.desc')}</DialogDescription>
         </DialogHeader>
+        <PHero tone="orange" icon={Languages} title={tt('kruti.title')} desc={tt('kruti.desc')} />
 
         {/* দিক নির্বাচক — segmented control */}
         <div className="flex items-center gap-2">

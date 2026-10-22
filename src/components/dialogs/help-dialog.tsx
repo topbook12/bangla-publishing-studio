@@ -15,6 +15,7 @@ import { BrandMark } from '@/components/brand-mark';
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
+import { PHero } from '@/components/premium';
 import { useUiStore } from '@/lib/ui-store';
 import { useT, tplNodes } from '@/lib/i18n';
 
@@ -62,15 +63,13 @@ export function HelpDialog() {
   return (
     <Dialog open={open} onOpenChange={(v) => !v && close()}>
       <DialogContent className="flex max-h-[85vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-xl" data-testid="help-dialog">
-        <DialogHeader className="border-b px-5 pb-3 pt-4">
-          <DialogTitle className="flex items-center gap-2">
-            <CircleHelp size={17} className="text-primary" aria-hidden="true" />
-            {tt('dlg2.help.title')}
-          </DialogTitle>
+        <DialogHeader className="sr-only">
+          <DialogTitle>{tt('dlg2.help.title')}</DialogTitle>
           <DialogDescription>
             {tt('dlg2.help.desc')}
           </DialogDescription>
         </DialogHeader>
+        <PHero tone="violet" icon={CircleHelp} title={tt('dlg2.help.title')} desc={tt('dlg2.help.desc')} className="mx-5 mt-4" />
 
         <div className="flex-1 space-y-2 overflow-y-auto px-5 py-4">
           {/* প্রিমিয়াম অ্যাবাউট কার্ড — ব্র্যান্ড + ফিচার চিপ */}

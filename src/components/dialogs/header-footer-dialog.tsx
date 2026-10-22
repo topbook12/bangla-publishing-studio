@@ -7,10 +7,12 @@
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
+import { PHero } from '@/components/premium';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
+import { PanelTop } from 'lucide-react';
 import { COLOR_SWATCHES } from '@/lib/paper';
 import { useEditorStore } from '@/lib/store';
 import { useUiStore } from '@/lib/ui-store';
@@ -77,12 +79,13 @@ export function HeaderFooterDialog() {
   return (
     <Dialog open={open} onOpenChange={(v) => !v && close()}>
       <DialogContent className="max-h-[88vh] max-w-2xl overflow-y-auto">
-        <DialogHeader>
+        <DialogHeader className="sr-only">
           <DialogTitle>{tt('dlg1.hf.title')}</DialogTitle>
           <DialogDescription>
             {tt('dlg1.hf.desc')}
           </DialogDescription>
         </DialogHeader>
+        <PHero tone="slate" icon={PanelTop} title={tt('dlg1.hf.title')} desc={tt('dlg1.hf.desc')} />
 
         {/* হেডার */}
         <section className="space-y-3">

@@ -18,8 +18,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   BookPlus, CalendarDays, Camera, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, CircleAlert, Eraser,
-  Download, FileQuestion, History, Loader2, PenLine, Printer, RefreshCw, SlidersHorizontal, Sparkles,
-  Trash2, Wand2, X, Zap, ZoomIn, ZoomOut, Image as ImageIcon,
+  Download, FileQuestion, GraduationCap, History, Landmark, LayoutTemplate, Loader2, PenLine, Printer, RefreshCw,
+  Shapes, SlidersHorizontal, Sparkles, Star, Trash2, Type, Wand2, X, Zap, ZoomIn, ZoomOut, Image as ImageIcon,
 } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
@@ -28,6 +28,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { PHero, PPill, PSection, PTile } from '@/components/premium';
 import { useUiStore } from '@/lib/ui-store';
 import { useAiStore, aiConfiguredSelector } from '@/lib/ai-store';
 import { callAi, prepareImageFile } from '@/lib/ai-client';
@@ -947,7 +948,7 @@ export function QuestionPaperDialog() {
   const stepInput = (
     <section aria-label={tt('qp.step.input')} className="flex flex-col gap-3">
       <div>
-        <p className="ai-field-label mb-1.5">{tt('qp.docType.title')}</p>
+        <PSection tone="violet" icon={Shapes} title={tt('qp.docType.title')} className="mb-1.5" />
         <div className="qp-doctypes" role="radiogroup" aria-label={tt('qp.docType.title')}>
           {DOC_TYPES.map((dt) => (
             <button
@@ -956,8 +957,11 @@ export function QuestionPaperDialog() {
               onClick={() => changeDocType(dt.id)}
               disabled={busy}
             >
-              <span className="qp-doctype-vis"><DocTypeVis id={dt.id} /></span>
-              <strong>{tt(dt.label)}</strong>
+              <span className="qp-doctype-vis" aria-hidden="true"><DocTypeVis id={dt.id} /></span>
+              <span className="flex items-center gap-2">
+                <PTile size="sm" tone={dt.id === 'question' ? 'violet' : 'fuchsia'} icon={dt.id === 'question' ? FileQuestion : Star} />
+                <strong>{tt(dt.label)}</strong>
+              </span>
               <span className="qp-doctype-desc">{tt(dt.desc)}</span>
             </button>
           ))}
@@ -965,7 +969,7 @@ export function QuestionPaperDialog() {
       </div>
 
       <div>
-        <p className="ai-field-label mb-1.5">{tt('qp.level.title')}</p>
+        <PSection tone="emerald" icon={GraduationCap} title={tt('qp.level.title')} className="mb-1.5" />
         <div className="qp-doctypes" role="radiogroup" aria-label={tt('qp.level.title')}>
           {LEVELS.map((lv) => (
             <button
@@ -974,7 +978,10 @@ export function QuestionPaperDialog() {
               onClick={() => changeLevel(lv.id)}
               disabled={busy}
             >
-              <strong>{tt(lv.label)}</strong>
+              <span className="flex items-center gap-2">
+                <PTile size="sm" tone={lv.id === 'school' ? 'amber' : 'purple'} icon={lv.id === 'school' ? GraduationCap : Landmark} />
+                <strong>{tt(lv.label)}</strong>
+              </span>
               <span className="qp-doctype-desc">{tt(lv.desc)}</span>
             </button>
           ))}
@@ -987,7 +994,7 @@ export function QuestionPaperDialog() {
           className={cn('qp-mode', mode === 'photo' && 'qp-mode-on')}
           onClick={() => setMode('photo')}
         >
-          <Camera size={18} aria-hidden="true" />
+          <PTile size="sm" tone="teal" icon={Camera} className="mb-1 [&>svg]:mb-0! [&>svg]:text-white!" />
           <span className="qp-mode-name">{tt('qp.mode.photo')}</span>
           <span className="qp-mode-desc">{tt('qp.mode.photo.desc')}</span>
         </button>
@@ -996,7 +1003,7 @@ export function QuestionPaperDialog() {
           className={cn('qp-mode', mode === 'text' && 'qp-mode-on')}
           onClick={() => setMode('text')}
         >
-          <PenLine size={18} aria-hidden="true" />
+          <PTile size="sm" tone="cyan" icon={PenLine} className="mb-1 [&>svg]:mb-0! [&>svg]:text-white!" />
           <span className="qp-mode-name">{tt('qp.mode.text')}</span>
           <span className="qp-mode-desc">{tt('qp.mode.text.desc')}</span>
         </button>
@@ -1009,7 +1016,7 @@ export function QuestionPaperDialog() {
               className={cn('ai-drop', dragOver && 'ai-drop-over')}
               role="button" tabIndex={0} aria-label={tt('qp.drop.title')}
               onClick={() => fileInputRef.current?.click()}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') fileInputRef.current?.click(); }}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInputRef.current?.click(); } }}
               onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
               onDragLeave={() => setDragOver(false)}
               onDrop={(e) => {
@@ -1035,7 +1042,7 @@ export function QuestionPaperDialog() {
                       ? <><Loader2 size={13} className="animate-spin" aria-hidden="true" /> {tt(phase === 'verifying' ? 'qp.busy.verify' : 'qp.transcribing')}</>
                       : <><Sparkles size={13} aria-hidden="true" /> {tt('qp.transcribe')}</>}
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => fileInputRef.current?.click()}>{tt('ai.drop.change')}</Button>
+                  <Button size="sm" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={busy}>{tt('ai.drop.change')}</Button>
                 </div>
               </div>
             </div>
@@ -1275,7 +1282,7 @@ export function QuestionPaperDialog() {
       {docType !== 'suggestion' ? (
         <div className="qp-field qp-field-full qp-switch-row">
           <span>{tt('qp.meta.studentLine')}</span>
-          <Switch checked={meta.studentLine} onCheckedChange={(v) => patchMeta({ studentLine: v })} disabled={busy} />
+          <Switch checked={meta.studentLine} onCheckedChange={(v) => patchMeta({ studentLine: v })} disabled={busy} aria-label={tt('qp.meta.studentLine')} />
         </div>
       ) : null}
       <div className="qp-nav-row">
@@ -1292,7 +1299,7 @@ export function QuestionPaperDialog() {
   // ── ধাপ ৩: নকশা ──
   const stepFormat = (
     <section aria-label={tt('qp.step.format')} className="flex flex-col gap-3">
-      <p className="ai-field-label">{tt('qp.format.title')}</p>
+      <PSection tone="purple" icon={LayoutTemplate} title={tt('qp.format.title')} />
       <div className="qp-formats" role="radiogroup" aria-label={tt('qp.format.title')}>
         {formatsForDocType(docType).map((f) => (
           <button
@@ -1301,7 +1308,7 @@ export function QuestionPaperDialog() {
             onClick={() => changeFormat(f.id)}
             disabled={busy}
           >
-            <span className="qp-format-vis"><FormatVis id={f.id} /></span>
+            <span className="qp-format-vis" aria-hidden="true"><FormatVis id={f.id} /></span>
             <strong>{tt(f.label)}</strong>
             <span className="qp-format-desc">{tt(f.desc)}</span>
           </button>
@@ -1310,7 +1317,7 @@ export function QuestionPaperDialog() {
 
       <div className="qp-design-opts">
         <div className="qp-design-block">
-          <span className="ai-field-label">{tt('qp.typo.title')}</span>
+          <PSection tone="amber" icon={Type} title={tt('qp.typo.title')} />
           <div className="qp-scale" role="radiogroup" aria-label={tt('qp.typo.title')}>
             {FONT_SCALES.map((s) => (
               <button
@@ -1415,7 +1422,7 @@ export function QuestionPaperDialog() {
         ) : null}
         {shuffle ? <span className="qp-stat qp-stat-set">{tt('qp.shuffle')}</span> : null}
         <span className="qp-stat qp-stat-page">{tt('qp.preview.pages').replace('{n}', fmtNum(pages))}</span>
-        {isDemo ? <span className="ai-demo-badge">{tt('qp.demo.badge')}</span> : null}
+        {isDemo ? <PPill tone="ai">{tt('qp.demo.badge')}</PPill> : null}
         <span className="qp-stat-zoom">
           <button type="button" aria-label={tt('qp.zoomOut')} onClick={() => setZoomMult((z) => Math.max(0.5, Math.round((z - 0.1) * 10) / 10))} disabled={busy}><ZoomOut size={13} aria-hidden="true" /></button>
           <span>{fmtNum(Math.round(effScale * 100))}%</span>
@@ -1427,10 +1434,7 @@ export function QuestionPaperDialog() {
       {figSlots.length > 0 ? (
         <div className="qp-figman" role="group" aria-label={tt('qp.fig.title')}>
           <div className="qp-figman-head">
-            <p className="qp-figman-title">
-              <ImageIcon size={14} aria-hidden="true" className="inline mr-1 -mt-0.5" />
-              {tFmt('qp.fig.count', { n: fmtNum(figSlots.length) })}
-            </p>
+            <PSection tone="rose" icon={ImageIcon} title={tFmt('qp.fig.count', { n: fmtNum(figSlots.length) })} />
             <div className="flex gap-1.5">
               <Button size="sm" variant="outline" onClick={autoMatchAll} disabled={busy} title={tt('qp.fig.matchAllTip')}>
                 <Sparkles size={13} aria-hidden="true" /> {tt('qp.fig.matchAll')}
@@ -1543,14 +1547,17 @@ export function QuestionPaperDialog() {
   return (
     <Dialog open={open} onOpenChange={(v) => !v && close()}>
       <DialogContent className="qp-dialog max-h-[94dvh] overflow-y-auto sm:max-w-3xl">
-        <DialogHeader className="ai-set-head">
-          <DialogTitle className="flex items-center gap-2">
-            <span className="ai-head-tile" aria-hidden="true"><FileQuestion size={16} /></span>
-            {tt('qp.title')}
-            {isDemo && paper ? <span className="ai-demo-badge">{tt('qp.demo.badge')}</span> : null}
-          </DialogTitle>
+        <DialogHeader className="sr-only">
+          <DialogTitle>{tt('qp.title')}</DialogTitle>
           <DialogDescription>{tt('qp.desc')}</DialogDescription>
         </DialogHeader>
+        <PHero
+          tone="violet"
+          icon={FileQuestion}
+          title={tt('qp.title')}
+          desc={tt('qp.desc')}
+          badge={isDemo && paper ? <PPill tone="ai">{tt('qp.demo.badge')}</PPill> : undefined}
+        />
 
         {/* ধাপ-নির্দেশক */}
         <div className="qp-steps" role="list" aria-label={tt('qp.title')}>

@@ -17,9 +17,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Check, ChevronLeft, ChevronRight, CircleAlert, FileText, Loader2, Replace,
-  Search, SearchX, Sparkles, Wand2, ZoomIn, ZoomOut,
+  Award, Briefcase, Check, ChevronLeft, ChevronRight, FileText, FileUser,
+  GraduationCap, Globe, Loader2, Megaphone, PartyPopper, ReceiptText,
+  Replace, Scale, Search, SearchX, Sparkles, Stethoscope, Wand2,
+  ZoomIn, ZoomOut, type LucideIcon,
 } from 'lucide-react';
+import { PHero, PPill, PSection, PTile, type PTone } from '@/components/premium';
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
@@ -60,18 +63,18 @@ const SHEET_H = 1123;
 const POPULAR_IDS = ['resume-modern', 'invoice', 'official-letter', 'award', 'letterhead', 'calendar-month', 'invitation', 'press-release'] as const;
 const POPULAR_SET = new Set<string>(POPULAR_IDS);
 
-/** ক্যাটাগরি → lucide আইকন (গ্রিড কার্ডের বাঁ-চিহ্ন) */
-const CAT_ICONS: Record<DsCategory, string> = {
-  career: '📄',
-  office: '🏛️',
-  finance: '🧾',
-  legal: '⚖️',
-  cert: '🏅',
-  edu: '🎓',
-  event: '🎉',
-  med: '🩺',
-  promo: '📣',
-  regional: '🌏',
+/** ক্যাটাগরি → lucide আইকন + Aurora হিউ (গ্রিড-টাইল ও চিপ-বিন্দু) */
+const CAT_META: Record<DsCategory, { icon: LucideIcon; tone: PTone; dot: string }> = {
+  career:   { icon: FileUser,      tone: 'rose',    dot: 'bg-rose-500' },
+  office:   { icon: Briefcase,     tone: 'violet',  dot: 'bg-violet-500' },
+  finance:  { icon: ReceiptText,   tone: 'emerald', dot: 'bg-emerald-500' },
+  legal:    { icon: Scale,         tone: 'slate',   dot: 'bg-slate-500' },
+  cert:     { icon: Award,         tone: 'amber',   dot: 'bg-amber-500' },
+  edu:      { icon: GraduationCap, tone: 'teal',    dot: 'bg-teal-500' },
+  event:    { icon: PartyPopper,   tone: 'fuchsia', dot: 'bg-fuchsia-500' },
+  med:      { icon: Stethoscope,   tone: 'cyan',    dot: 'bg-cyan-500' },
+  promo:    { icon: Megaphone,     tone: 'orange',  dot: 'bg-orange-500' },
+  regional: { icon: Globe,         tone: 'lime',    dot: 'bg-lime-600' },
 };
 
 /** তথ্য-ফরমের এক ঘর */
@@ -244,9 +247,7 @@ export function DocumentStudioDialog() {
       aria-label={t.name[lang] || t.name.en}
     >
       {POPULAR_SET.has(t.id) ? (
-        <span className="absolute -top-1.5 right-1.5 z-10 rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-semibold text-amber-800 shadow-sm dark:bg-amber-900/70 dark:text-amber-200">
-          {tt('ds.pick.badgePopular')}
-        </span>
+        <PPill tone="hot" className="absolute -top-1.5 right-1.5 z-10">{tt('ds.pick.badgePopular')}</PPill>
       ) : null}
       <DesignThumb html={thumbCache.get(t.id) ?? ''} />
       <span className="text-[12.5px] font-semibold leading-tight">{t.name[lang] || t.name.en}</span>
@@ -386,13 +387,12 @@ export function DocumentStudioDialog() {
   return (
     <Dialog open={open} onOpenChange={(v) => !v && close()}>
       <DialogContent className="qp-dialog max-h-[94dvh] overflow-y-auto sm:max-w-3xl">
-        <DialogHeader className="ai-set-head">
-          <DialogTitle className="flex items-center gap-2">
-            <span className="ai-head-tile" aria-hidden="true"><FileText size={16} /></span>
-            {tt('ds.title')}
-          </DialogTitle>
+        {/* অ্যাক্সেসিবল শিরোনাম — স্ক্রিন-রিডারের জন্য, দৃশ্যমান হিরো নিচে */}
+        <DialogHeader className="sr-only">
+          <DialogTitle>{tt('ds.title')}</DialogTitle>
           <DialogDescription>{tt('ds.desc')}</DialogDescription>
         </DialogHeader>
+        <PHero tone="violet" icon={FileText} title={tt('ds.title')} desc={tt('ds.desc')} />
 
         {/* ধাপ-নির্দেশক */}
         <div className="qp-steps" role="list" aria-label={tt('ds.title')}>
@@ -425,18 +425,20 @@ export function DocumentStudioDialog() {
               <div className="qp-scale flex-wrap" role="group" aria-label={tt('ds.pick.all')}>
                 <button
                   type="button" aria-pressed={cat === 'all'}
-                  className={cn('qp-scale-btn', cat === 'all' && 'qp-scale-on')}
+                  className={cn('qp-scale-btn inline-flex items-center gap-1.5', cat === 'all' && 'qp-scale-on')}
                   onClick={() => setCat('all')}
                 >
+                  <span className="h-2 w-2 rounded-full bg-violet-600" aria-hidden="true" />
                   {tt('ds.pick.all')} ({nf(DS_TEMPLATES.length)})
                 </button>
                 {DS_CATEGORY_ORDER.map((c) => (
                   <button
                     key={c} type="button" aria-pressed={cat === c}
-                    className={cn('qp-scale-btn', cat === c && 'qp-scale-on')}
+                    className={cn('qp-scale-btn inline-flex items-center gap-1.5', cat === c && 'qp-scale-on')}
                     onClick={() => setCat(c)}
                   >
-                    {CAT_ICONS[c]} {DS_CATEGORY_LABELS[c][lang] || DS_CATEGORY_LABELS[c].en}
+                    <span className={cn('h-2 w-2 rounded-full', CAT_META[c].dot)} aria-hidden="true" />
+                    {DS_CATEGORY_LABELS[c][lang] || DS_CATEGORY_LABELS[c].en}
                   </button>
                 ))}
               </div>
@@ -446,9 +448,7 @@ export function DocumentStudioDialog() {
               {/* ফিচার্ড-স্ট্রিপ — জনপ্রিয় নকশা (ওয়ার্ড/ক্যানভা-প্রথা) */}
               {cat === 'all' && !query.trim() ? (
                 <div className="mb-4">
-                  <p className="ai-field-label mb-1.5 flex items-center gap-1.5">
-                    <Sparkles size={13} aria-hidden="true" /> {tt('ds.pick.popular')}
-                  </p>
+                  <PSection tone="amber" icon={Sparkles} title={tt('ds.pick.popular')} className="mb-1.5" />
                   <div className="flex gap-2 overflow-x-auto pb-1.5">
                     {popular.map((t) => (
                       <div key={t.id} className="w-40 shrink-0">{renderCard(t)}</div>
@@ -460,7 +460,7 @@ export function DocumentStudioDialog() {
               {[...byCat.entries()].map(([category, tpls]) => (
                 <div key={category} className="mb-4">
                   <p className="ai-field-label mb-1.5 flex items-center gap-1.5">
-                    <span aria-hidden="true">{CAT_ICONS[category]}</span>
+                    <PTile size="sm" tone={CAT_META[category].tone} icon={CAT_META[category].icon} />
                     {DS_CATEGORY_LABELS[category][lang] || DS_CATEGORY_LABELS[category].en}
                     <span className="text-[10px] font-normal opacity-60">{tt('ds.pick.count').replace('{n}', nf(tpls.length))}</span>
                   </p>
@@ -486,7 +486,10 @@ export function DocumentStudioDialog() {
         {step === 2 && tpl ? (
           <section aria-label={tt('ds.step.fill')} className="flex flex-col gap-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-sm font-semibold">{tpl.name[lang] || tpl.name.en}</p>
+              <div className="flex items-center gap-2">
+                <PTile size="sm" tone="violet" icon={FileText} />
+                <p className="text-sm font-semibold">{tpl.name[lang] || tpl.name.en}</p>
+              </div>
               <div className="flex items-center gap-1.5">
                 <span className="ai-field-label" title={tt('ds.fill.styleTip')}>{tt('ds.fill.style')}:</span>
                 <div className="qp-scale" role="group" aria-label={tt('ds.fill.style')}>
@@ -506,9 +509,7 @@ export function DocumentStudioDialog() {
 
             {/* AI দিয়ে পূরণ */}
             <div className="rounded-lg border border-border bg-muted/30 p-2.5">
-              <p className="ai-field-label mb-1.5 flex items-center gap-1.5">
-                <Wand2 size={13} aria-hidden="true" /> {tt('ds.fill.ai.tip')}
-              </p>
+              <PSection tone="fuchsia" icon={Wand2} title={tt('ds.fill.ai.tip')} className="mb-1.5" />
               <div className="flex flex-col gap-1.5 sm:flex-row">
                 <Input
                   value={aiBrief}

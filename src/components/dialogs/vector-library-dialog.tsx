@@ -14,10 +14,11 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { DraftingCompass, Heart, Search } from 'lucide-react';
+import { Heart, Search, Shapes } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
+import { PHero } from '@/components/premium';
 import { Input } from '@/components/ui/input';
 import { runCommand, refocusActiveEditor } from '@/components/ribbon/ribbon-shell';
 import {
@@ -154,16 +155,22 @@ export function VectorLibraryDialog() {
         className="flex h-[86vh] max-w-5xl flex-col gap-0 overflow-hidden p-0 sm:max-w-5xl"
         onCloseAutoFocus={(e) => { e.preventDefault(); refocusActiveEditor(); }}
       >
-        <DialogHeader className="border-b px-5 pb-3 pt-4">
-          <DialogTitle className="flex flex-wrap items-center gap-2">
-            <DraftingCompass size={17} className="text-primary" />
-            {tt('ins.vector.title')}
+        <DialogHeader className="sr-only">
+          <DialogTitle>{tt('ins.vector.title')}</DialogTitle>
+          <DialogDescription>{tt('ins.vector.desc')}</DialogDescription>
+        </DialogHeader>
+        <PHero
+          tone="pink"
+          icon={Shapes}
+          title={tt('ins.vector.title')}
+          desc={tt('ins.vector.desc')}
+          badge={(
             <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
               {tFmt('ins.vector.count', { n: VECTOR_DEFS.length })}
             </span>
-          </DialogTitle>
-          <DialogDescription>{tt('ins.vector.desc')}</DialogDescription>
-        </DialogHeader>
+          )}
+          className="mx-5 mt-4"
+        />
 
         {/* সার্চ */}
         <div className="border-b px-5 py-3">

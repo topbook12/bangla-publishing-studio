@@ -9,12 +9,13 @@
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
+import { PHero } from '@/components/premium';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
-import { RotateCcw } from 'lucide-react';
+import { Frame, RotateCcw } from 'lucide-react';
 import { useEditorStore } from '@/lib/store';
 import { useUiStore } from '@/lib/ui-store';
 import type { HeaderFooterSettings, HeaderFooterStyle } from '@/lib/types';
@@ -168,12 +169,18 @@ export function PageChromeDialog() {
   return (
     <Dialog open={open} onOpenChange={(v) => !v && close()}>
       <DialogContent className="max-h-[88vh] max-w-2xl overflow-y-auto">
-        <DialogHeader>
+        <DialogHeader className="sr-only">
           <DialogTitle>{tt('dlg1.chrome.title').split('{n}').join(nf(pageIndex + 1))}</DialogTitle>
           <DialogDescription>
             {tt('dlg1.chrome.desc')}
           </DialogDescription>
         </DialogHeader>
+        <PHero
+          tone="purple"
+          icon={Frame}
+          title={tt('dlg1.chrome.title').split('{n}').join(nf(pageIndex + 1))}
+          desc={tt('dlg1.chrome.desc')}
+        />
 
         <section className="space-y-2">
           <div className="flex items-center justify-between rounded-lg border border-dashed px-3 py-2">

@@ -7,7 +7,10 @@
 import { memo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { motion, MotionConfig } from 'framer-motion';
-import { ChevronDown, Redo2, Undo2 } from 'lucide-react';
+import {
+  ChevronDown, House, LayoutTemplate, Palette, PenLine, Redo2, Share2, SpellCheck2,
+  Sparkles, SquarePlus, Undo2,
+} from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEditorStore } from '@/lib/store';
@@ -32,33 +35,33 @@ const GROUP_ACCENTS: Record<string, string> = {
   history: 'amber',
   font: 'violet',
   paragraph: 'emerald',
-  'advanced text': 'amber',
+  'advanced text': 'fuchsia',
   styles: 'rose',
   'table tools': 'cyan',
   'tables & media': 'cyan',
   'icons & design': 'rose',
-  'academic blocks': 'blue',
-  'page & decor': 'fuchsia',
+  'academic blocks': 'sky',
+  'page & decor': 'purple',
   'paper size': 'blue',
   'content flow': 'amber',
   'margins (in)': 'teal',
   'paper & border': 'emerald',
   'default typography': 'violet',
-  'book themes': 'fuchsia',
+  'book themes': 'purple',
   'header & footer': 'sky',
   'page numbers': 'teal',
   'cover & toc': 'amber',
   'page templates': 'rose',
   statistics: 'cyan',
-  'spelling & proofing': 'sky',
-  'conjunct toolkit': 'teal',
+  'spelling & proofing': 'teal',
+  'conjunct toolkit': 'orange',
   settings: 'slate',
   'press-ready output': 'amber',
   'export file': 'emerald',
-  'creative formats': 'violet',
+  'creative formats': 'fuchsia',
   backup: 'slate',
   'ai vision': 'fuchsia',
-  'ai writer': 'amber',
+  'ai writer': 'purple',
   'ai config': 'emerald',
 };
 
@@ -72,14 +75,14 @@ export function useActiveEditor() {
   return getEditor(activePageId);
 }
 
-export const RIBBON_TABS: Array<{ id: RibbonTab; i18nKey: string; fallback: string }> = [
-  { id: 'home', i18nKey: 'rb.tab.home', fallback: 'Home' },
-  { id: 'insert', i18nKey: 'rb.tab.insert', fallback: 'Insert' },
-  { id: 'layout', i18nKey: 'rb.tab.layout', fallback: 'Layout' },
-  { id: 'design', i18nKey: 'rb.tab.design', fallback: 'Design' },
-  { id: 'review', i18nKey: 'rb.tab.review', fallback: 'Review' },
-  { id: 'ai', i18nKey: 'rb.tab.ai', fallback: 'AI' },
-  { id: 'export', i18nKey: 'rb.tab.export', fallback: 'Export' },
+export const RIBBON_TABS: Array<{ id: RibbonTab; i18nKey: string; fallback: string; icon: LucideIcon; tone: string }> = [
+  { id: 'home', i18nKey: 'rb.tab.home', fallback: 'Home', icon: House, tone: 'violet' },
+  { id: 'insert', i18nKey: 'rb.tab.insert', fallback: 'Insert', icon: SquarePlus, tone: 'fuchsia' },
+  { id: 'layout', i18nKey: 'rb.tab.layout', fallback: 'Layout', icon: LayoutTemplate, tone: 'amber' },
+  { id: 'design', i18nKey: 'rb.tab.design', fallback: 'Design', icon: Palette, tone: 'rose' },
+  { id: 'review', i18nKey: 'rb.tab.review', fallback: 'Review', icon: SpellCheck2, tone: 'teal' },
+  { id: 'ai', i18nKey: 'rb.tab.ai', fallback: 'AI', icon: Sparkles, tone: 'purple' },
+  { id: 'export', i18nKey: 'rb.tab.export', fallback: 'Export', icon: Share2, tone: 'emerald' },
 ];
 
 /**
@@ -274,6 +277,7 @@ export function Ribbon() {
                 role="tab"
                 aria-selected={activeTab === tab.id}
                 className={cn('ribbon-tab', activeTab === tab.id && 'ribbon-tab-active')}
+                data-tone={tab.tone}
                 onClick={() => selectTab(tab.id)}
               >
                 {activeTab === tab.id ? (
@@ -284,6 +288,7 @@ export function Ribbon() {
                     transition={{ type: 'spring', bounce: 0.21, duration: 0.5 }}
                   />
                 ) : null}
+                <span className="ribbon-tab-ico" aria-hidden="true"><tab.icon size={13} /></span>
                 <span className="ribbon-tab-label">{tt(tab.i18nKey, tab.fallback)}</span>
               </button>
             ))}

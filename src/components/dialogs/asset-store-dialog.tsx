@@ -17,11 +17,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  DraftingCompass, Heart, ImagePlus, Loader2, Search, Store, Trash2,
+  DraftingCompass, Heart, ImagePlus, Loader2, Package, Search, Trash2,
 } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
+import { PHero } from '@/components/premium';
 import { Input } from '@/components/ui/input';
 import { runCommand, refocusActiveEditor } from '@/components/ribbon/ribbon-shell';
 import {
@@ -183,14 +184,13 @@ export function AssetStoreDialog() {
         className="flex h-[84vh] max-w-3xl flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl"
         onCloseAutoFocus={(e) => { e.preventDefault(); refocusActiveEditor(); }}
       >
-        <DialogHeader className="border-b px-5 pb-3 pt-4">
-          <DialogTitle className="flex items-center gap-2">
-            <Store size={17} className="text-primary" /> {tt('ins.store.title')}
-          </DialogTitle>
+        <DialogHeader className="sr-only">
+          <DialogTitle>{tt('ins.store.title')}</DialogTitle>
           <DialogDescription>
             {tt('ins.store.desc')}
           </DialogDescription>
         </DialogHeader>
+        <PHero tone="amber" icon={Package} title={tt('ins.store.title')} desc={tt('ins.store.desc')} className="mx-5 mt-4" />
 
         {/* সার্চ + নিয়ন্ত্রণ */}
         <div className="space-y-2 border-b px-5 py-3">

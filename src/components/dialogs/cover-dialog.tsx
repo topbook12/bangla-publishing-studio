@@ -5,9 +5,11 @@
 'use client';
 
 import { useState } from 'react';
+import { BookOpen } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
+import { PHero } from '@/components/premium';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -63,12 +65,19 @@ function CoverDialogBody({ open }: { open: boolean }) {
   return (
     <Dialog open={open} onOpenChange={(v) => !v && close()}>
       <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
-        <DialogHeader>
+        {/* অ্যাক্সেসিবল নাম/বিবরণ sr-only-তে — দৃশ্যমান শিরোনাম এখন প্রিমিয়াম হিরো-প্যানেল */}
+        <DialogHeader className="sr-only">
           <DialogTitle>{existing ? tt('dlg1.cover.edit') : tt('dlg1.cover.new')}</DialogTitle>
           <DialogDescription>
             {tt('dlg1.cover.desc')}
           </DialogDescription>
         </DialogHeader>
+        <PHero
+          tone="amber"
+          icon={BookOpen}
+          title={existing ? tt('dlg1.cover.edit') : tt('dlg1.cover.new')}
+          desc={tt('dlg1.cover.desc')}
+        />
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-3">
@@ -103,7 +112,13 @@ function CoverDialogBody({ open }: { open: boolean }) {
                   <button
                     key={s.id}
                     type="button"
-                    className={cn('rounded-md border px-2 py-1 text-xs', data.style === s.id && 'border-primary bg-accent')}
+                    aria-pressed={data.style === s.id}
+                    className={cn(
+                      'rounded-md border px-2 py-1 text-xs transition focus-visible:outline-2 focus-visible:outline-ring',
+                      data.style === s.id
+                        ? 'border-primary bg-primary/10 font-semibold text-primary shadow-sm'
+                        : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
+                    )}
                     onClick={() => set({ style: s.id })}
                   >
                     {tt(s.nameKey)}
@@ -119,7 +134,11 @@ function CoverDialogBody({ open }: { open: boolean }) {
                     key={c}
                     type="button"
                     aria-label={tt('dlg1.color.named').split('{c}').join(c)}
-                    className={cn('h-6 w-6 rounded-full border-2', data.accentColor === c ? 'border-foreground scale-110' : 'border-transparent')}
+                    aria-pressed={data.accentColor === c}
+                    className={cn(
+                      'h-6 w-6 rounded-full border-2 transition-transform focus-visible:outline-2 focus-visible:outline-ring',
+                      data.accentColor === c ? 'scale-110 border-primary ring-2 ring-primary/25' : 'border-transparent',
+                    )}
                     style={{ backgroundColor: c }}
                     onClick={() => set({ accentColor: c })}
                   />
@@ -129,7 +148,7 @@ function CoverDialogBody({ open }: { open: boolean }) {
             </div>
           </div>
 
-          <div className="flex items-center justify-center overflow-hidden rounded-lg border border-dashed p-3">
+          <div className="flex items-center justify-center overflow-hidden rounded-lg border border-dashed border-primary/30 bg-primary/5 p-3">
             <div className="relative" style={{ width: 240, height: 340 }}>
               <div
                 style={{

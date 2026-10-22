@@ -45,74 +45,75 @@
 }
 
 :root {
-  /* ─── "Grand Ink" এডিটরিয়াল প্যালেট — বইয়ের কাপড়-বাঁধাই সবুজ + সোনালি ফয়েল + উষ্ণ কাগজ ─── */
+  /* ─── "Aurora Studio" প্রিমিয়াম প্যালেট — রয়্যাল ভায়োলেট → অর্কিড ফাক্সিয়া ব্র্যান্ড,
+         শীতল সাদা নিরপেক্ষ (ClassForge-অনুপ্রাণিত প্রিমিয়াম রং-সংযোগ) ─── */
   --radius: 0.625rem;
-  --background: oklch(0.984 0.004 95);
-  --foreground: oklch(0.24 0.016 150);
+  --background: oklch(0.985 0.003 300);
+  --foreground: oklch(0.25 0.022 300);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.24 0.016 150);
+  --card-foreground: oklch(0.25 0.022 300);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.24 0.016 150);
-  --primary: oklch(0.455 0.104 168); /* deep book-cloth emerald */
-  --primary-foreground: oklch(0.985 0.003 95);
-  --secondary: oklch(0.964 0.007 100);
-  --secondary-foreground: oklch(0.26 0.016 150);
-  --muted: oklch(0.964 0.007 100);
-  --muted-foreground: oklch(0.5 0.02 140);
-  --accent: oklch(0.951 0.018 105);
-  --accent-foreground: oklch(0.4 0.075 162);
+  --popover-foreground: oklch(0.25 0.022 300);
+  --primary: oklch(0.5 0.21 293); /* royal violet — ব্র্যান্ড অ্যাকসেন্ট */
+  --primary-foreground: oklch(0.985 0.003 300);
+  --secondary: oklch(0.963 0.008 300);
+  --secondary-foreground: oklch(0.26 0.022 300);
+  --muted: oklch(0.964 0.006 300);
+  --muted-foreground: oklch(0.5 0.022 300);
+  --accent: oklch(0.951 0.026 300);
+  --accent-foreground: oklch(0.42 0.16 293);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.918 0.008 100);
-  --input: oklch(0.918 0.008 100);
-  --ring: oklch(0.55 0.095 168);
-  --chart-1: oklch(0.55 0.115 165);
-  --chart-2: oklch(0.66 0.12 75);
-  --chart-3: oklch(0.6 0.115 45);
-  --chart-4: oklch(0.58 0.08 195);
-  --chart-5: oklch(0.42 0.05 155);
-  --sidebar: oklch(0.984 0.003 100);
-  --sidebar-foreground: oklch(0.24 0.016 150);
-  --sidebar-primary: oklch(0.455 0.104 168);
-  --sidebar-primary-foreground: oklch(0.985 0.003 95);
-  --sidebar-accent: oklch(0.964 0.007 100);
-  --sidebar-accent-foreground: oklch(0.26 0.016 150);
-  --sidebar-border: oklch(0.918 0.008 100);
-  --sidebar-ring: oklch(0.55 0.095 168);
+  --border: oklch(0.918 0.01 300);
+  --input: oklch(0.918 0.01 300);
+  --ring: oklch(0.55 0.19 293);
+  --chart-1: oklch(0.52 0.2 293);
+  --chart-2: oklch(0.58 0.2 328);
+  --chart-3: oklch(0.66 0.13 75);
+  --chart-4: oklch(0.58 0.1 195);
+  --chart-5: oklch(0.44 0.03 280);
+  --sidebar: oklch(0.985 0.003 300);
+  --sidebar-foreground: oklch(0.25 0.022 300);
+  --sidebar-primary: oklch(0.5 0.21 293);
+  --sidebar-primary-foreground: oklch(0.985 0.003 300);
+  --sidebar-accent: oklch(0.963 0.008 300);
+  --sidebar-accent-foreground: oklch(0.26 0.022 300);
+  --sidebar-border: oklch(0.918 0.01 300);
+  --sidebar-ring: oklch(0.55 0.19 293);
 }
 
 .dark {
-  /* ─── "Midnight Atelier" — কালি-সবুজ গাঢ় থিম, উজ্জ্বল এমারেল্ড + অ্যাম্বার নয়েজ ─── */
-  --background: oklch(0.168 0.012 165);
-  --foreground: oklch(0.965 0.004 110);
-  --card: oklch(0.208 0.014 165);
-  --card-foreground: oklch(0.965 0.004 110);
-  --popover: oklch(0.208 0.014 165);
-  --popover-foreground: oklch(0.965 0.004 110);
-  --primary: oklch(0.755 0.125 165);
-  --primary-foreground: oklch(0.185 0.02 165);
-  --secondary: oklch(0.272 0.016 160);
-  --secondary-foreground: oklch(0.965 0.004 110);
-  --muted: oklch(0.272 0.016 160);
-  --muted-foreground: oklch(0.71 0.015 135);
-  --accent: oklch(0.3 0.02 160);
-  --accent-foreground: oklch(0.93 0.015 110);
+  /* ─── "Aurora Noir" — গাঢ় অ্যামেথিস্ট থিম, উজ্জ্বল ভায়োলেট + অর্কিড নয়েজ ─── */
+  --background: oklch(0.166 0.016 300);
+  --foreground: oklch(0.962 0.005 300);
+  --card: oklch(0.206 0.018 300);
+  --card-foreground: oklch(0.962 0.005 300);
+  --popover: oklch(0.206 0.018 300);
+  --popover-foreground: oklch(0.962 0.005 300);
+  --primary: oklch(0.72 0.17 295);
+  --primary-foreground: oklch(0.17 0.04 293);
+  --secondary: oklch(0.272 0.02 300);
+  --secondary-foreground: oklch(0.962 0.005 300);
+  --muted: oklch(0.272 0.02 300);
+  --muted-foreground: oklch(0.715 0.02 300);
+  --accent: oklch(0.3 0.03 300);
+  --accent-foreground: oklch(0.93 0.02 300);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.6 0.1 168);
-  --chart-1: oklch(0.7 0.12 165);
-  --chart-2: oklch(0.8 0.13 80);
-  --chart-3: oklch(0.72 0.12 45);
+  --ring: oklch(0.6 0.16 295);
+  --chart-1: oklch(0.7 0.16 295);
+  --chart-2: oklch(0.74 0.15 330);
+  --chart-3: oklch(0.8 0.13 80);
   --chart-4: oklch(0.72 0.09 195);
-  --chart-5: oklch(0.6 0.04 155);
-  --sidebar: oklch(0.208 0.014 165);
-  --sidebar-foreground: oklch(0.965 0.004 110);
-  --sidebar-primary: oklch(0.755 0.125 165);
-  --sidebar-primary-foreground: oklch(0.185 0.02 165);
-  --sidebar-accent: oklch(0.272 0.016 160);
-  --sidebar-accent-foreground: oklch(0.965 0.004 110);
+  --chart-5: oklch(0.62 0.03 280);
+  --sidebar: oklch(0.206 0.018 300);
+  --sidebar-foreground: oklch(0.962 0.005 300);
+  --sidebar-primary: oklch(0.72 0.17 295);
+  --sidebar-primary-foreground: oklch(0.17 0.04 293);
+  --sidebar-accent: oklch(0.272 0.02 300);
+  --sidebar-accent-foreground: oklch(0.962 0.005 300);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.6 0.1 168);
+  --sidebar-ring: oklch(0.6 0.16 295);
 }
 
 @layer base {
@@ -170,7 +171,7 @@ html.dark .theme-icon-moon { display: none; }
 }
 
 html.dark .app-header {
-  background: linear-gradient(180deg, oklch(0.21 0.014 165), oklch(0.152 0.012 165));
+  background: linear-gradient(180deg, oklch(0.205 0.018 300), oklch(0.15 0.014 300));
   border-bottom-color: rgb(255 255 255 / 0.08);
   box-shadow: 0 1px 2px rgb(0 0 0 / 0.45), 0 8px 24px rgb(0 0 0 / 0.35);
 }
@@ -182,7 +183,7 @@ html.dark .app-header::before { opacity: 0.8; }
   width: 36px;
   height: 36px;
   border-radius: 11px;
-  background: linear-gradient(140deg, oklch(0.52 0.09 172) 0%, oklch(0.42 0.1 168) 48%, oklch(0.33 0.075 172) 100%);
+  background: linear-gradient(140deg, oklch(0.6 0.2 296) 0%, oklch(0.52 0.22 312) 48%, oklch(0.56 0.21 330) 100%);
   color: #fff;
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 0.4),
@@ -200,7 +201,7 @@ html.dark .app-header::before { opacity: 0.8; }
   width: 84px;
   height: 84px;
   border-radius: 24px;
-  background: linear-gradient(140deg, oklch(0.52 0.09 172) 0%, oklch(0.42 0.1 168) 48%, oklch(0.33 0.075 172) 100%);
+  background: linear-gradient(140deg, oklch(0.6 0.2 296) 0%, oklch(0.52 0.22 312) 48%, oklch(0.56 0.21 330) 100%);
   color: #fff;
   box-shadow:
     inset 0 2px 0 rgb(255 255 255 / 0.45),
@@ -214,13 +215,13 @@ html.dark .app-header::before { opacity: 0.8; }
   font-size: 19px;
   font-weight: 800;
   letter-spacing: -0.015em;
-  background: linear-gradient(120deg, oklch(0.5 0.11 170), oklch(0.4 0.09 178));
+  background: linear-gradient(120deg, oklch(0.52 0.2 293), oklch(0.56 0.2 330));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 html.dark .app-splash-title {
-  background: linear-gradient(120deg, oklch(0.8 0.12 168), oklch(0.71 0.11 178));
+  background: linear-gradient(120deg, oklch(0.78 0.14 295), oklch(0.8 0.13 330));
   -webkit-background-clip: text;
   background-clip: text;
 }
@@ -313,9 +314,15 @@ html.dark .save-indicator-error { color: oklch(0.704 0.191 22.216); }
 .header-action:active { transform: translateY(0) scale(0.97); }
 html.dark .header-action { box-shadow: 0 1px 2px rgb(0 0 0 / 0.3), inset 0 1px 0 rgb(255 255 255 / 0.06); }
 .header-action-accent {
-  background: linear-gradient(180deg, color-mix(in oklab, var(--primary) 13%, var(--card)), color-mix(in oklab, var(--primary) 7%, var(--card)));
-  border-color: color-mix(in oklab, var(--primary) 30%, var(--border));
-  color: color-mix(in oklab, var(--primary) 85%, var(--foreground));
+  background: linear-gradient(135deg, oklch(0.55 0.2 293), oklch(0.56 0.2 328));
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 2px 10px -1px oklch(0.55 0.2 310 / 0.5), inset 0 1px 0 rgb(255 255 255 / 0.3);
+}
+.header-action-accent:hover { filter: brightness(1.06); }
+html.dark .header-action-accent {
+  background: linear-gradient(135deg, oklch(0.6 0.19 293), oklch(0.6 0.19 328));
+  color: #fff;
 }
 
 /* ─── PRO প্রিমিয়াম ব্যাজ — গোল্ড গ্রেডিয়েন্ট চিপ (হেডার/স্প্ল্যাশ/অ্যাবাউট) ─── */
@@ -381,7 +388,7 @@ html.dark .pro-badge {
   height: 42px;
   border-radius: 12px;
   flex-shrink: 0;
-  background: linear-gradient(140deg, oklch(0.52 0.09 172) 0%, oklch(0.42 0.1 168) 48%, oklch(0.33 0.075 172) 100%);
+  background: linear-gradient(140deg, oklch(0.6 0.2 296) 0%, oklch(0.52 0.22 312) 48%, oklch(0.56 0.21 330) 100%);
   color: #fff;
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 0.4),
@@ -432,7 +439,7 @@ html.dark .about-chip { box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05); }
   width: 45%;
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, transparent, oklch(0.55 0.11 168) 35%, oklch(0.78 0.13 82) 65%, transparent);
+  background: linear-gradient(90deg, transparent, oklch(0.55 0.2 293) 35%, oklch(0.6 0.19 330) 65%, transparent);
   animation: splash-shimmer 1.25s ease-in-out infinite;
 }
 @keyframes splash-shimmer {
@@ -643,29 +650,35 @@ html.dark .ribbon-tab-ind {
 
 /* ─── গ্রুপ অ্যাকসেন্ট প্যালেট — হারমোনাইজড এডিটরিয়াল ফ্যামিলি (এমারেল্ড/টিল/অ্যাম্বার/টেরাকোটা/কালি) ─── */
 
-.ribbon-group[data-accent="indigo"] { --grp-accent: oklch(0.47 0.03 155); }
-.ribbon-group[data-accent="amber"] { --grp-accent: oklch(0.6 0.115 75); }
-.ribbon-group[data-accent="violet"] { --grp-accent: oklch(0.54 0.075 195); }
-.ribbon-group[data-accent="emerald"] { --grp-accent: oklch(0.52 0.1 168); }
-.ribbon-group[data-accent="rose"] { --grp-accent: oklch(0.56 0.115 45); }
-.ribbon-group[data-accent="cyan"] { --grp-accent: oklch(0.54 0.075 195); }
-.ribbon-group[data-accent="blue"] { --grp-accent: oklch(0.44 0.04 220); }
-.ribbon-group[data-accent="teal"] { --grp-accent: oklch(0.53 0.08 190); }
-.ribbon-group[data-accent="sky"] { --grp-accent: oklch(0.5 0.05 235); }
-.ribbon-group[data-accent="fuchsia"] { --grp-accent: oklch(0.58 0.1 60); }
-.ribbon-group[data-accent="slate"] { --grp-accent: oklch(0.45 0.025 150); }
+.ribbon-group[data-accent="indigo"] { --grp-accent: oklch(0.5 0.18 285); }
+.ribbon-group[data-accent="amber"] { --grp-accent: oklch(0.62 0.13 75); }
+.ribbon-group[data-accent="violet"] { --grp-accent: oklch(0.52 0.18 293); }
+.ribbon-group[data-accent="purple"] { --grp-accent: oklch(0.5 0.19 315); }
+.ribbon-group[data-accent="emerald"] { --grp-accent: oklch(0.52 0.12 165); }
+.ribbon-group[data-accent="rose"] { --grp-accent: oklch(0.58 0.18 15); }
+.ribbon-group[data-accent="cyan"] { --grp-accent: oklch(0.56 0.1 210); }
+.ribbon-group[data-accent="blue"] { --grp-accent: oklch(0.5 0.12 255); }
+.ribbon-group[data-accent="teal"] { --grp-accent: oklch(0.54 0.1 190); }
+.ribbon-group[data-accent="sky"] { --grp-accent: oklch(0.55 0.11 245); }
+.ribbon-group[data-accent="fuchsia"] { --grp-accent: oklch(0.56 0.19 328); }
+.ribbon-group[data-accent="pink"] { --grp-accent: oklch(0.6 0.18 350); }
+.ribbon-group[data-accent="orange"] { --grp-accent: oklch(0.6 0.16 45); }
+.ribbon-group[data-accent="slate"] { --grp-accent: oklch(0.48 0.03 280); }
 
-html.dark .ribbon-group[data-accent="indigo"] { --grp-accent: oklch(0.74 0.04 155); }
+html.dark .ribbon-group[data-accent="indigo"] { --grp-accent: oklch(0.76 0.14 285); }
 html.dark .ribbon-group[data-accent="amber"] { --grp-accent: oklch(0.83 0.13 80); }
-html.dark .ribbon-group[data-accent="violet"] { --grp-accent: oklch(0.78 0.09 195); }
+html.dark .ribbon-group[data-accent="violet"] { --grp-accent: oklch(0.78 0.14 295); }
+html.dark .ribbon-group[data-accent="purple"] { --grp-accent: oklch(0.77 0.14 315); }
 html.dark .ribbon-group[data-accent="emerald"] { --grp-accent: oklch(0.76 0.12 165); }
-html.dark .ribbon-group[data-accent="rose"] { --grp-accent: oklch(0.76 0.12 45); }
-html.dark .ribbon-group[data-accent="cyan"] { --grp-accent: oklch(0.78 0.09 195); }
-html.dark .ribbon-group[data-accent="blue"] { --grp-accent: oklch(0.72 0.06 220); }
+html.dark .ribbon-group[data-accent="rose"] { --grp-accent: oklch(0.78 0.13 18); }
+html.dark .ribbon-group[data-accent="cyan"] { --grp-accent: oklch(0.78 0.09 210); }
+html.dark .ribbon-group[data-accent="blue"] { --grp-accent: oklch(0.75 0.1 255); }
 html.dark .ribbon-group[data-accent="teal"] { --grp-accent: oklch(0.77 0.1 190); }
-html.dark .ribbon-group[data-accent="sky"] { --grp-accent: oklch(0.74 0.07 235); }
-html.dark .ribbon-group[data-accent="fuchsia"] { --grp-accent: oklch(0.8 0.11 65); }
-html.dark .ribbon-group[data-accent="slate"] { --grp-accent: oklch(0.74 0.03 155); }
+html.dark .ribbon-group[data-accent="sky"] { --grp-accent: oklch(0.77 0.09 245); }
+html.dark .ribbon-group[data-accent="fuchsia"] { --grp-accent: oklch(0.79 0.14 330); }
+html.dark .ribbon-group[data-accent="pink"] { --grp-accent: oklch(0.79 0.13 350); }
+html.dark .ribbon-group[data-accent="orange"] { --grp-accent: oklch(0.79 0.13 50); }
+html.dark .ribbon-group[data-accent="slate"] { --grp-accent: oklch(0.74 0.03 280); }
 
 .ribbon-btn {
   display: inline-flex;
@@ -1171,7 +1184,7 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
   display: block;
 }
 .bwp-prosemirror img.ProseMirror-selectednode { outline: 2px solid var(--primary); }
-.bwp-prosemirror a { color: #0c7a54; text-decoration: underline; }
+.bwp-prosemirror a { color: #6d28d9; text-decoration: underline; }
 .paper-dark .bwp-prosemirror a { color: #7fd8ae; }
 /* ছবির হাইপারলিংক — ক্লিকযোগ্য র‍্যাপার (প্রিন্ট-PDF/HTML এক্সপোর্টে লিংক টিকে যায়) */
 .bwp-prosemirror a.doc-image-link {
@@ -1237,7 +1250,7 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
 .callout-concept {
   background: color-mix(in oklab, var(--primary) 9%, transparent);
   border: 1px solid color-mix(in oklab, var(--primary) 30%, transparent);
-  border-left: 4px solid #0c7a54;
+  border-left: 4px solid #6d28d9;
 }
 .callout-warning {
   background: rgba(220, 38, 38, 0.07);
@@ -1269,7 +1282,7 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
   font-weight: 800;
   font-size: 0.85em;
 }
-.callout-concept .callout-badge { color: #0c7a54; }
+.callout-concept .callout-badge { color: #6d28d9; }
 .callout-warning .callout-badge { color: #dc2626; }
 .callout-formula .callout-badge { color: #16a34a; }
 .callout-note .callout-badge { color: #64748b; }
@@ -1359,7 +1372,7 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
   margin: 0.55em 0;
   background: rgba(100, 116, 139, 0.035);
 }
-.mcq-selected { border-color: #0c7a54; box-shadow: 0 0 0 1px #0c7a54; }
+.mcq-selected { border-color: #6d28d9; box-shadow: 0 0 0 1px #6d28d9; }
 .mcq-head {
   display: flex;
   align-items: center;
@@ -1367,7 +1380,7 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
   margin-bottom: 5px;
 }
 .mcq-tag {
-  background: #0c7a54;
+  background: #6d28d9;
   color: #fff;
   font-size: 0.68em;
   font-weight: 800;
@@ -1410,7 +1423,7 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
 .footnote-wrap { position: relative; display: inline; }
 .footnote-ref, .footnote {
   counter-increment: bwp-footnote;
-  color: #0c7a54;
+  color: #6d28d9;
   font-weight: 800;
   cursor: pointer;
   font-size: 0.72em;
@@ -1489,9 +1502,9 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
   background: transparent;
   color: inherit;
 }
-.doc-figure-cap-input:focus { outline: 1.5px solid #0c7a54; }
+.doc-figure-cap-input:focus { outline: 1.5px solid #6d28d9; }
 .doc-icon-wrap:hover { background: color-mix(in oklab, var(--primary) 14%, transparent); }
-.doc-icon-selected { outline: 2px solid #0c7a54; outline-offset: 1px; }
+.doc-icon-selected { outline: 2px solid #6d28d9; outline-offset: 1px; }
 .doc-icon-tools {
   position: absolute;
   top: calc(100% + 6px);
@@ -1631,7 +1644,7 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
   transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
 }
 .shape-card:hover {
-  border-color: #0c7a54;
+  border-color: #6d28d9;
   box-shadow: 0 4px 14px color-mix(in oklab, var(--primary) 18%, transparent);
   transform: translateY(-1px);
 }
@@ -1683,9 +1696,9 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
 .paper-dark .icon-cell { color: #cbd5e1; }
 .icon-cell:hover { background: color-mix(in oklab, var(--primary) 10%, transparent); color: #0f172a; }
 .icon-cell-active {
-  border-color: #0c7a54;
+  border-color: #6d28d9;
   background: color-mix(in oklab, var(--primary) 12%, transparent);
-  color: #0c7a54;
+  color: #6d28d9;
 }
 .chip {
   flex-shrink: 0;
@@ -1700,8 +1713,8 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
 }
 .chip:hover { background: color-mix(in oklab, var(--primary) 8%, transparent); }
 .chip-active {
-  background: #0c7a54;
-  border-color: #0c7a54;
+  background: #6d28d9;
+  border-color: #6d28d9;
   color: #fff;
 }
 .color-dot {
@@ -1715,7 +1728,7 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
 .color-dot-auto {
   background: linear-gradient(135deg, #e2e8f0 45%, #0f172a 46%, #0f172a 55%, #e2e8f0 56%);
 }
-.color-dot-active { outline: 2px solid #0c7a54; outline-offset: 1.5px; }
+.color-dot-active { outline: 2px solid #6d28d9; outline-offset: 1.5px; }
 .docbox-preview {
   display: inline-block;
   width: 26px;
@@ -1724,7 +1737,7 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
   flex-shrink: 0;
 }
 .docbox-preview[data-variant="box"] { border: 2px solid #475569; }
-.docbox-preview[data-variant="rounded"] { border: 2px solid #0c7a54; border-radius: 5px; }
+.docbox-preview[data-variant="rounded"] { border: 2px solid #6d28d9; border-radius: 5px; }
 .docbox-preview[data-variant="pill"] { border: 2px solid #0d9488; border-radius: 999px; }
 .docbox-preview[data-variant="dashed"] { border: 2px dashed #d97706; border-radius: 5px; }
 .docbox-preview[data-variant="double"] { border: 4px double #b91c1c; border-radius: 3px; }
@@ -1965,7 +1978,7 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
 
 .cover-classic { justify-content: center; gap: 12px; }
 .cover-classic-inner {
-  border: 3px double var(--cover-accent, #0c7a54);
+  border: 3px double var(--cover-accent, #6d28d9);
   border-radius: 6px;
   padding: 28px 18px;
   display: flex;
@@ -1976,7 +1989,7 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
 .cover-classic-ornament { font-size: 0.9em; letter-spacing: 2px; }
 .cover-classic-divider { width: 120px; height: 2px; }
 
-.cover-modern { background: var(--cover-accent, #0c7a54); color: #fff; }
+.cover-modern { background: var(--cover-accent, #6d28d9); color: #fff; }
 .cover-modern-band { height: 14px; background: rgba(255,255,255,0.25); }
 .cover-modern-body {
   flex: 1;
@@ -2672,8 +2685,8 @@ html.dark .ai-header-on {
   height: 28px;
   border-radius: 9px;
   color: #fff;
-  background: linear-gradient(135deg, oklch(0.66 0.13 76), oklch(0.53 0.12 62));
-  box-shadow: 0 3px 10px color-mix(in oklab, oklch(0.6 0.13 70) 45%, transparent),
+  background: linear-gradient(135deg, oklch(0.58 0.2 296), oklch(0.55 0.2 328));
+  box-shadow: 0 3px 10px color-mix(in oklab, oklch(0.56 0.2 312) 45%, transparent),
     inset 0 1px 0 rgb(255 255 255 / 0.35);
 }
 .ai-set-head { padding-bottom: 2px; }
@@ -3271,9 +3284,9 @@ html.dark .clone-edit-static { color: oklch(0.62 0.01 250); }
 
 /* সন্নিবেশ বাটন */
 .ai-insert-btn {
-  background: linear-gradient(135deg, oklch(0.62 0.16 155), oklch(0.52 0.15 165));
+  background: linear-gradient(135deg, oklch(0.55 0.2 293), oklch(0.56 0.2 328));
   color: #fff;
-  box-shadow: 0 3px 12px color-mix(in oklab, oklch(0.55 0.15 160) 40%, transparent),
+  box-shadow: 0 3px 12px color-mix(in oklab, oklch(0.55 0.2 310) 45%, transparent),
     inset 0 1px 0 rgb(255 255 255 / 0.3);
 }
 .ai-insert-btn:hover { filter: brightness(1.07); }
@@ -4710,64 +4723,64 @@ html.dark .qp-stat-warn { color: #fbbf24; }
 }
 
 /* ═══════════ থিসিস স্টুডিও (Thesis Studio) ═══════════
-   রং-সংযোগ: গভীর এমারেল্ড ব্র্যান্ড (var(--primary)) + পুরনো সোনা — নীল/হিউ-২৫০ নয় */
+   রং-সংযোগ: রয়্যাল ভায়োলেট ব্র্যান্ড (var(--primary)) + শীতল নিরপেক্ষ (হিউ-৩০০) */
 
 .thesis-chip {
   display: inline-flex; align-items: center; gap: 4px;
-  border: 1px solid oklch(0.87 0.012 110); border-radius: 9999px;
+  border: 1px solid oklch(0.918 0.01 300); border-radius: 9999px;
   padding: 3px 11px; font-size: 12.5px; line-height: 1.45;
-  background: color-mix(in oklab, oklch(0.98 0.006 110) 70%, transparent);
+  background: color-mix(in oklab, oklch(0.985 0.003 300) 70%, transparent);
   color: inherit; cursor: pointer; transition: background 0.15s, border-color 0.15s;
   min-height: 28px;
 }
-.thesis-chip:hover { background: color-mix(in oklab, var(--primary) 12%, transparent); border-color: color-mix(in oklab, var(--primary) 45%, oklch(0.87 0.012 110)); }
+.thesis-chip:hover { background: color-mix(in oklab, var(--primary) 12%, transparent); border-color: color-mix(in oklab, var(--primary) 45%, oklch(0.918 0.01 300)); }
 .thesis-chip-on {
   background: color-mix(in oklab, var(--primary) 18%, transparent);
   border-color: var(--primary); color: color-mix(in oklab, var(--primary) 85%, black); font-weight: 600;
 }
-html.dark .thesis-chip { border-color: oklch(0.36 0.015 110); background: color-mix(in oklab, oklch(0.27 0.012 110) 60%, transparent); }
-html.dark .thesis-chip-on { border-color: var(--primary); background: color-mix(in oklab, var(--primary) 30%, transparent); color: oklch(0.9 0.06 165); }
+html.dark .thesis-chip { border-color: oklch(0.36 0.015 300); background: color-mix(in oklab, oklch(0.27 0.014 300) 60%, transparent); }
+html.dark .thesis-chip-on { border-color: var(--primary); background: color-mix(in oklab, var(--primary) 30%, transparent); color: oklch(0.9 0.05 300); }
 
 .thesis-out {
-  border: 1px solid oklch(0.87 0.012 110); border-radius: 10px;
-  background: color-mix(in oklab, oklch(0.975 0.008 110) 60%, transparent);
+  border: 1px solid oklch(0.918 0.01 300); border-radius: 10px;
+  background: color-mix(in oklab, oklch(0.975 0.004 300) 60%, transparent);
   overflow: hidden;
 }
 .thesis-out-label {
   font-size: 11px; font-weight: 600; color: color-mix(in oklab, var(--primary) 72%, black);
-  padding: 5px 10px 4px; border-bottom: 1px solid oklch(0.9 0.012 110);
+  padding: 5px 10px 4px; border-bottom: 1px solid oklch(0.935 0.008 300);
   text-transform: uppercase; letter-spacing: 0.03em;
 }
 .thesis-out-body { padding: 8px 10px; font-size: 13px; line-height: 1.65; min-height: 44px; }
 .thesis-out-sm { min-width: 128px; }
 .thesis-out-sm .thesis-out-body { font-size: 12.5px; }
-html.dark .thesis-out { border-color: oklch(0.36 0.015 110); background: color-mix(in oklab, oklch(0.27 0.012 110) 55%, transparent); }
-html.dark .thesis-out-label { color: oklch(0.78 0.07 165); border-color: oklch(0.34 0.015 110); }
+html.dark .thesis-out { border-color: oklch(0.36 0.015 300); background: color-mix(in oklab, oklch(0.27 0.014 300) 55%, transparent); }
+html.dark .thesis-out-label { color: oklch(0.78 0.09 295); border-color: oklch(0.34 0.015 300); }
 
 .thesis-guide-item {
   display: flex; gap: 8px; align-items: flex-start;
-  border: 1px solid oklch(0.9 0.012 110); border-radius: 10px;
+  border: 1px solid oklch(0.935 0.008 300); border-radius: 10px;
   padding: 9px 11px; font-size: 13px; line-height: 1.65;
-  background: color-mix(in oklab, oklch(0.98 0.006 110) 60%, transparent);
+  background: color-mix(in oklab, oklch(0.985 0.003 300) 60%, transparent);
 }
-html.dark .thesis-guide-item { border-color: oklch(0.34 0.015 110); background: color-mix(in oklab, oklch(0.27 0.012 110) 55%, transparent); }
+html.dark .thesis-guide-item { border-color: oklch(0.34 0.015 300); background: color-mix(in oklab, oklch(0.27 0.014 300) 55%, transparent); }
 
 /* থিসিস স্টুডিও ২ — টুলবক্স, লাইব্রেরি, ক্যাপশন-টুল, AI খসড়া */
 .thesis-toolbox {
   border: 1px dashed oklch(0.8 0.05 80); border-radius: 12px;
   padding: 12px 14px; display: flex; flex-direction: column; gap: 8px;
-  background: color-mix(in oklab, oklch(0.97 0.015 90) 55%, transparent);
+  background: color-mix(in oklab, oklch(0.97 0.01 300) 55%, transparent);
 }
-html.dark .thesis-toolbox { border-color: oklch(0.42 0.06 80); background: color-mix(in oklab, oklch(0.26 0.02 90) 55%, transparent); }
+html.dark .thesis-toolbox { border-color: oklch(0.42 0.06 80); background: color-mix(in oklab, oklch(0.26 0.02 300) 55%, transparent); }
 .thesis-chip-mini { padding: 2px 8px; font-size: 11px; border-radius: 7px; }
 .thesis-lib-list { display: flex; flex-direction: column; gap: 6px; list-style: none; margin: 0; padding: 0; }
 .thesis-lib-item {
   display: flex; align-items: flex-start; gap: 8px;
-  border: 1px solid oklch(0.9 0.012 110); border-radius: 9px;
+  border: 1px solid oklch(0.935 0.008 300); border-radius: 9px;
   padding: 7px 9px; font-size: 12.5px; line-height: 1.6;
-  background: color-mix(in oklab, oklch(0.98 0.006 110) 65%, transparent);
+  background: color-mix(in oklab, oklch(0.985 0.003 300) 65%, transparent);
 }
-html.dark .thesis-lib-item { border-color: oklch(0.34 0.015 110); background: color-mix(in oklab, oklch(0.27 0.012 110) 55%, transparent); }
+html.dark .thesis-lib-item { border-color: oklch(0.34 0.015 300); background: color-mix(in oklab, oklch(0.27 0.014 300) 55%, transparent); }
 .thesis-lib-body { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .thesis-lib-del {
   flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center;
@@ -4779,7 +4792,7 @@ html.dark .thesis-lib-item { border-color: oklch(0.34 0.015 110); background: co
 
 /* ব্র্যান্ড-অ্যাকসেন্ট আইকন ও গণনা-ব্যাজ — emerald-বিকল্প (ব্র্যান্ড-সংগত) */
 .thesis-accent-ico { color: var(--primary); }
-html.dark .thesis-accent-ico { color: oklch(0.78 0.09 165); }
+html.dark .thesis-accent-ico { color: oklch(0.78 0.1 295); }
 .thesis-count-badge {
   margin-left: 4px; display: inline-flex; align-items: center; justify-content: center;
   min-width: 18px; height: 16px; padding: 0 5px; border-radius: 9999px;
@@ -4811,3 +4824,164 @@ html.dark .thesis-mixed-warn { color: oklch(0.82 0.1 80); }
   padding: 7px 10px; border-radius: 0 8px 8px 0;
 }
 html.dark .thesis-draft-notice { border-left-color: oklch(0.72 0.13 80); background: color-mix(in oklab, oklch(0.72 0.13 80) 10%, transparent); }
+
+/* ═══════════════ প্রিমিয়াম ডিজাইন-সিস্টেম — "Aurora Studio" ═══════════════
+   ClassForge-অনুপ্রাণিত প্রিমিয়াম রং-সংযোগ ও গ্রাফিক্স:
+   গ্রেডিয়েন্ট আইকন-টাইল (.ptile-*), টিন্টেড ব্যাজ (.ppill-*), হিরো-প্যানেল
+   (.phero), গ্রেডিয়েন্ট-শিরোনাম (.pgrad-text) — সব টুল-পৃষ্ঠে একরূপ। */
+
+/* ─── গ্রেডিয়েন্ট আইকন-টাইল ─── */
+.ptile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 10px;
+  color: #fff;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.38),
+    inset 0 -2px 5px rgb(20 10 45 / 0.22),
+    0 3px 10px -2px var(--tile-glow, rgb(124 58 237 / 0.4));
+}
+.ptile-sm { width: 26px; height: 26px; border-radius: 8px; }
+.ptile-md { width: 34px; height: 34px; }
+.ptile-lg { width: 44px; height: 44px; border-radius: 12px; }
+.ptile-xl { width: 56px; height: 56px; border-radius: 15px; }
+
+.ptile-violet  { background: linear-gradient(135deg, oklch(0.62 0.19 296), oklch(0.5 0.21 290));  --tile-glow: oklch(0.55 0.2 293 / 0.45); }
+.ptile-purple  { background: linear-gradient(135deg, oklch(0.6 0.19 315), oklch(0.48 0.2 310));  --tile-glow: oklch(0.54 0.2 313 / 0.45); }
+.ptile-fuchsia { background: linear-gradient(135deg, oklch(0.64 0.2 336), oklch(0.53 0.2 325));  --tile-glow: oklch(0.58 0.2 330 / 0.45); }
+.ptile-pink    { background: linear-gradient(135deg, oklch(0.68 0.18 354), oklch(0.58 0.19 350));  --tile-glow: oklch(0.63 0.19 352 / 0.45); }
+.ptile-rose    { background: linear-gradient(135deg, oklch(0.66 0.19 20),  oklch(0.56 0.19 14));   --tile-glow: oklch(0.61 0.19 17 / 0.45); }
+.ptile-orange  { background: linear-gradient(135deg, oklch(0.7 0.17 55),   oklch(0.6 0.18 42));   --tile-glow: oklch(0.65 0.18 48 / 0.45); }
+.ptile-amber   { background: linear-gradient(135deg, oklch(0.78 0.15 80),  oklch(0.68 0.15 70));   --tile-glow: oklch(0.73 0.15 75 / 0.5); }
+.ptile-lime    { background: linear-gradient(135deg, oklch(0.75 0.16 125), oklch(0.64 0.15 138));  --tile-glow: oklch(0.7 0.16 130 / 0.45); }
+.ptile-teal    { background: linear-gradient(135deg, oklch(0.64 0.12 190), oklch(0.53 0.11 200));  --tile-glow: oklch(0.58 0.12 195 / 0.45); }
+.ptile-cyan    { background: linear-gradient(135deg, oklch(0.68 0.11 215), oklch(0.57 0.11 225));  --tile-glow: oklch(0.62 0.11 220 / 0.45); }
+.ptile-emerald { background: linear-gradient(135deg, oklch(0.64 0.14 163), oklch(0.53 0.13 168));  --tile-glow: oklch(0.58 0.14 165 / 0.45); }
+.ptile-slate   { background: linear-gradient(135deg, oklch(0.55 0.03 275), oklch(0.42 0.03 275));  --tile-glow: oklch(0.48 0.03 275 / 0.4); }
+
+html.dark .ptile { box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.25), inset 0 -2px 5px rgb(0 0 0 / 0.3), 0 3px 12px -2px var(--tile-glow, rgb(124 58 237 / 0.5)); }
+
+/* ─── টিন্টেড ব্যাজ-পিল ─── */
+.ppill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  border-radius: 999px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  line-height: 1.5;
+  padding: 1.5px 7px;
+  white-space: nowrap;
+}
+.ppill-new  { background: oklch(0.94 0.07 152);  color: oklch(0.42 0.13 158); }
+.ppill-hot  { background: oklch(0.95 0.06 85);   color: oklch(0.48 0.12 70); }
+.ppill-ai   { background: oklch(0.94 0.05 330);  color: oklch(0.48 0.19 330); }
+.ppill-info { background: oklch(0.94 0.04 295);  color: oklch(0.46 0.17 293); }
+.ppill-pro  { color: oklch(0.42 0.11 85); background: linear-gradient(135deg, oklch(0.9 0.09 92), oklch(0.78 0.13 78)); }
+html.dark .ppill-new  { background: oklch(0.32 0.06 155); color: oklch(0.85 0.13 155); }
+html.dark .ppill-hot  { background: oklch(0.33 0.06 80);  color: oklch(0.86 0.12 82); }
+html.dark .ppill-ai   { background: oklch(0.33 0.07 330); color: oklch(0.84 0.12 332); }
+html.dark .ppill-info { background: oklch(0.31 0.07 293); color: oklch(0.85 0.11 295); }
+
+/* ─── গ্রেডিয়েন্ট-শিরোনাম (ব্র্যান্ড ভায়োলেট → অর্কিড) ─── */
+.pgrad-text {
+  background: linear-gradient(94deg, oklch(0.5 0.2 292) 5%, oklch(0.54 0.21 315) 55%, oklch(0.57 0.2 332) 95%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+html.dark .pgrad-text {
+  background: linear-gradient(94deg, oklch(0.76 0.14 295) 5%, oklch(0.78 0.14 315) 55%, oklch(0.8 0.13 332) 95%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+/* ─── হিরো-প্যানেল (ডায়ালগ-শিরোনাম) — নরম দ্বি-প্রান্তিক গ্লো ─── */
+.phero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  border: 1px solid color-mix(in oklab, var(--primary) 14%, var(--border));
+  background:
+    linear-gradient(115deg,
+      color-mix(in oklab, var(--primary) 7%, var(--card)) 0%,
+      color-mix(in oklab, oklch(0.6 0.2 330) 5%, var(--card)) 48%,
+      var(--card) 100%);
+  padding: 12px 14px;
+}
+.phero-glow {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(34px);
+  opacity: 0.5;
+  pointer-events: none;
+}
+.phero-glow-a { width: 150px; height: 150px; top: -70px; left: -30px; background: color-mix(in oklab, var(--primary) 26%, transparent); }
+.phero-glow-b { width: 130px; height: 130px; bottom: -80px; right: 12%; background: color-mix(in oklab, oklch(0.6 0.2 330) 20%, transparent); }
+.phero-main { position: relative; display: flex; align-items: flex-start; gap: 12px; }
+.phero-tile { margin-top: 2px; }
+.phero-title {
+  font-size: 16.5px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  background: linear-gradient(94deg, oklch(0.5 0.2 292) 5%, oklch(0.54 0.21 315) 55%, oklch(0.57 0.2 332) 95%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+html.dark .phero-title {
+  background: linear-gradient(94deg, oklch(0.78 0.13 295) 5%, oklch(0.8 0.13 315) 55%, oklch(0.82 0.12 332) 95%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+.phero-desc {
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--muted-foreground);
+  max-width: 52ch;
+}
+html.dark .phero {
+  border-color: color-mix(in oklab, var(--primary) 24%, var(--border));
+  background: linear-gradient(115deg,
+    color-mix(in oklab, var(--primary) 12%, var(--card)) 0%,
+    color-mix(in oklab, oklch(0.6 0.2 330) 8%, var(--card)) 48%,
+    var(--card) 100%);
+}
+
+/* ─── সেকশন-শিরোনাম (টুল-ক্যাটাগরি শৈলী) ─── */
+.psection-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+}
+.psection-count {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--primary) 8%, var(--muted));
+  color: color-mix(in oklab, var(--primary) 75%, var(--foreground));
+}
+
+/* ─── রিবন ট্যাব-আইকন (প্রতি-ট্যাব হিউ) ─── */
+.ribbon-tab-ico { display: inline-flex; margin-right: 5px; opacity: 0.85; }
+.ribbon-tab { display: inline-flex; align-items: center; }
+.ribbon-tab[data-tone="violet"]  .ribbon-tab-ico { color: oklch(0.52 0.18 293); }
+.ribbon-tab[data-tone="fuchsia"] .ribbon-tab-ico { color: oklch(0.56 0.19 328); }
+.ribbon-tab[data-tone="amber"]   .ribbon-tab-ico { color: oklch(0.62 0.13 75); }
+.ribbon-tab[data-tone="rose"]    .ribbon-tab-ico { color: oklch(0.58 0.18 15); }
+.ribbon-tab[data-tone="teal"]    .ribbon-tab-ico { color: oklch(0.54 0.1 190); }
+.ribbon-tab[data-tone="emerald"] .ribbon-tab-ico { color: oklch(0.52 0.12 165); }
+.ribbon-tab[data-tone="purple"]  .ribbon-tab-ico { color: oklch(0.5 0.19 315); }
+html.dark .ribbon-tab[data-tone="violet"]  .ribbon-tab-ico { color: oklch(0.78 0.14 295); }
+html.dark .ribbon-tab[data-tone="fuchsia"] .ribbon-tab-ico { color: oklch(0.79 0.14 330); }
+html.dark .ribbon-tab[data-tone="amber"]   .ribbon-tab-ico { color: oklch(0.83 0.13 80); }
+html.dark .ribbon-tab[data-tone="rose"]    .ribbon-tab-ico { color: oklch(0.78 0.13 18); }
+html.dark .ribbon-tab[data-tone="teal"]    .ribbon-tab-ico { color: oklch(0.77 0.1 190); }
+html.dark .ribbon-tab[data-tone="emerald"] .ribbon-tab-ico { color: oklch(0.76 0.12 165); }
+html.dark .ribbon-tab[data-tone="purple"]  .ribbon-tab-ico { color: oklch(0.77 0.14 315); }

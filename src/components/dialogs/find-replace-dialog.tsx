@@ -11,10 +11,11 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowDown, ArrowUp, CaseSensitive, Replace, ReplaceAll, Search } from 'lucide-react';
+import { ArrowDown, ArrowUp, CaseSensitive, Replace, ReplaceAll } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
+import { PHero } from '@/components/premium';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -105,15 +106,13 @@ export function FindReplaceDialog() {
   return (
     <Dialog open={open} onOpenChange={(v) => !v && close()}>
       <DialogContent className="sm:max-w-md" data-testid="find-replace-dialog">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Search size={16} className="text-primary" aria-hidden="true" />
-            {tt('dlg2.find.title')}
-          </DialogTitle>
+        <DialogHeader className="sr-only">
+          <DialogTitle>{tt('dlg2.find.title')}</DialogTitle>
           <DialogDescription>
             {tt('dlg2.find.desc')}
           </DialogDescription>
         </DialogHeader>
+        <PHero tone="teal" icon={Replace} title={tt('dlg2.find.title')} desc={tt('dlg2.find.desc')} />
 
         <div className="space-y-3">
           <div className="space-y-1.5">

@@ -33,6 +33,7 @@ import { getEditor, insertBlocksAtCursor } from '@/lib/editor-registry';
 import { toast } from 'sonner';
 import { useT } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
+import { PTile, PHero, PSection, type PTone } from '@/components/premium';
 import { callAi } from '@/lib/ai-client';
 import {
   buildThesisPages, thesisFormatPreset, THESIS_MARGINS, THESIS_ACCENT,
@@ -94,6 +95,36 @@ const GUIDE_ITEMS: Array<{ icon: typeof Check; key: string }> = [
   { icon: Wand2, key: 'thesis.guide.tools' },
   { icon: Check, key: 'thesis.guide.check' },
 ];
+
+/** গাইড-আইটেমের টাইল-টোন — চক্রাকারে বর্ণাঢ্য (violet→amber→fuchsia→teal→emerald) */
+const GUIDE_TONES: PTone[] = ['violet', 'amber', 'fuchsia', 'teal', 'emerald'];
+
+const CITE_STYLES = new Set(Object.keys(CITE_STYLE_NAMES));
+const CITE_TYPES = new Set(Object.keys(CITE_TYPE_NAMES));
+
+/** সব ফিল্ডই টেক্সট — keyof-সূচিত লেখায় type/style (লিটারাল-ইউনিয়ন) বাদ রাখতে এই তালিকা */
+const CITE_TEXT_KEYS = [
+  'authors', 'year', 'title', 'container', 'publisher', 'place',
+  'volume', 'issue', 'pages', 'url', 'accessed', 'doi', 'edition',
+] as const;
+
+/**
+ * localStorage-আসা লাইব্রেরি-এন্ট্রির স্বাভাবিকীকরণ — পুরনো/ভাঙা স্কিমা থাকলে
+ * formatReference-এর e.authors.replace() ক্র্যাশ করত এবং IEEE-নম্বর এদিক-ওদিক হত।
+ * ইঞ্জিনের নিয়মেই অসম্পূর্ণ এন্ট্রি (শিরোনাম/বছর নেই) বাদ।
+ */
+function sanitizeLibEntry(e: unknown): CiteEntry | null {
+  if (!e || typeof e !== 'object') return null;
+  const rec = e as Record<string, unknown>;
+  const out = { ...EMPTY_CITE };
+  CITE_TEXT_KEYS.forEach((k) => {
+    if (typeof rec[k] === 'string') out[k] = rec[k];
+  });
+  if (!CITE_STYLES.has(out.style)) out.style = 'apa';
+  if (!CITE_TYPES.has(out.type)) out.type = 'book';
+  if (!out.title.trim() || !out.year.trim()) return null;
+  return out;
+}
 
 const DRAFT_SECTIONS: Array<{ id: DraftSection; key: string }> = [
   { id: 'abstract', key: 'thesis.draft.sec.abstract' },
@@ -203,8 +234,12 @@ export function ThesisDialog() {
     try {
       const raw = localStorage.getItem(LIB_KEY);
       if (raw) {
-        const arr = JSON.parse(raw) as CiteEntry[];
-        if (Array.isArray(arr)) setLib(arr);
+        const arr: unknown = JSON.parse(raw);
+        if (Array.isArray(arr)) {
+          // পুরনো/ভাঙা স্কিমা-সুরক্ষা — ভাঙা এন্ট্রি ক্র্যাশ বা ভুল IEEE-নম্বর দেবে না;
+          // অসম্পূর্ণ এন্ট্রি ইঞ্জিনের (formatReferenceLibrary) মতোই বাদ
+          setLib(arr.map(sanitizeLibEntry).filter((e): e is CiteEntry => e !== null));
+        }
       }
     } catch { /* করাপ্ট লাইব্রেরি — খালি থাকুক */ }
   }, [open]);
@@ -218,22 +253,44 @@ export function ThesisDialog() {
 
   const citeValid = cite.title.trim().length > 0 && cite.year.trim().length > 0;
   const refHtml = useMemo(() => (citeValid ? formatReference(cite) : ''), [cite, citeValid]);
+  // ইঞ্জিন (formatReferenceLibrary) যেমন করে তেমন শুধু সম্পূর্ণ এন্ট্রির উপর সূচি —
+  // নইলে অসম্পূর্ণ এন্ট্রি আগে থাকলে IEEE in-text নম্বর ও বসানো তালিকা আলাদা হয়ে যেত
+  const libValid = useMemo(() => lib.filter((e) => e.title.trim() && e.year.trim()), [lib]);
   const libHasCite = useMemo(
-    () => lib.findIndex((e) => e.style === cite.style && e.title.trim() === cite.title.trim() && e.year.trim() === cite.year.trim()),
-    [lib, cite],
+    () => libValid.findIndex((e) => e.style === cite.style && e.title.trim() === cite.title.trim() && e.year.trim() === cite.year.trim()),
+    [libValid, cite],
   );
-  // IEEE in-text — লাইব্রেরিতে থাকলে সেই ক্রম-নম্বর, নইলে পরের নম্বর-প্রিভিউ
+  // IEEE in-text — লাইব্রেরিতে থাকলে সেই ক্রম-নম্বর, নইলে পরের নম্বর-প্রিভিউ।
+  // নম্বর = IEEE-এন্ট্রিগুলোর মধ্যে ক্রম — formatReferenceLibrary-এর ++n-এর সাথে হুবহু
+  // মিল (আগে সব এন্ট্রি গণনা হত, মিশ্র-স্টাইল লাইব্রেরিতে APA-এন্ট্রি নম্বর সরিয়ে দিত)
   const inText = useMemo(() => {
     if (!citeValid) return '';
-    const n = cite.style === 'ieee'
-      ? (libHasCite >= 0 ? libHasCite + 1 : lib.filter((e) => e.title.trim() && e.year.trim()).length + 1)
-      : undefined;
+    if (cite.style !== 'ieee') return formatInText(cite);
+    let n: number;
+    if (libHasCite >= 0) {
+      n = 0;
+      for (let i = 0; i <= libHasCite; i++) if (libValid[i].style === 'ieee') n++;
+    } else {
+      n = libValid.filter((e) => e.style === 'ieee').length + 1;
+    }
     return formatInText(cite, n);
-  }, [cite, citeValid, lib, libHasCite]);
+  }, [cite, citeValid, libValid, libHasCite]);
   const libHtml = useMemo(() => formatReferenceLibrary(lib), [lib]);
   const libMixed = useMemo(() => citeLibMixed(lib), [lib]);
 
   const patchCite = (id: keyof CiteEntry, v: string) => setCite((prev) => ({ ...prev, [id]: v }));
+  // ধরন বদলে নতুন ধরনের অপ্রাসঙ্গিক ফিল্ড ফাঁকা — নইলে লুকানো পুরনো মান (যেমন
+  // জার্নালের DOI/খণ্ড) বই/থিসিস-এন্ট্রির ফরম্যাট-আউটপুটে নিঃশব্দে ঢুকে যেত
+  const setCiteType = (ct: CiteType) => {
+    const allowed = new Set(citeFieldsFor(ct).map((f) => f.id));
+    setCite((prev) => {
+      const next: CiteEntry = { ...prev, type: ct };
+      CITE_TEXT_KEYS.forEach((k) => {
+        if (!allowed.has(k)) next[k] = '';
+      });
+      return next;
+    });
+  };
 
   // ── ক্যাপশন-স্টেট ──
   const [capKind, setCapKind] = useState<'figure' | 'table'>('figure');
@@ -355,18 +412,25 @@ export function ThesisDialog() {
   };
 
   const copyText = (text: string, plainHtml: string) => {
-    // ক্লিপবোর্ডে ফরম্যাট-সহ HTML + প্লেইন উভয়ই
+    // ক্লিপবোর্ডে ফরম্যাট-সহ HTML + প্লেইন উভয়ই — প্রমিশ রিজেক্ট হলে প্লেইন-ফলব্যাক;
+    // "কপি হয়েছে" টোস্ট কেবল সত্যিই কপি হলে (আগে ব্যর্থতাতেও সফল-টোস্ট দেখাত)
+    const copied = () => toast.success(tt('thesis.cite.copied'));
+    const writePlain = () => {
+      navigator.clipboard.writeText(text).then(copied, () => { /* ব্যবহারকারী নাকচ করেছেন */ });
+    };
     try {
-      void navigator.clipboard.write([
-        new ClipboardItem({
-          'text/html': new Blob([plainHtml], { type: 'text/html' }),
-          'text/plain': new Blob([text], { type: 'text/plain' }),
-        }),
-      ]);
+      navigator.clipboard
+        .write([
+          new ClipboardItem({
+            'text/html': new Blob([plainHtml], { type: 'text/html' }),
+            'text/plain': new Blob([text], { type: 'text/plain' }),
+          }),
+        ])
+        .then(copied, writePlain);
     } catch {
-      void navigator.clipboard.writeText(text);
+      // ClipboardItem নেই (পুরনো Firefox) — সিঙ্ক্রোনাস প্লেইন-ফলব্যাক
+      writePlain();
     }
-    toast.success(tt('thesis.cite.copied'));
   };
 
   const fillExample = () => {
@@ -451,21 +515,20 @@ export function ThesisDialog() {
   return (
     <Dialog open={open} onOpenChange={(v) => !v && close()}>
       <DialogContent className="thesis-dialog max-h-[92dvh] overflow-y-auto sm:max-w-3xl">
-        <DialogHeader className="ai-set-head">
-          <DialogTitle className="flex items-center gap-2">
-            <span className="ai-head-tile" aria-hidden="true"><GraduationCap size={16} /></span>
-            {tt('thesis.title')}
-          </DialogTitle>
+        {/* অ্যাক্সেসিবল শিরোনাম — স্ক্রিন-রিডারের জন্য; দৃশ্যমান হিরো নিচে */}
+        <DialogHeader className="sr-only">
+          <DialogTitle>{tt('thesis.title')}</DialogTitle>
           <DialogDescription>{tt('thesis.desc')}</DialogDescription>
         </DialogHeader>
+        <PHero tone="purple" icon={GraduationCap} title={tt('thesis.title')} desc={tt('thesis.desc')} />
 
         {/* ট্যাব-বার */}
         <div className="ai-tabs" role="tablist" aria-label={tt('thesis.title')}>
           {([
-            { id: 'build' as Tab, icon: GraduationCap, label: tt('thesis.tab.build') },
-            { id: 'cite' as Tab, icon: BookMarked, label: tt('thesis.tab.cite') },
-            { id: 'draft' as Tab, icon: PenLine, label: tt('thesis.tab.draft') },
-            { id: 'guide' as Tab, icon: ScrollText, label: tt('thesis.tab.guide') },
+            { id: 'build' as Tab, icon: GraduationCap, tone: 'violet' as PTone, label: tt('thesis.tab.build') },
+            { id: 'cite' as Tab, icon: BookMarked, tone: 'amber' as PTone, label: tt('thesis.tab.cite') },
+            { id: 'draft' as Tab, icon: PenLine, tone: 'fuchsia' as PTone, label: tt('thesis.tab.draft') },
+            { id: 'guide' as Tab, icon: ScrollText, tone: 'teal' as PTone, label: tt('thesis.tab.guide') },
           ]).map((t) => (
             <button
               key={t.id}
@@ -475,14 +538,15 @@ export function ThesisDialog() {
               className={cn('ai-tab', tab === t.id && 'ai-tab-on')}
               onClick={() => setTab(t.id)}
             >
-              <t.icon size={14} aria-hidden="true" /> {t.label}
+              <PTile size="sm" tone={t.tone} icon={t.icon} />
+              {t.label}
             </button>
           ))}
         </div>
 
         {/* ─── ট্যাব: নির্মাণ ─── */}
         {tab === 'build' ? (
-          <section aria-label={tt('thesis.tab.build')} className="flex flex-col gap-3">
+          <section role="tabpanel" aria-label={tt('thesis.tab.build')} className="flex flex-col gap-3">
             {/* ভাষা */}
             <div>
               <p className="ai-field-label mb-1.5">{tt('thesis.lang')}</p>
@@ -638,10 +702,7 @@ export function ThesisDialog() {
 
             {/* ── দ্রুত সরঞ্জাম: চিত্র/টেবিল ক্যাপশন ── */}
             <div className="thesis-toolbox">
-              <p className="ai-result-title">
-                <Tag size={14} className="thesis-accent-ico" aria-hidden="true" />
-                {tt('thesis.capt.title')}
-              </p>
+              <PSection tone="teal" icon={Tag} title={tt('thesis.capt.title')} />
               <p className="ai-setup-desc">{tt('thesis.capt.desc')}</p>
               <div className="grid gap-2 sm:grid-cols-[auto_auto_1fr]">
                 <div>
@@ -660,11 +721,11 @@ export function ThesisDialog() {
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <label className="ai-field-label mb-1 block" htmlFor="cap-ch">{tt('thesis.capt.chapter')}</label>
-                    <Input id="cap-ch" type="number" min={1} value={capChapter} onChange={(e) => setCapChapter(e.target.value)} className="w-20" />
+                    <Input id="cap-ch" type="number" min={1} step={1} value={capChapter} onChange={(e) => setCapChapter(e.target.value)} className="w-20" />
                   </div>
                   <div>
                     <label className="ai-field-label mb-1 block" htmlFor="cap-serial">{tt('thesis.capt.serial')}</label>
-                    <Input id="cap-serial" type="number" min={1} value={capSerial} onChange={(e) => setCapSerial(e.target.value)} className="w-20" />
+                    <Input id="cap-serial" type="number" min={1} step={1} value={capSerial} onChange={(e) => setCapSerial(e.target.value)} className="w-20" />
                   </div>
                 </div>
                 <div className="grid gap-2">
@@ -683,10 +744,13 @@ export function ThesisDialog() {
                       className="shrink-0"
                       disabled={busy}
                       onClick={() => {
-                        const html = captionHtml(capKind, Math.max(1, Number(capChapter) || 1), Math.max(1, Number(capSerial) || 1), capText, lang, capSource);
+                        // ভগ্নাংশ/অকার্যকর ইনপুটেও পূর্ণসংখ্যা নম্বর — "চিত্র ২.৫" নয়
+                        const capCh = Math.max(1, Math.floor(Number(capChapter) || 1));
+                        const capNo = Math.max(1, Math.floor(Number(capSerial) || 1));
+                        const html = captionHtml(capKind, capCh, capNo, capText, lang, capSource);
                         if (insertAtCursor(html)) {
                           toast.success(tt('thesis.capt.inserted'));
-                          setCapSerial(String((Number(capSerial) || 1) + 1));
+                          setCapSerial(String(capNo + 1));
                         }
                       }}
                     >
@@ -701,7 +765,7 @@ export function ThesisDialog() {
 
         {/* ─── ট্যাব: সূত্র ─── */}
         {tab === 'cite' ? (
-          <section aria-label={tt('thesis.tab.cite')} className="flex flex-col gap-3">
+          <section role="tabpanel" aria-label={tt('thesis.tab.cite')} className="flex flex-col gap-3">
             <p className="ai-setup-desc">{tt('thesis.cite.desc')}</p>
 
             <div className="grid gap-3 sm:grid-cols-2">
@@ -719,7 +783,7 @@ export function ThesisDialog() {
                 <p className="ai-field-label mb-1.5">{tt('thesis.cite.type')}</p>
                 <div className="flex flex-wrap gap-1.5" role="group" aria-label={tt('thesis.cite.type')}>
                   {(Object.keys(CITE_TYPE_NAMES) as CiteType[]).map((ct) => (
-                    <button key={ct} type="button" className={chipCls(cite.type === ct)} onClick={() => patchCite('type', ct)} title={CITE_TYPE_NAMES[ct].en}>
+                    <button key={ct} type="button" className={chipCls(cite.type === ct)} onClick={() => setCiteType(ct)} title={CITE_TYPE_NAMES[ct].en}>
                       {CITE_TYPE_NAMES[ct][lang === 'en' ? 'en' : 'bn']}
                     </button>
                   ))}
@@ -772,13 +836,12 @@ export function ThesisDialog() {
 
             {/* ── সূত্র-লাইব্রেরি ── */}
             <div className="thesis-toolbox">
-              <p className="ai-result-title">
-                <BookMarked size={14} className="thesis-accent-ico" aria-hidden="true" />
-                {tt('thesis.cite.library')}
-                {lib.length > 0 ? (
-                  <span className="thesis-count-badge">{lib.length}</span>
-                ) : null}
-              </p>
+              <PSection
+                tone="amber"
+                icon={BookMarked}
+                title={tt('thesis.cite.library')}
+                count={lib.length > 0 ? String(lib.length) : undefined}
+              />
               <p className="ai-setup-desc">{tt('thesis.cite.libDesc')}</p>
               {libMixed ? (
                 <p className="thesis-mixed-warn">⚠ {tt('thesis.cite.libMixed')}</p>
@@ -824,7 +887,7 @@ export function ThesisDialog() {
                   <Button variant="outline" size="sm" onClick={() => copyText(libHtml.join('').replace(/<[^>]+>/g, '\n').trim(), libHtml.join(''))}>
                     <Copy size={13} aria-hidden="true" /> {tt('thesis.cite.libCopyAll')}
                   </Button>
-                  <Button size="sm" className="ai-insert-btn" onClick={insertAllLib}>
+                  <Button size="sm" className="ai-insert-btn" onClick={insertAllLib} disabled={libHtml.length === 0}>
                     <BadgeCheck size={13} aria-hidden="true" /> {tt('thesis.cite.libInsertAll').replace('{n}', String(lib.length))}
                   </Button>
                 </div>
@@ -835,7 +898,7 @@ export function ThesisDialog() {
 
         {/* ─── ট্যাব: AI খসড়া ─── */}
         {tab === 'draft' ? (
-          <section aria-label={tt('thesis.tab.draft')} className="flex flex-col gap-3">
+          <section role="tabpanel" aria-label={tt('thesis.tab.draft')} className="flex flex-col gap-3">
             <p className="ai-setup-desc">{tt('thesis.draft.desc')}</p>
 
             <div>
@@ -885,10 +948,7 @@ export function ThesisDialog() {
 
             {draftOut ? (
               <div className="grid gap-2">
-                <p className="ai-result-title">
-                  <Wand2 size={14} className="thesis-accent-ico" aria-hidden="true" />
-                  {tt('thesis.draft.result')}
-                </p>
+                <PSection tone="fuchsia" icon={PenLine} title={tt('thesis.draft.result')} />
                 <Textarea
                   value={draftOut}
                   onChange={(e) => setDraftOut(e.target.value)}
@@ -911,15 +971,12 @@ export function ThesisDialog() {
 
         {/* ─── ট্যাব: গাইড ─── */}
         {tab === 'guide' ? (
-          <section aria-label={tt('thesis.tab.guide')} className="flex flex-col gap-2">
-            <p className="ai-result-title">
-              <GraduationCap size={14} className="thesis-accent-ico" aria-hidden="true" />
-              {tt('thesis.guide.title')}
-            </p>
+          <section role="tabpanel" aria-label={tt('thesis.tab.guide')} className="flex flex-col gap-2">
+            <PSection tone="teal" icon={GraduationCap} title={tt('thesis.guide.title')} />
             <ul className="thesis-guide max-h-96 list-none space-y-2 overflow-y-auto pr-1">
-              {GUIDE_ITEMS.map((g) => (
+              {GUIDE_ITEMS.map((g, i) => (
                 <li key={g.key} className="thesis-guide-item">
-                  <g.icon size={14} className="mt-0.5 shrink-0 opacity-70" aria-hidden="true" />
+                  <PTile size="sm" tone={GUIDE_TONES[i % GUIDE_TONES.length]} icon={g.icon} className="mt-0.5" />
                   <span>{tt(g.key)}</span>
                 </li>
               ))}

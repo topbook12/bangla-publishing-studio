@@ -11,6 +11,7 @@ import { ArchiveRestore, History, Loader2, RotateCcw, Trash2 } from 'lucide-reac
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
+import { PHero } from '@/components/premium';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -88,14 +89,13 @@ export function SnapshotsDialog() {
     <>
       <Dialog open={open} onOpenChange={(v) => !v && close()}>
         <DialogContent className="max-w-xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <History size={16} aria-hidden="true" /> {tt('dlg2.snap.title')}
-            </DialogTitle>
+          <DialogHeader className="sr-only">
+            <DialogTitle>{tt('dlg2.snap.title')}</DialogTitle>
             <DialogDescription>
               {tt('dlg2.snap.desc')}
             </DialogDescription>
           </DialogHeader>
+          <PHero tone="cyan" icon={History} title={tt('dlg2.snap.title')} desc={tt('dlg2.snap.desc')} />
 
           <Button className="w-full gap-2" onClick={() => void handleManual()} disabled={busy || !projectId}>
             {busy ? <Loader2 size={15} className="animate-spin" /> : <ArchiveRestore size={15} />}
