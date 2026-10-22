@@ -177,6 +177,9 @@ export const DS_STYLES: DsStyleOpt[] = [
   { id: 'graphite', name: L3('গ্রাফাইট ও গোল্ড', 'ग्रेफाइट व गोल्ड', 'Graphite & gold'), P: P_GRAPHITE },
 ];
 
+/** পুরো প্যালেট-গ্যালারি — প্রতিটি টেমপ্লেট দশটি কিউরেটেড রং-সংযোগ পায় */
+const ALL_STYLES: string[] = DS_STYLES.map((s) => s.id);
+
 function styleById(id: string, fallback = 'classic'): DsStyleOpt {
   return DS_STYLES.find((s) => s.id === id) ?? DS_STYLES.find((s) => s.id === fallback)!;
 }
@@ -939,8 +942,8 @@ const RESIDENCE_TPL: DsTemplate = {
   category: 'regional',
   name: L3('স্থায়ী নিবাসী সনদ', 'स्थायी निवास प्रमाणपत्र', 'Permanent Residence Certificate'),
   desc: L3('ইউনিয়ন/পৌরসভার স্থায়ী বাসিন্দা হওয়ার অফিসিয়াল সনদ — ভর্তি, নামজারি ও সরকারি কাজে লাগে।', 'स्थायी निवासी प्रमाणपत्र।', 'Official permanent-residence certificate.'),
-  styles: ['classic', 'green', 'royal', 'sepia', 'teal', 'wine'],
-  defaultStyle: 'classic',
+  styles: ALL_STYLES,
+  defaultStyle: 'royal',
   fields: CERT_FIELDS,
   build: (v, lang, P) =>
     attestationBody(v, lang, P, {
@@ -961,8 +964,8 @@ const CHARACTER_TPL: DsTemplate = {
   category: 'regional',
   name: L3('চারিত্রিক সনদ', 'चारित्रिक प्रमाणपत्र', 'Character Certificate'),
   desc: L3('নাগরিকের আচরণ-চরিত্র সম্পর্কে এলাকার কর্তৃপক্ষের প্রত্যয়ন — চাকরি ও ভর্তিতে ব্যবহৃত।', 'चारित्रिक प्रमाणपत्र।', 'Character attestation certificate.'),
-  styles: ['classic', 'green', 'royal', 'sepia', 'teal', 'wine'],
-  defaultStyle: 'classic',
+  styles: ALL_STYLES,
+  defaultStyle: 'royal',
   fields: CERT_FIELDS,
   build: (v, lang, P) =>
     attestationBody(v, lang, P, {
@@ -983,8 +986,8 @@ const UNMARRIED_TPL: DsTemplate = {
   category: 'regional',
   name: L3('অবিবাহিত সনদ', 'अविवाहित प्रमाणपत्र', 'Unmarried Certificate'),
   desc: L3('বিবাহ-বহির্ভূত অবস্থা প্রত্যয়ন — নিয়োগ, ভিসা ও প্রশাসনিক কাজে ব্যবহৃত।', 'अविवाहित प्रमाणपत्र।', 'Unmarried status certificate.'),
-  styles: ['classic', 'green', 'royal', 'sepia', 'teal', 'wine'],
-  defaultStyle: 'classic',
+  styles: ALL_STYLES,
+  defaultStyle: 'royal',
   fields: CERT_FIELDS,
   build: (v, lang, P) =>
     attestationBody(v, lang, P, {
@@ -1005,8 +1008,8 @@ const INCOME_TPL: DsTemplate = {
   category: 'regional',
   name: L3('বার্ষিক আয় সনদ', 'वार्षिक आय प्रमाणपत्र', 'Annual Income Certificate'),
   desc: L3('পারিবারিক বার্ষিক আয়ের প্রত্যয়ন — বৃত্তি, ভর্তি-ছাড় ও আইনসহায়তায় লাগে।', 'वार्षिक आय प्रमाणपत्र।', 'Annual income certificate.'),
-  styles: ['classic', 'green', 'royal', 'sepia', 'teal', 'wine'],
-  defaultStyle: 'classic',
+  styles: ALL_STYLES,
+  defaultStyle: 'olive',
   fields: [
     ...CERT_FIELDS.slice(0, 10),
     { id: 'income', kind: 'text', label: L3('বার্ষিক আয় (টাকায়)', 'वार्षिक आय (रुपये)', 'Annual income (Tk.)') },
@@ -1037,8 +1040,8 @@ const HEIR_TPL: DsTemplate = {
   category: 'regional',
   name: L3('ওয়ারিশ সনদ', 'वारिस प्रमाणपत्र', 'Heir / Inheritance Certificate'),
   desc: L3('মৃত ব্যক্তির স্বামী/স্ত্রী, ছেলে-মেয়ে ও ওয়ারিশগণের তালিকাসহ সনদ — নামজারি ও দলিলে প্রয়োজন।', 'वारिस प्रमाणपत्र।', 'Certificate listing legal heirs.'),
-  styles: ['classic', 'green', 'royal', 'sepia', 'teal', 'wine'],
-  defaultStyle: 'classic',
+  styles: ALL_STYLES,
+  defaultStyle: 'royal',
   fields: [
     ...fOffice(),
     ...fRef(),
@@ -1090,8 +1093,8 @@ const AFFIDAVIT_TPL: DsTemplate = {
   category: 'legal',
   name: L3('হলফনামা', 'शपथ पत्र', 'Affidavit'),
   desc: L3('নোটারি-পাবলিক প্রথায় স্বঘোষিত হলফনামা — সাধারণ ঘোষণা, তথ্য-নিশ্চিতকরণ ও প্রতিশ্রুতি।', 'शपथ पत्र।', 'Self-declared affidavit.'),
-  styles: ['classic', 'sepia', 'royal', 'graphite', 'espresso'],
-  defaultStyle: 'classic',
+  styles: ALL_STYLES,
+  defaultStyle: 'sepia',
   fields: [
     { id: 'court', kind: 'text', label: L3('আদালত/প্রথা-শিরোনাম', 'अदालत/शीर्षक', 'Court/heading'), wide: true },
     { id: 'name', kind: 'text', label: L3('হলফকারীর নাম', 'शपथकर्ता का नाम', 'Deponent\u2019s name') },
@@ -1126,7 +1129,7 @@ const GENERAL_APP_TPL: DsTemplate = {
   category: 'regional',
   name: L3('সাধারণ দরখাস্ত', 'सामान्य आवेदन/दरखास्त', 'General Application'),
   desc: L3('কর্তৃপক্ষ বরাবর বিনীত দরখাস্ত — ভর্তি, চাকরি, অনুমতি, সাহায্য — যেকোনো বিষয়ে।', 'सामान्य आवेदन।', 'General petition/application.'),
-  styles: ['classic', 'green', 'royal', 'sepia', 'teal', 'wine'],
+  styles: ALL_STYLES,
   defaultStyle: 'classic',
   fields: [
     { id: 'toWho', kind: 'text', label: L3('বরাবর (পদবি)', 'सेवा में (पद)', 'To (designation)'), wide: true },
@@ -1160,8 +1163,8 @@ const MUTATION_TPL: DsTemplate = {
   category: 'regional',
   name: L3('নামজারির দরখাস্ত', 'नामजारी आवेदन', 'Land Mutation Application'),
   desc: L3('উপজেলা নির্বাহী অফিসার/সার্কেল অফিস বরাবর ভূমি-নামজারির প্রথাসিদ্ধ দরখাস্ত।', 'नामजारी आवेदन।', 'Mutation petition to land office.'),
-  styles: ['classic', 'green', 'royal', 'sepia', 'teal', 'wine'],
-  defaultStyle: 'classic',
+  styles: ALL_STYLES,
+  defaultStyle: 'green',
   fields: [
     { id: 'toWho', kind: 'text', label: L3('বরাবর (পদবি)', 'सेवा में (पद)', 'To (designation)'), wide: true },
     { id: 'subject', kind: 'text', wide: true, label: DSB.subject },
@@ -1230,8 +1233,8 @@ const GIFT_TPL: DsTemplate = {
   category: 'regional',
   name: L3('হেবানামা (দানপত্র)', 'हेबा-नामा (दानपत्र)', 'Gift Deed (Heba)'),
   desc: L3('পিতা-মাতা → ছেলে-মেয়ে বা আত্মীয়কে বিনা-প্রতিদানে জমি দানের আইনি হেবানামা।', 'हेबा-नामा।', 'Gift deed without consideration.'),
-  styles: ['classic', 'green', 'royal', 'sepia', 'teal', 'wine'],
-  defaultStyle: 'classic',
+  styles: ALL_STYLES,
+  defaultStyle: 'sepia',
   fields: DEED_FIELDS,
   build: (v, lang, P) =>
     deedShell(
@@ -1257,8 +1260,8 @@ const PARTITION_TPL: DsTemplate = {
   category: 'regional',
   name: L3('বন্টননামা', 'बंटननामा', 'Deed of Partition'),
   desc: L3('ওয়ারিশদের মধ্যে ঐত্যভাগ জমি সমান-শর্তে বণ্টনের আইনি দলিল।', 'बंटननामा।', 'Partition deed among heirs.'),
-  styles: ['classic', 'green', 'royal', 'sepia', 'teal', 'wine'],
-  defaultStyle: 'classic',
+  styles: ALL_STYLES,
+  defaultStyle: 'sepia',
   fields: DEED_FIELDS,
   build: (v, lang, P) =>
     deedShell(
@@ -1284,8 +1287,8 @@ const SALE_TPL: DsTemplate = {
   category: 'regional',
   name: L3('ভায়া দলিল (সাফ কবলা)', 'भाया दस्तावेज़ (सफ कबला)', 'Sale Deed (Vhaya)'),
   desc: L3('নগদ প্রতিদানে জমি ক্রয়-বিক্রয়ের ভায়া দলিল — পাটোয়ারি প্রথা অনুযায়ী।', 'भाया दस्तावेज़।', 'Sale deed for consideration.'),
-  styles: ['classic', 'green', 'royal', 'sepia', 'teal', 'wine'],
-  defaultStyle: 'classic',
+  styles: ALL_STYLES,
+  defaultStyle: 'sepia',
   fields: DEED_FIELDS,
   build: (v, lang, P) =>
     deedShell(
@@ -1313,8 +1316,8 @@ const NOTICE_TPL: DsTemplate = {
   category: 'office',
   name: L3('নোটিশ/সার্কুলার', 'नोटिस/सर्कुलर', 'Notice / Circular'),
   desc: L3('প্রতিষ্ঠান-বহির্মুখী ঘোষণা — সভা, ভর্তি, নিয়োগ, শর্তাবলি ও তারিখসহ।', 'नोटिस।', 'Public notice with points.'),
-  styles: ['classic', 'royal', 'green', 'teal', 'graphite', 'espresso'],
-  defaultStyle: 'classic',
+  styles: ALL_STYLES,
+  defaultStyle: 'royal',
   fields: [
     ...fOffice(),
     ...fRef(),
@@ -1348,8 +1351,8 @@ const OFFICE_ORDER_TPL: DsTemplate = {
   category: 'office',
   name: L3('অফিস আদেশ', 'कार्यालय आदेश', 'Office Order'),
   desc: L3('স্মারক-নম্বরসহ আনুষ্ঠানিক আদেশ — নিয়োগ, বদলি, ছুটি ও নির্দেশনা।', 'कार्यालय आदेश।', 'Formal office order.'),
-  styles: ['classic', 'royal', 'green', 'teal', 'graphite', 'espresso'],
-  defaultStyle: 'classic',
+  styles: ALL_STYLES,
+  defaultStyle: 'green',
   fields: [
     ...fOffice(),
     ...fRef(),
@@ -1382,8 +1385,8 @@ const OFFICIAL_LETTER_TPL: DsTemplate = {
   category: 'office',
   name: L3('অফিসিয়াল চিঠি', 'आधिकारिक पत्र', 'Official Letter'),
   desc: L3('চিঠির শিরোনাম, স্মারক-নং, সূত্র ও প্রাপক-ব্লকসহ সরকারি ধাঁচের পত্র।', 'आधिकारिक पत्र।', 'Letter with memo header.'),
-  styles: ['classic', 'royal', 'green', 'teal', 'graphite', 'espresso'],
-  defaultStyle: 'classic',
+  styles: ALL_STYLES,
+  defaultStyle: 'royal',
   fields: [
     ...fOffice(),
     ...fRef(),
@@ -1423,8 +1426,8 @@ const REPORT_TPL: DsTemplate = {
   category: 'office',
   name: L3('প্রতিবেদন', 'प्रतिवेदन', 'Report'),
   desc: L3('ভূমিকা–পরিদর্শন–প্রাপ্ত তথ্য–পর্যবেক্ষণ–সুপারিশ — পূর্ণাঙ্গ প্রতিবেদন-কাঠামো।', 'प्रतिवेदन।', 'Structured official report.'),
-  styles: ['classic', 'royal', 'green', 'teal', 'graphite', 'espresso'],
-  defaultStyle: 'classic',
+  styles: ALL_STYLES,
+  defaultStyle: 'teal',
   fields: [
     ...fOffice(),
     { id: 'title', kind: 'text', wide: true, label: L3('প্রতিবেদনের শিরোনাম', 'प्रतिवेदन शीर्षक', 'Report title') },
@@ -1530,7 +1533,7 @@ const INVOICE_TPL: DsTemplate = {
   category: 'finance',
   name: L3('ইনভয়েস/চালান', 'इनवॉइस/चालान', 'Invoice'),
   desc: L3('পরিমাণ×দর=টাকা স্বয়ংক্রিয় গণনাসহ পেশাদার চালান — কথায়-মোট, ভ্যাট, স্বাক্ষর।', 'पेशेवर इनवॉइस।', 'Invoice with auto totals.'),
-  styles: ['classic', 'teal', 'royal', 'green', 'espresso', 'graphite'],
+  styles: ALL_STYLES,
   defaultStyle: 'teal',
   fields: [
     { id: 'shop', kind: 'text', wide: true, label: L3('প্রতিষ্ঠানের নাম', 'प्रतिष्ठान का नाम', 'Business name') },
@@ -1593,8 +1596,8 @@ const MONEY_RECEIPT_TPL: DsTemplate = {
   category: 'finance',
   name: L3('টাকা আদায়ের রসিদ', 'नकद रसीद', 'Money Receipt'),
   desc: L3('রসিদ-নম্বর ও কথায়-টাকাসহ নগদ আদায়ের প্রথাসিদ্ধ রসিদ — মোহর-স্থানসহ।', 'नकद रसीद।', 'Cash receipt with stamp spot.'),
-  styles: ['classic', 'teal', 'royal', 'green', 'espresso', 'graphite'],
-  defaultStyle: 'classic',
+  styles: ALL_STYLES,
+  defaultStyle: 'royal',
   fields: [
     { id: 'shop', kind: 'text', wide: true, label: L3('প্রতিষ্ঠানের নাম', 'प्रतिष्ठान', 'Business name') },
     { id: 'address', kind: 'text', wide: true, label: L3('ঠিকানা/মোবাইল', 'पता/मोबाइल', 'Address / phone') },
@@ -1634,8 +1637,8 @@ const AGREEMENT_TPL: DsTemplate = {
   category: 'legal',
   name: L3('চুক্তিপত্র', 'समझौता पत्र', 'Agreement'),
   desc: L3('দুই পক্ষের সমঝোতা চুক্তি — শর্তাবলি, সাক্ষী ও স্বাক্ষর-ব্লকসহ আইনি ধাঁচ।', 'समझौता पत्र।', 'Two-party agreement.'),
-  styles: ['classic', 'sepia', 'royal', 'graphite', 'espresso'],
-  defaultStyle: 'classic',
+  styles: ALL_STYLES,
+  defaultStyle: 'sepia',
   fields: [
     { id: 'title', kind: 'text', wide: true, label: L3('চুক্তির শিরোনাম', 'समझौते का शीर्षक', 'Agreement title'), ph: L3('দোকান ভাড়া চুক্তিপত্র', 'किराया समझौता', 'Shop rent agreement') },
     { id: 'deedDate', kind: 'text', label: L3('তারিখ', 'तिथि', 'Date') },
@@ -1678,8 +1681,8 @@ const CLASS_ROUTINE_TPL: DsTemplate = {
   category: 'edu',
   name: L3('ক্লাস রুটিন', 'कक्षा रुटीन', 'Class Routine'),
   desc: L3('পিরিয়ড×দিন গ্রিডের ক্লাস-রুটিন — শ্রেণি, শাখা ও নোটসহ।', 'कक्षा रुटीन।', 'Period×day class routine.'),
-  styles: ['classic', 'green', 'teal', 'plum', 'royal', 'graphite'],
-  defaultStyle: 'teal',
+  styles: ALL_STYLES,
+  defaultStyle: 'green',
   fields: [
     { id: 'office', kind: 'text', wide: true, label: L3('প্রতিষ্ঠানের নাম', 'संस्था का नाम', 'Institution name') },
     { id: 'address', kind: 'text', wide: true, label: L3('ঠিকানা', 'पता', 'Address') },
@@ -1720,8 +1723,8 @@ const EXAM_ROUTINE_TPL: DsTemplate = {
   category: 'edu',
   name: L3('পরীক্ষার রুটিন', 'परीक्षा रुटीन', 'Exam Routine'),
   desc: L3('তারিখ-বার-সময়-বিষয় কলামের পরীক্ষা-রুটিন — নির্দেশনা-বক্সসহ।', 'परीक्षा रुटीन।', 'Exam schedule with instructions.'),
-  styles: ['classic', 'green', 'teal', 'plum', 'royal', 'graphite'],
-  defaultStyle: 'classic',
+  styles: ALL_STYLES,
+  defaultStyle: 'green',
   fields: [
     { id: 'office', kind: 'text', wide: true, label: L3('প্রতিষ্ঠানের নাম', 'संस्था', 'Institution name') },
     { id: 'address', kind: 'text', wide: true, label: L3('ঠিকানা', 'पता', 'Address') },
@@ -1764,8 +1767,8 @@ const MARKSHEET_TPL: DsTemplate = {
   category: 'edu',
   name: L3('মার্কশিট', 'मार्कशीट', 'Marksheet'),
   desc: L3('বিষয়-নম্বর-গ্রেড টেবিল, সর্বমোট ও জিপিএ-সহ স্কুল-প্রথার মার্কশিট।', 'मार्कशीट।', 'Subject marks with totals & GPA.'),
-  styles: ['classic', 'green', 'teal', 'plum', 'royal', 'graphite'],
-  defaultStyle: 'classic',
+  styles: ALL_STYLES,
+  defaultStyle: 'teal',
   fields: [
     { id: 'office', kind: 'text', wide: true, label: L3('প্রতিষ্ঠানের নাম', 'संस्था', 'Institution name') },
     { id: 'address', kind: 'text', wide: true, label: L3('ঠিকানা', 'पता', 'Address') },
@@ -1813,7 +1816,7 @@ const AWARD_TPL: DsTemplate = {
   category: 'cert',
   name: L3('প্রশংসাপত্র', 'प्रशंसा पत्र', 'Award Certificate'),
   desc: L3('স্বর্ণ-ফ্রেমসহ সম্মাননা-সনদ — সেরা ছাত্র, প্রতিযোগিতা ও কৃতিত্বের স্বীকৃতি।', 'प्रशंसा पत्र।', 'Framed award certificate.'),
-  styles: ['royal', 'green', 'wine', 'plum', 'sepia', 'teal'],
+  styles: ALL_STYLES,
   defaultStyle: 'royal',
   fields: [
     { id: 'office', kind: 'text', wide: true, label: L3('প্রতিষ্ঠান/আয়োজক', 'संस्था', 'Institution / organiser') },
@@ -1848,8 +1851,8 @@ const ADMISSION_TPL: DsTemplate = {
   category: 'edu',
   name: L3('ভর্তি ফরম', 'प्रवेश फॉर्म', 'Admission Form'),
   desc: L3('ছবি-ঘর ও পূরণ-যোগ্য তথ্য-পঙক্তিসহ স্কুল-প্রথার ভর্তি ফরম।', 'प्रवेश फॉर्म।', 'Admission form with photo box.'),
-  styles: ['classic', 'green', 'teal', 'plum', 'royal', 'graphite'],
-  defaultStyle: 'classic',
+  styles: ALL_STYLES,
+  defaultStyle: 'royal',
   fields: [
     { id: 'office', kind: 'text', wide: true, label: L3('প্রতিষ্ঠানের নাম', 'संस्था', 'Institution name') },
     { id: 'address', kind: 'text', wide: true, label: L3('ঠিকানা', 'पता', 'Address') },
@@ -1903,8 +1906,8 @@ const INVITATION_TPL: DsTemplate = {
   category: 'event',
   name: L3('আমন্ত্রণ পত্র', 'निमंत्रण पत्र', 'Invitation Card'),
   desc: L3('অনুষ্ঠানের সম্মানিত আমন্ত্রণ — ফ্রেম, অলংকরণ ও তারিখ-স্থানসহ।', 'निमंत्रण कार्ड।', 'Framed event invitation.'),
-  styles: ['royal', 'wine', 'plum', 'sepia', 'olive', 'teal'],
-  defaultStyle: 'royal',
+  styles: ALL_STYLES,
+  defaultStyle: 'plum',
   fields: [
     { id: 'office', kind: 'text', wide: true, label: L3('আয়োজক', 'आयोजक', 'Host / organiser') },
     { id: 'title', kind: 'text', wide: true, label: L3('অনুষ্ঠানের নাম', 'अनुष्ठान', 'Event name'), ph: L3('বার্ষিক সাংস্কৃতিক অনুষ্ঠান', '…', 'Annual cultural event') },
@@ -1938,7 +1941,7 @@ const WEDDING_TPL: DsTemplate = {
   category: 'event',
   name: L3('বিয়ের আমন্ত্রণ কার্ড', 'विवाह निमंत्रण', 'Wedding Invitation'),
   desc: L3('কনে-বরের নাম-অভিভাবকসহ প্রথাসিদ্ধ বিবাহ-দাওয়াত — অলংকৃত ফ্রেম।', 'विवाह निमंत्रण कार्ड।', 'Traditional wedding card.'),
-  styles: ['royal', 'wine', 'plum', 'sepia', 'olive', 'teal'],
+  styles: ALL_STYLES,
   defaultStyle: 'royal',
   fields: [
     { id: 'host', kind: 'text', wide: true, label: L3('দাওয়াতকারী (পরিবার)', 'आमंत्रणकर्ता', 'Inviting family'), ph: L3('আমাদের একমাত্র কন্যা বিবাহ উপলক্ষে', '…', 'On the marriage of our daughter') },
@@ -1976,8 +1979,8 @@ const PROGRAM_TPL: DsTemplate = {
   category: 'event',
   name: L3('প্রোগ্রাম সূচি', 'कार्यक्रम सूची', 'Program Schedule'),
   desc: L3('সময়-পর্ব টেবিলের অনুষ্ঠান-সূচি — আয়োজক ও স্লোগানসহ।', 'कार्यक्रम सूची।', 'Time-item programme sheet.'),
-  styles: ['royal', 'wine', 'plum', 'sepia', 'olive', 'teal'],
-  defaultStyle: 'royal',
+  styles: ALL_STYLES,
+  defaultStyle: 'wine',
   fields: [
     { id: 'office', kind: 'text', wide: true, label: L3('আয়োজক', 'आयोजक', 'Organiser') },
     { id: 'title', kind: 'text', wide: true, label: L3('অনুষ্ঠানের নাম', 'अनुष्ठान', 'Event name') },
@@ -2014,8 +2017,8 @@ const PRESCRIPTION_TPL: DsTemplate = {
   category: 'med',
   name: L3('প্রেসক্রিপশন প্যাড', 'पर्चा पैड', 'Prescription Pad'),
   desc: L3('ডাক্তার-শিরোনাম, রোগী-তথ্য, ℞-ওষুধ-তালিকা ও পরামর্শসহ ক্লিনিক-প্রথার পর্চা।', 'पर्चा पैड।', 'Clinic prescription pad.'),
-  styles: ['teal', 'green', 'classic', 'royal', 'graphite'],
-  defaultStyle: 'teal',
+  styles: ALL_STYLES,
+  defaultStyle: 'green',
   fields: [
     { id: 'doctor', kind: 'text', wide: true, label: L3('ডাক্তারের নাম', 'डॉक्टर का नाम', 'Doctor\u2019s name') },
     { id: 'degrees', kind: 'text', wide: true, label: L3('ডিগ্রি', 'डिग्री', 'Degrees'), ph: L3('MBBS, BCS (Health), FCPS (Medicine)', '…', 'MBBS, FCPS') },
@@ -2089,7 +2092,7 @@ const POSTER_TPL: DsTemplate = {
   category: 'promo',
   name: L3('পোস্টার', 'पोस्टर', 'Poster'),
   desc: L3('বড়-শিরোনামের ঘোষণা-পোস্টার — আয়োজন, পয়েন্ট, তারিখ-স্থান ও যোগাযোগ।', 'पोस्टर।', 'Bold announcement poster.'),
-  styles: ['royal', 'wine', 'olive', 'teal', 'plum', 'espresso'],
+  styles: ALL_STYLES,
   defaultStyle: 'royal',
   fields: [
     { id: 'kicker', kind: 'text', wide: true, label: L3('উপরের ছোট-পঙক্তি', 'ऊपरी पंक्ति', 'Kicker line'), ph: L3('সবার জন্য উন্মুক্ত', '…', 'Open for all') },
@@ -2125,7 +2128,7 @@ const FLYER_TPL: DsTemplate = {
   category: 'promo',
   name: L3('লিফলেট (দুই-স্তম্ভ)', 'लीफलेट (दो स्तंभ)', 'Two-column Flyer'),
   desc: L3('দুই-স্তম্ভ সংবাদপত্র-ধাঁচের লিফলেট — সেবা-তালিকা ও দামসহ কমপ্যাক্ট।', 'लीफलेट।', 'Compact two-column flyer.'),
-  styles: ['royal', 'wine', 'olive', 'teal', 'plum', 'espresso'],
+  styles: ALL_STYLES,
   defaultStyle: 'teal',
   fields: [
     { id: 'office', kind: 'text', wide: true, label: L3('প্রতিষ্ঠানের নাম', 'प्रतिष्ठान', 'Business name') },
@@ -2204,7 +2207,7 @@ const RESUME_MODERN_TPL: DsTemplate = {
   category: 'career',
   name: L3('আধুনিক রেজিউমে', 'आधुनिक रिज़्यूमे', 'Modern Resume'),
   desc: L3('দুই-স্তম্ভ সমসাময়িক রেজিউমে — বাঁ-পাশে অভিজ্ঞতা-শিক্ষা, ডানে যোগাযোগ-দক্ষতা-ভাষা।', 'दो-स्तंभ रिज़्यूमे।', 'Two-column resume with sidebar.'),
-  styles: ['classic', 'teal', 'graphite', 'wine', 'plum', 'espresso', 'green', 'royal'],
+  styles: ALL_STYLES,
   defaultStyle: 'teal',
   fields: [
     { id: 'name', kind: 'text', wide: true, label: L3('পূর্ণ নাম', 'पूरा नाम', 'Full name') },
@@ -2269,8 +2272,8 @@ const RESUME_CLASSIC_TPL: DsTemplate = {
   category: 'career',
   name: L3('ক্লাসিক সিভি', 'क्लासिक सीवी', 'Classic CV'),
   desc: L3('ঐতিহ্যবাহী এক-স্তম্ভ সিভি — কেন্দ্র-শিরোনাম, ধারাবাহিক সেকশন, সাদৃশ্য-বান্ধব বিন্যাস।', 'पारंपरिक सीवी।', 'Traditional single-column CV.'),
-  styles: ['classic', 'teal', 'graphite', 'wine', 'plum', 'espresso', 'green', 'royal'],
-  defaultStyle: 'classic',
+  styles: ALL_STYLES,
+  defaultStyle: 'graphite',
   fields: [
     { id: 'name', kind: 'text', wide: true, label: L3('পূর্ণ নাম', 'पूरा नाम', 'Full name') },
     { id: 'headline', kind: 'text', wide: true, label: L3('পদবি/পেশা-শিরোনাম', 'पद/पेशা', 'Professional title') },
@@ -2312,8 +2315,8 @@ const COVER_LETTER_TPL: DsTemplate = {
   category: 'career',
   name: L3('কভার লেটার', 'कवर लेटर', 'Cover Letter'),
   desc: L3('চাকরির আবেদনের সঙ্গী-পত্র — প্রেরক-প্রাপক-ব্লক, পদ-উল্লেখ ও তিন-অনুচ্ছেদ বক্তব্য।', 'कवर लेटर।', 'Job application cover letter.'),
-  styles: ['classic', 'teal', 'graphite', 'wine', 'plum', 'espresso', 'green', 'royal'],
-  defaultStyle: 'classic',
+  styles: ALL_STYLES,
+  defaultStyle: 'espresso',
   fields: [
     { id: 'name', kind: 'text', wide: true, label: L3('আপনার নাম', 'आपका नाम', 'Your name') },
     { id: 'addressLines', kind: 'textarea', rows: 2, label: L3('ঠিকানা (প্রতি লাইনে একটি)', 'पता (प्रति पंक्ति)', 'Address (one per line)') },
@@ -2356,8 +2359,8 @@ const RECOMMENDATION_TPL: DsTemplate = {
   category: 'career',
   name: L3('সুপারিশপত্র', 'सिफारिश पत्र', 'Recommendation Letter'),
   desc: L3('শিক্ষক/বসের সুপারিশ-পত্র — সম্পর্ক, গুণাবলি ও দৃঢ়-সুপারিশের ধাঁচ।', 'सिफारिश पत्र।', 'Reference letter from mentor.'),
-  styles: ['classic', 'teal', 'graphite', 'wine', 'plum', 'espresso', 'green', 'royal'],
-  defaultStyle: 'classic',
+  styles: ALL_STYLES,
+  defaultStyle: 'green',
   fields: [
     { id: 'office', kind: 'text', wide: true, label: L3('প্রতিষ্ঠানের নাম', 'संस्था', 'Institution / company') },
     { id: 'date', kind: 'date', label: DSB.date },
@@ -2392,8 +2395,8 @@ const RESIGNATION_TPL: DsTemplate = {
   category: 'career',
   name: L3('পদত্যাগপত্র', 'त्यागपत्र', 'Resignation Letter'),
   desc: L3('আনুষ্ঠানিক পদত্যাগ — নোটিশ, শেষ কার্যদিবস, কৃতজ্ঞতা ও হস্তান্তর-প্রতিশ্রুতি।', 'त्यागपत्र।', 'Formal resignation with notice.'),
-  styles: ['classic', 'teal', 'graphite', 'wine', 'plum', 'espresso', 'green', 'royal'],
-  defaultStyle: 'classic',
+  styles: ALL_STYLES,
+  defaultStyle: 'graphite',
   fields: [
     { id: 'name', kind: 'text', wide: true, label: L3('আপনার নাম', 'आपका नाम', 'Your name') },
     { id: 'position', kind: 'text', wide: true, label: L3('বর্তমান পদবি', 'वर्तमान पद', 'Current position') },
@@ -2429,7 +2432,7 @@ const LETTERHEAD_TPL: DsTemplate = {
   category: 'office',
   name: L3('লেটারহেড', 'लेटरहेड', 'Letterhead'),
   desc: L3('প্রতিষ্ঠানের মাস্টহেড-চিঠির কাগজ — নাম, ট্যাগলাইন, যোগাযোগ-পটি ও লেখা-জায়গা।', 'लेटरहेड।', 'Branded letterhead with contact strip.'),
-  styles: ['classic', 'royal', 'green', 'teal', 'graphite', 'espresso'],
+  styles: ALL_STYLES,
   defaultStyle: 'royal',
   fields: [
     { id: 'name', kind: 'text', wide: true, label: L3('প্রতিষ্ঠানের নাম', 'संस्था का नाम', 'Organization name') },
@@ -2465,8 +2468,8 @@ const MEMO_TPL: DsTemplate = {
   category: 'office',
   name: L3('মেমোর‍্যান্ডাম', 'ज्ञापन', 'Memorandum'),
   desc: L3('TO-FROM-DATE-RE গ্রিডের অভ্যন্তরীণ স্মারক-পত্র — সংক্ষিপ্ত ও সরাসরি।', 'ज्ञापन।', 'Internal memo with header grid.'),
-  styles: ['classic', 'royal', 'green', 'teal', 'graphite', 'espresso'],
-  defaultStyle: 'classic',
+  styles: ALL_STYLES,
+  defaultStyle: 'graphite',
   fields: [
     { id: 'office', kind: 'text', wide: true, label: L3('প্রতিষ্ঠান/বিভাগ', 'संस्था/विभाग', 'Organization / department') },
     { id: 'to', kind: 'text', wide: true, label: L3('প্রাপক (TO)', 'प्रापक (TO)', 'To') },
@@ -2495,8 +2498,8 @@ const MEETING_AGENDA_TPL: DsTemplate = {
   category: 'office',
   name: L3('সভার আলোচ্যসূচি', 'बैठक की कार्यसूची', 'Meeting Agenda'),
   desc: L3('তারিখ-স্থান-সভাপতি গ্রিডসহ আলোচ্যসূচি — ধারাবাহিক বিষয়-তালিকা।', 'कार्यसूची।', 'Structured meeting agenda.'),
-  styles: ['classic', 'royal', 'green', 'teal', 'graphite', 'espresso'],
-  defaultStyle: 'classic',
+  styles: ALL_STYLES,
+  defaultStyle: 'teal',
   fields: [
     { id: 'office', kind: 'text', wide: true, label: L3('প্রতিষ্ঠান', 'संस्था', 'Organization') },
     { id: 'meetingTitle', kind: 'text', wide: true, label: L3('সভার নাম', 'बैठक का नाम', 'Meeting title') },
@@ -2529,8 +2532,8 @@ const MEETING_MINUTES_TPL: DsTemplate = {
   category: 'office',
   name: L3('সভার কার্যবিবরণী', 'बैठक का कार्यवृत्त', 'Meeting Minutes'),
   desc: L3('উপস্থিতি-আলোচনা-সিদ্ধান্ত ও কর্ম-তালিকার পূর্ণাঙ্গ কার্যবিবরণী — সভাপতি ও সচিবের স্বাক্ষর।', 'कार्यवृत्त।', 'Minutes with action items.'),
-  styles: ['classic', 'royal', 'green', 'teal', 'graphite', 'espresso'],
-  defaultStyle: 'classic',
+  styles: ALL_STYLES,
+  defaultStyle: 'graphite',
   fields: [
     { id: 'office', kind: 'text', wide: true, label: L3('প্রতিষ্ঠান', 'संस्था', 'Organization') },
     { id: 'meetingTitle', kind: 'text', wide: true, label: L3('সভার নাম', 'बैठক का नाम', 'Meeting title') },
@@ -2595,8 +2598,8 @@ const QUOTATION_TPL: DsTemplate = {
   category: 'finance',
   name: L3('দর-উদ্ধৃতি (কোটেশন)', 'कोटेशन', 'Quotation'),
   desc: L3('স্বয়ংক্রিয় মোট-গণনার দরপত্র — প্রাপক, বৈধতা-সময় ও শর্তাবলিসহ।', 'कोटेशन।', 'Price quotation with validity.'),
-  styles: ['classic', 'teal', 'royal', 'green', 'espresso', 'graphite'],
-  defaultStyle: 'teal',
+  styles: ALL_STYLES,
+  defaultStyle: 'espresso',
   fields: [
     { id: 'shop', kind: 'text', wide: true, label: L3('প্রতিষ্ঠানের নাম', 'प्रतिष्ठान', 'Business name') },
     { id: 'address', kind: 'text', wide: true, label: L3('ঠিকানা', 'पता', 'Address') },
@@ -2647,8 +2650,8 @@ const PURCHASE_ORDER_TPL: DsTemplate = {
   category: 'finance',
   name: L3('ক্রয়াদেশ (পিও)', 'क्रय आदेश', 'Purchase Order'),
   desc: L3('PO-নম্বরসহ আনুষ্ঠানিক ক্রয়াদেশ — বিক্রেতা, সরবরাহ-ঠিকানা ও স্বয়ংক্রিয় মোট।', 'क्रय आदेश।', 'Formal PO with vendor block.'),
-  styles: ['classic', 'teal', 'royal', 'green', 'espresso', 'graphite'],
-  defaultStyle: 'classic',
+  styles: ALL_STYLES,
+  defaultStyle: 'green',
   fields: [
     { id: 'shop', kind: 'text', wide: true, label: L3('ক্রেতা-প্রতিষ্ঠান', 'खरीदार संस्था', 'Buying organization') },
     { id: 'address', kind: 'text', wide: true, label: L3('ঠিকানা', 'पता', 'Address') },
@@ -2701,8 +2704,8 @@ const RENTAL_AGREEMENT_TPL: DsTemplate = {
   category: 'legal',
   name: L3('ভাড়া চুক্তিপত্র', 'किराया अनुबंध', 'Rental / Lease Agreement'),
   desc: L3('বাড়ি/দোকান ভাড়ার চুক্তি — বাড়িওয়ালা-ভাড়াটিয়া, মেয়াদ, ভাড়া ও শর্তাবলি।', 'किराया अनुबंध।', 'Landlord-tenant lease contract.'),
-  styles: ['classic', 'sepia', 'royal', 'graphite', 'espresso'],
-  defaultStyle: 'classic',
+  styles: ALL_STYLES,
+  defaultStyle: 'sepia',
   fields: [
     { id: 'title', kind: 'text', wide: true, label: L3('চুক্তির শিরোনাম', 'शीर्षक', 'Agreement title'), ph: L3('বাসা ভাড়া চুক্তিপত্র', '…', 'Residential Lease Agreement') },
     { id: 'deedDate', kind: 'text', label: L3('তারিখ', 'तिथि', 'Date') },
@@ -2745,8 +2748,8 @@ const EMPLOYMENT_CONTRACT_TPL: DsTemplate = {
   category: 'legal',
   name: L3('নিয়োগ চুক্তি', 'नियोजन अनुबंध', 'Employment Contract'),
   desc: L3('চাকরির চুক্তি — পদবি, বেতন, দায়িত্ব, কর্মঘণ্টা ও নোটিশ-শর্তসহ।', 'नियोजन अनुबंध।', 'Employment terms contract.'),
-  styles: ['classic', 'sepia', 'royal', 'graphite', 'espresso'],
-  defaultStyle: 'classic',
+  styles: ALL_STYLES,
+  defaultStyle: 'graphite',
   fields: [
     { id: 'title', kind: 'text', wide: true, label: L3('চুক্তির শিরোনাম', 'शीर्षক', 'Contract title'), ph: L3('নিয়োগ ও সেবা-শর্ত চুক্তি', '…', 'Employment Agreement') },
     { id: 'deedDate', kind: 'text', label: L3('তারিখ', 'तिथि', 'Date') },
@@ -2788,8 +2791,8 @@ const NDA_TPL: DsTemplate = {
   category: 'legal',
   name: L3('গোপনীয়তা চুক্তি (NDA)', 'गोपनीयता अनुबंध', 'Non-Disclosure Agreement'),
   desc: L3('NDA — গোপন-তথ্যের সংজ্ঞা, দায়বদ্ধতা, ব্যতিক্রম ও মেয়াদ।', 'एनडीए।', 'Confidentiality agreement (NDA).'),
-  styles: ['classic', 'sepia', 'royal', 'graphite', 'espresso'],
-  defaultStyle: 'classic',
+  styles: ALL_STYLES,
+  defaultStyle: 'graphite',
   fields: [
     { id: 'deedDate', kind: 'text', label: L3('তারিখ', 'तिथि', 'Date') },
     { id: 'partyA', kind: 'text', wide: true, label: L3('পক্ষক — তথ্য-প্রদানকারী (নাম, ঠিকানা)', 'पक्षक (नाम…)', 'Party A — disclosing (name, address)') },
@@ -2837,7 +2840,7 @@ const CERT_APPRECIATION_TPL: DsTemplate = {
   category: 'cert',
   name: L3('কৃতজ্ঞতা সনদ', 'कृतज्ञता प्रमाणपत्र', 'Certificate of Appreciation'),
   desc: L3('অবদানের স্বীকৃতি-সনদ — কর্মী, স্বেচ্ছাসেবক ও সহযোগীদের সম্মানে।', 'कृतज्ञता प्रमाणपत्र।', 'Recognition of contribution.'),
-  styles: ['royal', 'green', 'wine', 'plum', 'sepia', 'teal'],
+  styles: ALL_STYLES,
   defaultStyle: 'royal',
   fields: [
     { id: 'office', kind: 'text', wide: true, label: L3('প্রতিষ্ঠান/আয়োজক', 'संस्था', 'Institution / organiser') },
@@ -2864,8 +2867,8 @@ const CERT_PARTICIPATION_TPL: DsTemplate = {
   category: 'cert',
   name: L3('অংশগ্রহণ সনদ', 'भागीदारी प्रमाणপत्र', 'Certificate of Participation'),
   desc: L3('প্রতিযোগিতা/কর্মশালায় অংশগ্রহণের স্বীকৃতি — অনুষ্ঠান, ভূমিকা ও তারিখসহ।', 'भागीदारी प्रमाणपত्र।', 'Event participation certificate.'),
-  styles: ['royal', 'green', 'wine', 'plum', 'sepia', 'teal'],
-  defaultStyle: 'teal',
+  styles: ALL_STYLES,
+  defaultStyle: 'wine',
   fields: [
     { id: 'office', kind: 'text', wide: true, label: L3('প্রতিষ্ঠান/আয়োজক', 'संस्था', 'Institution / organiser') },
     { id: 'eventName', kind: 'text', wide: true, label: L3('অনুষ্ঠানের নাম', 'अनुष्ठान', 'Event name'), ph: L3('জাতীয় বিজ্ঞান অলিম্পিয়াড ২০২৫', '…', 'National Science Olympiad 2025') },
@@ -2892,7 +2895,7 @@ const CERT_TRAINING_TPL: DsTemplate = {
   category: 'cert',
   name: L3('প্রশিক্ষণ সমাপ্তি সনদ', 'प्रशिक्षण पूर्णता प्रमाणপत्र', 'Training Completion Certificate'),
   desc: L3('কর্মশালা/কোর্স সমাপ্তির সনদ — প্রশিক্ষণ-সময়, বিষয়-তালিকা ও প্রশিক্ষক-স্বাক্ষর।', 'प्रशिक्षण प्रमाणपत्र।', 'Course completion certificate.'),
-  styles: ['royal', 'green', 'wine', 'plum', 'sepia', 'teal'],
+  styles: ALL_STYLES,
   defaultStyle: 'green',
   fields: [
     { id: 'office', kind: 'text', wide: true, label: L3('প্রতিষ্ঠান/আয়োজক', 'संस्था', 'Institution / organiser') },
@@ -2925,7 +2928,7 @@ const LESSON_PLAN_TPL: DsTemplate = {
   category: 'edu',
   name: L3('পাঠ পরিকল্পনা', 'पाठ योजना', 'Lesson Plan'),
   desc: L3('শিক্ষকের পাঠ-পরিকল্পনা — শেখার-লক্ষ্য, উপকরণ ও ধাপে-ধাপে কার্যক্রম।', 'पाठ योजना।', 'Structured lesson plan.'),
-  styles: ['classic', 'green', 'teal', 'plum', 'royal', 'graphite'],
+  styles: ALL_STYLES,
   defaultStyle: 'teal',
   fields: [
     { id: 'institution', kind: 'text', wide: true, label: L3('প্রতিষ্ঠান', 'संस्था', 'Institution') },
@@ -2973,8 +2976,8 @@ const REPORT_CARD_TPL: DsTemplate = {
   category: 'edu',
   name: L3('প্রগতি পত্র (রিপোর্ট কার্ড)', 'प्रगति पत्र', 'Report Card'),
   desc: L3('সাময়িক মূল্যায়নের প্রগতি-পত্র — গ্রেড, উপস্থিতি, আচরণ ও শিক্ষকের মন্তব্য।', 'प्रगति पत्र।', 'Term report with remarks.'),
-  styles: ['classic', 'green', 'teal', 'plum', 'royal', 'graphite'],
-  defaultStyle: 'classic',
+  styles: ALL_STYLES,
+  defaultStyle: 'royal',
   fields: [
     { id: 'institution', kind: 'text', wide: true, label: L3('প্রতিষ্ঠানের নাম', 'संस्था', 'Institution name') },
     { id: 'address', kind: 'text', wide: true, label: L3('ঠিকানা', 'पता', 'Address') },
@@ -3023,7 +3026,7 @@ const MEDICAL_CERT_TPL: DsTemplate = {
   category: 'med',
   name: L3('মেডিকেল সনদ', 'चिकित्सा प्रमाणपत्र', 'Medical Certificate'),
   desc: L3('চিকিৎসকের অসুস্থতা-সনদ — পরীক্ষা-বক্তব্য, অনুপস্থিতি-মেয়াদ ও নিবন্ধন-নম্বর।', 'चिकित्सा प्रमाणपत्र।', 'Doctor\u2019s sick-leave certificate.'),
-  styles: ['teal', 'green', 'classic', 'royal', 'graphite'],
+  styles: ALL_STYLES,
   defaultStyle: 'teal',
   fields: [
     { id: 'clinic', kind: 'text', wide: true, label: L3('ক্লিনিক/হাসপাতালের নাম', 'क्लिनिक/अस्पताल', 'Clinic / hospital') },
@@ -3066,7 +3069,7 @@ const BROCHURE_TPL: DsTemplate = {
   category: 'promo',
   name: L3('ত্রি-ভাঁজ ব্রোশিওর', 'त्रिकोण ब्रोशर', 'Tri-fold Brochure'),
   desc: L3('তিন-স্তম্ভ প্রচার-ব্রোশিওর — পরিচিতি, সেবা-তালিকা ও যোগাযোগ-প্যানেল।', 'ब्रोशर।', 'Three-panel marketing brochure.'),
-  styles: ['royal', 'wine', 'olive', 'teal', 'plum', 'espresso'],
+  styles: ALL_STYLES,
   defaultStyle: 'teal',
   fields: [
     { id: 'name', kind: 'text', wide: true, label: L3('প্রতিষ্ঠানের নাম', 'प्रतिष्ठान', 'Business name') },
@@ -3099,7 +3102,7 @@ const NEWSLETTER_TPL: DsTemplate = {
   category: 'promo',
   name: L3('নিউজলেটার', 'न्यूज़लेटर', 'Newsletter'),
   desc: L3('প্রতিষ্ঠানের সংবাদ-পত্র — মাস্টহেড, প্রধান-সংবাদ, দুই-স্তম্ভ আয়োজন ও হাইলাইট।', 'न्यूज़लेटर।', 'Masthead newsletter with highlights.'),
-  styles: ['royal', 'wine', 'olive', 'teal', 'plum', 'espresso'],
+  styles: ALL_STYLES,
   defaultStyle: 'royal',
   fields: [
     { id: 'name', kind: 'text', wide: true, label: L3('নিউজলেটারের নাম', 'न्यूज़लेटर का नाम', 'Newsletter name') },
@@ -3142,8 +3145,8 @@ const PRESS_RELEASE_TPL: DsTemplate = {
   category: 'promo',
   name: L3('প্রেস বিজ্ঞপ্তি', 'प्रेस विज्ञप्ति', 'Press Release'),
   desc: L3('সংবাদ-মাধ্যমের জন্য ঘোষণা — শিরোনাম, ডেটলাইন, মূল-বক্তব্য ও যোগাযোগ-ব্লক।', 'प्रेस विज्ञप्ति।', 'Media announcement release.'),
-  styles: ['royal', 'wine', 'olive', 'teal', 'plum', 'espresso'],
-  defaultStyle: 'royal',
+  styles: ALL_STYLES,
+  defaultStyle: 'graphite',
   fields: [
     { id: 'office', kind: 'text', wide: true, label: L3('প্রতিষ্ঠান', 'संस्था', 'Organization') },
     { id: 'date', kind: 'date', label: DSB.date },
@@ -3178,8 +3181,8 @@ const PROJECT_PROPOSAL_TPL: DsTemplate = {
   category: 'office',
   name: L3('প্রকল্প প্রস্তাবনা', 'परियोजना प्रस्ताव', 'Project Proposal'),
   desc: L3('দরপত্র/অনুদানের প্রস্তাব — উদ্দেশ্য, পরিসর, ডেলিভারেবল, সময়সূচি-টেবিল ও বাজেট।', 'प्रस्ताव — उद्देश्य, समय-सारिणी, बजट।', 'Client-facing proposal with timeline and budget.'),
-  styles: ['classic', 'royal', 'green', 'teal', 'graphite', 'espresso'],
-  defaultStyle: 'teal',
+  styles: ALL_STYLES,
+  defaultStyle: 'green',
   fields: [
     { id: 'office', kind: 'text', wide: true, label: L3('প্রস্তাবক প্রতিষ্ঠান', 'प्रस्तावक संस्था', 'Submitting organization') },
     { id: 'projectTitle', kind: 'text', wide: true, label: L3('প্রকল্পের নাম', 'परियोजना का नाम', 'Project title') },
@@ -3263,8 +3266,8 @@ const CALENDAR_TPL: DsTemplate = {
   category: 'office',
   name: L3('মাসিক ক্যালেন্ডার', 'मासिक कैलेंडर', 'Monthly Calendar'),
   desc: L3('সত্যিকারের মাস-গ্রিড — মাস-বছর লিখলেই বার-ক্যালকুলেশনসহ ক্যালেন্ডার, অনুষ্ঠান-চিহ্নসহ।', 'सही महीने का ग्रिड।', 'Real month grid — auto weekdays, event marks.'),
-  styles: ['classic', 'royal', 'green', 'teal', 'graphite', 'espresso'],
-  defaultStyle: 'classic',
+  styles: ALL_STYLES,
+  defaultStyle: 'royal',
   fields: [
     { id: 'office', kind: 'text', wide: true, label: L3('প্রতিষ্ঠান (ঐচ্ছিক)', 'संस्था', 'Organization (optional)') },
     { id: 'title', kind: 'text', wide: true, label: L3('শিরোনাম (ঐচ্ছিক)', 'शीर्षक', 'Title (optional)'), ph: L3('কার্যক্রম ক্যালেন্ডার', 'कार्यक्रम कैलेंडर', 'Activity calendar') },
@@ -3325,8 +3328,8 @@ const BUSINESS_CARD_TPL: DsTemplate = {
   category: 'promo',
   name: L3('বিজনেস কার্ড', 'विज़नेस कार्ड', 'Business Card'),
   desc: L3('পরিচয়-পত্রিকা — সামনের পিঠে নাম-পদবি-যোগাযোগ, উল্টা পিঠে মনোগ্রাম; কার্ড-বক্স নকশা।', 'परिचय-पत्रिका।', 'Front + back visiting card design.'),
-  styles: ['royal', 'wine', 'olive', 'teal', 'plum', 'espresso'],
-  defaultStyle: 'royal',
+  styles: ALL_STYLES,
+  defaultStyle: 'graphite',
   fields: [
     { id: 'company', kind: 'text', wide: true, label: L3('প্রতিষ্ঠানের নাম', 'संस्था', 'Company name') },
     { id: 'tagline', kind: 'text', wide: true, label: L3('ট্যাগলাইন (ঐচ্ছিক)', 'टैगलाइन', 'Tagline (optional)') },

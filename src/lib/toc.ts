@@ -146,6 +146,50 @@ export function extractTocTitle(pages: PageData[]): string {
  * নিজেই isDestroyed গার্ড করে, এখানেও try/catch-এ মোড়ানো; মাউন্ট-করা পাতার HTML
  * কখনো হাতে লেখা হয় না (এডিটরই syncHtml করে)।
  */
+
+/**
+ * স্ক্যান-ফলাফল সব tocBlock-এ প্রয়োগ — মাউন্ট করা এডিটরে নোড-আপডেট,
+ * রিসাইকেলড পাতায় সরাসরি HTML-লেখা। ইঞ্জিন ও স্ট্রাকচারাল-ইনসার্ট
+ * (থিসিস নির্মাণ) দুই জায়গাতেই ব্যবহৃত — এক আচরণ, এক কোডপথ।
+ */
+function applyTocUpdate(entries: TocEntry[], title: string): void {
+  // (ক) মাউন্ট করা এডিটরগুলোর tocBlock নোড আপডেট — ধ্বংসপ্রাপ্ত এডিটর গার্ডসহ
+  try {
+    updateTocNodes(getAllEditors().filter((ed) => !ed.isDestroyed), entries, title);
+  } catch { /* ফ্লো-অপের মাঝে নিরীক্ষিত ব্যর্থতা — পরের ডিবাউন্সে আবার চেষ্টা হবে */ }
+
+  // (খ) মাউন্ট নেই এমন toc-পাতার HTML সরাসরি সিঙ্ক
+  const pages = useEditorStore.getState().pages;
+  for (const page of pages) {
+    if (!page.html.includes('toc-block')) continue;
+    const ed = getEditor(page.id);
+    if (ed && !ed.isDestroyed) continue; // মাউন্ট করা → updateTocNodes-ই সামলেছে
+    const newHtml = updateTocInHtml(page.html, entries);
+    if (newHtml !== page.html) {
+      useEditorStore.getState().replacePageHtml(page.id, newHtml);
+    }
+  }
+}
+
+/**
+ * নির্ধারিত (deterministic) এক-রান — কাঠামো-সন্নিবেশ (থিসিস নির্মাণ, বই-নকশা)
+ * শেষ হলে সরাসরি ডাকুন; ডিবাউন্স-অপেক্ষা ছাড়াই সূচিপত্র সঙ্গে সঙ্গে ভরে যায়।
+ * ফিরিয়ে দেয়: স্ক্যান-করা এন্ট্রি (toc-block না থাকলে/ব্যর্থ হলে null)।
+ */
+export function refreshTocsNow(): TocEntry[] | null {
+  const { pages, settings } = useEditorStore.getState();
+  if (!hasTocBlock(pages)) return null;
+  let entries: TocEntry[];
+  try {
+    entries = scanTocEntries(pages, settings);
+  } catch {
+    return null;
+  }
+  const title = extractTocTitle(pages);
+  applyTocUpdate(entries, title);
+  return entries;
+}
+
 export function useAutoToc(): void {
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null;
@@ -167,21 +211,7 @@ export function useAutoToc(): void {
       if (signature === lastSignature) return;
 
       const title = extractTocTitle(pages);
-      // (ক) মাউন্ট করা এডিটরগুলোর tocBlock নোড আপডেট — ধ্বংসপ্রাপ্ত এডিটর গার্ডসহ
-      try {
-        updateTocNodes(getAllEditors().filter((ed) => !ed.isDestroyed), entries, title);
-      } catch { /* ফ্লো-অপের মাঝে নিরীক্ষিত ব্যর্থতা — পরের ডিবাউন্সে আবার চেষ্টা হবে */ }
-
-      // (খ) মাউন্ট নেই এমন toc-পাতার HTML সরাসরি সিঙ্ক
-      for (const page of pages) {
-        if (!page.html.includes('toc-block')) continue;
-        const ed = getEditor(page.id);
-        if (ed && !ed.isDestroyed) continue; // মাউন্ট করা → updateTocNodes-ই সামলেছে
-        const newHtml = updateTocInHtml(page.html, entries);
-        if (newHtml !== page.html) {
-          useEditorStore.getState().replacePageHtml(page.id, newHtml);
-        }
-      }
+      applyTocUpdate(entries, title);
       lastSignature = signature;
     };
 

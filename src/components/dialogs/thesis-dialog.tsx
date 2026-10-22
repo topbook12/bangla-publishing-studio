@@ -39,6 +39,7 @@ import {
   DEFAULT_THESIS_OPTIONS, formatReference, formatInText, formatReferenceLibrary,
   EMPTY_CITE, CITE_STYLE_NAMES, CITE_TYPE_NAMES, BD_UNIVERSITIES, exampleMeta, captionHtml,
 } from '@/lib/thesis';
+import { refreshTocsNow } from '@/lib/toc';
 import type {
   ThesisLang, ThesisLevel, ThesisDiscipline, ThesisOptions, CiteEntry, CiteStyle, CiteType,
 } from '@/lib/thesis';
@@ -259,10 +260,22 @@ export function ThesisDialog() {
       };
       const pages = buildThesisPages(meta, opts);
 
-      // ডকুমেন্ট-স্তরের অ্যাকশন — সম্পূর্ণ কাঠামো সবসময় ডকুমেন্টের শেষে যোগ হয়।
+      const s = useEditorStore.getState();
+
+      // প্রথম-ব্যবহারের অতিথি-পাতা (স্বাগতম-নির্দেশনা বা ফাঁকা প্রথম পাতা) এখনো
+      // অস্পৃশ্য থাকলে সরিয়ে ফেলুন — থিসিসটি যেন পুরো ডকুমেন্ট হয়; নইলে অটো-সূচিপত্র
+      // স্বাগতম-পাতার শিরোনামও তুলে নেয় এবং রানিং-হেডার/পৃষ্ঠা-স্কিম মিশে যায়।
+      // (শেষ-পাতা-একমাত্র পাতা হলে deletePage আটকে দেয়, তাই কাঠামো ঢোকানোর
+      // পরে মুছতে হবে।)
+      const firstPage = s.pages[0];
+      const firstUntouched = firstPage
+        && (firstPage.html.includes('বাংলা পাবলিশিং স্টুডিওতে স্বাগতম')
+          || firstPage.html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim() === '');
+      const welcomePageId = s.pages.length === 1 && firstUntouched ? firstPage.id : null;
+
+      // ডকুমেন্ট-স্তরের অ্যাকশন — সম্পূর্ণ কাঠামো সম্পূর্ণ ডকুমেন্টের শেষে যোগ হয়।
       // activePageId-এর পরে বসালে মাঝ-ডকুমেন্টে কাঠামো ঢুকে চলমান লেখা দু-ভাগ হয়ে
       // যায় (যেমন: রেফারেন্স ও পরিশিষ্টের মাঝে) — তাই শেষ পাতার পরেই বসানো নিরাপদ।
-      const s = useEditorStore.getState();
       let after = s.pages[s.pages.length - 1]?.id ?? null;
       const firstId = (() => {
         const id = s.addPage(after, pages[0].html);
@@ -281,6 +294,23 @@ export function ThesisDialog() {
         const preset = thesisFormatPreset(lang);
         useEditorStore.getState().updateSettings({ ...preset, margins: { ...THESIS_MARGINS } });
       }
+
+      // অতিথি-স্বাগতম পাতা এখন সরানো নিরাপদ (ডকুমেন্টে থিসিসের ১৫+ পাতা আছে)
+      if (welcomePageId) s.deletePage(welcomePageId);
+
+      // রানিং-হেডার থিসিস-রীতিতে — বাঁয়ে ফাঁকা, ডানে থিসিসের শিরোনাম (পুরনো
+      // "অধ্যায় ১ — ভূমিকা"-জাতীয় বাসি হেডার প্রতিটি পাতায় দেখাত না)
+      const st = useEditorStore.getState();
+      if (st.settings.header.enabled) {
+        const shortTitle = meta.title.length > 68 ? `${meta.title.slice(0, 66).trimEnd()}…` : meta.title;
+        st.updateSettings({
+          header: { ...st.settings.header, leftText: '', centerText: '', rightText: shortTitle, accentColor: '#0f5d40' },
+        });
+      }
+
+      // সূচিপত্র সঙ্গে সঙ্গে ভরাট — ডিবাউন্স-অপেক্ষা নয়; কাঠামো ঢোকার পরেই
+      // নির্ধারিত এক-রান (নইলে খালি-সূচির ফ্ল্যাশ দেখা যায়)
+      refreshTocsNow();
 
       toast.success(tt('thesis.toast.built').replace('{n}', String(pages.length)));
       close();

@@ -510,6 +510,9 @@ function titleMetaTable(left: string[], right: string[]): string {
   return `<table style="width:100%; margin-top:0.6em;"><tr>${cell('', left)}${cell('', right)}</tr></table>`;
 }
 
+/** উল্লম্ব স্পেসার — শিরোনাম-পাতার বিষয়বস্তু পুরো A4-উচ্চতায় ছড়িয়ে দিতে */
+const vsp = (n: number) => Array.from({ length: n }, () => '<p style="text-align:center"></p>').join('');
+
 function titlePage(meta: ThesisMeta): ThesisPage {
   const Lx = L(meta.lang);
   const en = meta.lang === 'en';
@@ -543,6 +546,7 @@ function titlePage(meta: ThesisMeta): ThesisPage {
   const rightCol: string[] = [];
   if (meta.supervisor.trim()) rightCol.push(`<strong>${esc(meta.supervisor.trim())}</strong>`);
   if (meta.session.trim()) rightCol.push(spanSoft(esc(`${Lx.sessionLabel}: ${meta.session.trim()}`)));
+  parts.push(vsp(2));
   if (leftCol.length || rightCol.length) {
     parts.push(
       titleMetaTable(
@@ -551,11 +555,11 @@ function titlePage(meta: ThesisMeta): ThesisPage {
       ),
     );
   }
-  // নিচের ব্লক — প্রতিষ্ঠান ও তারিখ
+  // নিচের ব্লক — প্রতিষ্ঠান ও তারিখ পাতার একদম নিচে (উদার শ্বাস-প্রশ্বাস)
   const bottom: string[] = [];
   if (meta.university.trim()) bottom.push(C(`<strong>${esc(meta.university.trim())}</strong>`, 'margin:0.9em 0 0.05em;'));
   if (meta.date.trim()) bottom.push(C(spanAcc(esc(meta.date.trim())), 'margin:0.05em 0;'));
-  if (bottom.length) parts.push(rule('single'), ...bottom);
+  if (bottom.length) parts.push(vsp(5), rule('single'), ...bottom);
   return { html: parts.join(''), noChrome: true, numberRestart: { from: 1, format: 'roman' } };
 }
 
@@ -764,6 +768,8 @@ export function formatReference(e: CiteEntry): string {
   const pubPlace = pl && p ? `${pl}: ${p}` : p || pl;
   const volIssue = v && i ? `${v}(${i})` : v || (i ? `(${i})` : '');
   const link = d ? `https://doi.org/${d}` : u;
+  /** ফরম্যাট-নির্ভুলতা — শেষে ব্যবহারকারীর বসানো দাঁড়ি বাদ (প্রতিটি স্টাইল নিজের দাঁড়ি নিজেই বসায়, নইলে "এ.." যুগল-দাঁড়ি হয়) */
+  const nd = (s: string) => s.trim().replace(/\.+$/, '');
 
   switch (e.style) {
     case 'apa': {
@@ -773,10 +779,10 @@ export function formatReference(e: CiteEntry): string {
       if (a) parts.push(`${a} `);
       parts.push(`(${y}). `);
       if (e.type === 'journal' || e.type === 'newspaper') {
-        parts.push(`${t}. `);
-        if (c) parts.push(`<i>${c}</i>${volIssue ? `, ${volIssue}` : ''}${pg ? `, ${pg}` : ''}. `);
+        parts.push(`${nd(t)}. `);
+        if (c) parts.push(`<i>${nd(c)}</i>${volIssue ? `, ${volIssue}` : ''}${pg ? `, ${pg}` : ''}. `);
       } else {
-        parts.push(`<i>${t}</i>${ed ? ` (${ed})` : ''}. `);
+        parts.push(`<i>${nd(t)}</i>${ed ? ` (${ed})` : ''}. `);
         if (pubPlace) parts.push(`${pubPlace}. `);
       }
       if (link) parts.push(link);
@@ -786,21 +792,21 @@ export function formatReference(e: CiteEntry): string {
       // বই: Author. Title. Publisher, Year.
       // জার্নাল: Author. "Title." Journal, vol. V, no. I, Year, pp.
       const parts: string[] = [];
-      if (a) parts.push(`${a}. `);
+      if (a) parts.push(`${nd(a)}. `);
       if (e.type === 'journal' || e.type === 'newspaper') {
-        parts.push(`"${t}." `);
-        if (c) parts.push(`<i>${c}</i>, `);
+        parts.push(`"${nd(t)}." `);
+        if (c) parts.push(`<i>${nd(c)}</i>, `);
         if (v) parts.push(`vol. ${v}, `);
         if (i) parts.push(`no. ${i}, `);
         if (y) parts.push(`${y}, `);
         if (pg) parts.push(`pp. ${pg}. `);
       } else {
-        parts.push(`<i>${t}</i>. `);
+        parts.push(`<i>${nd(t)}</i>. `);
         if (pubPlace) parts.push(`${pubPlace}, `);
         if (y) parts.push(`${y}. `);
       }
       if (link && e.type === 'website') parts.push(`${link}${e.accessed ? `, accessed ${e.accessed}` : ''}.`);
-      return parts.join('').trim();
+      return parts.join('').trim().replace(/\s{2,}/g, ' ');
     }
     case 'harvard': {
       // বই: Author (Year) Title. Place: Publisher.
@@ -808,57 +814,62 @@ export function formatReference(e: CiteEntry): string {
       if (a) parts.push(`${a} `);
       parts.push(`(${y}) `);
       if (e.type === 'journal' || e.type === 'newspaper') {
-        parts.push(`'${t}', `);
-        if (c) parts.push(`<i>${c}</i>`);
+        parts.push(`'${nd(t)}', `);
+        if (c) parts.push(`<i>${nd(c)}</i>`);
         if (v) parts.push(`, vol. ${v}`);
         if (i) parts.push(`, no. ${i}`);
         if (pg) parts.push(`, pp. ${pg}`);
         parts.push('. ');
       } else {
-        parts.push(`<i>${t}</i>${ed ? ` (${ed})` : ''}. `);
+        parts.push(`<i>${nd(t)}</i>${ed ? ` (${ed})` : ''}. `);
         if (pubPlace) parts.push(`${pubPlace}. `);
       }
       if (link) parts.push(`${link}${e.accessed ? ` (Accessed ${e.accessed})` : ''}`);
-      return parts.join('').trim();
+      return parts.join('').trim().replace(/\s{2,}/g, ' ');
     }
     case 'chicago': {
       // author-date: Author. Year. Title. Place: Publisher.
       const parts: string[] = [];
-      if (a) parts.push(`${a}. `);
+      if (a) parts.push(`${nd(a)}. `);
       if (y) parts.push(`${y}. `);
       if (e.type === 'journal' || e.type === 'newspaper') {
-        parts.push(`"${t}." `);
-        if (c) parts.push(`<i>${c}</i> `);
+        parts.push(`"${nd(t)}." `);
+        if (c) parts.push(`<i>${nd(c)}</i> `);
         if (v) parts.push(`${v}`);
         if (i) parts.push(`, no. ${i}`);
         if (pg) parts.push(`: ${pg}`);
         parts.push('. ');
       } else {
-        parts.push(`<i>${t}</i>. `);
+        parts.push(`<i>${nd(t)}</i>. `);
         if (pubPlace) parts.push(`${pubPlace}. `);
       }
       if (link) parts.push(link);
-      return parts.join('').trim();
+      return parts.join('').trim().replace(/\s{2,}/g, ' ');
     }
     case 'ieee': {
       // [1] A. Rahman, Title, ed. Place: Publisher, Year.
       const parts: string[] = [];
       if (a) parts.push(`${a}, `);
       if (e.type === 'journal' || e.type === 'newspaper') {
-        parts.push(`"${t}," `);
-        if (c) parts.push(`<i>${c}</i>`);
+        parts.push(`"${nd(t)}," `);
+        if (c) parts.push(`<i>${nd(c)}</i>`);
         if (v) parts.push(`, vol. ${v}`);
         if (i) parts.push(`, no. ${i}`);
         if (pg) parts.push(`, pp. ${pg}`);
         if (y) parts.push(`, ${y}`);
         parts.push('. ');
       } else {
-        parts.push(`<i>${t}</i>${ed ? `, ${ed}` : ''}. `);
+        parts.push(`<i>${nd(t)}</i>${ed ? `, ${ed}` : ''}. `);
         if (pubPlace) parts.push(`${pubPlace}, `);
         if (y) parts.push(`${y}. `);
       }
-      if (link) parts.push(` [Online]. Available: ${link}`);
-      return parts.join('').trim();
+      if (link) {
+        // আগের অংশের শেষ-চিহ্ন বিচার করে একটাই বিভাজক — যুগল-স্পেস/দাঁড়ি নয়
+        const tail = parts.join('').trimEnd();
+        const sep = /[.]$/.test(tail) ? ' ' : '. ';
+        parts.push(`${sep}[Online]. Available: ${link}`);
+      }
+      return parts.join('').trim().replace(/\s{2,}/g, ' ');
     }
   }
 }
