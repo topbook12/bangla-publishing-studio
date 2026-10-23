@@ -1886,7 +1886,7 @@ const ADMISSION_TPL: DsTemplate = {
     // ডট-চিহ্নই স্বাক্ষর-যোগ্য পূরণ-রেখা); ছবি-ঘর ডান স্তম্ভে rowspan-সেল
     const fieldRows = rows
       .map((label) =>
-        `<tr><td colwidth="240" data-border="none" style="border:none; width:40%; vertical-align:middle"><p style="margin:0.2em 0; font-size:11pt">${esc(label)}</p></td>` +
+        `<tr><td data-border="none" style="border:none; width:40%; vertical-align:middle"><p style="margin:0.2em 0; font-size:11pt">${esc(label)}</p></td>` +
         `<td data-border="none" style="border:none; vertical-align:bottom"><p style="margin:0.5em 0; letter-spacing:1px">${dots(26, P)}</p></td></tr>`)
       .join('');
     return [
@@ -2496,7 +2496,7 @@ const MEMO_TPL: DsTemplate = {
   ],
   build: (v, lang, P) => {
     const mRow = (label: string, val: string) =>
-      `<tr><td colwidth="110" data-border="none" style="border:none; width:16%; vertical-align:top"><p style="margin:0.3em 0; font-size:10.5pt; letter-spacing:1px"><strong>${esc(label)}</strong></p></td><td data-border="none" style="border:none; vertical-align:top"><p style="margin:0.3em 0; font-size:11pt">${esc(val || '—')}</p></td></tr>`;
+      `<tr><td data-border="none" style="border:none; width:16%; vertical-align:top"><p style="margin:0.3em 0; font-size:10.5pt; letter-spacing:1px"><strong>${esc(label)}</strong></p></td><td data-border="none" style="border:none; vertical-align:top"><p style="margin:0.3em 0; font-size:11pt">${esc(val || '—')}</p></td></tr>`;
     return [
       pc(`<strong style="font-size:11pt; letter-spacing:0.5px">${esc(V(v, 'office'))}</strong>`, `color:${P.head}`),
       band(pick(lang, 'মেমোর‍্যান্ডাম', 'ज्ञापन', 'MEMORANDUM'), P),
@@ -3231,7 +3231,7 @@ const PROJECT_PROPOSAL_TPL: DsTemplate = {
         [V(v, 'preparedBy'), pick(lang, 'প্রস্তুতকারী', 'प्रस्तुतकर्ता', 'Prepared by')],
         [V(v, 'duration'), pick(lang, 'মেয়াদ', 'अवधि', 'Duration')],
         [V(v, 'budget'), pick(lang, 'বাজেট', 'बजट', 'Budget')],
-      ].map(([val, lab]) => val ? `<tr><td colwidth="170" data-border="none" style="border:none; width:22%; vertical-align:top"><p style="margin:0.3em 0; font-size:10.5pt; color:${P.soft}"><strong>${esc(lab)}</strong></p></td><td data-border="none" style="border:none; vertical-align:top"><p style="margin:0.3em 0; font-size:11pt">${esc(val)}</p></td></tr>` : '').join('')}</table>`,
+      ].map(([val, lab]) => val ? `<tr><td data-border="none" style="border:none; width:22%; vertical-align:top"><p style="margin:0.3em 0; font-size:10.5pt; color:${P.soft}"><strong>${esc(lab)}</strong></p></td><td data-border="none" style="border:none; vertical-align:top"><p style="margin:0.3em 0; font-size:11pt">${esc(val)}</p></td></tr>` : '').join('')}</table>`,
       V(v, 'date') ? pc(`<span style="font-size:10pt; color:${P.soft}">${esc(V(v, 'date'))}</span>`) : '',
       buildDividerHtml('single'),
       lines(V(v, 'objectives')).length
