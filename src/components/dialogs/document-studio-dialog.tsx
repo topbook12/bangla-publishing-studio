@@ -392,7 +392,7 @@ export function DocumentStudioDialog() {
           <DialogTitle>{tt('ds.title')}</DialogTitle>
           <DialogDescription>{tt('ds.desc')}</DialogDescription>
         </DialogHeader>
-        <PHero tone="violet" icon={FileText} title={tt('ds.title')} desc={tt('ds.desc')} />
+        <PHero tone="emerald" icon={FileText} title={tt('ds.title')} desc={tt('ds.desc')} />
 
         {/* ধাপ-নির্দেশক */}
         <div className="qp-steps" role="list" aria-label={tt('ds.title')}>
@@ -428,7 +428,7 @@ export function DocumentStudioDialog() {
                   className={cn('qp-scale-btn inline-flex items-center gap-1.5', cat === 'all' && 'qp-scale-on')}
                   onClick={() => setCat('all')}
                 >
-                  <span className="h-2 w-2 rounded-full bg-violet-600" aria-hidden="true" />
+                  <span className="h-2 w-2 rounded-full bg-emerald-600" aria-hidden="true" />
                   {tt('ds.pick.all')} ({nf(DS_TEMPLATES.length)})
                 </button>
                 {DS_CATEGORY_ORDER.map((c) => (
@@ -487,7 +487,7 @@ export function DocumentStudioDialog() {
           <section aria-label={tt('ds.step.fill')} className="flex flex-col gap-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <PTile size="sm" tone="violet" icon={FileText} />
+                <PTile size="sm" tone="emerald" icon={FileText} />
                 <p className="text-sm font-semibold">{tpl.name[lang] || tpl.name.en}</p>
               </div>
               <div className="flex items-center gap-1.5">

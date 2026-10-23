@@ -18,7 +18,8 @@ import { cn } from '@/lib/utils';
 
 /** গ্রেডিয়েন্ট টাইলের কিউরেটেড হিউ-কী (CSS-এ .ptile-<tone> সংজ্ঞায়িত) */
 export type PTone =
-  | 'violet'   // রয়্যাল ভায়োলেট — ব্র্যান্ড
+  | 'emerald'  // এমারেল্ড — ব্র্যান্ড সবুজ (Grand Ink)
+  | 'violet'   // রয়্যাল ভায়োলেট
   | 'purple'   // অ্যামেথিস্ট
   | 'fuchsia'  // অর্কিড — AI
   | 'pink'     // ব্লশ
@@ -28,7 +29,6 @@ export type PTone =
   | 'lime'     // লাইম
   | 'teal'     // টিল
   | 'cyan'     // সায়ান
-  | 'emerald'  // এমারেল্ড — সাফল্য
   | 'slate';   // গ্রাফাইট — নিরপেক্ষ
 
 const TILE_ICON: Record<'sm' | 'md' | 'lg' | 'xl', number> = { sm: 13, md: 17, lg: 22, xl: 26 };
@@ -38,7 +38,7 @@ const TILE_ICON: Record<'sm' | 'md' | 'lg' | 'xl', number> = { sm: 13, md: 17, l
  * নরম গ্লো-শ্যাডো + উপরে সাদা হাইলাইট-বর্ডার। সাজসজ্জা মাত্র — aria-hidden।
  */
 export function PTile({
-  tone = 'violet',
+  tone = 'emerald',
   icon: Icon,
   size = 'md',
   className,
@@ -87,7 +87,7 @@ export function PPill({
  * সংকুচিত রূপ (ডায়ালগের মাথায় বসে)।
  */
 export function PHero({
-  tone = 'violet',
+  tone = 'emerald',
   icon,
   title,
   desc,
@@ -127,7 +127,7 @@ export function PHero({
  * গণনা-ব্যাজ (ClassForge "Tool Categories" শিরোনামের মতো)।
  */
 export function PSection({
-  tone = 'violet',
+  tone = 'emerald',
   icon,
   title,
   count,

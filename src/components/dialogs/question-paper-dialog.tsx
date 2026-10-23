@@ -948,7 +948,7 @@ export function QuestionPaperDialog() {
   const stepInput = (
     <section aria-label={tt('qp.step.input')} className="flex flex-col gap-3">
       <div>
-        <PSection tone="violet" icon={Shapes} title={tt('qp.docType.title')} className="mb-1.5" />
+        <PSection tone="emerald" icon={Shapes} title={tt('qp.docType.title')} className="mb-1.5" />
         <div className="qp-doctypes" role="radiogroup" aria-label={tt('qp.docType.title')}>
           {DOC_TYPES.map((dt) => (
             <button
@@ -959,7 +959,7 @@ export function QuestionPaperDialog() {
             >
               <span className="qp-doctype-vis" aria-hidden="true"><DocTypeVis id={dt.id} /></span>
               <span className="flex items-center gap-2">
-                <PTile size="sm" tone={dt.id === 'question' ? 'violet' : 'fuchsia'} icon={dt.id === 'question' ? FileQuestion : Star} />
+                <PTile size="sm" tone={dt.id === 'question' ? 'emerald' : 'fuchsia'} icon={dt.id === 'question' ? FileQuestion : Star} />
                 <strong>{tt(dt.label)}</strong>
               </span>
               <span className="qp-doctype-desc">{tt(dt.desc)}</span>
@@ -1552,7 +1552,7 @@ export function QuestionPaperDialog() {
           <DialogDescription>{tt('qp.desc')}</DialogDescription>
         </DialogHeader>
         <PHero
-          tone="violet"
+          tone="emerald"
           icon={FileQuestion}
           title={tt('qp.title')}
           desc={tt('qp.desc')}

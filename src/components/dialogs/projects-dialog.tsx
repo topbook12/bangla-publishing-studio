@@ -48,7 +48,7 @@ export function ProjectsDialog() {
           </DialogDescription>
         </DialogHeader>
         <PHero
-          tone="violet"
+          tone="emerald"
           icon={FolderOpen}
           title={tt('dlg1.projects.title')}
           desc={tt('dlg1.projects.desc').split('{n}').join(nf(projects.length))}

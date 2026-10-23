@@ -1,4 +1,4 @@
-// বাংলা পাবলিশিং স্টুডিও — Service Worker (bwp-v2)
+// বাংলা পাবলিশিং স্টুডিও — Service Worker (bwp-v4) — grand-ink green
 // কৌশল:
 //  - install: শুধু "/" প্রিক্যাশ (offline fallback)
 //  - activate: পুরনো ক্যাশ মুছে ফেলা + clients.claim()
@@ -10,7 +10,7 @@
 //       CSS/JS চলতে পারত; তাই v2 থেকে শুধু হ্যাশ-যুক্ত ফাইলই ক্যাশ-ফার্স্ট)
 //  - POST/অন্য মেথড কখনোই ইন্টারসেপ্ট হয় না
 
-const CACHE = 'bwp-v3';
+const CACHE = 'bwp-v4';
 
 /** content-hashed/immutable অ্যাসেট কি না — এগুলোই কেবল cache-first হবে */
 function isImmutable(url) {

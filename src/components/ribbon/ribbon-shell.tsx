@@ -76,7 +76,7 @@ export function useActiveEditor() {
 }
 
 export const RIBBON_TABS: Array<{ id: RibbonTab; i18nKey: string; fallback: string; icon: LucideIcon; tone: string }> = [
-  { id: 'home', i18nKey: 'rb.tab.home', fallback: 'Home', icon: House, tone: 'violet' },
+  { id: 'home', i18nKey: 'rb.tab.home', fallback: 'Home', icon: House, tone: 'emerald' },
   { id: 'insert', i18nKey: 'rb.tab.insert', fallback: 'Insert', icon: SquarePlus, tone: 'fuchsia' },
   { id: 'layout', i18nKey: 'rb.tab.layout', fallback: 'Layout', icon: LayoutTemplate, tone: 'amber' },
   { id: 'design', i18nKey: 'rb.tab.design', fallback: 'Design', icon: Palette, tone: 'rose' },

@@ -263,7 +263,7 @@ export function AssetStoreDialog() {
             />
           </div>
           {/* ট্যাব */}
-          <div className="flex gap-1.5 overflow-x-auto pb-1">
+          <div className="flex flex-wrap gap-1.5">
             {TABS.map(([id, key]) => (
               <button
                 key={id}

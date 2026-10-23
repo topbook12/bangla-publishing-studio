@@ -328,7 +328,7 @@ function IconLibraryDialogInner({ onOpenChange }: { onOpenChange: (v: boolean) =
             className="h-9"
             aria-label={tt('ins.iconlib.searchAria')}
           />
-          <div className="flex gap-1.5 overflow-x-auto pb-1">
+          <div className="flex flex-wrap gap-1.5">
             {!searching && (
               <button
                 type="button"
@@ -605,7 +605,7 @@ function ShapeGalleryDialogInner({ onOpenChange }: { onOpenChange: (v: boolean) 
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex gap-1.5 overflow-x-auto border-b px-5 py-3">
+        <div className="flex flex-wrap gap-1.5 border-b px-5 py-3">
           <button
             type="button"
             className={cn('chip', cat === 'all' && 'chip-active')}

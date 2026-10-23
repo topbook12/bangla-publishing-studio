@@ -69,7 +69,7 @@ export function HelpDialog() {
             {tt('dlg2.help.desc')}
           </DialogDescription>
         </DialogHeader>
-        <PHero tone="violet" icon={CircleHelp} title={tt('dlg2.help.title')} desc={tt('dlg2.help.desc')} className="mx-5 mt-4" />
+        <PHero tone="emerald" icon={CircleHelp} title={tt('dlg2.help.title')} desc={tt('dlg2.help.desc')} className="mx-5 mt-4" />
 
         <div className="flex-1 space-y-2 overflow-y-auto px-5 py-4">
           {/* প্রিমিয়াম অ্যাবাউট কার্ড — ব্র্যান্ড + ফিচার চিপ */}

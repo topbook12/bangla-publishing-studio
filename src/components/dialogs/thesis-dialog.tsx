@@ -520,12 +520,12 @@ export function ThesisDialog() {
           <DialogTitle>{tt('thesis.title')}</DialogTitle>
           <DialogDescription>{tt('thesis.desc')}</DialogDescription>
         </DialogHeader>
-        <PHero tone="purple" icon={GraduationCap} title={tt('thesis.title')} desc={tt('thesis.desc')} />
+        <PHero tone="emerald" icon={GraduationCap} title={tt('thesis.title')} desc={tt('thesis.desc')} />
 
         {/* ট্যাব-বার */}
         <div className="ai-tabs" role="tablist" aria-label={tt('thesis.title')}>
           {([
-            { id: 'build' as Tab, icon: GraduationCap, tone: 'violet' as PTone, label: tt('thesis.tab.build') },
+            { id: 'build' as Tab, icon: GraduationCap, tone: 'emerald' as PTone, label: tt('thesis.tab.build') },
             { id: 'cite' as Tab, icon: BookMarked, tone: 'amber' as PTone, label: tt('thesis.tab.cite') },
             { id: 'draft' as Tab, icon: PenLine, tone: 'fuchsia' as PTone, label: tt('thesis.tab.draft') },
             { id: 'guide' as Tab, icon: ScrollText, tone: 'teal' as PTone, label: tt('thesis.tab.guide') },
