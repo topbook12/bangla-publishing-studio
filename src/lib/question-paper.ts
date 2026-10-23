@@ -2206,9 +2206,11 @@ export function paperToEditorHtml(p: QuestionPaper, lang: Lang, figures?: readon
   }
 
   // ── বিভাগ ও প্রশ্ন (উন্নত লেআউট-সচেতন) ──
-  // twocol/sugslip/quiz — লুপ-শেষে পুরো বডি একটাই ২-স্তম্ভ ব্লকে মোড়া হয় (পত্রিকা-ধাঁচ)
+  // twocol/sugslip/quiz — প্রতি বিভাগ আলাদা ২-স্তম্ভ রানে (পত্রিকা-ধাঁচ)। আগে পুরো
+  // বডি এক বিশাল ব্লকে মোড়া হত — দীর্ঘ পত্রে ব্লকটাই পাতার চেয়ে লম্বা হয়ে পেজিনেশন
+  // আটকে যেত (ফ্লো-ইঞ্জিন শুধু উচ্চ-স্তরের ব্লক ভাগ করে); বিভাগ-সীমানায় ভাগ হওয়া
+  // পত্রিকা-প্রথাতেই স্বাভাবিক, তাই প্রতি-বিভাগ র‍্যাপই সঠিক সমাধান।
   const slipWrap = sugslip || quiz;
-  const bodyStart = parts.length;
   let firstSection = true;
   for (const sec of p.sections) {
     if (sec.title) {
@@ -2292,28 +2294,24 @@ export function paperToEditorHtml(p: QuestionPaper, lang: Lang, figures?: readon
       return bits.join('');
     });
 
-    if (colCount > 1 && !twocol && !slipWrap) {
+    if (twocol || slipWrap) {
+      // পত্রিকা-ধাঁচ — এই বিভাগটাই এক ২-স্তম্ভ রান; স্লিপ-দুটোতে ফাঁক আরো চাপা ও
+      // মাঝের রেখা নেই — কোচিং-পর্চার অল্প-জায়গা-প্রথা
+      const slipGap = sugslip ? 14 : 20;
+      parts.push(
+        `<div class="doc-columns" data-count="2" data-gap="${slipGap}" data-rule="${twocol ? 1 : 0}" data-rule-style="solid" style="${columnsStyleText({ count: 2, gap: slipGap, rule: !!twocol, fill: 'balance' })}">${blocks.join('')}</div>`,
+      );
+    } else if (colCount > 1) {
       // বাংলাদেশ-প্রথার ২/৩ কলাম — এডিটরের নিজস্ব doc-columns নোড (সম্পূর্ণ পাইপলাইন-সমর্থিত)
       // কলামের মাঝে রেখা — বোর্ড-স্টাইল MCQ-পত্রের চেনা ভাব
       // ইনলাইন column-count স্টাইল অপরিহার্য — এডিটরে TipTap renderHTML স্টাইল বসায়,
       // কিন্তু ডায়ালগ-প্রিভিউ ও স্বয়ংসম্পূর্ণ প্রিন্ট-ফাইলে কাঁচা HTML-ই দেখায়
-      // (twocol বাদ — ওর নিজস্ব এক-বডি র‍্যাপার আছে; নইলে columns-এর ভেতরে columns নেস্ট হয়)
       parts.push(
         `<div class="doc-columns" data-count="${colCount}" data-gap="26" data-rule="1" data-rule-style="solid" style="${columnsStyleText({ count: colCount, gap: 26, rule: true, fill: 'balance' })}">${blocks.join('')}</div>`,
       );
     } else {
       parts.push(...blocks);
     }
-  }
-
-  // twocol/sugslip/quiz — পুরো বডি একটাই ২-স্তম্ভ পত্রিকা-ব্লকে (শিরোনাম ভাগ জুড়ে, বিভাগগুলো স্তম্ভে স্রোয়);
-  // স্লিপ-দুটোতে ফাঁক আরো চাপা ও মাঝের রেখা নেই — কোচিং-পর্চার অল্প-জায়গা-প্রথা
-  if (twocol || slipWrap) {
-    const bodyHtml = parts.splice(bodyStart).join('');
-    const slipGap = sugslip ? 14 : 20;
-    parts.push(
-      `<div class="doc-columns" data-count="2" data-gap="${slipGap}" data-rule="${slipWrap ? 0 : 1}" data-rule-style="solid" style="${columnsStyleText({ count: 2, gap: slipGap, rule: !slipWrap, fill: 'balance' })}">${bodyHtml}</div>`,
-    );
   }
 
   if (sug) {

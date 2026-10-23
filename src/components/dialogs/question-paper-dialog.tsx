@@ -46,7 +46,7 @@ import {
   collectQpFigureSlots, matchFigureVector, fillFromMatch, fillFromSvg,
   type QpFigureFill,
 } from '@/lib/qp-figures';
-import { runCommand } from '@/components/ribbon/ribbon-shell';
+import { htmlIsEmpty, paginateInsertedReader } from '@/components/editor/page-ops';
 import { tFmt, useLangStore, useT, useFmtNum } from '@/lib/i18n';
 import { formatDateLong } from '@/lib/i18n/core';
 import { cn } from '@/lib/utils';
@@ -649,35 +649,46 @@ export function QuestionPaperDialog() {
   const insertIntoSheet = () => {
     if (!paper) return;
     const html = paperToEditorHtml(paper, lang, figPlan);
-    // সক্রিয় পাতা টেমপ্লেট-নকশা (flowLock) হলে তার ভেতরে ঢোকানো নকশা ভেঙে
-    // প্রশ্নপত্র উপচে পড়ত — প্রশ্নপত্র নিজেই পূর্ণ-পাতা ডকুমেন্ট, তাই পাশেই
-    // নতুন পাতায় সরাসরি বসে যায় (এডিটর-মাউন্টের অপেক্ষা লাগে না)
+    // প্রশ্নপত্র = পূর্ণ-পাতা ডকুমেন্ট — সম্পূর্ণ ডকুমেন্টের একদম শেষে বসে
+    // (থিসিস-স্টুডিওর মতো ডকুমেন্ট-স্তরের অ্যাকশন)। সক্রিয় পাতার পরে বসালে
+    // বহু-পাতার প্রশ্নপত্র/অধ্যায়ের মাঝে ঢুকে ধারাবাহিকতা ভাঙত; আর কারেন্ট
+    // পাতার শেষে জুড়লে উপচে পড়ত (অটো-ফ্লো ডিফল্টে বন্ধ — প্রতি-পাতা
+    // সম্পাদনা-আইসোলেশন রুল — ফলে লেখা নীরবে কাটা পড়ত)।
+    // শেষ পাতা ফাঁকা সাধারণ পাতা হলে সেটাই ব্যবহার — অহেতুক ফাঁকা পাতা জমে না।
     const st = useEditorStore.getState();
-    const active = st.pages.find((p) => p.id === st.activePageId);
-    if (active?.flowLock) {
-      try {
-        const newId = st.addPage(active.id, html);
-        st.setActivePage(newId);
-        toast.success(tt(docType === 'suggestion' ? 'qp.toast.inserted.sug' : 'qp.toast.inserted'));
-        close();
-        window.setTimeout(() => {
-          const idx = useEditorStore.getState().pages.findIndex((p) => p.id === newId);
-          if (idx >= 0) document.querySelector(`[data-page-index="${idx}"]`)?.scrollIntoView({ block: 'start' });
-        }, 260);
-      } catch {
-        toast.error(tt('qp.err.title'));
-      }
+    const last = st.pages[st.pages.length - 1];
+    const lastUsable = !!last && last.kind === 'normal' && !last.flowLock && htmlIsEmpty(last.html);
+    const insertedToast = () => toast.success(tt(docType === 'suggestion' ? 'qp.toast.inserted.sug' : 'qp.toast.inserted'));
+    const reveal = (id: string) => {
+      const idx = useEditorStore.getState().pages.findIndex((p) => p.id === id);
+      if (idx >= 0) document.querySelector(`[data-page-index="${idx}"]`)?.scrollIntoView({ block: 'start' });
+    };
+    if (lastUsable) {
+      // শেষ পাতা ফাঁকা — সেখানেই বসান (নতুন পাতা নয়)
+      const targetId = last.id;
+      st.replacePageHtml(targetId, html);
+      st.setActivePage(targetId);
+      insertedToast();
+      close();
+      window.setTimeout(() => {
+        // এক-বারের পেজিনেশন — দীর্ঘ প্রশ্নপত্র যত পাতা লাগে ভাগ হয়
+        // (অটো-ফ্লো চালু হয় না — পরে এক পাতায় সম্পাদনা অন্য পাতা নড়ায় না)
+        void paginateInsertedReader(targetId);
+        reveal(targetId);
+      }, 320);
       return;
     }
-    // সম্পূর্ণ প্রশ্নপত্র — ডকুমেন্টের একদম শেষে বসে। কারেন্ট-সিলেকশনে
-    // insertContent করলে TipTap টেক্সট-ব্লকের মাঝে মাল্টি-ব্লক HTML-এর
-    // <ul>-এর পরের অংশ নীরবে ফেলে দেয় — তাই স্পষ্ট পজিশনে insertContentAt
-    const ok = runCommand((ed) => {
-      ed.chain().focus().insertContentAt(ed.state.doc.content.size, html).run();
-    });
-    if (ok) {
-      toast.success(tt(docType === 'suggestion' ? 'qp.toast.inserted.sug' : 'qp.toast.inserted'));
+    try {
+      const newId = st.addPage(last?.id ?? null, html);
+      st.setActivePage(newId);
+      insertedToast();
       close();
+      window.setTimeout(() => {
+        void paginateInsertedReader(newId);
+        reveal(newId);
+      }, 320);
+    } catch {
+      toast.error(tt('qp.err.title'));
     }
   };
 

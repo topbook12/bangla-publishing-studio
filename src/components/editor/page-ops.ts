@@ -165,10 +165,74 @@ export function flowIfOverflow(editor: Editor, pageId: string, availableHeight: 
   }
 }
 
-function flowIfOverflowInner(editor: Editor, pageId: string, availableHeight: number): boolean {
+/**
+ * এক-বারের জোর-ফ্লো — অটো-ফ্লো সেটিং নির্বিশেষে একবার উপচে-পড়া ভাগ করা।
+ * সন্নিবেশ-পরবর্তী এককালীন পেজিনেশনের জন্য (প্রশ্নপত্র/থিসিস-স্টুডিও) — চলমান
+ * অটো-ফ্লো চালু হয় না, তাই প্রতি-পাতা সম্পাদনা-আইসোলেশনের হার্ড-রুল অটুট থাকে।
+ */
+export function flowOnceForced(editor: Editor, pageId: string, availableHeight: number): boolean {
+  if (!beginFlowOp(editor)) return false;
+  try {
+    return flowIfOverflowInner(editor, pageId, availableHeight, true);
+  } finally {
+    endFlowOp(editor);
+  }
+}
+
+/**
+ * সন্নিবেশ-করা পূর্ণ-দলিলের (প্রশ্নপত্র/সাজেশন-শিট) এক-বারের পেজিনেশন — যত পাতা
+ * লাগে ভাগ করে দেয়। অটো-ফ্লো বন্ধ থাকলেও কাজ করে (জোর-ফ্লো), কিন্তু শুধুমাত্র
+ * সন্নিবেশের মুহূর্তে একবার — পরে কোনো পাতায় সম্পাদনা করলে অন্য পাতা নড়ে না।
+ *
+ * মাল্টি-পাস: বাংলা ওয়েবফন্ট লেট-সোয়াপ/ছবি-লোডে উচ্চতা বদলায় — প্রথম পাসে মাপা
+ * ভাগ অসম্পূর্ণ থাকতে পারে। তাই ফন্ট-রেডি + সেটেল-বিরতির পরে পুনঃমাপ-পুনঃভাগ
+ * চালানো হয় (কোনো পাসে নতুন ভাগ না হলে থামে)।
+ * রিটার্ন: মোট কতবার ভাগ হলো (নতুন পাতা = ভাগ + ১)।
+ */
+export async function paginateInsertedReader(startPageId: string, maxPages = 10): Promise<number> {
+  let total = 0;
+  for (let pass = 0; pass < 3; pass++) {
+    if (pass === 0) {
+      // ফন্ট-লোড শেষ না হলে উচ্চতা ভুল মাপা হয় — প্রথম পাসের আগেই ফন্ট-রেডি
+      try { await document.fonts.ready; } catch { /* পুরনো ব্রাউজার */ }
+      await new Promise((r) => window.setTimeout(r, 140));
+    } else {
+      // লেট-লেআউট সেটেল — তারপর পুনঃমাপ
+      await new Promise((r) => window.setTimeout(r, 420));
+    }
+    let pageId = startPageId;
+    let passSplits = 0;
+    for (let guard = 0; guard < maxPages; guard++) {
+      let ed = getEditor(pageId);
+      if (!ed || ed.isDestroyed) {
+        const mounted = await ensurePageEditorMounted(pageId);
+        if (!mounted) break;
+        ed = getEditor(pageId);
+        if (!ed || ed.isDestroyed) break;
+      }
+      const avail = availableHeightOfEditor(pageId);
+      if (avail <= 0) break;
+      const flowed = flowOnceForced(ed, pageId, avail);
+      if (!flowed) break;
+      passSplits += 1;
+      const pages = useEditorStore.getState().pages;
+      const idx = pages.findIndex((p) => p.id === pageId);
+      const next = pages[idx + 1];
+      if (!next || next.kind !== 'normal') break;
+      pageId = next.id;
+      // নতুন পাতার এডিটর মাউন্ট/পেইন্টের সুযোগ — নইলে উচ্চতা ০ মাপা হয়
+      await new Promise((r) => window.setTimeout(r, 150));
+    }
+    total += passSplits;
+    if (passSplits === 0) break;
+  }
+  return total;
+}
+
+function flowIfOverflowInner(editor: Editor, pageId: string, availableHeight: number, force = false): boolean {
   if (editor.isDestroyed) return false;
   const s = useEditorStore.getState();
-  if (!s.settings.autoFlow) return false;
+  if (!force && !s.settings.autoFlow) return false;
   if (editor.view.composing) return false;
   // টেমপ্লেট-ডিজাইন লক পাতা ভাঙা যাবে না — নকশাটা অক্ষত থাকবে (উপচে পড়লে
   // লাল সতর্কতা দেখায়; ব্যবহারকারী সম্পাদনা করলেই লক খুলে স্বাভাবিক ফ্লো ফেরে)
