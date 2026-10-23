@@ -1193,6 +1193,53 @@ export const AdvancedTypography = Extension.create({
               return v ? { style: `padding-bottom: ${v}` } : {};
             },
           },
+          // প্যারার-উপরের রুল — টেমপ্লেটের band()-শিরোনাম/স্বাক্ষর-রেখার border-top
+          // ঢোকানোর পরে নীরবে হারাত; border-bottom-এর জোড়া হিসেবে রাউন্ড-ট্রিপে টিকে থাকে
+          borderTopColor: {
+            default: null,
+            parseHTML: (el) => el.style.borderTopColor || null,
+            renderHTML: (attrs) => {
+              const v = (attrs as { borderTopColor?: string | null }).borderTopColor;
+              return v ? { style: `border-top-color: ${v}` } : {};
+            },
+          },
+          borderTopWidth: {
+            default: null,
+            parseHTML: (el) => el.style.borderTopWidth || null,
+            renderHTML: (attrs) => {
+              const v = (attrs as { borderTopWidth?: string | null }).borderTopWidth;
+              return v ? { style: `border-top-width: ${v}` } : {};
+            },
+          },
+          borderTopStyle: {
+            default: null,
+            parseHTML: (el) => el.style.borderTopStyle || null,
+            renderHTML: (attrs) => {
+              const v = (attrs as { borderTopStyle?: string | null }).borderTopStyle;
+              return v ? { style: `border-top-style: ${v}` } : {};
+            },
+          },
+          // প্যারার-উপরের ফাঁক — band()-এর padding:5px 8px-এর উপরের অর্ধেক ও
+          // ভর্তি-ফরমের ছবি-ঘরের padding-top ঢোকানোর পরে টিকে থাকে
+          paddingTop: {
+            default: null,
+            parseHTML: (el) => el.style.paddingTop || null,
+            renderHTML: (attrs) => {
+              const v = (attrs as { paddingTop?: string | null }).paddingTop;
+              return v ? { style: `padding-top: ${v}` } : {};
+            },
+          },
+          // প্যারার-স্তরের হরফ-মাপ — প্রশ্নপত্রের fontScale (10.5/11.5pt ইত্যাদি) ও
+          // থিসিসের 1.05em মেটা-লেখা <p style="font-size:…"> হিসেবে আসে; মার্ক-স্তরের
+          // FontSize কেবল span ধরে — প্যারা-স্তর ছাড়া সাইজ এডিটরে নীরবে হারাত
+          fontSize: {
+            default: null,
+            parseHTML: (el) => el.style.fontSize || null,
+            renderHTML: (attrs) => {
+              const v = (attrs as { fontSize?: string | null }).fontSize;
+              return v ? { style: `font-size: ${v}` } : {};
+            },
+          },
         },
       },
       {

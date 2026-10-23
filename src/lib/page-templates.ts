@@ -101,6 +101,7 @@ ${sp(6)}
 ${sp(3)}
 <hr class="fancy-divider" data-style="single" />
 <p style="text-align:center"><span style="font-size:9pt; color:#78716c; letter-spacing:3px">সংস্করণ · প্রকাশকাল</span></p>
+${TIP_NOTE}
 `.trim(),
   },
   {

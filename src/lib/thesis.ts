@@ -506,11 +506,16 @@ function sectionHeading(num_: number, secNum: number, title: string, lang: Thesi
 /**
  * শিরোনাম-পাতার দুই-স্তম্ভ মেটা-টেবিল (বাঁ: গবেষক, ডান: সুপারভাইজার)।
  * এডিটর-চুক্তি: সেলের style-padding পার্সার ফেলে দেয়, তাই মাঝে ফাঁকা
- * স্পেসার-সেল (১০%) — colwidth অ্যাট্রিবিউটই স্তম্ভ-প্রস্থের প্রকৃত বাহক।
+ * স্পেসার-সেল (১০%) — মাঝের সেলের colwidth (৬০px) ফাঁক-প্রস্থের প্রকৃত বাহক।
+ *
+ * পাশের দুই স্তম্ভ ইচ্ছাকৃতভাবে colwidth-বিহীন (তরল): সব-সেলে colwidth দিলে
+ * TipTap টেবিলকে ৬০০px-এ আটকে দেয় — থিসিস-মার্জিনে (বাঁ ১.৫″) কনটেন্ট-বক্স
+ * ~৫৫৪px হওয়ায় সুপারভাইজার-স্তম্ভ কাটা পড়ত। তরল স্তম্ভে width:100% +
+ * table-layout:fixed — মাঝের ৬০px ফাঁক ঠিক রেখে বাকি প্রস্থ সমান ভাগে, যে-কাগজেই।
  */
 function titleMetaTable(left: string[], right: string[]): string {
   const cell = (rows: string[]) =>
-    `<td colwidth="270" data-border="none" style="border:none; width:45%; vertical-align:top">` +
+    `<td data-border="none" style="border:none; width:45%; vertical-align:top">` +
     rows.map((r) => `<p style="text-align:center; margin:0.1em 0; font-size:1.05em;">${r}</p>`).join('') +
     `</td>`;
   const gap = `<td colwidth="60" data-border="none" style="border:none; width:10%"></td>`;

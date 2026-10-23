@@ -68,12 +68,17 @@ function pc(html: string, extra = ''): string {
 /**
  * বাঁ/ডান দুই-স্তম্ভ নিরাকার-টেবিল সারি (স্বাক্ষর-ব্লক/শিরোনাম-তথ্য)।
  * এডিটর-চুক্তি (question-paper.ts-এর মতো): নিরাকার সেলে data-border="none" —
- * TipTap সেলের সাধারণ style ফেলে দেয়, তাই অ্যাট্রিবিউটই প্রকৃত বাহক; colwidth
- * অ্যাট্রিবিউট এডিটরে স্তম্ভ-প্রস্থ ধরে রাখে।
+ * TipTap সেলের সাধারণ style ফেলে দেয়, তাই অ্যাট্রিবিউটই প্রকৃত বাহক।
+ *
+ * কলাম-প্রস্থ ইচ্ছাকৃতভাবে colwidth ছাড়া তরল: সব-সেলে colwidth দিলে TipTap
+ * টেবিলকে নির্দিষ্ট px-প্রস্থে আটকে দেয় — ডেমি/ক্রাউন/A5-এর সরু কনটেন্ট-বক্সে
+ * উপচে লেখা কাটা পড়ত। colwidth ছাড়া টেবিল width:100% + table-layout:fixed
+ * চলে — যে-কাগজেই ঢোকাক, স্তম্ভ দুটি সমান ভাগে পুরো প্রস্থ জুড়ে থাকে
+ * (প্রিভিউ/স্ট্যান্ডঅ্যালোনে সেলের width:% ইনলাইন-স্টাইলই অনুপাত ধরে রাখে)।
  */
 function row2(leftHtml: string, rightHtml: string, leftPct = 50, rightPct = 50): string {
   const cell = (html: string, pct: number) =>
-    `<td colwidth="${Math.round((600 * pct) / 100)}" data-border="none" style="border:none; width:${pct}%; vertical-align:top">${html}</td>`;
+    `<td data-border="none" style="border:none; width:${pct}%; vertical-align:top">${html}</td>`;
   return `<table style="width:100%"><tr>${cell(leftHtml, leftPct)}${cell(rightHtml, rightPct)}</tr></table>`;
 }
 
@@ -1598,8 +1603,9 @@ const INVOICE_TPL: DsTemplate = {
       `<table><tr><th data-bg="${P.band}" style="text-align:left">${esc(pick(lang, 'বিবরণ', 'विवरण', 'Description'))}</th><th data-bg="${P.band}">${esc(pick(lang, 'পরিমাণ', 'मात्रा', 'Qty'))}</th><th data-bg="${P.band}" style="text-align:right">${esc(pick(lang, 'দর', 'दर', 'Rate'))}</th><th data-bg="${P.band}" style="text-align:right">${esc(pick(lang, 'টাকা', 'राशि', 'Amount'))}</th></tr>${bodyRows}${totalRow(tx(lang, DSB.total), numStr(sub, lang))}${disc ? totalRow(pick(lang, 'ছাড়', 'छूट', 'Discount'), `− ${numStr(disc, lang)}`) : ''}${vatAmt ? totalRow(`${pick(lang, 'ভ্যাট', 'वैट', 'VAT')} (${V(v, 'vat')}%)`, `+ ${numStr(vatAmt, lang)}`) : ''}${totalRow(pick(lang, 'সর্বমোট প্রদেয়', 'कुल देय', 'Grand total'), numStr(total, lang), true, true)}</table>`,
       `<p style="font-size:10.5pt"><strong>${tx(lang, DSB.inWords)}:</strong> ${esc(wordsTaka(total, lang))}</p>`,
       V(v, 'note') ? `<p style="font-size:10pt; color:${P.soft}">${esc(V(v, 'note'))}</p>` : '',
-      `<p style="text-align:right; margin-top:1.6em; border-top:1px solid ${P.border}; display:inline-block; float:right; padding:4px 26px 0; font-size:10pt">${esc(V(v, 'sign1Name') || pick(lang, 'অনুমোদিত স্বাক্ষর', 'अनुमोदित हस्ताक्षर', 'Authorised signature'))}</p>`,
-      '<p style="clear:both; margin:0"></p>',
+      // স্বাক্ষর-রেখা — float/inline-block এডিটর-চুক্তির বাইরে হারিয়ে যেত; ডান-সারিত
+      // প্যারা + border-top (extensions-এর নতুন borderTop* অ্যাট্রিবিউটে রাউন্ড-ট্রিপ করে)
+      `<p style="text-align:right; margin-top:1.6em; border-top:1px solid ${P.border}; padding-top:4px; font-size:10pt">${esc(V(v, 'sign1Name') || pick(lang, 'অনুমোদিত স্বাক্ষর', 'अनुमोदित हस्ताक्षर', 'Authorised signature'))}</p>`,
     ].filter(Boolean).join('');
   },
 };
@@ -1898,7 +1904,9 @@ const ADMISSION_TPL: DsTemplate = {
         55,
         45,
       ),
-      `<table style="width:100%"><tr>${fieldRows}</tr></table>`,
+      // fields খালি করলে fieldRows = '' → <tr></tr> স্কিমা-ভাঙা টেবিল ঢুকত —
+      // ফাঁকা হলে টেবিল-ই বাদ (বাকি ফরম-অংশ অক্ষত থাকে)
+      fieldRows ? `<table style="width:100%"><tr>${fieldRows}</tr></table>` : '',
       V(v, 'declare') ? `<p style="margin-top:1em; line-height:1.9; text-align:justify; font-size:10.5pt">${esc(V(v, 'declare'))}</p>` : '',
       sig2(lang, P, { t: V(v, 'sign1Title'), n: '', o: '' }, { t: V(v, 'sign2Title'), n: '', o: '' }),
     ].filter(Boolean).join('');
@@ -2646,8 +2654,9 @@ const QUOTATION_TPL: DsTemplate = {
       terms.length
         ? buildDesignBoxHtml({ variant: 'box', border: P.border, fill: 'transparent', bstyle: 'dashed', bwidth: 1 }, `<p style="margin:0.2em 0"><strong>${esc(pick(lang, 'শর্তাবলি:', 'शर्तें:', 'Terms:'))}</strong></p><ol>${terms.map((t) => `<li>${esc(t)}</li>`).join('')}</ol>`)
         : '',
-      `<p style="text-align:right; margin-top:1.6em; border-top:1px solid ${P.border}; display:inline-block; float:right; padding:4px 26px 0; font-size:10pt">${esc(V(v, 'sign1Name') || pick(lang, 'অনুমোদিত স্বাক্ষর', 'अनुमोदित हस्ताक्षर', 'Authorised signature'))}</p>`,
-      '<p style="clear:both; margin:0"></p>',
+      // স্বাক্ষর-রেখা — float/inline-block এডিটর-চুক্তির বাইরে হারিয়ে যেত; ডান-সারিত
+      // প্যারা + border-top (extensions-এর নতুন borderTop* অ্যাট্রিবিউটে রাউন্ড-ট্রিপ করে)
+      `<p style="text-align:right; margin-top:1.6em; border-top:1px solid ${P.border}; padding-top:4px; font-size:10pt">${esc(V(v, 'sign1Name') || pick(lang, 'অনুমোদিত স্বাক্ষর', 'अनुमोदित हस्ताक्षर', 'Authorised signature'))}</p>`,
     ].filter(Boolean).join('');
   },
 };
@@ -2698,8 +2707,8 @@ const PURCHASE_ORDER_TPL: DsTemplate = {
       `<p style="font-size:10.5pt"><strong>${tx(lang, DSB.inWords)}:</strong> ${esc(wordsTaka(total, lang))}</p>`,
       V(v, 'deliveryDate') ? `<p style="font-size:10.5pt"><strong>${esc(pick(lang, 'সরবরাহের শেষ-তারিখ', 'आपूर्ति समय-सीमा', 'Delivery by'))}:</strong> ${esc(V(v, 'deliveryDate'))}</p>` : '',
       V(v, 'paymentTerms') ? `<p style="font-size:10.5pt"><strong>${esc(pick(lang, 'মূল্যপরিশোধ', 'भुगतान', 'Payment'))}:</strong> ${esc(V(v, 'paymentTerms'))}</p>` : '',
-      `<p style="text-align:right; margin-top:1.6em; border-top:1px solid ${P.border}; display:inline-block; float:right; padding:4px 26px 0; font-size:10pt">${esc(V(v, 'sign1Name') || pick(lang, 'অনুমোদিত স্বাক্ষর', 'अनुमोदিত हस्ताक्षর', 'Authorised signature'))}</p>`,
-      '<p style="clear:both; margin:0"></p>',
+      `<p style="text-align:right; margin-top:1.6em; border-top:1px solid ${P.border}; padding-top:4px; font-size:10pt">${esc(V(v, 'sign1Name') || pick(lang, 'অনুমোদিত স্বাক্ষর', 'अनुमोदিত हस्ताक्षর', 'Authorised signature'))}</p>`,
+      // স্বাক্ষর-রেখার পরে float-পরিষ্কারক ফাঁকা প্যারা আর দরকার নেই (float বাদ)
     ].filter(Boolean).join('');
   },
 };
@@ -3314,7 +3323,13 @@ const CALENDAR_TPL: DsTemplate = {
         const day = r * 7 + c - firstDay + 1;
         if (day < 1 || day > daysIn) { tds.push('<td></td>'); continue; }
         lastDay = day;
-        const ev = (evMap.get(day) ?? []).map((e) => `<p style="margin:0.1em 0 0; font-size:8pt; line-height:1.4; color:${P.head}">${esc(e)}</p>`).join('');
+        // দিনে ৩টির বেশি অনুষ্ঠান ঘরে না-আঁটাক — বাকিগুলোর সংখ্যা-নির্দেশ
+        // (পূর্ণ তালিকা নিচে ছাপা হয়; নইলে ৬-সারির গ্রিড পাতা উপচে পড়ে)
+        const evs = evMap.get(day) ?? [];
+        const shown = evs.slice(0, 3);
+        const extra = evs.length - shown.length;
+        const ev = shown.map((e) => `<p style="margin:0.1em 0 0; font-size:8pt; line-height:1.4; color:${P.head}">${esc(e)}</p>`).join('')
+          + (extra > 0 ? `<p style="margin:0.1em 0 0; font-size:8pt; color:${P.soft}">+${fmt(extra)} ${pick(lang, 'আরও', 'और', 'more')}</p>` : '');
         tds.push(`<td style="height:58px; vertical-align:top; text-align:left"><p style="margin:0.1em 0 0; font-size:10pt"><strong>${fmt(day)}</strong></p>${ev}</td>`);
       }
       rows.push(`<tr>${tds.join('')}</tr>`);
@@ -3452,6 +3467,17 @@ export function dsPreviewInline(html: string): string {
     });
     root.querySelectorAll('div.doc-columns').forEach((el) => {
       el.setAttribute('style', columnsStyleText({ ...parseColumnsAttrs(el) }));
+    });
+    // টেবিল-সেলের এডিটর-চুক্তি অ্যাট্রিবিউট (table-cell-bg.ts-এর মতো) — প্রিভিউ-শীটের
+    // সাধারণ td/th-বর্ডার/ধূসর-হেডার রুল কাঁচা HTML-এ ভুল সাজ দেখাত; data-bg/
+    // data-border="none"-কে ইনলাইন style-এ ঢেলে প্রিভিউ হুবহু ঢোকানো পাতার মতো দেখায়
+    root.querySelectorAll('td, th').forEach((el) => {
+      const style = el.getAttribute('style') ?? '';
+      const add: string[] = [];
+      if (el.getAttribute('data-border') === 'none' && !/(^|;|\s)border\s*:/.test(style)) add.push('border:none');
+      const bg = el.getAttribute('data-bg');
+      if (bg) add.push(`background-color:${bg}`);
+      if (add.length) el.setAttribute('style', `${style ? `${style}${style.endsWith(';') ? '' : ';'}` : ''}${add.join(';')}`);
     });
     return root.innerHTML;
   } catch {

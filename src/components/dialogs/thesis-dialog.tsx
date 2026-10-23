@@ -44,7 +44,7 @@ import { refreshTocsNow } from '@/lib/toc';
 import type {
   ThesisLang, ThesisLevel, ThesisDiscipline, ThesisOptions, CiteEntry, CiteStyle, CiteType,
 } from '@/lib/thesis';
-import { ensurePageEditorMounted } from '@/components/editor/page-ops';
+import { ensurePageEditorMounted, fitTemplatePage } from '@/components/editor/page-ops';
 
 type Tab = 'build' | 'cite' | 'draft' | 'guide';
 type DraftSection = 'abstract' | 'intro' | 'literature' | 'method' | 'results' | 'conclusion';
@@ -357,22 +357,29 @@ export function ThesisDialog() {
       // activePageId-এর পরে বসালে মাঝ-ডকুমেন্টে কাঠামো ঢুকে চলমান লেখা দু-ভাগ হয়ে
       // যায় (যেমন: রেফারেন্স ও পরিশিষ্টের মাঝে) — তাই শেষ পাতার পরেই বসানো নিরাপদ।
       let after = s.pages[s.pages.length - 1]?.id ?? null;
+      const newIds: string[] = [];
       const firstId = (() => {
         const id = s.addPage(after, pages[0].html);
         s.updatePage(id, { noChrome: pages[0].noChrome, numberRestart: pages[0].numberRestart ?? null });
+        newIds.push(id);
         return id;
       })();
       after = firstId;
       for (let i = 1; i < pages.length; i++) {
         const id = s.addPage(after, pages[i].html);
         s.updatePage(id, { noChrome: pages[i].noChrome, numberRestart: pages[i].numberRestart ?? null });
+        newIds.push(id);
         after = id;
       }
 
-      // স্ট্যান্ডার্ড থিসিস ফরম্যাট (মার্জিন/ফন্ট/স্পেসিং) — চাইলে
+      // স্ট্যান্ডার্ড থিসিস ফরম্যাট (কাগজ/মার্জিন/ফন্ট/স্পেসিং) — চাইলে।
+      // paperSize:'a4' — থিসিস-স্ট্যান্ডার্ড A4 (বিশ্ববিদ্যালয়-প্রথা); থিসিসের
+      // শিরোনাম/ডেডিকেশন-পাতাগুলো A4-উচ্চতায় সাজানো, তাই ফরম্যাট-প্রয়োগ না করলে
+      // ডেমি/A5-তে নকশা উপচে পড়ে। ব্যবহারকারী "ফরম্যাট প্রয়োগ" বেছেছেন মানেই
+      // পুরো স্ট্যান্ডার্ড চান — কাগজও তার অংশ।
       if (opts.applyFormat) {
         const preset = thesisFormatPreset(lang);
-        useEditorStore.getState().updateSettings({ ...preset, margins: { ...THESIS_MARGINS } });
+        useEditorStore.getState().updateSettings({ ...preset, paperSize: 'a4', orientation: 'portrait', margins: { ...THESIS_MARGINS } });
       }
 
       // অতিথি-স্বাগতম পাতা এখন সরানো নিরাপদ (ডকুমেন্টে থিসিসের ১৫+ পাতা আছে)
@@ -400,8 +407,22 @@ export function ThesisDialog() {
       const idx = s2.pages.findIndex((p) => p.id === firstId);
       if (idx >= 0) {
         document.querySelector(`[data-page-index="${idx}"]`)?.scrollIntoView({ block: 'start' });
-        void ensurePageEditorMounted(firstId);
       }
+      // প্রতিটি নতুন পাতা মাউন্ট করিয়ে কাগজে আঁটানো — ছোট কাগজে শিরোনাম/ডেডিকেশনের
+      // ডিজাইনার-স্পেসারগুলো ফিট-ইঞ্জিন মুছে নকশা অক্ষত রাখে (টেমপ্লেট-চুক্তি)
+      void (async () => {
+        await new Promise((r) => window.setTimeout(r, 220));
+        for (const pid of newIds) {
+          const pi = useEditorStore.getState().pages.findIndex((pg) => pg.id === pid);
+          if (pi < 0) continue;
+          document.querySelector(`[data-page-index="${pi}"]`)?.scrollIntoView({ block: 'start' });
+          if (await ensurePageEditorMounted(pid)) fitTemplatePage(pid);
+        }
+        const idx0 = useEditorStore.getState().pages.findIndex((pg) => pg.id === firstId);
+        if (idx0 >= 0) {
+          document.querySelector(`[data-page-index="${idx0}"]`)?.scrollIntoView({ block: 'start' });
+        }
+      })();
     } catch (err) {
       // অর্ধনির্মিত কাঠামো + নীরব ব্যর্থতা নয় — ব্যবহারকারী জানুক, লগ থাকুক
       console.error('[thesis] generate failed:', err);

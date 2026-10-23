@@ -649,6 +649,26 @@ export function QuestionPaperDialog() {
   const insertIntoSheet = () => {
     if (!paper) return;
     const html = paperToEditorHtml(paper, lang, figPlan);
+    // সক্রিয় পাতা টেমপ্লেট-নকশা (flowLock) হলে তার ভেতরে ঢোকানো নকশা ভেঙে
+    // প্রশ্নপত্র উপচে পড়ত — প্রশ্নপত্র নিজেই পূর্ণ-পাতা ডকুমেন্ট, তাই পাশেই
+    // নতুন পাতায় সরাসরি বসে যায় (এডিটর-মাউন্টের অপেক্ষা লাগে না)
+    const st = useEditorStore.getState();
+    const active = st.pages.find((p) => p.id === st.activePageId);
+    if (active?.flowLock) {
+      try {
+        const newId = st.addPage(active.id, html);
+        st.setActivePage(newId);
+        toast.success(tt(docType === 'suggestion' ? 'qp.toast.inserted.sug' : 'qp.toast.inserted'));
+        close();
+        window.setTimeout(() => {
+          const idx = useEditorStore.getState().pages.findIndex((p) => p.id === newId);
+          if (idx >= 0) document.querySelector(`[data-page-index="${idx}"]`)?.scrollIntoView({ block: 'start' });
+        }, 260);
+      } catch {
+        toast.error(tt('qp.err.title'));
+      }
+      return;
+    }
     // সম্পূর্ণ প্রশ্নপত্র — ডকুমেন্টের একদম শেষে বসে। কারেন্ট-সিলেকশনে
     // insertContent করলে TipTap টেক্সট-ব্লকের মাঝে মাল্টি-ব্লক HTML-এর
     // <ul>-এর পরের অংশ নীরবে ফেলে দেয় — তাই স্পষ্ট পজিশনে insertContentAt

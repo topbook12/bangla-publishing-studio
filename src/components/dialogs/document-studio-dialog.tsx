@@ -340,7 +340,15 @@ export function DocumentStudioDialog() {
       const s = useEditorStore.getState();
       const after = s.activePageId ?? s.pages[s.pages.length - 1]?.id ?? null;
       const id = s.addPage(after, previewHtml);
-      s.updatePage(id, { noChrome: true });
+      // প্রিভিউ-শীটের মার্জিন (46px 54px ≈ 0.48″ × 0.5625″)ই এই পাতায়ও বসে —
+      // যা প্রিভিউতে দেখা যায় হুবহু তাই-ই পাতায় ঢোকে (WYSIWYG); গ্লোবাল মার্জিন
+      // ১″ হলে নকশা প্রিভিউের চেয়ে ~১২% আগে মোড়াত, যা ব্যবহারকারীকে বিভ্রান্ত করত।
+      // flowLock — অটো-ফ্লো নকশা ভাঙবে না; প্রথম সম্পাদনাতেই লক খুলে যায়।
+      s.updatePage(id, {
+        noChrome: true,
+        flowLock: true,
+        marginsOverride: { top: 0.48, bottom: 0.48, left: 0.5625, right: 0.5625, gutter: s.settings.margins.gutter },
+      });
       toast.success(tt('ds.toast.inserted'));
       close();
       void mountFitReveal(id);
@@ -359,7 +367,12 @@ export function DocumentStudioDialog() {
         return;
       }
       s.replacePageHtml(target, previewHtml);
-      s.updatePage(target, { noChrome: true });
+      // ঢোকানোর মতোই — প্রিভিউের মার্জিনই পাতায় বসে (WYSIWYG) + নকশা-লক
+      s.updatePage(target, {
+        noChrome: true,
+        flowLock: true,
+        marginsOverride: { top: 0.48, bottom: 0.48, left: 0.5625, right: 0.5625, gutter: s.settings.margins.gutter },
+      });
       toast.success(tt('ds.toast.replaced'));
       setConfirmReplace(false);
       close();

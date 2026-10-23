@@ -2321,12 +2321,17 @@ export function paperToEditorHtml(p: QuestionPaper, lang: Lang, figures?: readon
     if (note) parts.push(`<p${center}><strong>\u2605</strong> <em>${escapeQpHtml(note)}</em></p>`);
     parts.push(`<p style="text-align:right"><em>${escapeQpHtml(L.signature)}: ____________________</em></p>`);
   } else if (quiz) {
-    // টেস্ট-স্লিপের স্কোর-বক্স — ডান-কোণে ছোট ঘর (শিক্ষক লিখে দেন)
+    // টেস্ট-স্লিপের স্কোর-বক্স — ডান-কোণে ছোট ঘর (শিক্ষক লিখে দেন)।
+    // এডিটর-চুক্তিতে table-এর margin-left:auto/width ইনলাইন-স্টাইল পার্স হয় না —
+    // তাই প্রথম তরল স্পেসার-সেল বাকি প্রস্থ নিয়ে বাক্সটিকে ডান-কোণে চেপে রাখে
+    // (colwidth 150+64 সেলে স্তম্ভ-প্রস্থ ধরে রাখে; স্পেসার colwidth-বিহীন তাই
+    // টেবিল তরল থাকে — কোনো কাগজেই উপচে কাটা পড়ে না)
     const scoreLabel = lang === 'en' ? 'Score' : lang === 'hi' ? 'प्राप्तांक' : 'প্রাপ্ত নম্বর';
     parts.push(
-      `<table style="width:auto;min-width:32%;margin:10px 0 4px;margin-left:auto"><colgroup><col /><col style="width:64px" /></colgroup><tbody>`
-      + `<tr>${qpTdFree(`<p style="margin:2px 0;text-align:right"><strong>${escapeQpHtml(scoreLabel)}</strong></p>`)}`
-      + `<td style="padding:2px 8px"><p style="margin:2px 0">&nbsp;</p></td></tr></tbody></table>`,
+      `<table style="width:auto;min-width:32%;margin:10px 0 4px;margin-left:auto"><colgroup><col /><col style="width:150px" /><col style="width:64px" /></colgroup><tbody>`
+      + `<tr>${qpTdFree('<p style="margin:0">&nbsp;</p>')}`
+      + `${qpTdFree(`<p style="margin:2px 0;text-align:right"><strong>${escapeQpHtml(scoreLabel)}</strong></p>`, '', 150)}`
+      + `<td colwidth="64" style="padding:2px 8px"><p style="margin:2px 0">&nbsp;</p></td></tr></tbody></table>`,
     );
   } else if (sugslip) {
     // স্লিপ-ফুটার — শুধু স্বাক্ষর-লাইন (জায়গা-সাশ্রয়ী)

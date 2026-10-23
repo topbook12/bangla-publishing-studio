@@ -439,8 +439,9 @@ export function TemplatesDialog() {
           description: tt('store.bp.toastStartedDesc'),
         });
         close();
-        const firstDesignPage = finalPages[cover ? 1 : 0];
-        if (firstDesignPage) void fitAllBlueprintPages([firstDesignPage.id]);
+        // সব ডিজাইন-পাতা কাগজে আঁটানো — শুধু প্রথমটা নয়; বই-প্রতিরূপের পরের
+        // পাতাগুলোও (কপিরাইট/সূচি/পরিশিষ্ট) মার্জিন-ব্যবধানে নকশা ভাঙা লাগত
+        void fitAllBlueprintPages(finalPages.filter((p) => p.kind !== 'cover').map((p) => p.id));
       } catch (err) {
         // প্রয়োগ ব্যর্থ হলে ডায়ালগ ব্যবহারযোগ্য থাকে — ব্যস্ত অবস্থা নেই, শুধু জানানো হয়
         console.error('[templates] applyStart failed', err);
