@@ -112,8 +112,9 @@ body { margin: 0; background: #e2e8f0; font-family: 'Hind Siliguri', 'Noto Sans 
 .paper-cream { background: #faf3e0; color: #33261a; }
 .paper-dark { background: #1c2a3f; color: #e2e8f0; }
 .paper-inner { display: flex; flex-direction: column; height: 100%; position: relative; }
-/* অ্যাপের .page-content-এর সাথে হুবহু এক প্যাডিং — নইলে লাইন-র‍্যাপ বদলে যায় */
-.page-content { flex: 1; min-height: 0; padding: 10px 14px; overflow: hidden; border-radius: 2px; }
+/* অ্যাপের .page-content-এর সাথে হুবহু এক প্যাডিং (০) — মার্জিন-বক্সই কনটেন্ট-বক্স,
+   নইলে লাইন-র‍্যাপ বদলে যায় */
+.page-content { flex: 1; min-height: 0; padding: 0; overflow: hidden; border-radius: 2px; }
 .page-content-text { height: 100%; counter-reset: bwp-footnote; }
 h1 { font-size: 1.7em; margin: .5em 0 .4em; }
 h2 { font-size: 1.35em; margin: .9em 0 .4em; }

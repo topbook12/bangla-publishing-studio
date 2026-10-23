@@ -644,7 +644,11 @@ export function fitTemplatePage(pageId: string, maxRemove = 80): number {
   // শেষ ভরসা: স্পেসার শেষ হয়ে গেলেও উপচে পড়লে প্লেসহোল্ডার-নির্দেশ (tpl-hint)
   // প্যারাগ্রাফটি সরানো হয় — নকশার মূল অংশ পাতায় অক্ষত থাকে (প্রিন্টে কাটা পড়ে না)।
   // টেমপ্লেট-লেখকরা নির্দেশ-লাইনে 'প্লেসহোল্ডার' শব্দটি রাখেন — সেটাই শনাক্তকারী।
-  while (removed < maxRemove + 20 && pmEl.scrollHeight > available + 4) {
+  // ★ নিরাপত্তা-গেট: লুপটি কেবল এখনো-অসম্পাদিত (flowLock) টেমপ্লেট পাতায় চলে —
+  //   ব্যবহারকারী একবার লিখে ফেললে (লক খুলে গেলে) তার নিজের লেখায় দুর্ঘটনায়
+  //   'placeholder' শব্দ থাকলেও সেটি আর মুছবে না (নীরব-মুছলে আন্ডুও হয় না)।
+  const flowLocked = useEditorStore.getState().pages.find((p) => p.id === pageId)?.flowLock === true;
+  if (flowLocked) while (removed < maxRemove + 20 && pmEl.scrollHeight > available + 4) {
     let hint: { pos: number; size: number } | null = null;
     editor.state.doc.descendants((node, pos) => {
       if (hint) return false;
