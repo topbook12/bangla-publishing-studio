@@ -15,7 +15,7 @@
  */
 
 import type { DocumentSettings, HeaderFooterSettings, PageData, PageNumberSettings, WatermarkSettings } from './types';
-import { effectivePageMargins, effectivePageStyle, effectivePageTypography } from './page-layout';
+import { effectivePageSize, effectivePageMargins, effectivePageStyle, effectivePageTypography } from './page-layout';
 import { getPaperPreset, pageBorderVisual } from './paper';
 import { parseMcqData, docBoxStyleText, columnsStyleText, parseColumnsAttrs, type DocBoxAttrs, type DocBoxVariant } from './nodes-html';
 import { healFigureSrcs } from './vector-catalog';
@@ -516,6 +516,25 @@ export function buildStandaloneHtml(title: string, settings: DocumentSettings, p
   const w = portrait ? size.w : size.h;
   const h = portrait ? size.h : size.w;
 
+  // প্রতি-পাতার কার্যকর মাপ — per-page paperSizeOverride (প্রশ্নপত্রের Legal/A5)
+  // সচেতন; মিশ্র-মাপ ডকুমেন্টে CSS named-pages-ও এমিট হয় (Chromium প্রিন্টে
+  // প্রতিটি পাতা নিজের কাগজের মাপেই ছাপা হয়)
+  const pageSizeMm = (p: PageData) => {
+    const ps = getPaperPreset(effectivePageSize(p, settings));
+    const base = effectivePageSize(p, settings) === 'custom'
+      ? { w: settings.customPaper.widthMm, h: settings.customPaper.heightMm }
+      : { w: ps.widthMm, h: ps.heightMm };
+    return portrait ? base : { w: base.h, h: base.w };
+  };
+  const usedSizes = Array.from(new Set(pages.map((p) => effectivePageSize(p, settings))));
+  const namedPageCss = usedSizes
+    .filter((id) => id !== settings.paperSize)
+    .map((id) => {
+      const sz = pageSizeMm(pages.find((p) => effectivePageSize(p, settings) === id) as PageData);
+      return `@page psz-${id} { size: ${sz.w}mm ${sz.h}mm; margin: 0; }\n.page[data-psize="${id}"] { page: psz-${id}; }`;
+    })
+    .join('\n');
+
   const pageHtmls = pages.map((page, index) => {
     // পাতার কার্যকর মার্জিন/টাইপোগ্রাফি/রূপ — স্ক্রিনের মতোই পাতার নিজস্ব override-সচেতন
     // (lib/page-layout.ts-এর একই বেইজ — এক্সপোর্ট স্ক্রিনের হুবহু প্রতিফলন)
@@ -545,7 +564,10 @@ export function buildStandaloneHtml(title: string, settings: DocumentSettings, p
       ? coverHtml(page.coverData, settings)
       : `<div class="page-content-text" style="font-family:'${typo.defaultFont}',sans-serif;font-size:${typo.defaultFontSize}pt;line-height:${typo.lineHeight};--p-gap:${typo.paragraphSpacing}px">${expandHtml(healFigureSrcs(page.html))}</div>`;
 
-    return `<div class="page paper-${st.paperColor}" style="width:${w}mm;height:${h}mm">
+    // পাতার নিজস্ব মাপ — override থাকলে সেটাই, নইলে গ্লোবাল
+    const pw = pageSizeMm(page);
+
+    return `<div class="page paper-${st.paperColor}" data-psize="${effectivePageSize(page, settings)}" style="width:${pw.w}mm;height:${pw.h}mm">
       <div class="paper-inner" style="padding:${padding}">
         ${wmHtml}
         ${headerHtml}
@@ -572,6 +594,7 @@ ${settings.singleColor ? `<style>${oneColorExportCss(settings.singleColor)}</sty
 <style>
   :root { --p-gap: ${settings.paragraphSpacing}px; }
   @page { size: ${w}mm ${h}mm; margin: 0; }
+  ${namedPageCss}
 </style>
 </head>
 <body>

@@ -8,7 +8,7 @@ import { memo } from 'react';
 import type { ReactNode } from 'react';
 import type { DocumentSettings, PageData } from '@/lib/types';
 import { getPageDimensionsMm, mmToPx, pageBorderVisual } from '@/lib/paper';
-import { effectivePageStyle, effectivePageTypography } from '@/lib/page-layout';
+import { effectivePageSize, effectivePageStyle, effectivePageTypography } from '@/lib/page-layout';
 import { PageFooter, PageHeader, PageWatermark, pageFontStyle, pagePaddingStyle } from './page-chrome';
 import { CoverView } from './cover-view';
 import { useT, useFmtNum } from '@/lib/i18n';
@@ -37,8 +37,11 @@ interface PaperPageProps {
  */
 export const PaperPage = memo(
   function PaperPage({ page, index, settings, children, active, onPageClick }: PaperPageProps) {
+  // পাতার কার্যকর কাগজের মাপ — পাতার নিজস্ব paperSizeOverride (প্রশ্নপত্রের Legal/A5)
+  // থাকলে সেটাই, নইলে গ্লোবাল। মিশ্র-মাপ ডকুমেন্টে প্রতিটি পাতা নিজের মাপে রেন্ডার হয়।
+  const pSize = effectivePageSize(page, settings);
   const { widthMm, heightMm } = getPageDimensionsMm(
-    settings.paperSize,
+    pSize,
     settings.orientation,
     settings.customPaper,
   );
@@ -70,6 +73,10 @@ export const PaperPage = memo(
       aria-label={tt('ws.page.n', 'Page {n}').split('{n}').join(fn(index + 1))}
       onClick={onPageClick}
       data-page-index={index}
+      // নাম-সহ প্রিন্ট-পাতা (CSS named pages) — Ctrl+P-তে মিশ্র-মাপ ডকুমেন্টেও
+      // প্রতিটি পাতা নিজের কাগজের মাপেই ছাপা হয় (Chromium; অন্য ব্রাউজারে
+      // গ্লোবাল @page-এ সৌম্য ফলব্যাক)
+      data-psize={pSize}
     >
       <div className="paper-inner" style={{ padding: pagePaddingStyle(page, index, settings) }}>
         {/* ওয়াটারমার্ক লেয়ার — কনটেন্টের নিচে, প্রিন্টেও ছাপা হয় (খসড়া/নমুনা কপি) */}

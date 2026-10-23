@@ -228,6 +228,8 @@ export interface QpHistoryItem {
   docType?: QpDocType;
   /** শিক্ষার স্তর — পুরনো এন্ট্রিতে অনুপস্থিত হতে পারে */
   level?: QpLevel;
+  /** chrome-নীরবতা — প্রশ্নপত্রের পাতায় ডকুমেন্ট-হেডার/ফুটার/নম্বর লুকানো (ডিফল্ট চালু) */
+  hideChrome?: boolean;
   /** v2 — প্রিভিউ-চিপে দেখানোর হিসাব */
   counts?: { sections: number; questions: number; marks: number };
 }

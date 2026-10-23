@@ -177,6 +177,13 @@ export interface PageData {
   /** এই পাতার জন্য কাস্টম ফুটার — null/অনুপস্থিত হলে গ্লোবাল settings.footer */
   footerOverride?: HeaderFooterSettings | null;
   /**
+   * এই পাতার নিজস্ব কাগজের মাপ (প্রশ্নপত্রের Legal/A5 ইত্যাদি) — null/অনুপস্থিত
+   * হলে গ্লোবাল settings.paperSize। QP-সন্নিবেশ এই ফিল্ড বসায় এবং ধারাবাহিক
+   * পাতা-চেইনে (flowOverflow/splitPageAt) উত্তরাধিকারসূত্রে চলে — ফলে মিশ্র-মাপ
+   * ডকুমেন্টও (A4 বইয়ের শেষে Legal প্রশ্নপত্র) স্ক্রিন/প্রিন্ট/এক্সপোর্টে হুবহু মেলে।
+   */
+  paperSizeOverride?: PaperSizeId | null;
+  /**
    * এই পাতার নিজস্ব মার্জিন — null/অনুপস্থিত হলে গ্লোবাল settings.margins।
    * Layout ট্যাবে "এই পাতায়" স্কোপে বা রুলার-হাতল টেনে বদলালে কেবল এই পাতায় বসে।
    */

@@ -548,4 +548,9 @@ export const dictQuestionPaper = {
   // প্রিভিউ জুম-বাটন (aria-label — স্ক্রিন-রিডার)
   'qp.zoomOut': { bn: 'ছোট করুন', hi: 'ज़ूम आउट', en: 'Zoom out' },
   'qp.zoomIn': { bn: 'বড় করুন', hi: 'ज़ूम इन', en: 'Zoom in' },
+
+  // সন্নিবেশ-বিকল্প (ধাপ ৪) — chrome-নীরবতা ও কাগজ-মাপ প্রদর্শন
+  'qp.chrome.hide': { bn: 'প্রশ্নপত্রের পাতায় হেডার/ফুটার/নম্বর লুকান', hi: 'प्रश्न-पत्र पृष्ठों पर हेडर/फुटर/नंबर छिपाएँ', en: 'Hide header/footer/number on QP pages' },
+  'qp.chrome.hide.hint': { bn: 'প্রশ্নপত্রের নিজের হেডারই মুদ্রিত হবে — ডাবল-হেডার হবে না', hi: 'प्रश्न-पत्र का अपना हेडर ही छपेगा — डबल-हेडर नहीं होगा', en: "The paper's own header prints — no double header" },
+  'qp.sheet.size': { bn: 'শীটের মাপ', hi: 'शीट का आकार', en: 'Sheet size' },
 } as const;

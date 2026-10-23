@@ -289,10 +289,11 @@ export function PageEditor({ page, index, isFirstPage }: PageEditorProps) {
 
   // কাগজের সাইজ/মার্জিন/থিম/টাইপোগ্রাফি পরিবর্তনে অটো-ফ্লো পুনঃমূল্যায়ন —
   // পাতার নিজস্ব margin/type override-ও এখানে ধরা হয় (এই পাতায় মার্জিন বদলালে
-  // লভ্য উচ্চতা বদলায়, ফলে ভাঙ নতুন করে গণনা হওয়া চাই)
+  // লভ্য উচ্চতা বদলায়, ফলে ভাঙ নতুন করে গণনা হওয়া চাই)। পাতার নিজস্ব কাগজ-মাপ
+  // (paperSizeOverride — প্রশ্নপত্রের Legal/A5) বদলালেও লভ্য উচ্চতা বদলায়।
   useEffect(() => {
     scheduleFlow();
-  }, [scheduleFlow, settings.paperSize, settings.orientation, settings.margins, settings.header, settings.footer, settings.defaultFont, settings.defaultFontSize, settings.lineHeight, settings.paragraphSpacing, page.marginsOverride, page.typeOverride]);
+  }, [scheduleFlow, settings.paperSize, settings.orientation, settings.margins, settings.header, settings.footer, settings.defaultFont, settings.defaultFontSize, settings.lineHeight, settings.paragraphSpacing, page.paperSizeOverride, page.marginsOverride, page.typeOverride]);
 
   // বাংলা ওয়েবফন্ট লেট-সোয়াপ রেস — ফলব্যাক ফন্টে মেপে ভাঙা পাতা পরে ঠিক হত না।
   // ফন্ট লোড শেষে একবার পুনঃমূল্যায়ন করলে আসল মেট্রিক্সে ভাঙ পুনঃগণনা হয়।

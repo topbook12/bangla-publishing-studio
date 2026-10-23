@@ -17,7 +17,7 @@
 import { memo, useEffect, useRef } from 'react';
 import { useEditorStore } from '@/lib/store';
 import { getPageDimensionsMm, mmToPx, pageBorderVisual } from '@/lib/paper';
-import { effectivePageStyle, effectivePageTypography } from '@/lib/page-layout';
+import { effectivePageSize, effectivePageStyle, effectivePageTypography } from '@/lib/page-layout';
 import { useT, useFmtNum } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import type { DocumentSettings, PageData } from '@/lib/types';
@@ -51,7 +51,9 @@ const PageThumb = memo(
     const tt = useT();
     const fn = useFmtNum();
 
-    const { widthMm, heightMm } = getPageDimensionsMm(settings.paperSize, settings.orientation, settings.customPaper);
+    // পাতার কার্যকর কাগজের মাপ — per-page paperSizeOverride সচেতন (মিশ্র-মাপ
+    // ডকুমেন্টে প্রশ্নপত্রের Legal/A5 পাতাও নিজের মাপেই থাম্বনেইল দেখায়)
+    const { widthMm, heightMm } = getPageDimensionsMm(effectivePageSize(page, settings), settings.orientation, settings.customPaper);
     const pageW = mmToPx(widthMm);
     const pageH = mmToPx(heightMm);
     const scale = Math.min(THUMB_W / pageW, THUMB_MAX_H / pageH);

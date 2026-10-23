@@ -8,7 +8,17 @@
  * আমদানি করা যায়। page-chrome.tsx এগুলো রি-এক্সপোর্ট করে।
  */
 
-import type { DocumentSettings, Margins, PageData, PageStyleOverride, PageTypographyOverride } from './types';
+import type { DocumentSettings, Margins, PageData, PageStyleOverride, PageTypographyOverride, PaperSizeId } from './types';
+
+/**
+ * পাতার কার্যকর কাগজের মাপ — পাতার নিজস্ব paperSizeOverride থাকলে সেটাই,
+ * নইলে গ্লোবাল settings.paperSize। স্ক্রিন (paper-page), রুলার, থাম্বনেইল ও
+ * সব এক্সপোর্ট (HTML/প্রিন্ট/DOCX) এই এক বেইজ থেকেই পড়ে — মিশ্র-মাপ ডকুমেন্টেও
+ * (A4 বই + Legal প্রশ্নপত্র) প্রতিটি স্তরে হুবহু এক মাপ।
+ */
+export function effectivePageSize(page: PageData | null | undefined, settings: DocumentSettings): PaperSizeId {
+  return page?.paperSizeOverride ?? settings.paperSize;
+}
 
 /**
  * পাতার কার্যকর মার্জিন — পাতার নিজস্ব override থাকলে সেটাই, নইলে গ্লোবাল।

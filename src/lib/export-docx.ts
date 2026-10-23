@@ -12,7 +12,7 @@ import {
 import type { DocumentSettings, HeaderFooterSettings, PageData } from './types';
 import { effectivePageBorderStyle, effectivePageBorderWidth, getPaperPreset, PAGE_BORDER_WIDTH_PX } from './paper';
 import { parseMcqData, docBoxInlineStyle, parseColumnsAttrs, type DocBoxAttrs, type DocBoxVariant } from './nodes-html';
-import { effectivePageMargins, settingsWithPageTypography } from './page-layout';
+import { effectivePageSize, effectivePageMargins, settingsWithPageTypography } from './page-layout';
 import { healFigureSrcs } from './vector-catalog';
 import { SHAPE_BY_ID, SHAPE_DEFS, readShapeAttrs } from './shape-catalog';
 import { displayPageNumber } from './pagenum';
@@ -725,10 +725,11 @@ function headerFooterParas(
   // ট্যাব-স্টপ অবস্থান — কাগজের প্রস্থ − মার্জিন (gutter প্যারিটি সহ)।
   // আগে 9360 (US Letter + 1″) হার্ডকোড ছিল — A4/Demy/Custom-এ ডান-অ্যালাইন লেখা
   // মার্জিন ছাড়িয়ে দ্বিতীয় লাইনে ঝাঁপাত।
-  const preset = getPaperPreset(settings.paperSize);
-  const paperSize = settings.paperSize === 'custom'
+  // পাতার কার্যকর মাপ — per-page paperSizeOverride (প্রশ্নপত্রের Legal/A5) সচেতন।
+  const effPreset = getPaperPreset(effectivePageSize(page, settings));
+  const paperSize = effectivePageSize(page, settings) === 'custom'
     ? { w: settings.customPaper.widthMm, h: settings.customPaper.heightMm }
-    : { w: preset.widthMm, h: preset.heightMm };
+    : { w: effPreset.widthMm, h: effPreset.heightMm };
   const portrait = settings.orientation === 'portrait';
   const pageWidthTwip = Math.round((portrait ? paperSize.w : paperSize.h) * MM_TO_TWIP);
   // per-page মার্জিন-অ্যারাপোর্ট — স্ক্রিনে যে পাতার নিজস্ব margin-override আছে, Word-এর
@@ -967,13 +968,7 @@ export async function exportProjectToDocx(input: DocxExportInput): Promise<void>
   const { settings, pages, title } = input;
   const accent = hexNoHash(settings.header.accentColor) ?? '4F46E5';
 
-  const preset = getPaperPreset(settings.paperSize);
-  const size = settings.paperSize === 'custom'
-    ? { w: settings.customPaper.widthMm, h: settings.customPaper.heightMm }
-    : { w: preset.widthMm, h: preset.heightMm };
   const portrait = settings.orientation === 'portrait';
-  const pageWidthTwip = Math.round((portrait ? size.w : size.h) * MM_TO_TWIP);
-  const pageHeightTwip = Math.round((portrait ? size.h : size.w) * MM_TO_TWIP);
 
   // পেজ বর্ডার — অ্যাপের কনফিগ (রং/স্টাইল/প্রস্থ) অনুযায়ী (docx border size = ১/৮ pt)
   const borderProps = settings.pageBorder !== 'none'
@@ -1021,6 +1016,14 @@ export async function exportProjectToDocx(input: DocxExportInput): Promise<void>
     // (lib/page-layout.ts-এর একই বেইজ); প্রতি পাতা = একটি Word-section বলে
     // per-page মার্জিন এখানে হুবহু বসে
     const m = effectivePageMargins(page, settings);
+    // পাতার কার্যকর কাগজ-মাপ — per-page paperSizeOverride (প্রশ্নপত্রের Legal/A5)
+    // সচেতন; Word-section-এর w:pgSz সেই মাপেই বসে (মিশ্র-মাপ ডকুমেন্টও হুবহু)
+    const effPreset = getPaperPreset(effectivePageSize(page, settings));
+    const effSize = effectivePageSize(page, settings) === 'custom'
+      ? { w: settings.customPaper.widthMm, h: settings.customPaper.heightMm }
+      : { w: effPreset.widthMm, h: effPreset.heightMm };
+    const pageWidthTwip = Math.round((portrait ? effSize.w : effSize.h) * MM_TO_TWIP);
+    const pageHeightTwip = Math.round((portrait ? effSize.h : effSize.w) * MM_TO_TWIP);
     const pageSettings = settingsWithPageTypography(page, settings);
     currentFootnotes = [];
     // differentFirst — স্ক্রিন ও HTML এক্সপোর্টের মতো প্রথম পাতায় সব ক্রোম লুকানো

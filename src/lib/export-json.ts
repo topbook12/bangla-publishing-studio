@@ -2,11 +2,12 @@
  * JSON ব্যাকআপ (ডাউনলোড/ইমপোর্ট) ও প্রিন্ট পোর্টাল
  */
 
-import type { BookProject, PageData } from './types';
+import type { BookProject, PageData, PaperSizeId } from './types';
 import { saveProject, getProject, newId } from './dexie';
 import { useEditorStore } from './store';
 import type { DocumentSettings } from './types';
 import { getPaperPreset } from './paper';
+import { effectivePageSize } from './page-layout';
 import { createDefaultSettings } from './sample';
 
 export function downloadJsonBackup(project: BookProject): void {
@@ -126,7 +127,7 @@ export function getOrCreatePrintStyleEl(): HTMLStyleElement {
 }
 
 /** @page রুল ডাইনামিক সেট — কাগজের সাইজ অনুযায়ী */
-export function ensurePrintStyle(settings: DocumentSettings): void {
+export function ensurePrintStyle(settings: DocumentSettings, pages?: PageData[]): void {
   const preset = getPaperPreset(settings.paperSize);
   const size = settings.paperSize === 'custom'
     ? { w: settings.customPaper.widthMm, h: settings.customPaper.heightMm }
@@ -135,7 +136,30 @@ export function ensurePrintStyle(settings: DocumentSettings): void {
   const w = portrait ? size.w : size.h;
   const h = portrait ? size.h : size.w;
 
-  getOrCreatePrintStyleEl().textContent = `@page { size: ${w}mm ${h}mm; margin: 0; }`;
+  // মিশ্র-মাপ ডকুমেন্ট (A4 বই + Legal/A5 প্রশ্নপত্র) — CSS named-pages:
+  // প্রতিটি ভিন্ন মাপের জন্য @page psz-<id> + সেই মাপের পাতায় page: psz-<id>।
+  // Chromium প্রতিটি পাতা নিজের কাগজের মাপেই ছাপায়; অসমর্থক ব্রাউজারে
+  // গ্লোবাল @page-এ সৌম্য ফলব্যাক (আগের আচরণ)।
+  let named = '';
+  if (pages && pages.length) {
+    const mmOf = (id: PaperSizeId) => {
+      if (id === 'custom') return { w: settings.customPaper.widthMm, h: settings.customPaper.heightMm };
+      const p = getPaperPreset(id);
+      return { w: p.widthMm, h: p.heightMm };
+    };
+    const rules = Array.from(new Set(pages.map((p) => effectivePageSize(p, settings))))
+      .filter((id) => id !== settings.paperSize)
+      .map((id) => {
+        const sz = mmOf(id);
+        const rw = portrait ? sz.w : sz.h;
+        const rh = portrait ? sz.h : sz.w;
+        return `@page psz-${id} { size: ${rw}mm ${rh}mm; margin: 0; }`
+          + `@media print { .paper-page[data-psize="${id}"] { page: psz-${id}; } }`;
+      });
+    if (rules.length) named = '\n' + rules.join('\n');
+  }
+
+  getOrCreatePrintStyleEl().textContent = `@page { size: ${w}mm ${h}mm; margin: 0; }${named}`;
 }
 
 /**
@@ -150,8 +174,9 @@ export function ensurePrintStyle(settings: DocumentSettings): void {
  * নিরাপদ ফলব্যাক: পুরো বই ছাপা হয়।
  */
 export async function printDocument(range?: { from: number; to: number }): Promise<void> {
-  const settings = useEditorStore.getState().settings;
-  ensurePrintStyle(settings);
+  const st = useEditorStore.getState();
+  const settings = st.settings;
+  ensurePrintStyle(settings, st.pages);
 
   // ── পরিসর-প্রস্তুতি (আসল window.print()-এর ঠিক আগেই — স্ক্রিন-ফ্লিকার ন্যূনতম) ──
   let skipped: HTMLElement[] = [];

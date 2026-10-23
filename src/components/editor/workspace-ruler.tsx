@@ -26,6 +26,7 @@ import { useEditorStore } from '@/lib/store';
 import { getPageDimensionsMm, inchToPx, mmToPx, MM_PER_INCH } from '@/lib/paper';
 import { useT, useFmtNum } from '@/lib/i18n';
 import { useUiStore } from '@/lib/ui-store';
+import { effectivePageSize } from '@/lib/page-layout';
 import { effectivePageMargins } from './page-chrome';
 import type { Margins, PageData } from '@/lib/types';
 
@@ -94,7 +95,9 @@ export function WorkspaceHRule() {
   const rulerRef = useRef<HTMLDivElement>(null);
   const [drag, setDrag] = useState<HDragSide | null>(null);
 
-  const { widthMm } = getPageDimensionsMm(settings.paperSize, settings.orientation, settings.customPaper);
+  // সক্রিয় পাতার কার্যকর কাগজের মাপ — per-page paperSizeOverride (প্রশ্নপত্রের
+  // Legal/A5) থাকলে রুলারও সেই মাপেই আঁকা হয় (Word-এর সেকশন-রুলারের মতো)
+  const { widthMm } = getPageDimensionsMm(effectivePageSize(activePage, settings), settings.orientation, settings.customPaper);
   const widthIn = widthMm / MM_PER_INCH;
   const widthPx = mmToPx(widthMm);
 
@@ -221,7 +224,8 @@ export const PageVRule = memo(
 
     if (!visible) return null;
 
-    const { heightMm } = getPageDimensionsMm(settings.paperSize, settings.orientation, settings.customPaper);
+    // এই পাতারই কার্যকর কাগজের মাপ — per-page paperSizeOverride সচেতন
+    const { heightMm } = getPageDimensionsMm(effectivePageSize(page, settings), settings.orientation, settings.customPaper);
     const heightIn = heightMm / MM_PER_INCH;
     const heightPx = mmToPx(heightMm);
 

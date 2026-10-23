@@ -34,6 +34,7 @@ import { useAiStore, aiConfiguredSelector } from '@/lib/ai-store';
 import { callAi, prepareImageFile } from '@/lib/ai-client';
 import type { PreparedImage } from '@/lib/ai-client';
 import { useEditorStore } from '@/lib/store';
+import type { PageData, PaperSizeId } from '@/lib/types';
 import {
   QP_SCHOOL_KEY, QP_REPAIR_NOTE, QP_FIGURE_SVG_SYSTEM, QP_STRUCTURE_SYSTEM, QP_SUGGESTION_SYSTEM, QP_TRANSCRIBE_SYSTEM, QP_VERIFY_SYSTEM,
   QP_DEFAULT_LAYOUT, cleanRawQpText, coerceQpLevel, defaultQpMeta, extractQpJson, extractTranscriptText, isDefaultQpInstructions,
@@ -337,6 +338,9 @@ export function QuestionPaperDialog() {
   // উন্নত সাজ — কলাম/পাতার মাপ/নম্বর-মান-বিভাগ/MCQ-শৈলী/উত্তরের জায়গা
   const [layout, setLayout] = useState<QpLayout>(QP_DEFAULT_LAYOUT);
   const [showAdv, setShowAdv] = useState(false);
+  // chrome-নীরবতা — প্রশ্নপত্রের পাতায় ডকুমেন্টের হেডার/ফুটার/পৃষ্ঠা-নম্বর লুকানো
+  // (প্রশ্নপত্রের নিজের হেডারই মূল — ডাবল-হেডার ছাপায় বিশৃঙ্খলা ঘটায়; ডিফল্ট চালু)
+  const [hideChrome, setHideChrome] = useState(true);
   // সাম্প্রতিক প্রশ্নপত্র — ডায়ালগ খোলা অবস্থায় localStorage থেকে derive;
   // তালিকা বদলালে (push/remove) histVersion বাড়ে → নতুন করে পড়ে
   const [histVersion, setHistVersion] = useState(0);
@@ -574,6 +578,7 @@ export function QuestionPaperDialog() {
         layout,
         docType,
         level,
+        hideChrome,
         counts: {
           sections: final.sections.length,
           questions: final.sections.reduce((n, s) => n + s.questions.length, 0),
@@ -656,6 +661,22 @@ export function QuestionPaperDialog() {
     // সম্পাদনা-আইসোলেশন রুল — ফলে লেখা নীরবে কাটা পড়ত)।
     // শেষ পাতা ফাঁকা সাধারণ পাতা হলে সেটাই ব্যবহার — অহেতুক ফাঁকা পাতা জমে না।
     const st = useEditorStore.getState();
+    // প্রশ্নপত্রের কাগজ-মাপ সন্নিবেশে সম্মানিত — QP-উইজার্ডে বেছে নেওয়া Legal/A5
+    // হলে বসানো পাতা-চেইনও সেই মাপেই যাবে (আগে: মাপ চুপচাপ হারিয়ে A4-এ বসত)।
+    // চারটি QP-মাপই PaperSizeId-এ বৈধ। (normalize — পুরনো paper-এ layout অনুপস্থিত হতে পারে)
+    const qpPs = normalizeQpLayout(paper.layout).pageSize as PaperSizeId;
+    const globalPs = st.settings.paperSize;
+    // ফাঁকা ডকুমেন্ট (সব পাতা খালি normal) — পুরো ডকুমেন্টই প্রশ্নপত্র, তাই
+    // গ্লোবাল মাপ বদলে দেওয়া নিরাপদ (রুলার/মার্জিন/এক্সপোর্ট সব একরকম হয়)।
+    // লেখা-আছে এমন ডকুমেন্টে কেবল প্রশ্নপত্রের পাতাগুলোতেই per-page override —
+    // বাকি পাতা অক্ষত (প্রতি-পাতা আইসোলেশন হার্ড-রুল)।
+    const docFresh = st.pages.length > 0
+      && st.pages.every((p) => p.kind === 'normal' && !p.flowLock && htmlIsEmpty(p.html));
+    if (docFresh && qpPs !== globalPs) st.updateSettings({ paperSize: qpPs });
+    const sizePatch: Partial<PageData> = {
+      paperSizeOverride: qpPs !== globalPs ? qpPs : null,
+      noChrome: hideChrome,
+    };
     const last = st.pages[st.pages.length - 1];
     const lastUsable = !!last && last.kind === 'normal' && !last.flowLock && htmlIsEmpty(last.html);
     const insertedToast = () => toast.success(tt(docType === 'suggestion' ? 'qp.toast.inserted.sug' : 'qp.toast.inserted'));
@@ -664,9 +685,10 @@ export function QuestionPaperDialog() {
       if (idx >= 0) document.querySelector(`[data-page-index="${idx}"]`)?.scrollIntoView({ block: 'start' });
     };
     if (lastUsable) {
-      // শেষ পাতা ফাঁকা — সেখানেই বসান (নতুন পাতা নয়)
+      // শেষ পাতা ফাঁকা — সেখানেই বসান (নতুন পাতা নয়); মাপ + chrome-নীরবতা একসাথে
       const targetId = last.id;
       st.replacePageHtml(targetId, html);
+      st.updatePage(targetId, sizePatch);
       st.setActivePage(targetId);
       insertedToast();
       close();
@@ -679,7 +701,7 @@ export function QuestionPaperDialog() {
       return;
     }
     try {
-      const newId = st.addPage(last?.id ?? null, html);
+      const newId = st.addPage(last?.id ?? null, html, sizePatch);
       st.setActivePage(newId);
       insertedToast();
       close();
@@ -746,6 +768,7 @@ export function QuestionPaperDialog() {
     setLayout(normalizeQpLayout(h.layout));
     setDocType(h.docType ?? 'question');
     setLevel(coerceQpLevel(h.level) ?? (h.format === 'university' ? 'university' : 'school'));
+    setHideChrome(h.hideChrome ?? true);
     setInstrDraft((h.meta.instructions ?? []).join('\n'));
     setImage(null);
     setPhase('idle');
@@ -1552,6 +1575,24 @@ export function QuestionPaperDialog() {
         </div>
       </div>
       <p className="qp-hint">{tt('qp.preview.hint')}</p>
+
+      {/* সন্নিবেশ-বিকল্প — কাগজ-মাপ ও chrome-নীরবতা (শীটে বসানোর আগে সিদ্ধান্ত) */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card/60 px-3 py-2.5">
+        <label className="flex cursor-pointer items-center gap-2.5 text-sm" htmlFor="qp-hide-chrome">
+          <Switch
+            id="qp-hide-chrome"
+            checked={hideChrome}
+            onCheckedChange={setHideChrome}
+            disabled={busy}
+            aria-label={tt('qp.chrome.hide')}
+          />
+          <span className="font-medium">{tt('qp.chrome.hide')}</span>
+          <span className="hidden text-xs text-muted-foreground sm:inline">{tt('qp.chrome.hide.hint')}</span>
+        </label>
+        <span className="text-xs text-muted-foreground">
+          {tt('qp.sheet.size')}: <strong className="font-semibold text-foreground">{tt(`qp.page.${normalizeQpLayout(paper.layout).pageSize}`)}</strong>
+        </span>
+      </div>
 
       <div className="qp-nav-row">
         <Button variant="outline" onClick={() => setStep(3)} disabled={busy}>

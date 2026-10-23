@@ -51,7 +51,7 @@ interface EditorActions {
   updateSettings: (patch: Partial<DocumentSettings>) => void;
   applyTheme: (theme: BookTheme) => void;
 
-  addPage: (afterPageId: string | null, html?: string) => string;
+  addPage: (afterPageId: string | null, html?: string, opts?: Partial<PageData>) => string;
   addCoverPage: (cover: CoverData) => void;
   updateCover: (pageId: string, cover: CoverData) => void;
   deletePage: (pageId: string) => void;
@@ -381,13 +381,14 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 
   // ── পৃষ্ঠা অপারেশন ──
 
-  addPage: (afterPageId, html) => {
+  addPage: (afterPageId, html, opts) => {
     const pages = [...get().pages];
     const page: PageData = {
       id: newId('pg'),
       kind: 'normal',
       html: html ?? '<p></p>',
       noChrome: false,
+      ...opts,
     };
     if (afterPageId === null) {
       pages.push(page);
@@ -516,6 +517,7 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
       noChrome: src?.noChrome ?? false,
       headerOverride: src?.headerOverride ?? null,
       footerOverride: src?.footerOverride ?? null,
+      paperSizeOverride: src?.paperSizeOverride ?? null,
       marginsOverride: src?.marginsOverride ?? null,
       typeOverride: src?.typeOverride ?? null,
       styleOverride: src?.styleOverride ?? null,
@@ -550,6 +552,9 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
         noChrome: src?.noChrome ?? false,
         headerOverride: src?.headerOverride ?? null,
         footerOverride: src?.footerOverride ?? null,
+        // কাগজের মাপও উত্তরাধিকারসূত্রে — QP-চেইন (Legal/A5) ভাঙলে ধারাবাহিক
+        // পাতাও সেই একই মাপে থাকবে, মাঝখানে A4-পাতা ঢুকে যাবে না
+        paperSizeOverride: src?.paperSizeOverride ?? null,
         marginsOverride: src?.marginsOverride ?? null,
         typeOverride: src?.typeOverride ?? null,
         styleOverride: src?.styleOverride ?? null,
