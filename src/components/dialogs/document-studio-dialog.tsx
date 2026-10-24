@@ -6,8 +6,8 @@
  *    বাংলাদেশ-ভারত আঞ্চলিক সংগ্রহ (সনদ, দলিল, দরখাস্ত)।
  *  ধাপ ২ তথ্য: টেমপ্লেট-ভিত্তিক ডাইনামিক ফরম + AI দিয়ে-পূরণ (সংক্ষিপ্ত
  *    বর্ণনা থেকে ঘরগুলো পূরণ) + সাজ-বিকল্প (কালি-প্যালেট)।
- *  ধাপ ৩ প্রিভিউ: সাদা A4-প্রতিরূপে জীবন্ত প্রিভিউ — নতুন পাতায় বসানো বা
- *    বর্তমান পাতায় বদলে বসানো।
+ *  ধাপ ৩ প্রিভিউ: প্রকৃত কাগজের মাপে (A4/Legal/Demy…) জীবন্ত প্রিভিউ — নতুন পাতায়
+ *    বসানো বা বর্তমান পাতায় বদলে বসানো। মার্জিনও কাগজ-আনুপাতিক।
  *
  * প্রিভিউ একই HTML (buildDsHtml) দিয়ে StaticContent-এ রেন্ডার — তাই যা
  * প্রিভিউয়ে দেখা যায়, এডিটর/প্রিন্ট/এক্সপোর্টে হুবহু তা-ই আসে।
@@ -43,9 +43,14 @@ import {
 import { callAi } from '@/lib/ai-client';
 import { extractJson } from '@/lib/ai-content';
 import { ensurePageEditorMounted, fitTemplatePage } from '@/components/editor/page-ops';
+import { dsMarginsForPaper, effectivePageSize } from '@/lib/page-layout';
+import { getPageDimensionsMm, getPaperPreset, mmToPx } from '@/lib/paper';
 import { useLangStore, useT, useFmtNum } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+
+/** প্রিভিউ-শীটের প্যাডিং px মার্জিনে রূপান্তর (96dpi — .ds-sheet-এর একক) */
+const inToPx = (inch: number): number => Math.round(inch * 96 * 100) / 100;
 
 type Step = 1 | 2 | 3;
 
@@ -54,10 +59,6 @@ const STEPS: Array<{ id: Step; key: string }> = [
   { id: 2, key: 'ds.step.fill' },
   { id: 3, key: 'ds.step.preview' },
 ];
-
-/** প্রিভিউ-শীটের ভার্চুয়াল প্রস্থ (px) — A4-প্রতিরূপ */
-const SHEET_W = 794;
-const SHEET_H = 1123;
 
 /** জনপ্রিয় নকশা — গ্যালারির শীর্ষে ফিচার্ড-স্ট্রিপ (ওয়ার্ড/ক্যানভা-প্রথা) */
 const POPULAR_IDS = ['resume-modern', 'invoice', 'official-letter', 'award', 'letterhead', 'calendar-month', 'invitation', 'press-release'] as const;
@@ -157,6 +158,7 @@ export function DocumentStudioDialog() {
   const lang = useLangStore((s) => s.lang);
   const tt = useT();
   const nf = useFmtNum();
+  const settings = useEditorStore((s) => s.settings);
 
   const [step, setStep] = useState<Step>(1);
   const [query, setQuery] = useState('');
@@ -174,17 +176,31 @@ export function DocumentStudioDialog() {
 
   const tpl = tplId ? dsTemplateById(tplId) ?? null : null;
 
+  // ── প্রকৃত-কাগজ প্রিভিউ: নতুন পাতা যে মাপ পায় (গ্লোবাল সেটিংস) সেই মাপেই শীট —
+  //    px-মাপ @96dpi + কাগজ-আনুপাতিক DS মার্জিন (dsMarginsForPaper) — ফলে যা
+  //    প্রিভিউয়ে দেখা যায়, বসানো পাতায় হুবহু তা-ই (WYSIWYG)।
+  const sheet = useMemo(() => {
+    const { widthMm, heightMm } = getPageDimensionsMm(settings.paperSize, settings.orientation, settings.customPaper);
+    return {
+      widthMm, heightMm,
+      w: mmToPx(widthMm),
+      h: mmToPx(heightMm),
+      margins: dsMarginsForPaper(settings.paperSize, settings.orientation, settings.customPaper),
+      label: getPaperPreset(settings.paperSize).name,
+    };
+  }, [settings.paperSize, settings.orientation, settings.customPaper]);
+
   // প্রিভিউ কনটেইনারের প্রস্থ → ফিট-স্কেল
   useEffect(() => {
     if (step !== 3 || !previewWrapRef.current) return;
     const el = previewWrapRef.current;
     const ro = new ResizeObserver(() => {
       const w = el.clientWidth - 24;
-      setFitScale(Math.max(0.28, Math.min(1, w / SHEET_W)));
+      setFitScale(Math.max(0.28, Math.min(1, w / sheet.w)));
     });
     ro.observe(el);
     return () => ro.disconnect();
-  }, [step]);
+  }, [step, sheet.w]);
 
   const setValue = useCallback((id: string, v: string) => {
     setValues((prev) => ({ ...prev, [id]: v }));
@@ -340,14 +356,14 @@ export function DocumentStudioDialog() {
       const s = useEditorStore.getState();
       const after = s.activePageId ?? s.pages[s.pages.length - 1]?.id ?? null;
       const id = s.addPage(after, previewHtml);
-      // প্রিভিউ-শীটের মার্জিন (46px 54px ≈ 0.48″ × 0.5625″)ই এই পাতায়ও বসে —
-      // যা প্রিভিউতে দেখা যায় হুবহু তাই-ই পাতায় ঢোকে (WYSIWYG); গ্লোবাল মার্জিন
-      // ১″ হলে নকশা প্রিভিউের চেয়ে ~১২% আগে মোড়াত, যা ব্যবহারকারীকে বিভ্রান্ত করত।
+      // প্রিভিউ-শীটের মার্জিনই এই পাতায়ও বসে — উভয়ই dsMarginsForPaper(কাগজ-মাপ)
+      // থেকে (কাগজ-আনুপাতিক), তাই যা প্রিভিউে দেখা যায় হুবহু তাই-ই পাতায় ঢোকে
+      // (WYSIWYG) — ছোট বই-কাগজে (Demy/Crown) মার্জিনও ছোট, Legal-এ আনুপাতিক বড়।
       // flowLock — অটো-ফ্লো নকশা ভাঙবে না; প্রথম সম্পাদনাতেই লক খুলে যায়।
       s.updatePage(id, {
         noChrome: true,
         flowLock: true,
-        marginsOverride: { top: 0.48, bottom: 0.48, left: 0.5625, right: 0.5625, gutter: s.settings.margins.gutter },
+        marginsOverride: { ...sheet.margins, gutter: s.settings.margins.gutter },
       });
       toast.success(tt('ds.toast.inserted'));
       close();
@@ -367,11 +383,17 @@ export function DocumentStudioDialog() {
         return;
       }
       s.replacePageHtml(target, previewHtml);
-      // ঢোকানোর মতোই — প্রিভিউের মার্জিনই পাতায় বসে (WYSIWYG) + নকশা-লক
+      // ঢোকানোর মতোই — কিন্তু লক্ষ্য-পাতার কার্যকর কাগজ-মাপ থেকে (পাতার নিজস্ব
+      // paperSizeOverride থাকলে সেটাই — দিন ২-এর মিক্সড-মাপ স্ট্যাক) আনুপাতিক মার্জিন,
+      // যাতে যে কাগজে বসছে সেই কাগজেই প্রিভিউের মতো দেখায় (WYSIWYG) + নকশা-লক
+      const targetPage = s.pages.find((p) => p.id === target) ?? null;
+      const targetMargins = dsMarginsForPaper(
+        effectivePageSize(targetPage, s.settings), s.settings.orientation, s.settings.customPaper,
+      );
       s.updatePage(target, {
         noChrome: true,
         flowLock: true,
-        marginsOverride: { top: 0.48, bottom: 0.48, left: 0.5625, right: 0.5625, gutter: s.settings.margins.gutter },
+        marginsOverride: { ...targetMargins, gutter: s.settings.margins.gutter },
       });
       toast.success(tt('ds.toast.replaced'));
       setConfirmReplace(false);
@@ -571,7 +593,7 @@ export function DocumentStudioDialog() {
           <section aria-label={tt('ds.step.preview')} className="flex flex-col gap-2">
             <div className="qp-stats" role="status">
               <span className="qp-stat"><strong>{tpl.name[lang] || tpl.name.en}</strong></span>
-              <span className="qp-stat qp-stat-page">{tt('ds.prev.pageHint')}</span>
+              <span className="qp-stat qp-stat-page">{tt('ds.prev.paper')}: {sheet.label} · {nf(Math.round(sheet.widthMm))}×{nf(Math.round(sheet.heightMm))}mm</span>
               <span className="qp-stat-zoom">
                 <button type="button" aria-label="-" onClick={() => setZoom((z) => Math.max(0.5, Math.round((z - 0.1) * 10) / 10))}><ZoomOut size={13} aria-hidden="true" /></button>
                 <span>{nf(Math.round(effScale * 100))}%</span>
@@ -582,11 +604,18 @@ export function DocumentStudioDialog() {
             <div ref={previewWrapRef} className="qp-preview">
               <div
                 className="qp-preview-spacer"
-                style={{ width: SHEET_W * effScale, height: SHEET_H * effScale, maxWidth: '100%' }}
+                style={{ width: sheet.w * effScale, height: sheet.h * effScale, maxWidth: '100%' }}
               >
                 <div
-                  className="ds-sheet"
-                  style={{ transform: `scale(${effScale})`, transformOrigin: 'top left', width: SHEET_W, minHeight: SHEET_H }}
+                  className="ds-sheet ds-sheet-live"
+                  style={{
+                    transform: `scale(${effScale})`,
+                    transformOrigin: 'top left',
+                    width: sheet.w,
+                    minHeight: sheet.h,
+                    // প্যাডিং = বসানো পাতার মার্জিন (dsMarginsForPaper) — প্রিভিউ = পাতা
+                    padding: `${inToPx(sheet.margins.top)}px ${inToPx(sheet.margins.right)}px ${inToPx(sheet.margins.bottom)}px ${inToPx(sheet.margins.left)}px`,
+                  }}
                   dangerouslySetInnerHTML={{ __html: dsPreviewInline(previewHtml) }}
                 />
               </div>

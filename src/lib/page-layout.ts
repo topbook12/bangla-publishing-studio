@@ -9,6 +9,7 @@
  */
 
 import type { DocumentSettings, Margins, PageData, PageStyleOverride, PageTypographyOverride, PaperSizeId } from './types';
+import { getPageDimensionsMm, MM_PER_INCH } from './paper';
 
 /**
  * পাতার কার্যকর কাগজের মাপ — পাতার নিজস্ব paperSizeOverride থাকলে সেটাই,
@@ -94,4 +95,46 @@ export function settingsWithPageStyle(page: PageData | null | undefined, setting
     pageBorderColor: st.pageBorderColor,
     watermark: st.watermark,
   } as DocumentSettings;
+}
+
+// ─── ডকুমেন্ট স্টুডিও-নকশার প্রতি-কাগজ মার্জিন ───
+
+/**
+ * DS-নকশার A4-রেফারেন্স মার্জিন (ইঞ্চি) — প্রিভিউ-শীটের .ds-sheet প্যাডিং
+ * (46px/54px @96dpi) ঠিক এই মানই — তাই A4-তে প্রিভিউ = বসানো পাতা হুবহু (WYSIWYG)।
+ */
+export const DS_REF_MARGIN = { top: 0.48, bottom: 0.48, left: 0.5625, right: 0.5625 } as const;
+
+/** ছাপাখানার নিরাপত্তা-মেঝে (ইঞ্চি) — কনটেন্ট কাগজের ধারে কাটা পড়বে না */
+const DS_MARGIN_FLOOR = { top: 0.3, side: 0.35 } as const;
+
+const clampNum = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
+const round3 = (v: number) => Math.round(v * 1000) / 1000;
+
+/**
+ * প্রদত্ত কাগজ-মাপে DS-নকশার কার্যকর মার্জিন — **A4-আনুপাতিক**।
+ *
+ * A4-রেফারেন্স মার্জিন কাগজের প্রস্থ/উচ্চতা-অনুপাতে স্কেল হয় (ক্ল্যাম্প ০.৫৫–১.২৫,
+ * ছাপাখানার নিরাপত্তা-মেঝেসহ) — ফলে Demy/Crown-এর মতো ছোট বইয়ে 0.5625″ বিশাল
+ * মার্জিনে নকশা চড়া-চড়া ভাবে না, Legal-এ আনুপাতিক বড় হয়। প্রিভিউ-শীটও এই এক
+ * ফাংশনের মানই প্যাডিং হিসেবে পায় — স্ক্রিন/প্রিভিউ/সন্নিবেশ সবখানে হুবহু এক।
+ */
+export function dsMarginsForPaper(
+  paperSize: PaperSizeId,
+  orientation: 'portrait' | 'landscape',
+  custom: { widthMm: number; heightMm: number },
+): Pick<Margins, 'top' | 'bottom' | 'left' | 'right'> {
+  const { widthMm, heightMm } = getPageDimensionsMm(paperSize, orientation, custom);
+  const wIn = widthMm / MM_PER_INCH;
+  const hIn = heightMm / MM_PER_INCH;
+  const a4W = 210 / MM_PER_INCH;
+  const a4H = 297 / MM_PER_INCH;
+  const sw = clampNum(wIn / a4W, 0.55, 1.25);
+  const sh = clampNum(hIn / a4H, 0.55, 1.25);
+  return {
+    top: Math.max(DS_MARGIN_FLOOR.top, round3(DS_REF_MARGIN.top * sh)),
+    bottom: Math.max(DS_MARGIN_FLOOR.top, round3(DS_REF_MARGIN.bottom * sh)),
+    left: Math.max(DS_MARGIN_FLOOR.side, round3(DS_REF_MARGIN.left * sw)),
+    right: Math.max(DS_MARGIN_FLOOR.side, round3(DS_REF_MARGIN.right * sw)),
+  };
 }

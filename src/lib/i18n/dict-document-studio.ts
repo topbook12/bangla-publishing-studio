@@ -79,7 +79,7 @@ export const dictDocumentStudio = {
   'ds.prev.insertTip': { bn: 'শীটের একদম শেষে নতুন পাতা হিসেবে বসে — পেজিনেশন/প্রিন্ট সব চলে', hi: 'नए पृष्ठ के रूप में जोड़ा जाएगा', en: 'Added as a new page — full pagination/print support' },
   'ds.prev.replaceTip': { bn: 'বর্তমান পাতার সব লেখা মুছে এই নকশা বসবে', hi: 'वर्तमान पृष्ठ बदल जाएगा', en: 'Replaces the current page content' },
   'ds.prev.back': { bn: '← তথ্য বদল', hi: '← जानकारी बदलें', en: '← Edit details' },
-  'ds.prev.pageHint': { bn: 'A4 প্রতিরূপ — আসল পাতায় হুবহু এমনই বসবে', hi: 'A4 प्रतिरूप', en: 'A4 replica — looks exactly like this on the page' },
+  'ds.prev.paper': { bn: 'কাগজ', hi: 'कागज़', en: 'Paper' },
 
   // ── টেমপ্লেট-স্টোরের "ডকুমেন্ট" ট্যাব ──
   'store.tab.doc': { bn: 'ডকুমেন্ট নকশা', hi: 'दस्तावेज़ डिज़ाइन', en: 'Document designs' },

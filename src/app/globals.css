@@ -4547,6 +4547,11 @@ html.dark .qp-format-vis { background: oklch(0.27 0.01 260); border-color: rgb(2
 .ds-sheet th { background: rgba(100, 116, 139, 0.14); font-weight: 700; }
 .ds-sheet .fancy-divider { color: #334155; }
 
+/* প্রকৃত-কাগজ লাইভ প্রিভিউ (ধাপ ৩) — ইনলাইন স্টাইলে কাগজের px-মাপ ও
+   কাগজ-আনুপাতিক মার্জিন বসে; কাগজের বাইরে উপচে-পড়া কাটা — এক পাতায় যা
+   আঁটে তা-ই সত্যি (fitTemplatePage-ও সন্নিবেশে ঠিক তাই করে) */
+.ds-sheet-live { overflow: hidden; }
+
 /* AI কাজের ওভারলে */
 .qp-progress {
   position: fixed;
