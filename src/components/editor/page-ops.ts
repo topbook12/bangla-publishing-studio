@@ -286,6 +286,43 @@ export async function paginateInsertedReader(startPageId: string, maxPages = 200
   return total;
 }
 
+/**
+ * ★ ডিপ-স্প্লিট (দিন ১০ — পেজিনেশন robustness): পাতার প্রথম ব্লকই যদি পাতার চেয়ে
+ * বড় হয় (প্রশ্নপত্রের বিভাগ-র‍্যাপার div, কলআউট, doc-columns…), ব্লক-গ্রানুলার
+ * ফ্লো হাল ছেড়ে দিত — ফলে পিছনের ছোট ব্লকগুলোও আটকে যেত আর শেষ পাতা বহু আয়তন
+ * উপচে থাকত। এখন কনটেইনারের ভেতরের শিশু-ব্লকগুলোর সীমানায় ভাগ হয়: যতটা আঁটে
+ * এই পাতায়, বাকিটা পরের পাতায় (একই কনটেইনার-শেল দুই ভাগে ক্লোন)। টেবিল/ছবি
+ * অ্যাটমিক থাকে — ভাঙা হয় না।
+ */
+function splitOversizedFirstContainer(
+  el: HTMLElement,
+  availableHeight: number,
+  pmEl: HTMLElement,
+): { keptHtml: string; overflowHtml: string } | null {
+  const tag = el.tagName;
+  if (tag === 'TABLE' || tag === 'IMG') return null;
+  if (el.classList.contains('ProseMirror-gapcursor')) return null;
+  const kids = Array.from(el.children).filter((c): c is HTMLElement => c instanceof HTMLElement);
+  if (kids.length < 2) return null;
+  const zoom = appliedZoomOf(pmEl);
+  const pmTop = pmEl.getBoundingClientRect().top;
+  let fit = 0;
+  for (let i = 0; i < kids.length; i++) {
+    const bottom = (kids[i].getBoundingClientRect().bottom - pmTop) / zoom;
+    if (bottom <= availableHeight - 4) fit = i + 1;
+    else break;
+  }
+  // একটিও ভেতরের ব্লক আঁটে না বা সবই আঁটে (মার্জিন/প্যাডিং-জনিত অসঙ্গতি) → হালছাড়া
+  if (fit < 1 || fit >= kids.length) return null;
+  const kept = el.cloneNode(false) as HTMLElement;
+  const over = el.cloneNode(false) as HTMLElement;
+  for (let i = 0; i < fit; i++) kept.appendChild(kids[i].cloneNode(true));
+  for (let i = fit; i < kids.length; i++) over.appendChild(kids[i].cloneNode(true));
+  kept.removeAttribute('contenteditable');
+  over.removeAttribute('contenteditable');
+  return { keptHtml: kept.outerHTML, overflowHtml: over.outerHTML };
+}
+
 function flowIfOverflowInner(editor: Editor, pageId: string, availableHeight: number, force = false): boolean {
   if (editor.isDestroyed) return false;
   const s = useEditorStore.getState();
@@ -321,37 +358,49 @@ function flowIfOverflowInner(editor: Editor, pageId: string, availableHeight: nu
     if (bottom <= availableHeight - 4) fitCount = i + 1;
     else break;
   }
-  if (fitCount < 1 || fitCount >= visibleChildren.length) return false;
+  if (fitCount >= visibleChildren.length) return false;
 
-  // doc-এ fitCount-তম নোডের শুরু অবস্থান (doc-শিশুর সংখ্যায় ক্ল্যাম্প — ম্যাপ-ভাঙা রোধ)
-  const doc = editor.state.doc;
-  const fitN = Math.min(fitCount, doc.childCount);
-  let pos = 0;
-  let counted = 0;
-  let guard = 0;
-  doc.forEach((child) => {
-    if (counted < fitN) {
-      pos += child.nodeSize;
-      counted += 1;
-    }
-    guard += 1;
-  });
-  void guard;
+  let keptHtml: string;
+  let overflowHtml: string;
+  let docCutPos: number | null = null;
+
+  if (fitCount >= 1) {
+    // doc-এ fitCount-তম নোডের শুরু অবস্থান (doc-শিশুর সংখ্যায় ক্ল্যাম্প — ম্যাপ-ভাঙা রোধ)
+    const doc = editor.state.doc;
+    const fitN = Math.min(fitCount, doc.childCount);
+    let pos = 0;
+    let counted = 0;
+    doc.forEach((child) => {
+      if (counted < fitN) {
+        pos += child.nodeSize;
+        counted += 1;
+      }
+    });
+    docCutPos = pos;
+    keptHtml = nodeContentToHtml(doc.cut(0, pos), editor.schema) || '<p></p>';
+    overflowHtml = nodeContentToHtml(doc.cut(pos, doc.content.size), editor.schema) || '<p></p>';
+  } else {
+    // প্রথম ব্লকই পাতার চেয়ে বড় → কনটেইনারের ভেতরে ভাগ (ডিপ-স্প্লিট)
+    const sp = splitOversizedFirstContainer(visibleChildren[0], availableHeight, pmEl);
+    if (!sp) return false;
+    keptHtml = sp.keptHtml;
+    overflowHtml = sp.overflowHtml;
+  }
 
   const selection = editor.state.selection;
-  const cursorMoved = selection.from >= pos;
-
-  const keptDoc = doc.cut(0, pos);
-  const overflowDoc = doc.cut(pos, doc.content.size);
-  const keptHtml = nodeContentToHtml(keptDoc, editor.schema) || '<p></p>';
-  const overflowHtml = nodeContentToHtml(overflowDoc, editor.schema) || '<p></p>';
+  const cursorMoved = docCutPos !== null && selection.from >= docCutPos;
 
   s.flowOverflow(pageId, keptHtml, overflowHtml);
 
   // নিজের এডিটরে রাখা অংশ সেট করা (আন্ডু-হিস্টরিতে নয়)
   replaceDocNoHistory(editor, keptHtml);
 
-  if (cursorMoved) {
+  if (docCutPos === null) {
+    // ডিপ-স্প্লিট পথ — কার্সর এই পাতার শেষে নিরাপদে রাখা
+    window.setTimeout(() => {
+      if (!editor.isDestroyed) setSafeTextSelection(editor, editor.state.doc.content.size);
+    }, 30);
+  } else if (cursorMoved) {
     // কার্সর সরে যাওয়া অংশে ছিল → পরের পৃষ্ঠার এডিটরে স্থানান্তর
     const pages = useEditorStore.getState().pages;
     const idx = pages.findIndex((p) => p.id === pageId);
@@ -361,7 +410,7 @@ function flowIfOverflowInner(editor: Editor, pageId: string, availableHeight: nu
       window.setTimeout(() => {
         const nextEditor = getEditor(nextPageId);
         if (nextEditor && !nextEditor.isDestroyed) {
-          setSafeTextSelection(nextEditor, selection.from - pos);
+          setSafeTextSelection(nextEditor, selection.from - (docCutPos ?? 0));
           nextEditor.commands.focus();
         }
       }, 80);
