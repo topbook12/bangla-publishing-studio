@@ -73,6 +73,10 @@ export const PaperPage = memo(
       aria-label={tt('ws.page.n', 'Page {n}').split('{n}').join(fn(index + 1))}
       onClick={onPageClick}
       data-page-index={index}
+      // নাম-ভিত্তিক পাতা-শনাক্তকারী — পেজ-ইঞ্জিনের async অপারেশন (পেজিনেশন/ফিল)
+      // চলাকালীন স্টোর-ইনডেক্স ও DOM-অর্ডার আন্তঃমুহূর্তে সরে গেলেও এই পাতার
+      // মাপ/মাউন্ট-কোয়েরি ভুল পাতায় গড়ায় না (index-কাপলিং রক্ষা — দিন ৬)
+      data-page-id={page.id}
       // নাম-সহ প্রিন্ট-পাতা (CSS named pages) — Ctrl+P-তে মিশ্র-মাপ ডকুমেন্টেও
       // প্রতিটি পাতা নিজের কাগজের মাপেই ছাপা হয় (Chromium; অন্য ব্রাউজারে
       // গ্লোবাল @page-এ সৌম্য ফলব্যাক)

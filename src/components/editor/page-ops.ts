@@ -242,8 +242,13 @@ export function flowOnceForced(editor: Editor, pageId: string, availableHeight: 
  * উচ্চতা-স্থিতিশীলতা — অন্ধ ১৪০/৪২০ms নয়) চালিয়ে পুনঃমাপ-পুনঃভাগ করা হয়
  * (কোনো পাসে নতুন ভাগ না হলে থামে)।
  * রিটার্ন: মোট কতবার ভাগ হলো (নতুন পাতা = ভাগ + ১)।
+ *
+ * maxPages = ২০০০-সুরক্ষা-ছাড় (আগে ১০ — দীর্ঘ প্রশ্নপত্র/বইয়ের অধ্যায় নীরবে
+ * অসম্পূর্ণ থেকে যেত)। লুপ তবু অসীম-নিরাপদ: প্রতিটি ভাগে কনটেন্ট পরের পাতায়
+ * সরে, উপচে-পড়া শেষ হলে flowOnceForced false ফেরত দেয় — অগ্রগতি ছাড়া
+ * লুপ নিজে থেমে যায়; ২০০০ কেবল প্যাথলজিকাল-রক্ষা।
  */
-export async function paginateInsertedReader(startPageId: string, maxPages = 10): Promise<number> {
+export async function paginateInsertedReader(startPageId: string, maxPages = 2000): Promise<number> {
   let total = 0;
   for (let pass = 0; pass < 3; pass++) {
     // ফন্ট-রেডি + ডাবল-rAF + উচ্চতা-স্থিতিশীলতা — স্টোর→এডিটর সিঙ্ক (setTimeout-0
@@ -417,12 +422,24 @@ export function htmlIsEmpty(html: string): boolean {
   return !div.querySelector('img, table, hr, .doc-textbox, .doc-shape, .callout-box, .mcq-block, .toc-block, svg, .doc-icon');
 }
 
+/**
+ * পাতার DOM-উপাদান খোঁজা — আগে পাতার স্থায়ী id দিয়ে (data-page-id), না পেলে
+ * ইনডেক্স-ফলব্যাক। কেবল [data-page-index]-কাপলিং থাকলে paginateInsertedReader-
+ * এর মতো async অপারেশনের await-জানালায় পাতা ঢোকা/মোছা হলে স্টোর-ইনডেক্স ও DOM
+ * আন্তঃমুহূর্তে সরে গিয়ে ভুল পাতার উচ্চতা মাপা হতো (প্রশ্নপত্রে ভুল ভাগ)।
+ */
+function queryPageElement(pageId: string, fallbackIndex: number): HTMLElement | null {
+  const byId = document.querySelector<HTMLElement>(`[data-page-id="${CSS.escape(pageId)}"]`);
+  if (byId) return byId;
+  return document.querySelector<HTMLElement>(`[data-page-index="${fallbackIndex}"]`);
+}
+
 /** কোনো পাতার এডিটরের লভ্য উচ্চতা (page-editor-inner) — DOM থেকে */
 export function availableHeightOfEditor(pageId: string): number {
   const s = useEditorStore.getState();
   const idx = s.pages.findIndex((p) => p.id === pageId);
   if (idx < 0) return 0;
-  const el = document.querySelector<HTMLElement>(`[data-page-index="${idx}"] .page-editor-inner`);
+  const el = queryPageElement(pageId, idx)?.querySelector<HTMLElement>('.page-editor-inner');
   return el?.clientHeight ?? 0;
 }
 
@@ -571,7 +588,7 @@ export interface SmartFlowStats {
 export async function ensurePageEditorMounted(pageId: string): Promise<boolean> {
   const idx = useEditorStore.getState().pages.findIndex((p) => p.id === pageId);
   if (idx < 0) return false;
-  document.querySelector(`[data-page-index="${idx}"]`)?.scrollIntoView({ block: 'center' });
+  queryPageElement(pageId, idx)?.scrollIntoView({ block: 'center' });
   return waitForEditorMounted(pageId);
 }
 
@@ -638,8 +655,8 @@ export async function smartFlowWholeBook(): Promise<SmartFlowStats> {
   // যে পাতায় কাজ শুরু করেছিল সেখানেই ফেরা (দৃশ্যমান হলে)
   if (wasActive && useEditorStore.getState().pages.some((p) => p.id === wasActive)) {
     useEditorStore.getState().setActivePage(wasActive);
-    document.querySelector(`[data-page-index="${useEditorStore.getState().pages.findIndex((p) => p.id === wasActive)}"]`)
-      ?.scrollIntoView({ block: 'start' });
+    const endIdx = useEditorStore.getState().pages.findIndex((p) => p.id === wasActive);
+    queryPageElement(wasActive, endIdx)?.scrollIntoView({ block: 'start' });
   }
   return stats;
 }
