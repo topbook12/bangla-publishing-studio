@@ -9,7 +9,7 @@
  */
 
 import type { DocumentSettings, Margins, PageData, PageStyleOverride, PageTypographyOverride, PaperSizeId } from './types';
-import { getPageDimensionsMm, MM_PER_INCH } from './paper';
+import { getPageDimensionsMm, getPaperPreset, MM_PER_INCH } from './paper';
 
 /**
  * পাতার কার্যকর কাগজের মাপ — পাতার নিজস্ব paperSizeOverride থাকলে সেটাই,
@@ -136,5 +136,44 @@ export function dsMarginsForPaper(
     bottom: Math.max(DS_MARGIN_FLOOR.top, round3(DS_REF_MARGIN.bottom * sh)),
     left: Math.max(DS_MARGIN_FLOOR.side, round3(DS_REF_MARGIN.left * sw)),
     right: Math.max(DS_MARGIN_FLOOR.side, round3(DS_REF_MARGIN.right * sw)),
+  };
+}
+
+// ─── বই-ব্লুপ্রিন্টের জনর-ভিত্তিক প্রতি-কাগজ মার্জিন ───
+
+/** বই-ব্লুপ্রিন্টের নিরাপত্তা-মেঝে (ইঞ্চি) — বাঁধাই-নিরাপদ সর্বনিম্ন; এর নিচে নামলে ছাপায় কাটা পড়ে */
+const BP_MARGIN_FLOOR = { v: 0.4, h: 0.42 } as const;
+
+/**
+ * বই-ব্লুপ্রিন্টের জনর-ভিত্তিক রেফারেন্স মার্জিন প্রদত্ত কাগজে নামানো।
+ *
+ * প্রতিটি ব্লুপ্রিন্ট নিজের ঘরানার মার্জিন জানে (উপন্যাস = ধীর-স্নিগ্ধ প্রশস্ত,
+ * পাঠ্যবই/কোচিং = ঘন-সঘন, ম্যাগাজিন = কমপ্যাক্ট) — ব্লুপ্রিন্টের ঘোষিত কাগজে
+ * টিউন করা রেফারেন্স মান। ভিন্ন কাগজে বসলে প্রস্থ/উচ্চতা-অনুপাতে আনুপাতিক স্কেল
+ * হয় (ক্ল্যাম্প ০.৬–১.৪, নিরাপত্তা-মেঝেসহ)।
+ *
+ * এই ফাংশন ছাড়া ব্লুপ্রিন্ট ব্যবহারকারীর পুরনো গ্লোবাল মার্জিনে (সাধারণত ১″) আটকে
+ * যেত — Demy উপন্যাসে (৫.৪৩″ প্রস্থ) দুই পাশে ১″ মানে মাত্র ৩.৪″ টেক্সট-কলাম —
+ * পেশাদার বইয়ের ~৪.২″-এর তুলনায় বিপর্যয়। gutter সবসময় ০ (বাঁইডিং পরে Layout ট্যাবে)।
+ */
+export function blueprintMarginsForPaper(
+  ref: Pick<Margins, 'top' | 'bottom' | 'left' | 'right'>,
+  refPaper: PaperSizeId | undefined,
+  targetPaper: PaperSizeId,
+  orientation: 'portrait' | 'landscape',
+  custom: { widthMm: number; heightMm: number },
+): Margins {
+  // রেফারেন্স-কাগজ অজানা বা টার্গেট-ই হলে স্কেল নেই — টিউন করা মানই চূড়ান্ত
+  if (!refPaper || refPaper === targetPaper) return { ...ref, gutter: 0 };
+  const rp = getPaperPreset(refPaper);
+  const { widthMm, heightMm } = getPageDimensionsMm(targetPaper, orientation, custom);
+  const sw = clampNum(widthMm / rp.widthMm, 0.6, 1.4);
+  const sh = clampNum(heightMm / rp.heightMm, 0.6, 1.4);
+  return {
+    top: Math.max(BP_MARGIN_FLOOR.v, round3(ref.top * sh)),
+    bottom: Math.max(BP_MARGIN_FLOOR.v, round3(ref.bottom * sh)),
+    left: Math.max(BP_MARGIN_FLOOR.h, round3(ref.left * sw)),
+    right: Math.max(BP_MARGIN_FLOOR.h, round3(ref.right * sw)),
+    gutter: 0,
   };
 }

@@ -85,6 +85,13 @@ export interface BookBlueprintSettings {
   headerLeft?: string;
   headerCenter?: string;
   headerRight?: string;
+  /**
+   * জনর-ভিত্তিক রেফারেন্স মার্জিন (ইঞ্চি) — ব্লুপ্রিন্টের নিজস্ব paperSize-এ টিউন করা
+   * পেশাদার প্রকাশনা-মান (উপন্যাসে প্রশস্ত, পাঠ্যবই/কোচিংয়ে ঘন, ম্যাগাজিনে কমপ্যাক্ট)।
+   * ভিন্ন কাগজে blueprintMarginsForPaper() প্রস্থ/উচ্চতা-অনুপাতে স্কেল করে — ফলে
+   * Demy-তে ১″ ডিফল্ট মার্জিনে ৩.৪″ টেক্সট-কলামের বিপর্যয় আর হয় না।
+   */
+  margins?: { top: number; bottom: number; left: number; right: number };
 }
 
 export interface BookBlueprintPage {
@@ -173,6 +180,8 @@ const novel: BookBlueprint = {
   tags: [L3('হাফ-টাইটেল', 'आधा-शीर्षक', 'Half-Title'), L3('শিরোনাম পাতা', 'शीर्षक पृष्ठ', 'Title Page'), L3('কপিরাইট', 'कॉपीराइट', 'Copyright'), L3('সূচিপত্র', 'सूचीपत्र', 'Index'), L3('অধ্যায় সূচনা', 'अध्याय शुरुआत', 'Chapter Start'), L3('নমুনা অধ্যায়', 'नमूना अध्याय', 'Sample Chapter')],
   settings: {
     paperSize: 'demy-octavo',
+    // ক্ল্যাসিক ট্রেড-বই টেক্সট-ব্লক ~৪.২×৭.০″ (Demy ৫.৪৩×৮.৫″-এ) — ধীর-স্নিগ্ধ পাঠের জন্য প্রশস্ত মার্জিন
+    margins: { top: 0.72, bottom: 0.8, left: 0.62, right: 0.62 },
     defaultFont: 'Tiro Bangla',
     defaultFontSize: 12,
     lineHeight: 1.7,
@@ -261,6 +270,8 @@ const guide: BookBlueprint = {
   tags: [L3('প্রতিষ্ঠান শিরোনাম', 'संस्था शीर्षक', 'Institution Title'), L3('কপিরাইট', 'कॉपीराइट', 'Copyright'), L3('সূচিপত্র', 'सूचीपत्र', 'Index'), L3('অধ্যায় + শেখার তালিকা', 'अध्याय + सीखने की सूची', 'Chapter + Learning List'), L3('নমুনা পাঠ', 'नमूना पाठ', 'Sample Text'), L3('শেষ পাতা', 'अंतिम पृष्ठ', 'Last Page')],
   settings: {
     paperSize: 'a4',
+    // কোচিং-গাইড = ঘন কনটেন্ট (MCQ/কলাম) — ~৭.০″ টেক্সট-কলাম, A4-এর জন্য টিউন করা
+    margins: { top: 0.62, bottom: 0.62, left: 0.66, right: 0.6 },
     defaultFont: 'Hind Siliguri',
     defaultFontSize: 11,
     lineHeight: 1.6,
@@ -354,6 +365,8 @@ const poetry: BookBlueprint = {
   tags: [L3('হাফ-টাইটেল', 'आधा-शीर्षक', 'Half-Title'), L3('শিরোনাম পাতা', 'शीर्षक पृष्ठ', 'Title Page'), L3('কপিরাইট', 'कॉपीराइट', 'Copyright'), L3('সূচিপত্র', 'सूचीपत्र', 'Index'), L3('কবিতা পাতা', 'कविता पृष्ठ', 'Poem Page'), L3('উৎসর্গ', 'उत्सर्ग', 'Dedication')],
   settings: {
     paperSize: 'a5',
+    // কবিতা = শিথিল বায়বীয় পাতা — ১.৯ লাইন-হাইটের সাথে মেলা প্রশস্ত মার্জিন
+    margins: { top: 0.68, bottom: 0.74, left: 0.6, right: 0.6 },
     paperColor: 'cream',
     defaultFont: 'Tiro Bangla',
     defaultFontSize: 11,
@@ -441,6 +454,8 @@ const textbook: BookBlueprint = {
   tags: [L3('প্রতিষ্ঠান শিরোনাম', 'संस्था शीर्षक', 'Institution Title'), L3('প্রকাশনা তথ্য', 'प्रकाशन जानकारी', 'Publication Information'), L3('বিষয়সূচি', 'विषय सूची', 'Contents'), L3('অধ্যায় + শেখার-তালিকা', 'अध्याय + सीखने की सूची', 'Chapter + Learning List'), L3('নমুনা পাঠ + অনুশীলনী', 'नमूना पाठ + अभ्यास', 'Sample Text + Exercise'), L3('শেষ পাতা', 'अंतिम पृष्ठ', 'Last Page')],
   settings: {
     paperSize: 'a4',
+    // পাঠ্যবই = সর্বাধিক ঘন কনটেন্ট (অনুশীলন/চিত্র) — ছাপা-নিরাপদ মেঝের কাছাকাছি
+    margins: { top: 0.6, bottom: 0.6, left: 0.62, right: 0.58 },
     defaultFont: 'Hind Siliguri',
     defaultFontSize: 11,
     lineHeight: 1.6,
@@ -533,6 +548,8 @@ const science: BookBlueprint = {
   tags: [L3('শিরোনাম পাতা', 'शीर्षक पृष्ठ', 'Title Page'), L3('বিষয়সূচি', 'विषय सूची', 'Contents'), L3('অধ্যায় + মূল ধারণা', 'अध्याय + मुख्य अवधारणा', 'Chapter + Main Concept'), L3('সূত্র + SI একক টেবিল', 'स्रोत + SI इकाई तालिका', 'Sources + SI Units Table'), L3('পরীক্ষার ভুল-সতর্কতা', 'परीक्षा चेतावनी', 'Exam Warning'), L3('শেষ পাতা', 'अंतिम पृष्ठ', 'Last Page')],
   settings: {
     paperSize: 'a4',
+    // বিজ্ঞান = সমীকরণ/চিত্রের প্রশস্ততা দরকার — পাঠ্যবইয়ের চেয়ে সামান্য খোলা
+    margins: { top: 0.62, bottom: 0.62, left: 0.66, right: 0.62 },
     defaultFont: 'Kalpurush',
     defaultFontSize: 11,
     lineHeight: 1.65,
@@ -610,6 +627,8 @@ const children: BookBlueprint = {
   tags: [L3('রঙিন শিরোনাম পাতা', 'रंगीन शीर्षक पृष्ठ', 'Color Title Page'), L3('গল্প পাতা + ছবির ফ্রেম', 'गल्प पृष्ठ + चित्र फ्रेम', 'Story Page + Image Frame'), L3('শেকড়ে শেখা', 'जड़ों में सीखें', 'Learning from Roots'), L3('গল্প-বীজ', 'गल्प-बीज', 'Story Seed'), L3('শেষ পাতা', 'अंतिम पृष्ठ', 'Last Page')],
   settings: {
     paperSize: 'a5',
+    // শিশু = বড় হরফ (১৩pt), কম শব্দ — নিরাপদ বড় মার্জিনে পড়া-সহজ পাতা
+    margins: { top: 0.6, bottom: 0.65, left: 0.55, right: 0.55 },
     defaultFont: 'Baloo Da 2',
     defaultFontSize: 13,
     lineHeight: 1.8,
@@ -685,6 +704,8 @@ const cooking: BookBlueprint = {
   tags: [L3('শিরোনাম পাতা', 'शीर्षक पृष्ठ', 'Title Page'), L3('রান্নার তালিকা', 'रेसिपी सूची', 'Recipe List'), L3('রেসিপি: উপকরণ + প্রণালি', 'रेसिपी: सामग्री + विधि', 'Recipe: Ingredients + Method'), L3('দ্বিতীয় রেসিপি', 'दूसरी रेसिपी', 'Second Recipe'), L3('রান্নাঘরের কথা', 'रसोई के बारे में', 'About the Kitchen')],
   settings: {
     paperSize: 'a5',
+    // রান্না = রেসিপি-কার্ড ঘন তালিকা — কমপ্যাক্ট কিন্তু ছাপা-নিরাপদ
+    margins: { top: 0.58, bottom: 0.62, left: 0.55, right: 0.55 },
     defaultFont: 'Anek Bangla',
     defaultFontSize: 11,
     lineHeight: 1.6,
@@ -767,6 +788,8 @@ const history: BookBlueprint = {
   tags: [L3('ফলক-শিরোনাম পাতা', 'प्लेट-शीर्षक पृष्ठ', 'Plaque Title Page'), L3('সূচিপত্র', 'सूचीपत्र', 'Index'), L3('পরিচ্ছেদ সূচনা', 'अध्याय शुरुआत', 'Section Start'), L3('সময়রেখার টেবিল', 'समयरेखा तालिका', 'Timeline Table'), L3('শেষ পাতা', 'अंतिम पृष्ठ', 'Last Page')],
   settings: {
     paperSize: 'demy-octavo',
+    // ইতিহাস-জীবনী = দীর্ঘ গদ্য — উপন্যাসের মতোই প্রশস্ত, ডাবল-বর্ডারের জায়গা মাথায় রেখে
+    margins: { top: 0.72, bottom: 0.78, left: 0.64, right: 0.64 },
     paperColor: 'cream',
     defaultFont: 'Siyam Rupali',
     defaultFontSize: 12,
@@ -847,6 +870,8 @@ const journal: BookBlueprint = {
   tags: [L3('নরম শিরোনাম পাতা', 'नरम शीर्षक पृष्ठ', 'Soft Title Page'), L3('কীভাবে লিখবে', 'कैसे लिखेंगे', 'How to Write'), L3('অভ্যাস খাতা', 'अभ्यास कार्यपुस्तिका', 'Practice Workbook'), L3('সাপ্তাহিক প্রতিফলন', 'साप्ताहिक प्रतिफलन', 'Weekly Reflection'), L3('শেষ পাতা', 'अंतिम पृष्ठ', 'Last Page')],
   settings: {
     paperSize: 'a5',
+    // ডায়েরি-জার্নাল = ব্যক্তিগত লেখা — সংযত কিন্তু লেখার নিঃশ্বাসের জায়গাসহ
+    margins: { top: 0.62, bottom: 0.66, left: 0.58, right: 0.58 },
     defaultFont: 'Mina',
     defaultFontSize: 12,
     lineHeight: 1.9,
@@ -920,6 +945,8 @@ const report: BookBlueprint = {
   tags: [L3('আনুষ্ঠানিক শিরোনাম পাতা', 'आधिकारिक शीर्षक पृष्ठ', 'Formal Title Page'), L3('নির্বাহী সারসংক্ষেপ', 'कार्यकारी सारांश', 'Executive Summary'), L3('বিষয়সূচি', 'विषय सूची', 'Contents'), L3('তথ্য-টেবিলসহ ফলাফল', 'डेटा-टेबल के साथ परिणाम', 'Results with Data Tables'), L3('সুপারিশ', 'सिफारिश', 'Recommendation'), L3('শেষ পাতা', 'अंतिम पृष्ठ', 'Last Page')],
   settings: {
     paperSize: 'a4',
+    // প্রতিবেদন = আনুষ্ঠানিক দলিল — মার্জিন সংযত, টেবিল/চার্টের প্রশস্ততা রেখে
+    margins: { top: 0.7, bottom: 0.7, left: 0.72, right: 0.66 },
     defaultFont: 'Noto Sans Bengali',
     defaultFontSize: 11,
     lineHeight: 1.55,
@@ -1010,6 +1037,8 @@ const magazine: BookBlueprint = {
   tags: [L3('মস্তহেড পাতা', 'मुखपृष्ठ', 'Masthead Page'), L3('সম্পাদকীয়', 'संपादकीय', 'Editorial'), L3('এ সংখ্যায়', 'इस संख्या में', 'In this Issue'), L3('গল্প', 'गल्प', 'Story'), L3('কবিতা-কোণ', 'कविता-कोण', 'Poetry Corner'), L3('লেখা পাঠাও', 'लेख भेजें', 'Submit Writing')],
   settings: {
     paperSize: 'letter',
+    // ম্যাগাজিন = ঘন মাল্টি-কলাম — সবচেয়ে কমপ্যাক্ট মার্জিন (Letter ৮.৫″-এ ৭.৪″ কলাম)
+    margins: { top: 0.55, bottom: 0.55, left: 0.55, right: 0.55 },
     defaultFont: 'Anek Bangla',
     defaultFontSize: 11,
     lineHeight: 1.6,
@@ -1097,6 +1126,8 @@ const islamic: BookBlueprint = {
   tags: [L3('বিসমিল্লাহ শিরোনাম পাতা', 'बिस्मिल्लाह शीर्षक पृष्ठ', 'Bismillah Title Page'), L3('সূচিপত্র', 'सूचीपत्र', 'Index'), L3('পরিচ্ছেদ পাতা', 'अध्याय पृष्ठ', 'Section Page'), L3('দোয়া ও হাদিস', 'दुआ और हदीस', 'Duas and Hadiths'), L3('ফজিলত', 'फज़ीलत', 'Fazilat'), L3('দোয়ার শেষ পাতা', 'दुआ का अंतिम पृष्ठ', 'Final Duas Page')],
   settings: {
     paperSize: 'demy-octavo',
+    // ইসলামিক = অলংকৃত ভক্তিমূলক পাতা — সবচেয়ে প্রশস্ত উলম্ব মার্জিন, অলংকরণের নিঃশ্বাস
+    margins: { top: 0.74, bottom: 0.82, left: 0.64, right: 0.64 },
     paperColor: 'cream',
     defaultFont: 'Tiro Bangla',
     defaultFontSize: 12,

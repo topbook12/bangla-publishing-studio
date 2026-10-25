@@ -150,6 +150,8 @@ export const dictDialogsA: Dict = {
   'store.oneColorPromo': { bn: 'পুরো বই এক রঙে ছাপার মতো দেখাতে চান? কালি বেছে নিন —', hi: 'पूरी किताब एक रंग की छपाई जैसी चाहिए? स्याही चुनें —', en: 'Want the whole book like single-colour printing? Pick an ink —' },
   'store.bp.pageCount': { bn: '{n}টি পাতা', hi: '{n} पृष्ठ', en: '{n} pages' },
   'store.bp.paper': { bn: 'কাগজ', hi: 'कागज़', en: 'Paper' },
+  'store.bp.margins': { bn: 'মার্জিন', hi: 'मार्जिन', en: 'Margin' },
+  'store.bp.marginsTip': { bn: 'ঘরানা-উপযোগী পেশাদার মার্জিন — কাগজ বদলালে আনুপাতিক স্কেল হয়', hi: 'शैली-अनुकूल पेशेवर मार्जिन — कागज़ बदलने पर आनुपातिक स्केल होता है', en: 'Genre-tuned professional margins — scale proportionally when paper changes' },
   'store.bp.start': { bn: 'এই ডিজাইনে বই শুরু করুন', hi: 'इस डिज़ाइन में किताब शुरू करें', en: 'Start book with this design' },
   'store.bp.insert': { bn: 'পাতাগুলো যোগ করুন', hi: 'पृष्ठ जोड़ें', en: 'Add pages only' },
   'store.bp.insertTip': { bn: 'বর্তমান লেখা অক্ষত রেখে ডিজাইন-পাতাগুলো পরে বসানো হবে', hi: 'मौजूदा लेख सुरक्षित रखकर डिज़ाइन-पृष्ठ बाद में जुड़ेंगे', en: 'Keeps your current text and appends the design pages after it' },

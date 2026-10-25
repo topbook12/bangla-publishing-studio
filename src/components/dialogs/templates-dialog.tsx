@@ -43,12 +43,13 @@ import {
   type BlueprintGenre, type BookBlueprint,
 } from '@/lib/book-templates';
 import { getPaperPreset, fontStackOf } from '@/lib/paper';
+import { blueprintMarginsForPaper } from '@/lib/page-layout';
 import { DS_CATEGORY_LABELS, DS_CATEGORY_ORDER, DS_TEMPLATES, type DsCategory } from '@/lib/document-studio';
 import { newId } from '@/lib/dexie';
-import { ensurePageEditorMounted, fitTemplatePage } from '@/components/editor/page-ops';
+import { ensurePageEditorMounted, fitTemplatePage, htmlIsEmpty } from '@/components/editor/page-ops';
 import { primeTocEntriesInHtml } from '@/lib/toc';
 import { StaticContent } from '@/components/editor/static-content';
-import type { DocumentSettings, HeaderFooterSettings } from '@/lib/types';
+import type { DocumentSettings, HeaderFooterSettings, PageData } from '@/lib/types';
 import { useT, useFmtNum, useLangStore, getLang } from '@/lib/i18n';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -193,7 +194,14 @@ function blueprintPreviewHtml(bp: BookBlueprint): string {
 function blueprintSettingsPatch(bp: BookBlueprint): Partial<DocumentSettings> {
   const b = bp.settings;
   const patch: Partial<DocumentSettings> = {};
-  if (b.paperSize) patch.paperSize = b.paperSize;
+  if (b.paperSize) {
+    patch.paperSize = b.paperSize;
+    // জনর-ভিত্তিক মার্জিন — ব্লুপ্রিন্ট পুরো বইয়ের মালিকানা নেয় (replace), তাই গ্লোবাল
+    // মার্জিনে বসে; Demy উপন্যাসে ১″ ডিফল্টে ৩.৪″ টেক্সট-কলামের বিপর্যয় আর হয় না।
+    if (b.margins) {
+      patch.margins = blueprintMarginsForPaper(b.margins, b.paperSize, b.paperSize, 'portrait', { widthMm: 210, heightMm: 297 });
+    }
+  }
   if (b.paperColor) patch.paperColor = b.paperColor;
   if (b.defaultFont) patch.defaultFont = b.defaultFont;
   if (b.defaultFontSize) patch.defaultFontSize = b.defaultFontSize;
@@ -255,11 +263,16 @@ function BlueprintCard({ bp, onStart, onInsert }: {
         </div>
       </div>
 
-      {/* সেটআপ-চিপ: কাগজ · ফন্ট · সাইজ */}
+      {/* সেটআপ-চিপ: কাগজ · ফন্ট · সাইজ · মার্জিন */}
       <div className="flex flex-wrap gap-1">
         {paper && <span className="chip text-[10px]">{tt('store.bp.paper')}: {paper.name}</span>}
         {bp.settings.defaultFont && <span className="chip text-[10px]">{bp.settings.defaultFont}</span>}
         {bp.settings.defaultFontSize && <span className="chip text-[10px]">{nf(bp.settings.defaultFontSize)}pt</span>}
+        {bp.settings.margins && (
+          <span className="chip text-[10px]" title={tt('store.bp.marginsTip')}>
+            {tt('store.bp.margins')}: {nf(bp.settings.margins.left)}″
+          </span>
+        )}
       </div>
 
       <p className="text-[10px] leading-snug text-muted-foreground/80">
@@ -453,11 +466,37 @@ export function TemplatesDialog() {
   const applyInsert = (bp: BookBlueprint) => {
     try {
       const s = useEditorStore.getState();
+      const globalPs = s.settings.paperSize;
+      const bpPs = bp.settings.paperSize;
+      const st = s.settings;
+      // জনর-ভিত্তিক মার্জিন — ব্লুপ্রিন্টের কাগজ থেকে বর্তমান গ্লোবাল কাগজে স্কেল
+      const bpMargins = bp.settings.margins
+        ? blueprintMarginsForPaper(bp.settings.margins, bpPs, globalPs, st.orientation, st.customPaper)
+        : null;
+      // ফাঁকা ডকুমেন্টে সম্পূর্ণ বই বসছে — পুরো সেটআপ-প্যাচই গ্লোবালে (QP-সন্নিবেশের
+      // fresh-doc শাখার মতোই); লেখা-আছে এমন ডকুমেন্টে কেবল নতুন পাতাগুলোতে per-page
+      // override — বাকি পাতা অক্ষত (প্রতি-পাতা আইসোলেশন হার্ড-রুল)।
+      const docFresh = s.pages.length > 0
+        && s.pages.every((p) => p.kind === 'normal' && !p.flowLock && htmlIsEmpty(p.html));
+      if (docFresh) s.updateSettings(blueprintSettingsPatch(bp));
       let after = s.activePageId ?? s.pages[s.pages.length - 1]?.id ?? null;
       const newIds: string[] = [];
       for (const p of bp.pages) {
         const id = s.addPage(after, p.html);
-        s.updatePage(id, { noChrome: Boolean(p.noChrome), flowLock: p.flowLock ?? true });
+        const pagePatch: Partial<PageData> = { noChrome: Boolean(p.noChrome), flowLock: p.flowLock ?? true };
+        if (!docFresh) {
+          // ডিজাইন-নিষ্ঠা: ব্লুপ্রিন্টের মার্জিন পাতার নিজস্ব বলে থাকে; কাগজ ভিন্ন হলে
+          // কাগজ-ওভাররাইডও (Day-2 QP-প্যাটার্ন) — মিশ্র-মাপ ডকুমেন্টেও নকশা হুবহু থাকে
+          if (bpMargins) {
+            // কাগজ-ওভাররাইড বসলে পাতা ব্লুপ্রিন্টের নিজের কাগজেই রেন্ডার হয় →
+            // রেফারেন্স মার্জিনই সঠিক; গ্লোবাল কাগজে থাকলে স্কেল-করা মার্জিন
+            pagePatch.marginsOverride = (bpPs && bpPs !== globalPs)
+              ? { ...bp.settings.margins!, gutter: 0 }
+              : bpMargins;
+          }
+          if (bpPs && bpPs !== globalPs) pagePatch.paperSizeOverride = bpPs;
+        }
+        s.updatePage(id, pagePatch);
         newIds.push(id);
         after = id;
       }
