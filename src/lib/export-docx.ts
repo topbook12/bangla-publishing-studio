@@ -966,7 +966,9 @@ async function rasterizeDocFigures(html: string): Promise<string> {
 
 export async function exportProjectToDocx(input: DocxExportInput): Promise<void> {
   const { settings, pages, title } = input;
-  const accent = hexNoHash(settings.header.accentColor) ?? '4F46E5';
+  // ফলব্যাক অ্যাকসেন্ট — Grand Ink ব্র্যান্ড-সবুজ (oklch(0.455 0.104 168) ≈ #00684B);
+  // আগে ইন্ডিগো #4F46E5 ফেরত দিত — সবুজ-ব্র্যান্ড দলিলে হঠাৎ নীল হেডার আসত
+  const accent = hexNoHash(settings.header.accentColor) ?? '00684B';
 
   const portrait = settings.orientation === 'portrait';
 

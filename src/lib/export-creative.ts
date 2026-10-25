@@ -118,28 +118,38 @@ interface EpubChapter {
   xhtml: string;
 }
 
-const XHTML_SKEL = (title: string, body: string, css: string) => `<?xml version="1.0" encoding="utf-8"?>
+const XHTML_SKEL = (title: string, body: string) => `<?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="bn" lang="bn">
 <head>
 <meta charset="utf-8" />
 <title>${escapeXml(title)}</title>
 <link rel="stylesheet" type="text/css" href="style.css" />
-${css ? '' : ''}
 </head>
 <body>
 ${body}
 </body>
 </html>`;
 
-const EPUB_CSS = `body { font-family: serif; line-height: 1.6; margin: 1em; }
+/**
+ * বইয়ের টাইপোগ্রাফি → EPUB style.css (দিন ৯ — ফিডেলিটি সুইপ)। আগে সব EPUB
+ * সিরিফ-ডিফল্ট + জোর-করে justify-এ যেত — স্ক্রিনের ফন্ট/সাইজ/লাইন-হাইট/প্যারা-ফাঁক
+ * হারিয়ে যেত। এখন দলিলের কার্যকর টাইপোগ্রাফিই বইয়ের ডিফল্ট হয় (রিডার চাইলে
+ * ওভাররাইড করতে পারে — সেটা EPUB-মান)। justify বাদ — স্ক্রিনের বাম-প্রান্তিক
+ * ডিফল্টের সাথে মেলে (alignment মার্ক ইনলাইনেই থাকে)।
+ */
+function epubCssOf(settings: DocumentSettings): string {
+  const font = (settings.defaultFont || 'Noto Serif Bengali').replace(/["']/g, '');
+  return `body { font-family: '${font}', 'Noto Serif Bengali', 'Noto Sans Bengali', serif;
+  font-size: ${settings.defaultFontSize}pt; line-height: ${settings.lineHeight}; margin: 1em; }
 h1, h2, h3, h4 { line-height: 1.3; }
-p { margin: 0 0 .6em; text-align: justify; }
+p { margin: 0 0 ${Math.max(2, settings.paragraphSpacing)}px; }
 img { max-width: 100%; height: auto; }
 table { border-collapse: collapse; width: 100%; }
 td, th { border: 1px solid #999; padding: 4px 8px; }
 blockquote { border-left: 3px solid #999; margin: .8em 0; padding: .2em 1em; color: #555; font-style: italic; }
 `;
+}
 
 /** স্টোরেজ HTML → EPUB XHTML (ছবি আলাদা ফাইলে গিয়ে src রিপ্লেস হয়) */
 function pageToEpubXhtml(
@@ -160,12 +170,12 @@ function pageToEpubXhtml(
   <p><b>${escapeXml(c.author)}</b></p>
   <p>${escapeXml(c.year)}</p>
 </section>`;
-    return XHTML_SKEL(c.title || bookTitle, body, '');
+    return XHTML_SKEL(c.title || bookTitle, body);
   }
 
   const dom = new DOMParser().parseFromString(`<div id="r">${page.html || '<p></p>'}</div>`, 'text/html');
   const root = dom.getElementById('r');
-  if (!root) return XHTML_SKEL(`পৃষ্ঠা ${index + 1}`, '<p></p>', '');
+  if (!root) return XHTML_SKEL(`পৃষ্ঠা ${index + 1}`, '<p></p>');
 
   // ছবিগুলো বের করে EPUB ফাইলে যোগ + src রিপ্লেস
   root.querySelectorAll('img').forEach((img, i) => {
@@ -187,7 +197,7 @@ function pageToEpubXhtml(
     // div/callout → section রাখলেও EPUB রিডার সহজে নেয়; শুধু epub:type বৈধতা
     .replace(/contenteditable="[^"]*"/gi, '');
 
-  return XHTML_SKEL(`পৃষ্ঠা ${index + 1}`, body, '');
+  return XHTML_SKEL(`পৃষ্ঠা ${index + 1}`, body);
 }
 
 export interface CreativeExportInput {
@@ -197,7 +207,7 @@ export interface CreativeExportInput {
 }
 
 export async function exportProjectToEpub(input: CreativeExportInput): Promise<void> {
-  const { title, pages } = input;
+  const { title, settings, pages } = input;
   const bookTitle = title || 'বই';
   const uuid = `urn:uuid:${crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`}`;
   const now = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
@@ -220,7 +230,7 @@ export async function exportProjectToEpub(input: CreativeExportInput): Promise<v
   </rootfiles>
 </container>`);
 
-  zip.file('OEBPS/style.css', EPUB_CSS);
+  zip.file('OEBPS/style.css', epubCssOf(settings));
 
   chapters.forEach((ch) => {
     zip.file(`OEBPS/${ch.id}.xhtml`, ch.xhtml);
@@ -237,7 +247,6 @@ export async function exportProjectToEpub(input: CreativeExportInput): Promise<v
   zip.file('OEBPS/nav.xhtml', XHTML_SKEL(
     'সূচিপত্র',
     `<nav epub:type="toc" id="toc">\n  <h1>সূচিপত্র</h1>\n  <ol>\n${navItems}\n  </ol>\n</nav>`,
-    '',
   ));
 
   const navPoints = chapters
