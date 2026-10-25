@@ -6,7 +6,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  BadgeCheck, BookText, FileCode2, FileDown, FileText, FileType2, Loader2, Printer, RefreshCw, TriangleAlert, Upload,
+  BadgeCheck, BookText, CheckCircle2, FileCode2, FileDown, FileText, FileType2, Loader2, Printer, RefreshCw, TriangleAlert, Upload,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { RibbonButton, RibbonDivider, RibbonGroup } from './ribbon-shell';
@@ -66,6 +66,10 @@ export function ExportTab() {
   const activePageIndex = useEditorStore((s) => s.pages.findIndex((p) => p.id === s.activePageId));
   const importRef = useRef<HTMLInputElement>(null);
   const [printOpen, setPrintOpen] = useState(false);
+  // দিন ৮ — গাইডেড Save as PDF: প্রথম-শ্রেণি PDF বোতাম থেকে খুললে ডায়ালগে
+  // ব্রাউজার-চেকলিস্ট (গন্তব্য/মার্জিন/ব্যাকগ্রাউন্ড) দেখায় আর প্রস্তাবকৃত ফাইল-নাম
+  // দলিলের শিরোনাম হয় (printDocument-এর pdfName পথ)
+  const [pdfGuide, setPdfGuide] = useState(false);
   const [mode, setMode] = useState<PrintMode>('normal');
   const [rangeMode, setRangeMode] = useState<PrintRangeMode>('all');
   const [rangeFrom, setRangeFrom] = useState('1');
@@ -211,6 +215,12 @@ export function ExportTab() {
 
   // ডায়ালগ সম্পূর্ণ বন্ধ (exit-animation সহ) হওয়ার পরেই প্রিন্ট —
   // নইলে fixed-position ডায়ালগ প্রতিটি প্রিন্টেড পেজে রিপিট হতো
+  const openPrint = (pdf: boolean) => {
+    setPdfGuide(pdf);
+    if (pdf) setMode('normal'); // PDF-গাইড সাধারণ প্রিন্ট-পথেই — ফরমা প্রেস-শিটের কাজ
+    setPrintOpen(true);
+  };
+
   const runNormalPrint = () => {
     // মুদ্রণ পরিসর যাচাই — বাংলা/ইংরেজি ডিজিট দুটোই চলে (toEnglishDigits),
     // ভুল হলে টোস্ট + বাতিল (নীরবে পুরো বই ছাপার দুর্ঘটনা নয়)
@@ -236,7 +246,9 @@ export function ExportTab() {
     }
     setPrintOpen(false);
     window.setTimeout(() => {
-      void waitForDialogsClosed().then(() => printDocument(range));
+      void waitForDialogsClosed().then(() =>
+        printDocument(range, pdfGuide ? useEditorStore.getState().title || undefined : undefined),
+      );
     }, 40);
   };
 
@@ -257,10 +269,19 @@ export function ExportTab() {
     <div className="ribbon-scroll flex items-stretch gap-1">
       <RibbonGroup label={tt('exp.group.press')} accent="press-ready output">
         <div className="flex flex-col items-center justify-center gap-1 px-2">
-          <Button className="gap-2" onClick={() => setPrintOpen(true)}>
-            <Printer size={16} /> {tt('exp.print.btn')}
-          </Button>
-          <p className="max-w-56 text-center text-[10px] leading-tight text-muted-foreground">
+          <div className="flex items-center gap-1">
+            <Button className="gap-2" onClick={() => openPrint(false)}>
+              <Printer size={16} /> {tt('exp.print.btn')}
+            </Button>
+            <Button
+              variant="outline"
+              className="gap-2 border-primary/40 text-primary hover:bg-primary/10"
+              onClick={() => openPrint(true)}
+            >
+              <FileDown size={16} /> {tt('exp.pdf.btn')}
+            </Button>
+          </div>
+          <p className="max-w-72 text-center text-[10px] leading-tight text-muted-foreground">
             {tt('exp.print.hint')}
           </p>
         </div>
@@ -345,6 +366,31 @@ export function ExportTab() {
               {tt('exp.dlg.desc')}
             </DialogDescription>
           </DialogHeader>
+
+          {/* দিন ৮ — PDF গাইড-চেকলিস্ট: ব্রাউজার-ডায়ালগের ৪টি সেটিং আগেই হাতে-গরম */}
+          {pdfGuide && mode === 'normal' && (
+            <div className="rounded-lg border border-primary/40 bg-primary/5 p-3">
+              <p className="mb-2 text-xs font-bold text-primary">{tt('exp.pdf.check.title')}</p>
+              <ul className="space-y-1.5 text-[11px] leading-snug">
+                <li className="flex items-start gap-1.5">
+                  <CheckCircle2 size={13} className="mt-px shrink-0 text-primary" />
+                  <span>{tt('exp.pdf.check.dest')}</span>
+                </li>
+                <li className="flex items-start gap-1.5">
+                  <CheckCircle2 size={13} className="mt-px shrink-0 text-primary" />
+                  <span>{tt('exp.pdf.check.margins')}</span>
+                </li>
+                <li className="flex items-start gap-1.5">
+                  <CheckCircle2 size={13} className="mt-px shrink-0 text-primary" />
+                  <span>{tt('exp.pdf.check.bg')}</span>
+                </li>
+                <li className="flex items-start gap-1.5">
+                  <CheckCircle2 size={13} className="mt-px shrink-0 text-primary" />
+                  <span>{tt('exp.pdf.check.paper')}</span>
+                </li>
+              </ul>
+            </div>
+          )}
 
           <RadioGroup value={mode} onValueChange={(v) => setMode(v as PrintMode)} className="gap-2">
             {/* সাধারণ */}
@@ -713,7 +759,7 @@ export function ExportTab() {
             </Button>
             {mode === 'normal' ? (
               <Button onClick={runNormalPrint}>
-                <Printer size={15} className="mr-1" /> {tt('exp.dlg.print')}
+                <Printer size={15} className="mr-1" /> {pdfGuide ? tt('exp.pdf.go') : tt('exp.dlg.print')}
               </Button>
             ) : (
               <Button onClick={runFormaPrint} disabled={!formaPrintable}>

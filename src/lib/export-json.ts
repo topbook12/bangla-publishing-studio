@@ -172,8 +172,13 @@ export function ensurePrintStyle(settings: DocumentSettings, pages?: PageData[])
  * (globals.css-এর @media print নিয়ম)। ক্লাস afterprint + ১০-মিনিট ফলব্যাক-এ
  * পরিষ্কার হয় (forma-print.ts-এর ক্লিনআপ প্যাটার্ন)। অবৈধ/না-মেলা পরিসরে
  * নিরাপদ ফলব্যাক: পুরো বই ছাপা হয়।
+ *
+ * pdfName দিলে (দিন ৮ — গাইডেড Save as PDF) document.title সাময়িকভাবে দলিলের
+ * শিরোনাম হয় — Chromium/Edge/Firefox সবাই প্রস্তাবকৃত PDF-ফাইলনাম ট্যাব-টাইটেল
+ * থেকে নেয়, ফলে সেভ করা PDF-এর নাম হয় বইয়ের নাম (আগে: অ্যাপের নাম)।
+ * afterprint + ৩০-সেকেন্ড ফলব্যাকে আসল ট্যাব-টাইটেল ফেরত (দুবার ফেরত নিরীহ)।
  */
-export async function printDocument(range?: { from: number; to: number }): Promise<void> {
+export async function printDocument(range?: { from: number; to: number }, pdfName?: string): Promise<void> {
   const st = useEditorStore.getState();
   const settings = st.settings;
   ensurePrintStyle(settings, st.pages);
@@ -223,5 +228,14 @@ export async function printDocument(range?: { from: number; to: number }): Promi
     const fallbackTimer = window.setTimeout(cleanup, 10 * 60 * 1000);
     window.addEventListener('afterprint', () => window.clearTimeout(fallbackTimer), { once: true });
   }
+  // ── PDF-ফাইলনাম (গাইডেড Save as PDF) — প্রিন্ট-শেষে আসল ট্যাব-টাইটেল ফেরত ──
+  const prevTitle = pdfName ? document.title : null;
+  if (pdfName && prevTitle !== null) {
+    document.title = pdfName;
+    const restoreTitle = () => { document.title = prevTitle; };
+    window.addEventListener('afterprint', restoreTitle, { once: true });
+    window.setTimeout(restoreTitle, 30_000); // afterprint না এলেও নিরাপদ-ফেরত
+  }
+
   window.print();
 }

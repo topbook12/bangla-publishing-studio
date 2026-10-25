@@ -20,6 +20,16 @@ export const dictExport: Dict = {
   'exp.print.btn': { bn: 'প্রিন্ট / PDF হিসেবে সেভ', hi: 'प्रिंट / PDF के रूप में सेव', en: 'Print / Save as PDF' },
   'exp.print.hint': { bn: 'সাধারণ বা ফরমা (প্রেস ইমপোজিশন) — ফন্ট ও মার্জিন ১০০% নির্ভুল থাকে', hi: 'सामान्य या फ़रमा (प्रेस इम्पोज़िशन) — फ़ॉन्ट और मार्जिन १००% सटीक रहते हैं', en: 'Normal or Farma (press imposition) — fonts & margins stay 100% accurate' },
 
+  // ─── দিন ৮ — গাইডেড Save as PDF ───
+  'exp.pdf.btn': { bn: 'PDF হিসেবে সেভ', hi: 'PDF के रूप में सेव', en: 'Save as PDF' },
+  'exp.pdf.btn.tip': { bn: 'গাইডেড PDF এক্সপোর্ট — ফাইল-নাম, কাগজ-মাপ ও রং আগে থেকেই সঠিক', hi: 'निर्देशित PDF एक्सपोर्ट — फ़ाइल-नाम, कागज़-माप और रंग पहले से सही', en: 'Guided PDF export — filename, paper size & colors pre-set' },
+  'exp.pdf.check.title': { bn: 'ব্রাউজারের প্রিন্ট-ডায়ালগে শুধু এগুলো বেছে নিন:', hi: 'ब्राउज़र प्रिंट-डायलॉग में बस ये चुनें:', en: 'In the browser print dialog, just pick these:' },
+  'exp.pdf.check.dest': { bn: 'গন্তব্য → Save as PDF', hi: 'गंतव्य → Save as PDF', en: 'Destination → Save as PDF' },
+  'exp.pdf.check.margins': { bn: 'মার্জিন → Default (পাতার মার্জিন নকশাতেই আছে)', hi: 'मार्जिन → Default (पेज का मार्जिन डिज़ाइन में ही है)', en: 'Margins → Default (page margins are built into the design)' },
+  'exp.pdf.check.bg': { bn: 'Background graphics → চালু (কাগজের রং/বর্ডার/ছাপ আসবে)', hi: 'Background graphics → चालू (कागज़ का रंग/बॉर्डर/वॉटरमार्क आएगा)', en: 'Background graphics → On (paper color/border/watermark included)' },
+  'exp.pdf.check.paper': { bn: 'কাগজ-মাপ → স্বয়ংক্রিয় (দলিলের আসল মাপ — বদলাবেন না)', hi: 'कागज़-माप → स्वतः (दस्तावेज़ का वास्तविक माप — न बदलें)', en: "Paper size → automatic (the document's real size — don't change it)" },
+  'exp.pdf.go': { bn: 'PDF-এর দিকে এগোন', hi: 'PDF की ओर बढ़ें', en: 'Continue to PDF' },
+
   // ─── ফাইল এক্সপোর্ট ───
   'exp.file.word': { bn: 'Word (.docx)', hi: 'Word (.docx)', en: 'Word (.docx)' },
   'exp.file.html.tip': { bn: 'স্বয়ংসম্পূর্ণ HTML ফাইল (অফলাইনে পড়া যায়)', hi: 'स्वयंसम्पूर्ण HTML फ़ाइल (ऑफ़लाइन पढ़ने योग्य)', en: 'Self-contained HTML file (readable offline)' },
