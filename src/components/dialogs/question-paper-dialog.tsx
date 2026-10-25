@@ -692,12 +692,10 @@ export function QuestionPaperDialog() {
       st.setActivePage(targetId);
       insertedToast();
       close();
-      window.setTimeout(() => {
-        // এক-বারের পেজিনেশন — দীর্ঘ প্রশ্নপত্র যত পাতা লাগে ভাগ হয়
-        // (অটো-ফ্লো চালু হয় না — পরে এক পাতায় সম্পাদনা অন্য পাতা নড়ায় না)
-        void paginateInsertedReader(targetId);
-        reveal(targetId);
-      }, 320);
+      // এক-বারের পেজিনেশন — দীর্ঘ প্রশ্নপত্র যত পাতা লাগে ভাগ হয়। আগে ৩২০ms
+      // অন্ধ অপেক্ষা ছিল; paginateInsertedReader এখন নিজেই promise-ভিত্তিক সেটেল
+      // (ফন্ট-রেডি + পেইন্ট + উচ্চতা-স্থিতিশীলতা) করে নেয় — অপেক্ষা অপ্রয়োজনীয়।
+      void paginateInsertedReader(targetId).then(() => reveal(targetId));
       return;
     }
     try {
@@ -705,10 +703,7 @@ export function QuestionPaperDialog() {
       st.setActivePage(newId);
       insertedToast();
       close();
-      window.setTimeout(() => {
-        void paginateInsertedReader(newId);
-        reveal(newId);
-      }, 320);
+      void paginateInsertedReader(newId).then(() => reveal(newId));
     } catch {
       toast.error(tt('qp.err.title'));
     }

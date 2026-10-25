@@ -93,6 +93,59 @@ function appliedZoomOf(el: HTMLElement): number {
   return el.offsetWidth > 0 && rect.width > 0 ? rect.width / el.offsetWidth : 1;
 }
 
+// ─── promise-ভিত্তিক লেআউট-সেটেল প্রিমিটিভ (timing-ম্যাজিক নয়) ───
+// আগে paginateInsertedReader/ensurePageEditorMounted অন্ধ ১৪০/৩২০/৪২০ms বিরতির
+// উপর দাঁড়িয়ে ছিল — ধীর মেশিনে যথেষ্ট হতো না (পেজিনেশন অসম্পূর্ণ), দ্রুত মেশিনে
+// অপচয়। এখন প্রতিটি অপেক্ষা একটি বাস্তব ঘটনার প্রতিশ্রুতি: ফন্ট-রেডি, পেইন্ট-ফ্রেম,
+// উচ্চতা-স্থিতিশীলতা, এডিটর-মাউন্ট।
+
+/** পরবর্তী পেইন্ট-ফ্রেম (ডাবল-rAF) — ডম-বদল → স্টাইল → লেআউট → পেইন্ট সম্পূর্ণ */
+function nextPaint(): Promise<void> {
+  return new Promise((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+  });
+}
+
+/**
+ * ফন্ট + লেআউট স্থিতিশীলতার অপেক্ষা — বাংলা ওয়েবফন্ট লেট-সোয়াপ/স্টোর→এডিটর
+ * সিঙ্কে উচ্চতা বদলায়। document.fonts.ready → ডাবল-rAF → তারপর এডিটরের
+ * scrollHeight টানা ২ ফ্রেম অপরিবর্তিত হলে স্থির ধরা হয়। deadline পার হলে
+ * স্থির-না-হলেও ফেরত (বাস্তবে ফন্ট/ছবি ছাড়া scrollHeight বদলায় না — অন্ধ
+ * বিরতির চেয়ে নির্ভরযোগ্য, আর সাধারণত ২-৩ ফ্রেমেই শেষ)।
+ */
+async function layoutStable(editor: Editor | null, deadlineMs = 500): Promise<void> {
+  try { await document.fonts.ready; } catch { /* পুরনো ব্রাউজার */ }
+  await nextPaint();
+  if (!editor || editor.isDestroyed) return;
+  const el = editor.view.dom as HTMLElement | null;
+  if (!el) return;
+  const start = performance.now();
+  let last = -1;
+  let stableFrames = 0;
+  while (performance.now() - start < deadlineMs && stableFrames < 2) {
+    await nextPaint();
+    const h = el.scrollHeight;
+    stableFrames = h === last ? stableFrames + 1 : 0;
+    last = h;
+  }
+}
+
+/**
+ * পাতার এডিটর মাউন্টের অপেক্ষা — rAF-লুপ (প্রতি পেইন্ট-ফ্রেমে একবার পরীক্ষা),
+ * deadline (~৩ সেকেন্ড) পার হলে ব্যর্থ ধরা হয়। ৯০ms×২২ setTimeout-পোল নয় —
+ * প্রতিটি ফ্রেমে মাউন্ট হলেই সঙ্গে সঙ্গে এগোয়, ঝুলে থাকে না।
+ */
+async function waitForEditorMounted(pageId: string, deadlineMs = 3000): Promise<boolean> {
+  const start = performance.now();
+  for (;;) {
+    const ed = getEditor(pageId);
+    if (ed && !ed.isDestroyed) return true;
+    if (!useEditorStore.getState().pages.some((p) => p.id === pageId)) return false;
+    if (performance.now() - start >= deadlineMs) return false;
+    await nextPaint();
+  }
+}
+
 // ─── ফ্লো-অপ মিউচুয়াল এক্সক্লুশন ───
 // fillFromNextPage-এর await-জানালায় ResizeObserver-ট্রিগারড ফ্লো ঢুকে একই এডিটরের
 // ডক বদলে দিলে ব্লক দুই পাতায় ডুপ্লিকেট হতে পারে — প্রতি-এডিটর ফ্ল্যাগ দিয়ে আটকাই।
@@ -185,21 +238,17 @@ export function flowOnceForced(editor: Editor, pageId: string, availableHeight: 
  * সন্নিবেশের মুহূর্তে একবার — পরে কোনো পাতায় সম্পাদনা করলে অন্য পাতা নড়ে না।
  *
  * মাল্টি-পাস: বাংলা ওয়েবফন্ট লেট-সোয়াপ/ছবি-লোডে উচ্চতা বদলায় — প্রথম পাসে মাপা
- * ভাগ অসম্পূর্ণ থাকতে পারে। তাই ফন্ট-রেডি + সেটেল-বিরতির পরে পুনঃমাপ-পুনঃভাগ
- * চালানো হয় (কোনো পাসে নতুন ভাগ না হলে থামে)।
+ * ভাগ অসম্পূর্ণ থাকতে পারে। তাই প্রতি পাসে layoutStable (ফন্ট-রেডি + পেইন্ট +
+ * উচ্চতা-স্থিতিশীলতা — অন্ধ ১৪০/৪২০ms নয়) চালিয়ে পুনঃমাপ-পুনঃভাগ করা হয়
+ * (কোনো পাসে নতুন ভাগ না হলে থামে)।
  * রিটার্ন: মোট কতবার ভাগ হলো (নতুন পাতা = ভাগ + ১)।
  */
 export async function paginateInsertedReader(startPageId: string, maxPages = 10): Promise<number> {
   let total = 0;
   for (let pass = 0; pass < 3; pass++) {
-    if (pass === 0) {
-      // ফন্ট-লোড শেষ না হলে উচ্চতা ভুল মাপা হয় — প্রথম পাসের আগেই ফন্ট-রেডি
-      try { await document.fonts.ready; } catch { /* পুরনো ব্রাউজার */ }
-      await new Promise((r) => window.setTimeout(r, 140));
-    } else {
-      // লেট-লেআউট সেটেল — তারপর পুনঃমাপ
-      await new Promise((r) => window.setTimeout(r, 420));
-    }
+    // ফন্ট-রেডি + ডাবল-rAF + উচ্চতা-স্থিতিশীলতা — স্টোর→এডিটর সিঙ্ক (setTimeout-0
+    // ম্যাক্রোটাস্ক) ও ওয়েবফন্ট-সোয়াপ দুটোই এর আগেই সেটেল হয়ে যায়
+    await layoutStable(getEditor(startPageId) ?? null);
     let pageId = startPageId;
     let passSplits = 0;
     for (let guard = 0; guard < maxPages; guard++) {
@@ -210,6 +259,9 @@ export async function paginateInsertedReader(startPageId: string, maxPages = 10)
         ed = getEditor(pageId);
         if (!ed || ed.isDestroyed) break;
       }
+      // ছবি লোড শেষ না হলে উচ্চতা ভুল মাপা হয় — মাপার আগেই ছবি-প্রতিশ্রুতি
+      await waitForImages(ed);
+      if (ed.isDestroyed) break;
       const avail = availableHeightOfEditor(pageId);
       if (avail <= 0) break;
       const flowed = flowOnceForced(ed, pageId, avail);
@@ -220,8 +272,8 @@ export async function paginateInsertedReader(startPageId: string, maxPages = 10)
       const next = pages[idx + 1];
       if (!next || next.kind !== 'normal') break;
       pageId = next.id;
-      // নতুন পাতার এডিটর মাউন্ট/পেইন্টের সুযোগ — নইলে উচ্চতা ০ মাপা হয়
-      await new Promise((r) => window.setTimeout(r, 150));
+      // নতুন পাতার এডিটর মাউন্ট + পেইন্ট — rAF-ভিত্তিক অপেক্ষা (অন্ধ ১৫০ms নয়)
+      await ensurePageEditorMounted(pageId);
     }
     total += passSplits;
     if (passSplits === 0) break;
@@ -515,18 +567,12 @@ export interface SmartFlowStats {
   pagesDeleted: number;
 }
 
-/** অদৃশ্য পাতার এডিটর মাউন্ট করতে পাতাটি ভিউপোর্টে এনে অপেক্ষা */
+/** অদৃশ্য পাতার এডিটর মাউন্ট করতে পাতাটি ভিউপোর্টে এনে অপেক্ষা (rAF-ভিত্তিক) */
 export async function ensurePageEditorMounted(pageId: string): Promise<boolean> {
   const idx = useEditorStore.getState().pages.findIndex((p) => p.id === pageId);
   if (idx < 0) return false;
-  const el = document.querySelector(`[data-page-index="${idx}"]`);
-  el?.scrollIntoView({ block: 'center' });
-  for (let i = 0; i < 22; i++) {
-    await new Promise((r) => window.setTimeout(r, 90));
-    if (getEditor(pageId)) return true;
-    if (!useEditorStore.getState().pages.some((p) => p.id === pageId)) return false;
-  }
-  return Boolean(getEditor(pageId));
+  document.querySelector(`[data-page-index="${idx}"]`)?.scrollIntoView({ block: 'center' });
+  return waitForEditorMounted(pageId);
 }
 
 /**
