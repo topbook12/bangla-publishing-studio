@@ -2397,6 +2397,9 @@ html.dark .ws-ruler-zone { background: rgb(255 255 255 / 0.055); }
     background: #fff !important;
     height: auto !important;
     overflow: visible !important;
+    /* ফাঁকা-শিট নিধন — ব্রাউজার ডিফল্ট body-margin কাগজ ভাঙায় না */
+    margin: 0 !important;
+    padding: 0 !important;
   }
   /* ডায়ালগ/ওভারলে/টোস্ট পোর্টাল body-র সরাসরি সন্তান (fixed) —
      লুকানো না হলে প্রতিটি প্রিন্টেড পেজে রিপিট হয় */
@@ -2416,11 +2419,15 @@ html.dark .ws-ruler-zone { background: rgb(255 255 255 / 0.055); }
     height: auto !important;
     overflow: visible !important;
     display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
   .workspace {
     overflow: visible !important;
     background: #fff !important;
     display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
   .workspace-inner {
     zoom: 1 !important;
@@ -2428,10 +2435,14 @@ html.dark .ws-ruler-zone { background: rgb(255 255 255 / 0.055); }
     padding: 0 !important;
     gap: 0 !important;
     min-width: 0 !important;
+    margin: 0 !important;
   }
   .page-slot {
     page-break-after: always;
     break-after: page;
+    /* স্ক্রিনের ব্যবধান/প্যাডিং প্রিন্টে শিট ভাঙে — হুবহু শূন্য */
+    margin: 0 !important;
+    padding: 0 !important;
   }
   .page-slot:last-of-type {
     page-break-after: auto;
@@ -2442,6 +2453,11 @@ html.dark .ws-ruler-zone { background: rgb(255 255 255 / 0.055); }
     border-radius: 0 !important;
     margin: 0 auto !important;
     outline: none !important;
+    /* ফাঁকা-শিট নিধন: কাগজের ব্লক হুবহু এক শিটে — mm→px রাউন্ডিং-এর
+       ১px উপচেও পরের ফাঁকা শিটে গড়িয়ে যাবে না */
+    overflow: hidden !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
   .page-toolbar { display: none !important; }
   .mcq-edit, .callout-delete, .footnote-pop { display: none !important; }

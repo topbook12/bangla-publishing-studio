@@ -4,7 +4,7 @@
 
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowDown, ArrowUp, ArrowUpToLine, ChevronDown, Copy, Eye, EyeOff, FilePlus2, RotateCcw, Settings2, Trash2,
 } from 'lucide-react';
@@ -20,6 +20,8 @@ import { getEditor } from '@/lib/editor-registry';
 import { t, useT, useFmtNum } from '@/lib/i18n';
 import { availableHeightOfEditor, fillFromNextPage } from './page-ops';
 import { getPageDimensionsMm, mmToPx } from '@/lib/paper';
+import { effectivePageSize } from '@/lib/page-layout';
+import { ensurePrintStyle } from '@/lib/export-json';
 import { PaperPage } from './paper-page';
 import { PageEditor } from './page-editor';
 import { WorkspaceHRule, PageVRule } from './workspace-ruler';
@@ -137,6 +139,21 @@ export function Workspace() {
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
   }, []);
+
+  // দিন ৭ — Ctrl+P-নিরাপত্তা: @page স্টাইল সবসময় বর্তমান দলিলের কাগজের সাথে সিঙ্কে।
+  // আগে এক্সপোর্ট-ট্যাব/ফরমা ছুঁয়ে না চালিয়ে সরাসরি Ctrl+P চাপলে হার্ডকোডেড A4-ফলব্যাক
+  // চলত — Legal/Letter/Demy দলিলের প্রিন্ট-প্রিভিউ ভুল কাগজে, ফুটার-ব্যান্ড পরের শিটে
+  // গড়িয়ে ফাঁকা পাতা ছাপা হত। এখন কাগজ-রূপ বদলালেই #bwp-print-page আপডেট হয়।
+  // সিগনেচার-কী দিয়ে চালানো হয় — প্রতি কীস্ট্রোকে নয়, কেবল কাগজ-রূপ বদলে।
+  const printSig = useMemo(() => {
+    const sizes = Array.from(new Set(pages.map((p) => effectivePageSize(p, settings)))).join(',');
+    const c = settings.customPaper;
+    return [settings.paperSize, settings.orientation, c.widthMm, c.heightMm, sizes].join('|');
+  }, [pages, settings]);
+  useEffect(() => {
+    ensurePrintStyle(useEditorStore.getState().settings, useEditorStore.getState().pages);
+    // printSig-ই আসল নির্ভরতা — settings/pages অবজেক্ট নয় (প্রতি কীস্ট্রোকে রি-রান এড়াতে)
+  }, [printSig]);
 
   // Ctrl+S — হেল্প-গাইডে "সেভ" হিসেবে ডকুমেন্টেড; হ্যান্ডলার না থাকলে
   // ব্রাউজারের "Save page as…" ডায়ালগ খুলে বিভ্রান্তি হত
