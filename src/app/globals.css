@@ -5080,3 +5080,14 @@ html.dark .ribbon-tab[data-tone="purple"]  .ribbon-tab-ico { color: oklch(0.77 0
 .qp-dialog .qp-scale { flex-wrap: wrap; }
 .ai-dialog .qp-scale { flex-wrap: wrap; }
 .thesis-dialog .qp-scale { flex-wrap: wrap; }
+
+/* ── দিন ১৬ — খুঁজুন-ফলাফল হাইলাইট (decoration; প্রিন্টে যায় না) ── */
+.find-hl {
+  background: color-mix(in srgb, #facc15 45%, transparent);
+  border-radius: 2px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+@media print {
+  .find-hl { background: transparent !important; }
+}

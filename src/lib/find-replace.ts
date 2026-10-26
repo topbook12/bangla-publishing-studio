@@ -27,6 +27,17 @@ export interface FindMatch {
   snippet: string;
 }
 
+/** দিন ১৬ — খোঁজের পরিসর: সম্পূর্ণ বই বা শুধু এক পাতা */
+export interface FindScope {
+  kind: 'book' | 'page';
+  pageId?: string;
+}
+
+export interface FindOptions {
+  wholeWord?: boolean;
+  scope?: FindScope;
+}
+
 interface TextSeg {
   /** কনক্যাটেনেটেড স্ট্রিং-এ শুরু/শেষ ইনডেক্স */
   start: number;
@@ -90,14 +101,24 @@ function segmentsFromDoc(doc: PMNode): { text: string; segs: TextSeg[] } {
   return { text, segs };
 }
 
-function findRanges(text: string, query: string, matchCase: boolean): Array<{ start: number; end: number }> {
+function findRanges(
+  text: string,
+  query: string,
+  matchCase: boolean,
+  wholeWord = false,
+): Array<{ start: number; end: number }> {
   const out: Array<{ start: number; end: number }> = [];
   const needle = matchCase ? query : query.toLowerCase();
   if (!needle) return out;
   const hay = matchCase ? text : text.toLowerCase();
+  // দিন ১৬ — পুরো-শব্দ মিল: JS-এর \b বাংলা-অক্ষরে কাজ করে না (\w = Latin-ই),
+  // তাই ইউনিকোড-সচেতন হাতে-চেক: মিলের দুই পাশে অক্ষর/সংখ্যা থাকলে বাদ
+  const isWordChar = (ch: string | undefined) => (ch ? /[\p{L}\p{N}]/u.test(ch) : false);
   let i = hay.indexOf(needle);
   while (i >= 0) {
-    out.push({ start: i, end: i + needle.length });
+    if (!wholeWord || (!isWordChar(hay[i - 1]) && !isWordChar(hay[i + needle.length]))) {
+      out.push({ start: i, end: i + needle.length });
+    }
     i = hay.indexOf(needle, i + needle.length);
   }
   return out;
@@ -119,19 +140,21 @@ function pmPosAt(segs: TextSeg[], offset: number, isEnd: boolean): number | null
   return seg.pmPos + (offset - seg.start);
 }
 
-/** সম্পূর্ণ বইয়ে সব মিল খুঁজুন (পাতার ক্রমে) */
-export function findAllMatches(query: string, matchCase: boolean): FindMatch[] {
+/** সম্পূর্ণ বইয়ে (বা এক পাতায় — দিন ১৬) সব মিল খুঁজুন (পাতার ক্রমে) */
+export function findAllMatches(query: string, matchCase: boolean, opts: FindOptions = {}): FindMatch[] {
   const q = query.trim();
   if (!q) return [];
+  const { wholeWord = false, scope } = opts;
   const { pages } = useEditorStore.getState();
   const out: FindMatch[] = [];
 
   pages.forEach((page, pageIndex) => {
     if (page.kind === 'cover') return;
+    if (scope?.kind === 'page' && scope.pageId && page.id !== scope.pageId) return;
     const editor = getEditor(page.id);
     if (editor && !editor.isDestroyed) {
       const { text, segs } = segmentsFromDoc(editor.state.doc);
-      for (const m of findRanges(text, q, matchCase)) {
+      for (const m of findRanges(text, q, matchCase, wholeWord)) {
         const from = pmPosAt(segs, m.start, false);
         const to = pmPosAt(segs, m.end, true);
         if (from === null || to === null) continue;
@@ -140,7 +163,7 @@ export function findAllMatches(query: string, matchCase: boolean): FindMatch[] {
     } else {
       const dom = new DOMParser().parseFromString(page.html || '<p></p>', 'text/html');
       const { text } = segmentsFromDom(dom.body);
-      findRanges(text, q, matchCase).forEach((m, occ) => {
+      findRanges(text, q, matchCase, wholeWord).forEach((m, occ) => {
         out.push({ pageId: page.id, pageIndex, occurrence: occ, snippet: snippetOf(text, m.start, m.end) });
       });
     }
@@ -151,7 +174,13 @@ export function findAllMatches(query: string, matchCase: boolean): FindMatch[] {
 // ─── প্রতিস্থাপন ───
 
 /** একটি মিল প্রতিস্থাপন — সফল হলে true */
-export function replaceMatch(m: FindMatch, query: string, replacement: string, matchCase: boolean): boolean {
+export function replaceMatch(
+  m: FindMatch,
+  query: string,
+  replacement: string,
+  matchCase: boolean,
+  wholeWord = false,
+): boolean {
   const editor = getEditor(m.pageId);
   if (editor && !editor.isDestroyed && m.from !== undefined && m.to !== undefined) {
     try {
@@ -164,7 +193,7 @@ export function replaceMatch(m: FindMatch, query: string, replacement: string, m
     const { pages } = useEditorStore.getState();
     const page = pages.find((p) => p.id === m.pageId);
     if (!page) return false;
-    const next = replaceNthInHtml(page.html || '<p></p>', query, m.occurrence, replacement, matchCase);
+    const next = replaceNthInHtml(page.html || '<p></p>', query, m.occurrence, replacement, matchCase, wholeWord);
     if (next === null) return false;
     useEditorStore.getState().replacePageHtml(m.pageId, next);
     return true;
@@ -176,10 +205,17 @@ export function replaceMatch(m: FindMatch, query: string, replacement: string, m
  * HTML-এ n-তম মিল (0-based) প্রতিস্থাপন — নতুন HTML, মিল না পড়লে null।
  * ক্রস-নোড মিল: প্রথম নোডে head+replacement, মাঝেরগুলো খালি, শেষ নোডে tail।
  */
-function replaceNthInHtml(html: string, query: string, n: number, replacement: string, matchCase: boolean): string | null {
+function replaceNthInHtml(
+  html: string,
+  query: string,
+  n: number,
+  replacement: string,
+  matchCase: boolean,
+  wholeWord = false,
+): string | null {
   const dom = new DOMParser().parseFromString(html, 'text/html');
   const { text, segs } = segmentsFromDom(dom.body);
-  const hits = findRanges(text, query, matchCase);
+  const hits = findRanges(text, query, matchCase, wholeWord);
   if (n >= hits.length) return null;
   applyRangeToDom(dom.body, segs, hits[n], replacement);
   return dom.body.innerHTML;
@@ -220,11 +256,17 @@ function applyRangeToDom(
   }
 }
 
-/** সব পাতায় replace-all — রিটার্ন: কতটি প্রতিস্থাপন হলো */
-export function replaceAll(query: string, replacement: string, matchCase: boolean): number {
+/** সব পাতায় (বা এক পাতায় — দিন ১৬) replace-all — রিটার্ন: কতটি প্রতিস্থাপন হলো */
+export function replaceAll(
+  query: string,
+  replacement: string,
+  matchCase: boolean,
+  opts: FindOptions = {},
+): number {
   const q = query.trim();
   if (!q) return 0;
-  const matches = findAllMatches(q, matchCase);
+  const { wholeWord = false, scope } = opts;
+  const matches = findAllMatches(q, matchCase, { wholeWord, scope });
   let count = 0;
 
   // পাতা অনুযায়ী গ্রুপ — এক পাতার রিপ্লেস অন্য পাতার অবস্থান নষ্ট করে না
@@ -255,7 +297,7 @@ export function replaceAll(query: string, replacement: string, matchCase: boolea
       // প্রতিস্থাপনের পরে পুনঃপার্স+পুনঃগণনা হত; রিপ্লেসমেন্টের ভেতরে কোয়েরি
       // থাকলে (যেমন "বই" → "বইটি") মিল শূন্যে নামতই না এবং ৯৯৯ চক্রে
       // লেখা বিশাল হয়ে দুর্নীতিগ্রস্ত হতো।
-      const { html, count: n } = replaceAllInHtml(page.html || '<p></p>', q, replacement, matchCase);
+      const { html, count: n } = replaceAllInHtml(page.html || '<p></p>', q, replacement, matchCase, wholeWord);
       if (n > 0) {
         useEditorStore.getState().replacePageHtml(pageId, html);
         count += n;
@@ -269,10 +311,16 @@ export function replaceAll(query: string, replacement: string, matchCase: boolea
  * এক পাতার HTML-এ সব মিল একবারই পার্স করে প্রতিস্থাপন (শেষ থেকে প্রথমে) —
  * রিপ্লেসমেন্টে কোয়েরি থাকলেও চক্র/দুর্নীতি হয় না, অফসেটও শিফট হয় না।
  */
-function replaceAllInHtml(html: string, query: string, replacement: string, matchCase: boolean): { html: string; count: number } {
+function replaceAllInHtml(
+  html: string,
+  query: string,
+  replacement: string,
+  matchCase: boolean,
+  wholeWord = false,
+): { html: string; count: number } {
   const dom = new DOMParser().parseFromString(html, 'text/html');
   const { text, segs } = segmentsFromDom(dom.body);
-  const hits = findRanges(text, query, matchCase);
+  const hits = findRanges(text, query, matchCase, wholeWord);
   let count = 0;
   // শেষ মিল থেকে প্রথমের দিকে — আগের মিলের অফসেট অপরিবর্তিত থাকে
   for (let i = hits.length - 1; i >= 0; i--) {

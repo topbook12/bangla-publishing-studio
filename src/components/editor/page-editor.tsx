@@ -23,6 +23,7 @@ import Table from '@tiptap/extension-table';
 import TableRow from '@tiptap/extension-table-row';
 import { FramedImage, insertImageFilesInto } from './image-ext';
 import { TableCellWithBg, TableHeaderWithBg } from './table-cell-bg';
+import { FindHighlightExtension } from '@/lib/find-highlight';
 import Placeholder from '@tiptap/extension-placeholder';
 import Subscript from '@tiptap/extension-subscript';
 import Superscript from '@tiptap/extension-superscript';
@@ -175,6 +176,8 @@ export function PageEditor({ page, index, isFirstPage }: PageEditorProps) {
       ...designExtensions,
       BlockMover,
       shortcuts,
+      // দিন ১৬ — খুঁজুন-ফলাফল হাইলাইট (decoration — ডক/undo/স্টোরেজ অপরিবর্তিত)
+      FindHighlightExtension(),
     ],
     content: page.html || '<p></p>',
     immediatelyRender: false,

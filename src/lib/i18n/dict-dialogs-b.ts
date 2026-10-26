@@ -184,3 +184,15 @@ export const dictDialogsB: Dict = {
   // ফুটার নোট
   'dlg2.help.foot': { bn: 'আরও কিছু দরকার হলে অ্যাপের ভেতরে কোনো টুলের উপর মাউস রাখুন — প্রতিটি টুলেই টুল-টিপ আছে।', hi: 'और कुछ चाहिए तो ऐप में किसी भी टूल पर माउस रखें — हर टूल पर टूल-टिप मौजूद है।', en: 'Need more? Hover any tool inside the app — every tool has a tooltip.' },
 };
+
+// ─── দিন ১৬ — খুঁজুন-বদলান আপগ্রেড ───
+const day16FindKeys = {
+  'dlg2.find.scopeBook': { bn: 'পুরো বই', hi: 'पूरी किताब', en: 'Whole book' },
+  'dlg2.find.scopePage': { bn: 'শুধু এই পাতা', hi: 'सिर्फ़ यह पृष्ठ', en: 'This page only' },
+  'dlg2.find.scopeAria': { bn: 'খোঁজার পরিসর', hi: 'खोज का दायरा', en: 'Search scope' },
+  'dlg2.find.wholeWord': { bn: 'পুরো শব্দ মিলান', hi: 'पूरा शब्द मिलाएँ', en: 'Match whole word' },
+  'dlg2.find.resultsAria': { bn: 'মিলের তালিকা', hi: 'मिलान सूची', en: 'Match list' },
+  'dlg2.find.moreResults': { bn: '…আরও {n} টি মিল — পরের বোতাম দিয়ে দেখুন', hi: '…आर {n} मिलान — अगला बटन से देखें', en: '…{n} more matches — use Next to browse' },
+} as const;
+
+Object.assign(dictDialogsB, day16FindKeys);
