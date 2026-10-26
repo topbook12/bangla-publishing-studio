@@ -282,3 +282,17 @@ dictWorkspace['ws.ruler.left'] = { bn: 'বাম মার্জিন', hi: '�
 dictWorkspace['ws.ruler.right'] = { bn: 'ডান মার্জিন', hi: 'दायाँ मार्जिन', en: 'Right margin' };
 dictWorkspace['ws.ruler.top'] = { bn: 'উপরের মার্জিন', hi: 'ऊपरी मार्जिन', en: 'Top margin' };
 dictWorkspace['ws.ruler.bottom'] = { bn: 'নিচের মার্জিন', hi: 'निचला मार्जिन', en: 'Bottom margin' };
+
+// ─── দিন ১৫ — কনটেক্সট-মেনু: হেডিং, সরঞ্জাম, কেস-ট্রান্সফর্ম ───
+export const day15CtxKeys = {
+  'ws.ctx.h1': { bn: 'শিরোনাম ১', hi: 'शीर्षक १', en: 'Heading 1' },
+  'ws.ctx.h2': { bn: 'শিরোনাম ২', hi: 'शीर्षक २', en: 'Heading 2' },
+  'ws.ctx.h3': { bn: 'শিরোনাম ৩', hi: 'शीर्षक ३', en: 'Heading 3' },
+  'ws.ctx.hTools': { bn: 'সরঞ্জাম', hi: 'उपकरण', en: 'Tools' },
+  'ws.ctx.findReplace': { bn: 'খুঁজুন ও বদলান…', hi: 'खोजें और बदलें…', en: 'Find & Replace…' },
+  'ws.ctx.toUpper': { bn: 'বড় হাতের (UPPERCASE)', hi: 'बड़े अक्षर (UPPERCASE)', en: 'UPPERCASE' },
+  'ws.ctx.toLower': { bn: 'ছোট হাতের (lowercase)', hi: 'छोटे अक्षर (lowercase)', en: 'lowercase' },
+  'ws.ctx.toTitle': { bn: 'শব্দের প্রথম অক্ষর বড় (Title Case)', hi: 'शीर्षक रूप (Title Case)', en: 'Title Case' },
+} as const;
+
+Object.assign(dictWorkspace, day15CtxKeys);

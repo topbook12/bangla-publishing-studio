@@ -26,10 +26,10 @@ import { CellSelection } from '@tiptap/pm/tables';
 import {
   AlignCenter, AlignJustify, AlignLeft, AlignRight, AlignCenterVertical,
   AlignEndVertical, AlignStartVertical, ArrowDownToLine, ArrowLeftToLine,
-  ArrowRightToLine, ArrowUpToLine, Bold, Check, ChevronsDown, ChevronsUp,
-  ClipboardPaste, Copy, Eraser, Expand, ExternalLink, Frame, Grid2x2, Grid2x2X, Highlighter, Italic, Languages, Link2, Link2Off, List,
-  ListOrdered, Maximize2, Merge, Minimize2, MessageSquare, Paintbrush,
-  Palette, PanelLeft, PanelTop, RotateCcw, Ruler, ScanEye, Scissors, Shrink, Sparkles, SpellCheck, SquareDashed, Split,
+  ArrowRightToLine, ArrowUpToLine, Bold, CaseLower, CaseSensitive, CaseUpper, Check, ChevronsDown, ChevronsUp,
+  ClipboardPaste, Copy, Eraser, Expand, ExternalLink, Frame, Grid2x2, Grid2x2X, Heading1, Heading2, Heading3, Highlighter, Italic, Languages, Link2, Link2Off, List,
+  ListOrdered, Maximize2, Merge, Minimize2, MessageSquare, MoveVertical, Paintbrush,
+  Palette, PanelLeft, PanelTop, RotateCcw, Ruler, ScanEye, Scissors, Search, Shrink, Sparkles, SpellCheck, SquareDashed, Split,
   Strikethrough, Subscript as SubIcon, Superscript as SupIcon, Table2, TextCursorInput, Trash2,
   Underline as UnderlineIcon, UnfoldVertical, Wand2, WrapText, type LucideIcon,
 } from 'lucide-react';
@@ -37,6 +37,9 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useT } from '@/lib/i18n';
 import { getEditor } from '@/lib/editor-registry';
+import { useUiStore } from '@/lib/ui-store';
+import { useEditorStore } from '@/lib/store';
+import { pageBreakOnEditor } from './page-ops';
 import { COLOR_SWATCHES, HIGHLIGHT_SWATCHES } from '@/lib/paper';
 import { CELL_BG_COLORS } from './table-cell-bg';
 import { ImageResizeHost } from './image-resizer';
@@ -123,6 +126,22 @@ function insertPlainText(editor: Editor, text: string): void {
       }))
     : text;
   editor.chain().focus().insertContent(content).run();
+}
+
+/** দিন ১৫ — সিলেকশনের অক্ষর-রূপ বদলানো (upper/lower/title) — এক undo-ধাপ */
+function transformSelectionCase(
+  editor: Editor,
+  mode: 'upper' | 'lower' | 'title',
+): void {
+  const { from, to, empty } = editor.state.selection;
+  if (empty) return;
+  const text = editor.state.doc.textBetween(from, to, '\n', ' ');
+  let out: string;
+  if (mode === 'upper') out = text.toUpperCase();
+  else if (mode === 'lower') out = text.toLowerCase();
+  else out = text.replace(/\S+/g, (w) => (w.length > 1 ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : w.toUpperCase()));
+  if (out === text) return;
+  editor.chain().focus().insertContentAt({ from, to }, out).run();
 }
 
 // ─────────────────────────── presentational pieces ───────────────────────────
@@ -953,6 +972,9 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
     {
       header: tt('ws.ctx.hParagraph', 'Paragraph'),
       items: [
+        { id: 'h1', label: tt('ws.ctx.h1', 'Heading 1'), icon: Heading1, active: ed.isActive('heading', { level: 1 }), onSelect: () => closeAndRun((editor) => { editor.chain().focus().toggleHeading({ level: 1 }).run(); }) },
+        { id: 'h2', label: tt('ws.ctx.h2', 'Heading 2'), icon: Heading2, active: ed.isActive('heading', { level: 2 }), onSelect: () => closeAndRun((editor) => { editor.chain().focus().toggleHeading({ level: 2 }).run(); }) },
+        { id: 'h3', label: tt('ws.ctx.h3', 'Heading 3'), icon: Heading3, active: ed.isActive('heading', { level: 3 }), onSelect: () => closeAndRun((editor) => { editor.chain().focus().toggleHeading({ level: 3 }).run(); }) },
         { id: 'align-left', label: tt('ws.ctx.alignLeft', 'Align Left'), icon: AlignLeft, active: ed.isActive({ textAlign: 'left' }), onSelect: () => closeAndRun((editor) => { editor.chain().focus().setTextAlign('left').run(); }) },
         { id: 'align-center', label: tt('ws.ctx.alignCenter', 'Align Center'), icon: AlignCenter, active: ed.isActive({ textAlign: 'center' }), onSelect: () => closeAndRun((editor) => { editor.chain().focus().setTextAlign('center').run(); }) },
         { id: 'align-right', label: tt('ws.ctx.alignRight', 'Align Right'), icon: AlignRight, active: ed.isActive({ textAlign: 'right' }), onSelect: () => closeAndRun((editor) => { editor.chain().focus().setTextAlign('right').run(); }) },
@@ -969,6 +991,17 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
         { id: 'blk-move-down', label: tt('ws.ctx.blkDown', 'Move block down'), icon: ChevronsDown, shortcut: 'Alt+↓', onSelect: () => closeAndRun((editor) => { editor.chain().focus().moveBlockDown().run(); }) },
         { id: 'blk-line-above', label: tt('ws.tbl.lineAbove', 'Empty line above'), icon: ArrowUpToLine, onSelect: () => closeAndRun((editor) => { editor.chain().focus().insertLineAbove().run(); }) },
         { id: 'blk-line-below', label: tt('ws.tbl.lineBelow', 'Empty line below'), icon: ArrowDownToLine, onSelect: () => closeAndRun((editor) => { editor.chain().focus().insertLineAfter().run(); }) },
+      ],
+    },
+    {
+      // দিন ১৫ — সরঞ্জাম সেকশন: আগে কনটেক্সট-মেনু থেকে নাগালের বাইরে ছিল
+      header: tt('ws.ctx.hTools', 'Tools'),
+      items: [
+        { id: 'tool-find', label: tt('ws.ctx.findReplace', 'Find & Replace…'), icon: Search, shortcut: 'Ctrl+H', onSelect: () => { setMenu(null); useUiStore.getState().open('findReplace'); } },
+        { id: 'tool-pagebreak', label: tt('cp.pgbreak', 'Page break'), icon: MoveVertical, shortcut: 'Ctrl+Enter', onSelect: () => closeAndRun((editor) => { const pid = useEditorStore.getState().activePageId; if (pid) pageBreakOnEditor(editor, pid); }) },
+        { id: 'tool-upper', label: tt('ws.ctx.toUpper', 'UPPERCASE'), icon: CaseUpper, onSelect: () => closeAndRun((editor) => transformSelectionCase(editor, 'upper')) },
+        { id: 'tool-lower', label: tt('ws.ctx.toLower', 'lowercase'), icon: CaseLower, onSelect: () => closeAndRun((editor) => transformSelectionCase(editor, 'lower')) },
+        { id: 'tool-title', label: tt('ws.ctx.toTitle', 'Title Case'), icon: CaseSensitive, onSelect: () => closeAndRun((editor) => transformSelectionCase(editor, 'title')) },
       ],
     },
   ];
