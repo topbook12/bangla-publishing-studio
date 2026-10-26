@@ -27,7 +27,7 @@ import {
   AlignCenter, AlignJustify, AlignLeft, AlignRight, AlignCenterVertical,
   AlignEndVertical, AlignStartVertical, ArrowDownToLine, ArrowLeftToLine,
   ArrowRightToLine, ArrowUpToLine, Bold, Check, ChevronsDown, ChevronsUp,
-  ClipboardPaste, Copy, Eraser, Expand, ExternalLink, Frame, Highlighter, Italic, Languages, Link2, Link2Off, List,
+  ClipboardPaste, Copy, Eraser, Expand, ExternalLink, Frame, Grid2x2, Grid2x2X, Highlighter, Italic, Languages, Link2, Link2Off, List,
   ListOrdered, Maximize2, Merge, Minimize2, MessageSquare, Paintbrush,
   Palette, PanelLeft, PanelTop, RotateCcw, Ruler, ScanEye, Scissors, Shrink, Sparkles, SpellCheck, SquareDashed, Split,
   Strikethrough, Subscript as SubIcon, Superscript as SupIcon, Table2, TextCursorInput, Trash2,
@@ -476,6 +476,7 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
   let cellAlign: string | null = null;
   let cellBg: string | null = null;
   let cellVAlign: string | null = null;
+  let cellBorderless = false;
   const $head = ed.state.selection.$head;
   for (let d = $head.depth; d > 0; d--) {
     const node = $head.node(d);
@@ -483,6 +484,7 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
       cellAlign = (node.childCount > 0 ? (node.child(0).attrs.textAlign as string | undefined) : null) ?? null;
       cellBg = (node.attrs.backgroundColor as string | null) ?? null;
       cellVAlign = (node.attrs.verticalAlign as string | null) ?? null;
+      cellBorderless = node.attrs.borderless === true || node.attrs.borderless === 'true';
       break;
     }
   }
@@ -726,6 +728,7 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
           icon: RotateCcw,
           onSelect: () => closeAndRun((editor) => { editor.chain().focus().setCellAttribute('colwidth', null).run(); }),
         },
+        { id: 'cell-borders', label: cellBorderless ? tt('ws.tbl.bordersRestore', 'Restore cell borders') : tt('ws.tbl.borderless', 'Remove cell borders'), icon: cellBorderless ? Grid2x2 : Grid2x2X, active: cellBorderless, onSelect: () => closeAndRun((editor) => { editor.chain().focus().setCellAttribute('borderless', cellBorderless ? null : true).run(); }) },
         {
           id: 'cell-bg',
           render: () => (

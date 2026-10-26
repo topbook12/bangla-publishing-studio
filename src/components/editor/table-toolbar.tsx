@@ -2,8 +2,14 @@
  * ভাসমান টেবিল টুলবার — কার্সর টেবিলের ভিতরে থাকলে টেবিলের ঠিক উপরে
  * একটি কমপ্যাক্ট pill টুলবার দেখায় (Word স্টাইল)।
  *
- *  - +সারি / +কলাম / মুছুন (সারি-কলাম-টেবিল dropdown) / মার্জ / স্প্লিট /
- *    হেডার toggle / সেল ব্যাকগ্রাউন্ড রং
+ * দিন ১২ — প্রো-সম্প্রসারণ:
+ *  - +সারি (উপরে/নিচে), +কলাম (বামে/ডানে) ড্রপডাউন
+ *  - সিলেক্ট ড্রপডাউন (সারি/কলাম সিলেক্ট → CellSelection তৈরি হয়, মার্জ সহজ)
+ *  - মুছুন (সারি-কলাম-টেবিল dropdown) / মার্জ / স্প্লিট
+ *  - ভার্টিক্যাল অ্যালাইন (উপরে/মাঝ/নিচে — data-v-align attr)
+ *  - হেডার সারি + হেডার কলাম toggle
+ *  - বর্ডার dropdown (বর্ডারহীন সেল / বর্ডার ফেরত — data-border attr)
+ *  - সেল ব্যাকগ্রাউন্ড রং
  *  - position: getBoundingClientRect + fixed (rAF sync — scroll/zoom-safe)
  *  - selection টেবিলের বাইরে গেলে লুকিয়ে যায়; প্রিন্টে আসে না (no-print)
  */
@@ -15,8 +21,9 @@ import { createPortal } from 'react-dom';
 import { CellSelection } from '@tiptap/pm/tables';
 import type { Editor } from '@tiptap/react';
 import {
-  BetweenHorizontalEnd, BetweenVerticalEnd, ChevronDown, Merge, Paintbrush, PanelTop,
-  Split, Trash2,
+  AlignCenterVertical, AlignEndVertical, AlignStartVertical, BetweenHorizontalEnd, BetweenHorizontalStart,
+  BetweenVerticalEnd, BetweenVerticalStart, ChevronDown, Grid2x2, Grid2x2X, Merge, Paintbrush, PanelLeft,
+  PanelTop, SquareDashedMousePointer, Split, Trash2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -37,17 +44,23 @@ interface ToolbarInfo {
   cellBg: string | null;
   isHeaderActive: boolean;
   canMerge: boolean;
+  vAlign: string | null;
+  borderless: boolean;
 }
 
-function cellBackgroundOf(ed: Editor): string | null {
+function cellAttrsOf(ed: Editor): { bg: string | null; vAlign: string | null; borderless: boolean } {
   const $head = ed.state.selection.$head;
   for (let d = $head.depth; d > 0; d--) {
     const node = $head.node(d);
     if (node.type.name === 'tableCell' || node.type.name === 'tableHeader') {
-      return (node.attrs.backgroundColor as string | null) ?? null;
+      return {
+        bg: (node.attrs.backgroundColor as string | null) ?? null,
+        vAlign: (node.attrs.verticalAlign as string | null) ?? null,
+        borderless: node.attrs.borderless === true || node.attrs.borderless === 'true',
+      };
     }
   }
-  return null;
+  return { bg: null, vAlign: null, borderless: false };
 }
 
 function resolveInfo(): ToolbarInfo | null {
@@ -69,13 +82,54 @@ function resolveInfo(): ToolbarInfo | null {
   const dom = ed.view.nodeDOM(tablePos);
   if (!(dom instanceof HTMLElement)) return null;
 
+  const attrs = cellAttrsOf(ed);
   return {
     editor: ed,
     tableEl: dom,
-    cellBg: cellBackgroundOf(ed),
+    cellBg: attrs.bg,
     isHeaderActive: ed.isActive('tableHeader'),
     canMerge: selection instanceof CellSelection,
+    vAlign: attrs.vAlign,
+    borderless: attrs.borderless,
   };
+}
+
+/** দিন ১২ — কারেন্ট সেলের সারি/কলাম ইনডেক্স + টেবিল জ্যামিতি (পুরো সারি/কলাম সিলেকশনের জন্য) */
+function tableGeometryOf(ed: Editor): { tableDepth: number; cellDepth: number; row: number; col: number; rows: number } | null {
+  const $head = ed.state.selection.$head;
+  let tableDepth = -1;
+  let cellDepth = -1;
+  for (let d = $head.depth; d > 0; d--) {
+    const n = $head.node(d);
+    if ((n.type.name === 'tableCell' || n.type.name === 'tableHeader') && cellDepth < 0) cellDepth = d;
+    if (n.type.name === 'table') {
+      tableDepth = d;
+      break;
+    }
+  }
+  if (tableDepth < 0 || cellDepth < 0) return null;
+  return {
+    tableDepth,
+    cellDepth,
+    row: $head.index(cellDepth - 1),
+    col: $head.index(cellDepth),
+    rows: $head.node(tableDepth).childCount,
+  };
+}
+
+/** দিন ১২ — (r,c) সেলের doc-position; merged সেল থাকলে শেষ সেলে ক্ল্যাম্প */
+function cellPosAt(ed: Editor, geo: { tableDepth: number; row: number; rows: number }, r: number, c: number): number | null {
+  const $head = ed.state.selection.$head;
+  const tableNode = $head.node(geo.tableDepth);
+  const tableStart = $head.before(geo.tableDepth);
+  const ri = Math.min(Math.max(r, 0), geo.rows - 1);
+  let pos = tableStart + 1;
+  for (let i = 0; i < ri; i++) pos += tableNode.child(i).nodeSize;
+  const row = tableNode.child(ri);
+  const ci = Math.min(Math.max(c, 0), row.childCount - 1);
+  let cellOffset = 0;
+  for (let i = 0; i < ci; i++) cellOffset += row.child(i).nodeSize;
+  return pos + cellOffset + 1;
 }
 
 export function TableToolbarHost({ suppressed = false }: { suppressed?: boolean }) {
@@ -129,6 +183,24 @@ export function TableToolbarHost({ suppressed = false }: { suppressed?: boolean 
     }
   };
 
+  // দিন ১২ — পুরো সারি/কলাম CellSelection (মার্জ/ব্যাকগ্রাউন্ড এক টানে প্রয়োগের সুবিধা)।
+  // prosemirror-tables-এর selectRow/selectColumn এই বিল্ডে এক্সপোর্ট নেই — CellSelection.create দিয়ে হাতে।
+  const selectEntire = (axis: 'row' | 'col') => {
+    run((ed) => {
+      const geo = tableGeometryOf(ed);
+      if (!geo) return;
+      const anchor = axis === 'row'
+        ? cellPosAt(ed, geo, geo.row, 0)
+        : cellPosAt(ed, geo, 0, geo.col);
+      const head = axis === 'row'
+        ? cellPosAt(ed, geo, geo.row, Number.MAX_SAFE_INTEGER)
+        : cellPosAt(ed, geo, geo.rows - 1, geo.col);
+      if (anchor === null || head === null) return;
+      const sel = CellSelection.create(ed.state.doc, anchor, head);
+      ed.view.dispatch(ed.state.tr.setSelection(sel));
+    });
+  };
+
   return createPortal(
     <div
       ref={barRef}
@@ -136,33 +208,74 @@ export function TableToolbarHost({ suppressed = false }: { suppressed?: boolean 
       role="toolbar"
       aria-label={tt('ws.tblbar.aria', 'Table toolbar')}
     >
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost" size="icon"
-            className="h-7 w-7 rounded-full"
-            aria-label={tt('ws.tblbar.addRowBelow', 'Add row below')}
-            onClick={() => run((ed) => ed.chain().focus().addRowAfter().run())}
-          >
-            <BetweenHorizontalEnd size={15} aria-hidden="true" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="bottom">{tt('ws.tblbar.addRowBelow', 'Add row below')}</TooltipContent>
-      </Tooltip>
+      {/* +সারি — উপরে/নিচে */}
+      <DropdownMenu>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full" aria-label={tt('ws.tbl.rowAbove', 'Add row above')}>
+                <BetweenHorizontalStart size={15} aria-hidden="true" />
+                <ChevronDown size={10} aria-hidden="true" className="-ml-1" />
+              </Button>
+            </DropdownMenuTrigger>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">{tt('ws.tblbar.addRow', 'Add row — above / below')}</TooltipContent>
+        </Tooltip>
+        <DropdownMenuContent align="center">
+          <DropdownMenuItem onClick={() => run((ed) => ed.chain().focus().addRowBefore().run())}>
+            {tt('ws.tbl.rowAbove', 'Add row above')}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => run((ed) => ed.chain().focus().addRowAfter().run())}>
+            {tt('ws.tbl.rowBelow', 'Add row below')}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost" size="icon"
-            className="h-7 w-7 rounded-full"
-            aria-label={tt('ws.tblbar.addColRight', 'Add column right')}
-            onClick={() => run((ed) => ed.chain().focus().addColumnAfter().run())}
-          >
-            <BetweenVerticalEnd size={15} aria-hidden="true" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="bottom">{tt('ws.tblbar.addColRight', 'Add column right')}</TooltipContent>
-      </Tooltip>
+      {/* +কলাম — বামে/ডানে */}
+      <DropdownMenu>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full" aria-label={tt('ws.tbl.colLeft', 'Column left')}>
+                <BetweenVerticalStart size={15} aria-hidden="true" />
+                <ChevronDown size={10} aria-hidden="true" className="-ml-1" />
+              </Button>
+            </DropdownMenuTrigger>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">{tt('ws.tblbar.addCol', 'Add column — left / right')}</TooltipContent>
+        </Tooltip>
+        <DropdownMenuContent align="center">
+          <DropdownMenuItem onClick={() => run((ed) => ed.chain().focus().addColumnBefore().run())}>
+            {tt('ws.tbl.colLeft', 'Column left')}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => run((ed) => ed.chain().focus().addColumnAfter().run())}>
+            {tt('ws.tbl.colRight', 'Column right')}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {/* সিলেক্ট — পুরো সারি/কলাম (CellSelection → মার্জ/রং এক টানে) */}
+      <DropdownMenu>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full" aria-label={tt('ws.tblbar.select', 'Select')}>
+                <SquareDashedMousePointer size={15} aria-hidden="true" />
+                <ChevronDown size={10} aria-hidden="true" className="-ml-1" />
+              </Button>
+            </DropdownMenuTrigger>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">{tt('ws.tblbar.selectTip', 'Select entire row / column')}</TooltipContent>
+        </Tooltip>
+        <DropdownMenuContent align="center">
+          <DropdownMenuItem onClick={() => selectEntire('row')}>
+            {tt('ws.tbl.selectRow', 'Select entire row')}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => selectEntire('col')}>
+            {tt('ws.tbl.selectCol', 'Select entire column')}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       {/* মুছুন — সারি / কলাম / টেবিল */}
       <DropdownMenu>
@@ -229,6 +342,36 @@ export function TableToolbarHost({ suppressed = false }: { suppressed?: boolean 
         <TooltipContent side="bottom">{tt('ws.tbl.split', 'Split cell')}</TooltipContent>
       </Tooltip>
 
+      {/* ভার্টিক্যাল অ্যালাইন — উপরে/মাঝ/নিচে */}
+      <DropdownMenu>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost" size="icon"
+                className={cn('h-7 w-7 rounded-full', info.vAlign && 'bg-primary/15 text-primary')}
+                aria-label={tt('ws.tblbar.vAlign', 'Vertical align')}
+              >
+                <AlignCenterVertical size={15} aria-hidden="true" />
+                <ChevronDown size={10} aria-hidden="true" className="-ml-1" />
+              </Button>
+            </DropdownMenuTrigger>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">{tt('ws.tblbar.vAlign', 'Vertical align')}</TooltipContent>
+        </Tooltip>
+        <DropdownMenuContent align="center">
+          <DropdownMenuItem onClick={() => run((ed) => ed.chain().focus().setCellAttribute('verticalAlign', 'top').run())}>
+            <AlignStartVertical size={14} /> {tt('ws.tbl.vTop', 'Cell vertical align — top')}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => run((ed) => ed.chain().focus().setCellAttribute('verticalAlign', 'middle').run())}>
+            <AlignCenterVertical size={14} /> {tt('ws.tbl.vMiddle', 'Cell vertical align — middle')}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => run((ed) => ed.chain().focus().setCellAttribute('verticalAlign', 'bottom').run())}>
+            <AlignEndVertical size={14} /> {tt('ws.tbl.vBottom', 'Cell vertical align — bottom')}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
@@ -243,6 +386,47 @@ export function TableToolbarHost({ suppressed = false }: { suppressed?: boolean 
         </TooltipTrigger>
         <TooltipContent side="bottom">{tt('ws.tbl.headerRowToggle', 'Toggle header row')}</TooltipContent>
       </Tooltip>
+
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost" size="icon"
+            className="h-7 w-7 rounded-full"
+            aria-label={tt('ws.tbl.headerColToggle', 'Toggle header column')}
+            onClick={() => run((ed) => ed.chain().focus().toggleHeaderColumn().run())}
+          >
+            <PanelLeft size={15} aria-hidden="true" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">{tt('ws.tbl.headerColToggle', 'Toggle header column')}</TooltipContent>
+      </Tooltip>
+
+      {/* বর্ডার — সেল বর্ডার সরান / ফেরত আনুন */}
+      <DropdownMenu>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost" size="icon"
+                className={cn('h-7 w-7 rounded-full', info.borderless && 'bg-primary/15 text-primary')}
+                aria-label={tt('ws.tblbar.borders', 'Cell borders')}
+              >
+                <Grid2x2X size={15} aria-hidden="true" />
+                <ChevronDown size={10} aria-hidden="true" className="-ml-1" />
+              </Button>
+            </DropdownMenuTrigger>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">{tt('ws.tblbar.bordersTip', 'Remove or restore cell borders')}</TooltipContent>
+        </Tooltip>
+        <DropdownMenuContent align="center">
+          <DropdownMenuItem onClick={() => run((ed) => ed.chain().focus().setCellAttribute('borderless', true).run())}>
+            <Grid2x2X size={14} /> {tt('ws.tbl.borderless', 'Remove cell borders')}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => run((ed) => ed.chain().focus().setCellAttribute('borderless', null).run())}>
+            <Grid2x2 size={14} /> {tt('ws.tbl.bordersRestore', 'Restore cell borders')}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       {/* সেল ব্যাকগ্রাউন্ড */}
       <DropdownMenu>
