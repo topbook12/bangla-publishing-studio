@@ -5091,3 +5091,10 @@ html.dark .ribbon-tab[data-tone="purple"]  .ribbon-tab-ico { color: oklch(0.77 0
 @media print {
   .find-hl { background: transparent !important; }
 }
+
+/* ── দিন ১৯ — থাম্বনেইল ড্র্যাগ-রিঅর্ডার ড্রপ-টার্গেট ── */
+.page-thumb-drop {
+  outline: 2px dashed color-mix(in srgb, var(--primary) 60%, transparent);
+  outline-offset: 2px;
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+}

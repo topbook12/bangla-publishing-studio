@@ -14,7 +14,9 @@
 
 'use client';
 
-import { memo, useEffect, useRef } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { Copy, ListEnd, ListStart, Trash2, type LucideIcon } from 'lucide-react';
 import { useEditorStore } from '@/lib/store';
 import { getPageDimensionsMm, mmToPx, pageBorderVisual } from '@/lib/paper';
 import { effectivePageSize, effectivePageStyle, effectivePageTypography } from '@/lib/page-layout';
@@ -41,12 +43,14 @@ const PageThumb = memo(
     settings,
     active,
     onClick,
+    onContextMenu,
   }: {
     page: PageData;
     index: number;
     settings: DocumentSettings;
     active: boolean;
     onClick: () => void;
+    onContextMenu?: (e: React.MouseEvent) => void;
   }) {
     const tt = useT();
     const fn = useFmtNum();
@@ -88,6 +92,13 @@ const PageThumb = memo(
         }
         aria-current={active ? 'page' : undefined}
         onClick={onClick}
+        onContextMenu={onContextMenu}
+        // দিন ১৯ — ড্র্যাগ-রিঅর্ডার: থাম্বনেইল টেনে পাতার ক্রম বদলানো
+        draggable
+        onDragStart={(e) => {
+          e.dataTransfer.effectAllowed = 'move';
+          try { e.dataTransfer.setData('text/plain', page.id); } catch { /* নীরব */ }
+        }}
       >
         {/* আসল মাপে রেন্ডার → transform scale — ছাপার মতো হুবহু মিনিএচার */}
         <span className="page-thumb-clip" style={{ width: viewW, height: viewH }} aria-hidden="true">
@@ -154,12 +165,43 @@ export function PageThumbsPanel() {
       ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
+  // দিন ১৯ — ড্র্যাগ-রিঅর্ডার: ড্রপ টার্গেট হাইলাইট + movePageTo
+  const [dropTarget, setDropTarget] = useState<string | null>(null);
+
+  // দিন ১৯ — থাম্বনেইল রাইট-ক্লিক পেজ-অপস মেনু
+  const [thumbMenu, setThumbMenu] = useState<{ x: number; y: number; pageId: string; index: number } | null>(null);
+  useEffect(() => {
+    if (!thumbMenu) return;
+    const close = () => setThumbMenu(null);
+    window.addEventListener('pointerdown', close, true);
+    window.addEventListener('scroll', close, true);
+    window.addEventListener('resize', close);
+    return () => {
+      window.removeEventListener('pointerdown', close, true);
+      window.removeEventListener('scroll', close, true);
+      window.removeEventListener('resize', close);
+    };
+  }, [thumbMenu]);
+
+  const moveBy = (pageId: string, dir: -1 | 1) => useEditorStore.getState().movePage(pageId, dir);
+
   // অ্যাকটিভ পাতা বদলালে (অন্য কোথাও ক্লিক/কীবোর্ডে) সংশ্লিষ্ট থাম্বনেইল দৃশ্যমানে আনা
   useEffect(() => {
     if (!activePageId) return;
     const el = thumbRegistry.get(activePageId);
     el?.scrollIntoView({ block: 'nearest' });
   }, [activePageId]);
+
+  const handleDrop = (draggedRaw: string | null, targetPageId: string, targetIndex: number) => {
+    const dragged = draggedRaw?.startsWith('pg-') ? draggedRaw : null;
+    setDropTarget(null);
+    if (!dragged || dragged === targetPageId) return;
+    const from = useEditorStore.getState().pages.findIndex((p) => p.id === dragged);
+    if (from < 0) return;
+    // ড্রপ-অন = টার্গেটের জায়গা নেওয়া: মুছে-ফেলার পরে টার্গেট-ইনডেক্সেই বসে
+    // (দুই দিকেই সঠিক — উপরে টানলে শুরুতে, নিচে টানলে শেষে ঢোকে)
+    useEditorStore.getState().movePageTo(dragged, targetIndex);
+  };
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -179,19 +221,86 @@ export function PageThumbsPanel() {
         {...(settings.singleColor ? { 'data-one-color': settings.singleColor } : {})}
       >
         {pages.map((page, index) => (
-          <div key={page.id} role="listitem" className="flex justify-center">
+          <div
+            key={page.id}
+            role="listitem"
+            className={cn('flex justify-center rounded-md', dropTarget === page.id && 'page-thumb-drop')}
+            onDragOver={(e) => {
+              e.preventDefault();
+              e.dataTransfer.dropEffect = 'move';
+              setDropTarget(page.id);
+            }}
+            onDragLeave={() => setDropTarget((cur) => (cur === page.id ? null : cur))}
+            onDrop={(e) => {
+              e.preventDefault();
+              handleDrop(e.dataTransfer.getData('text/plain') || null, page.id, index);
+            }}
+          >
             <PageThumb
               page={page}
               index={index}
               settings={settings}
               active={page.id === activePageId}
               onClick={() => jumpTo(page.id, index)}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                setThumbMenu({ x: e.clientX, y: e.clientY, pageId: page.id, index });
+              }}
             />
           </div>
         ))}
       </div>
       {/* স্ক্রিন রিডারের জন্য অর্থবহ এক লাইনের সারসংক্ষেপ */}
       <p className="sr-only">{tt('ws.thumbs.count', '{n} pages').split('{n}').join(fn(pages.length))}</p>
+
+      {/* দিন ১৯ — থাম্বনেইল রাইট-ক্লিক মেনু: পেজ-অপস সরাসরি নেভিগেটর থেকে */}
+      {thumbMenu && typeof document !== 'undefined'
+        ? createPortal(
+            <div
+              role="menu"
+              aria-label={tt('ws.page.menu', 'Page menu')}
+              className="fixed z-[80] min-w-[190px] rounded-lg border border-border bg-popover/95 p-1 shadow-xl backdrop-blur"
+              style={{
+                left: Math.min(thumbMenu.x, window.innerWidth - 210),
+                top: Math.min(thumbMenu.y, window.innerHeight - 220),
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+            >
+              {(
+                [
+                  { icon: Copy, label: tt('ws.page.duplicate', 'Duplicate page'), run: () => useEditorStore.getState().duplicatePage(thumbMenu.pageId) },
+                  { icon: ListStart, label: tt('ws.page.moveUp', 'Move up'), disabled: thumbMenu.index === 0, run: () => moveBy(thumbMenu.pageId, -1) },
+                  { icon: ListEnd, label: tt('ws.page.moveDown', 'Move down'), disabled: thumbMenu.index >= pages.length - 1, run: () => moveBy(thumbMenu.pageId, 1) },
+                  { icon: ListStart, label: tt('ws.page.moveToFirst', 'Move to very beginning'), disabled: thumbMenu.index === 0, run: () => useEditorStore.getState().movePageTo(thumbMenu.pageId, 0) },
+                  { icon: ListEnd, label: tt('ws.page.moveToEnd', 'Move to very end'), disabled: thumbMenu.index >= pages.length - 1, run: () => useEditorStore.getState().movePageTo(thumbMenu.pageId, pages.length - 1) },
+                ] as Array<{ icon: LucideIcon; label: string; disabled?: boolean; run: () => void }>
+              ).map((it) => (
+                <button
+                  key={it.label}
+                  type="button"
+                  role="menuitem"
+                  disabled={it.disabled ?? false}
+                  className="flex w-full items-center gap-2.5 rounded-md px-3 py-1.5 text-left text-[13px] outline-none transition-colors hover:bg-accent focus:bg-accent disabled:pointer-events-none disabled:opacity-40"
+                  onClick={() => { setThumbMenu(null); it.run(); }}
+                >
+                  <it.icon size={14} aria-hidden="true" />
+                  {it.label}
+                </button>
+              ))}
+              <div className="my-1 h-px bg-border" aria-hidden="true" />
+              <button
+                type="button"
+                role="menuitem"
+                disabled={pages.length <= 1}
+                className="flex w-full items-center gap-2.5 rounded-md px-3 py-1.5 text-left text-[13px] text-red-600 outline-none transition-colors hover:bg-red-500/10 focus:bg-red-500/10 disabled:pointer-events-none disabled:opacity-40"
+                onClick={() => { setThumbMenu(null); useEditorStore.getState().deletePage(thumbMenu.pageId); }}
+              >
+                <Trash2 size={14} aria-hidden="true" /> {tt('ws.page.delete', 'Delete page')}
+              </button>
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }

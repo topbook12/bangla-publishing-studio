@@ -26,18 +26,18 @@ export interface OutlineEntry {
   pageIndex: number;
   pageId: string;
   text: string;
-  /** 1 = h1 (অধ্যায়), 2 = h2, 3 = h3 */
+  /** 1 = h1 (অধ্যায়), 2 = h2, 3 = h3, 4 = h4 (দিন ১৯ — h4-ও আউটলাইনে) */
   level: number;
 }
 
-/** সব পৃষ্ঠার HTML থেকে h1-h3 শিরোনাম সংগ্রহ (প্রচ্ছদ ও ফাঁকা টেক্সট বাদ) */
+/** সব পৃষ্ঠার HTML থেকে h1-h4 শিরোনাম সংগ্রহ (প্রচ্ছদ ও ফাঁকা টেক্সট বাদ) */
 export function scanOutline(pages: PageData[]): OutlineEntry[] {
   const entries: OutlineEntry[] = [];
   const parser = new DOMParser();
   pages.forEach((page, index) => {
     if (page.kind === 'cover' || !page.html) return;
     const doc = parser.parseFromString(`<div>${page.html}</div>`, 'text/html');
-    doc.querySelectorAll('h1, h2, h3').forEach((h) => {
+    doc.querySelectorAll('h1, h2, h3, h4').forEach((h) => {
       const text = (h.textContent ?? '').trim();
       if (!text) return;
       const level = Number(h.tagName.substring(1));
@@ -151,6 +151,7 @@ function OutlineTab() {
                   entry.level === 1 && 'font-semibold',
                   entry.level === 2 && 'pl-3 font-normal',
                   entry.level === 3 && 'pl-6 font-normal',
+                  entry.level === 4 && 'pl-9 font-normal text-muted-foreground',
                   isActive
                     ? 'nav-row-active bg-primary/10 text-foreground'
                     : 'text-foreground/85 hover:bg-accent/60 hover:text-foreground',
