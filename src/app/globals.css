@@ -991,6 +991,44 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
 
 .page-menu-btn { height: 24px; font-size: 10.5px; border-radius: 999px; }
 
+/* ── দিন ১১ — পাতা-সীমানায় হোভার "+" সন্নিবেশ-জোন (স্ক্রিন-ওনলি, no-print) ── */
+.page-gap-zone {
+  position: relative;
+  height: 0;
+  z-index: 15;
+  display: flex;
+  justify-content: center;
+}
+.page-gap-line {
+  position: absolute;
+  top: -6px;
+  left: 12%;
+  right: 12%;
+  height: 0;
+  border-top: 1px dashed transparent;
+  transition: border-color 0.15s;
+}
+.page-gap-zone:hover .page-gap-line,
+.page-gap-zone:focus-within .page-gap-line { border-top-color: var(--border); }
+.page-gap-btn {
+  position: absolute;
+  top: -14px;
+  height: 24px;
+  padding: 0 10px;
+  font-size: 11px;
+  border-radius: 999px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+  background: color-mix(in srgb, var(--card) 88%, transparent);
+  backdrop-filter: blur(4px);
+}
+.page-gap-zone:hover .page-gap-btn,
+.page-gap-zone:focus-within .page-gap-btn {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 .paper-page {
   position: relative;
   overflow: hidden;

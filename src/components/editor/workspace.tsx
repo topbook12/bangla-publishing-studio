@@ -4,9 +4,9 @@
 
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ArrowDown, ArrowUp, ArrowUpToLine, ChevronDown, Copy, Eye, EyeOff, FilePlus2, RotateCcw, Settings2, Trash2,
+  ArrowDown, ArrowUp, ArrowUpToLine, ChevronDown, Copy, Eye, EyeOff, FilePlus2, ListEnd, ListStart, Plus, RotateCcw, Settings2, Trash2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -28,11 +28,35 @@ import { WorkspaceHRule, PageVRule } from './workspace-ruler';
 import { ContextMenuHost } from './context-menu';
 import { AiBubbleHost } from './ai-bubble';
 
+/** দিন ১১ — পাতা-সীমানায় হোভার করলে দেখা "+" পিল: ঠিক এখানে নতুন পাতা ঢোকায় (মাঝে-সন্নিবেশ)। */
+function InsertGap({ afterPageId }: { afterPageId: string }) {
+  const tt = useT();
+  return (
+    <div className="page-gap-zone no-print" aria-hidden="false">
+      <span className="page-gap-line" aria-hidden="true" />
+      <Button
+        variant="outline"
+        size="sm"
+        tabIndex={0}
+        className="page-gap-btn"
+        aria-label={tt('ws.page.insertHere', 'Insert a new page here')}
+        onClick={() => {
+          const id = useEditorStore.getState().addPage(afterPageId);
+          useEditorStore.getState().setActivePage(id);
+        }}
+      >
+        <Plus size={12} /> {tt('ws.page.insertHere', 'Insert a new page here')}
+      </Button>
+    </div>
+  );
+}
+
 function PageMenu({ pageId, index }: { pageId: string; index: number }) {
   const addPage = useEditorStore((s) => s.addPage);
   const deletePage = useEditorStore((s) => s.deletePage);
   const duplicatePage = useEditorStore((s) => s.duplicatePage);
   const movePage = useEditorStore((s) => s.movePage);
+  const movePageTo = useEditorStore((s) => s.movePageTo);
   const updatePage = useEditorStore((s) => s.updatePage);
   const totalPages = useEditorStore((s) => s.pages.length);
   const tt = useT();
@@ -47,6 +71,15 @@ function PageMenu({ pageId, index }: { pageId: string; index: number }) {
       <DropdownMenuContent align="end" className="no-print">
         <DropdownMenuItem onClick={() => { const id = addPage(pageId); useEditorStore.getState().setActivePage(id); }}>
           <FilePlus2 size={14} /> {tt('ws.page.newAfter', 'New page after this one')}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => {
+          const pages = useEditorStore.getState().pages;
+          const idx = pages.findIndex((p) => p.id === pageId);
+          const prevId = idx > 0 ? pages[idx - 1].id : null;
+          const id = addPage(prevId);
+          useEditorStore.getState().setActivePage(id);
+        }}>
+          <Plus size={14} /> {tt('ws.page.newBefore', 'New page before this one')}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => duplicatePage(pageId)}>
           <Copy size={14} /> {tt('ws.page.duplicate', 'Duplicate page')}
@@ -80,6 +113,12 @@ function PageMenu({ pageId, index }: { pageId: string; index: number }) {
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => movePage(pageId, 1)} disabled={index >= totalPages - 1}>
           <ArrowDown size={14} /> {tt('ws.page.moveDown', 'Move down')}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => movePageTo(pageId, 0)} disabled={index === 0}>
+          <ListStart size={14} /> {tt('ws.page.moveToFirst', 'Move to very beginning')}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => movePageTo(pageId, useEditorStore.getState().pages.length - 1)} disabled={index >= totalPages - 1}>
+          <ListEnd size={14} /> {tt('ws.page.moveToEnd', 'Move to very end')}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => updatePage(pageId, { noChrome: !useEditorStore.getState().pages.find((p) => p.id === pageId)?.noChrome })}>
@@ -238,7 +277,10 @@ export function Workspace() {
         {/* MS Word-ধাঁচের স্কেল/রুলার — sticky, কাগজের প্রস্থ অনুযায়ী */}
         {rulerVisible ? <WorkspaceHRule /> : null}
         {pages.map((page, index) => (
-          <section key={page.id} className="page-slot relative" aria-label={tt('ws.page.n', 'Page {n}').split('{n}').join(fn(index + 1))}>
+          <Fragment key={page.id}>
+            {/* দিন ১১ — পাতার মাঝে হোভার "+" জোন: ঠিক এই সীমানায় নতুন পাতা ঢোকানো */}
+            {index > 0 ? <InsertGap afterPageId={pages[index - 1].id} /> : null}
+          <section className="page-slot relative" aria-label={tt('ws.page.n', 'Page {n}').split('{n}').join(fn(index + 1))}>
             <div className="page-toolbar no-print" aria-hidden="true">
               <span className="page-slot-index">{fn(index + 1)}</span>
               <PageMenu pageId={page.id} index={index} />
@@ -257,6 +299,7 @@ export function Workspace() {
               ) : null}
             </PaperPage>
           </section>
+          </Fragment>
         ))}
 
         <div className="flex justify-center pb-16 pt-2 no-print">

@@ -57,6 +57,8 @@ interface EditorActions {
   deletePage: (pageId: string) => void;
   duplicatePage: (pageId: string) => void;
   movePage: (pageId: string, direction: -1 | 1) => void;
+  /** দিন ১১ — যেকোনো অবস্থানে সরানো (থাম্বনেইল ড্র্যাগ-রিঅর্ডারসহ); targetIndex ক্ল্যাম্প করা হয় */
+  movePageTo: (pageId: string, targetIndex: number) => void;
   updatePageHtml: (pageId: string, html: string) => void;
   updatePage: (pageId: string, patch: Partial<PageData>) => void;
   replacePageHtml: (pageId: string, html: string) => void;
@@ -452,6 +454,20 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
     const idx = pages.findIndex((p) => p.id === pageId);
     const target = idx + direction;
     if (idx < 0 || target < 0 || target >= pages.length) return;
+    const [removed] = pages.splice(idx, 1);
+    pages.splice(target, 0, removed);
+    set({ pages });
+    touch(get);
+  },
+
+  // দিন ১১ — যেকোনো অবস্থানে পাতা সরানো (মেনু "শুরুতে/শেষে সরান" + থাম্বনেইল ড্র্যাগ)।
+  // targetIndex মুছে-ফেলার-পরের স্পেসে: ০..pages.length-1 এ ক্ল্যাম্প; অপরিবর্তিত হলে নো-অপ।
+  movePageTo: (pageId, targetIndex) => {
+    const pages = [...get().pages];
+    const idx = pages.findIndex((p) => p.id === pageId);
+    if (idx < 0) return;
+    const target = Math.max(0, Math.min(targetIndex, pages.length - 1));
+    if (target === idx) return;
     const [removed] = pages.splice(idx, 1);
     pages.splice(target, 0, removed);
     set({ pages });
