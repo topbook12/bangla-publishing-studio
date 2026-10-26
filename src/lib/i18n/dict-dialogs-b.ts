@@ -196,3 +196,17 @@ const day16FindKeys = {
 } as const;
 
 Object.assign(dictDialogsB, day16FindKeys);
+
+// ─── দিন ১৮ — প্রুফিং সাজেশন + যুক্তাক্ষর-বিশ্লেষণ ───
+const day18ProofKeys = {
+  'dlg2.review.suggestLabel': { bn: 'সম্ভাব্য সংশোধন:', hi: 'संभावित सुधार:', en: 'Suggestions:' },
+  'dlg2.review.fixedAll': { bn: '{w} → {s} — {n} জায়গায় বদলানো হয়েছে', hi: '{w} → {s} — {n} जगह बदला गया', en: '{w} → {s} — replaced in {n} places' },
+  'dlg2.review.fixNone': { bn: 'এই শব্দটি বইয়ে আর পাওয়া যায়নি', hi: 'यह शब्द किताब में नहीं मिला', en: 'No occurrences of this word were found' },
+  'dlg2.review.conjunctStatsTitle': { bn: 'যুক্তাক্ষর-বিশ্লেষণ (পুরো বই)', hi: 'संयुक्ताक्षर-विश्लेषण (पूरी किताब)', en: 'Conjunct analysis (whole book)' },
+  'dlg2.review.statWords': { bn: 'মোট শব্দ', hi: 'कुल शब्द', en: 'Total words' },
+  'dlg2.review.statConjunctWords': { bn: 'যুক্তাক্ষর-শব্দ', hi: 'संयुक्ताक्षर शब्द', en: 'Conjunct words' },
+  'dlg2.review.statDensity': { bn: 'ঘনত্ব', hi: 'घनत्व', en: 'Density' },
+  'dlg2.review.statTop': { bn: 'সবচেয়ে বেশি ব্যবহৃত যুক্তাক্ষর', hi: 'सबसे अधिक प्रयुक्त संयुक्ताक्षर', en: 'Most used conjuncts' },
+} as const;
+
+Object.assign(dictDialogsB, day18ProofKeys);
