@@ -97,6 +97,8 @@ interface UiState {
   rulerVisible: boolean;
   /** রুলারের একক — সেন্টিমিটার বা ইঞ্চি (অনুভূমিক + উল্লম্ব দুটোতেই একসাথে) */
   rulerUnit: 'cm' | 'in';
+  /** দিন ১৪ — কমান্ড প্যালেট (Ctrl+K) খোলা আছে কি না */
+  paletteOpen: boolean;
   open: (name: DialogName) => void;
   /** AI ডায়ালগ নির্দিষ্ট ট্যাবসহ খোলা */
   openAi: (tab: AiVisionTab) => void;
@@ -110,6 +112,9 @@ interface UiState {
   setRulerVisible: (v: boolean) => void;
   toggleRuler: () => void;
   setRulerUnit: (u: 'cm' | 'in') => void;
+  /** দিন ১৪ — কমান্ড প্যালেট */
+  setPaletteOpen: (v: boolean) => void;
+  togglePalette: () => void;
 }
 
 export const useUiStore = create<UiState>((set, get) => ({
@@ -123,6 +128,7 @@ export const useUiStore = create<UiState>((set, get) => ({
   // স্কেল/রুলার — ডেস্কটপে ডিফল্ট চালু, ছোট স্ক্রিনে (মোবাইল) ডিফল্ট বন্ধ
   rulerVisible: typeof window !== 'undefined' && window.innerWidth >= 900,
   rulerUnit: readStrFlag('bwp-ruler-unit', 'cm') === 'in' ? 'in' : 'cm',
+  paletteOpen: false,
   open: (name) => set({ openDialog: name }),
   openAi: (tab) => set({ openDialog: 'aiVision', aiVisionTab: tab }),
   openPageChrome: (pageId) => set({ openDialog: 'pageChrome', pageChromeId: pageId }),
@@ -151,4 +157,6 @@ export const useUiStore = create<UiState>((set, get) => ({
     writeStrFlag('bwp-ruler-unit', u);
     set({ rulerUnit: u });
   },
+  setPaletteOpen: (v) => set({ paletteOpen: v }),
+  togglePalette: () => set((s) => ({ paletteOpen: !s.paletteOpen })),
 }));
