@@ -437,6 +437,9 @@ export function mergeWithPreviousPage(editor: Editor, pageId: string, attempt = 
     if (idx <= 0) return;
     const prev = s.pages[idx - 1];
     if (prev.kind === 'cover') return;
+    // দিন ১৭ — Backspace-মার্জ পাতা মুছে দেয় — টিপট্যাপ-ইতিহাসের বাইরে;
+    // আগের অবস্থার লেবেলসহ স্ন্যাপশট (নিরাপত্তা-জাল)
+    void s.guardSnapshot('পাতা মার্জের আগে / Before merging pages');
     const currentHtml = editor.getHTML();
     const mergedHtml = `${prev.html}${currentHtml}`;
     s.updatePageHtml(prev.id, mergedHtml);
@@ -650,6 +653,8 @@ export async function smartFlowWholeBook(): Promise<SmartFlowStats> {
   const stats: SmartFlowStats = { pagesFilled: 0, blocksMoved: 0, pagesDeleted: 0 };
   const visited = new Set<string>();
   const wasActive = useEditorStore.getState().activePageId;
+  // দিন ১৭ — পুরো-বই পুনর্বিন্যাসের আগে নিরাপত্তা-স্ন্যাপশট
+  await useEditorStore.getState().guardSnapshot('স্মার্ট-ফ্লোর আগে / Before smart flow');
 
   for (let guard = 0; guard < 1000; guard++) {
     const s = useEditorStore.getState();
@@ -799,6 +804,10 @@ export function removeEmptyPages(): number {
   const emptyIds = s.pages.filter((p) => p.kind === 'normal' && htmlIsEmpty(p.html)).map((p) => p.id);
   const maxRemovable = Math.max(0, s.pages.length - 1);
   const removable = emptyIds.slice(0, maxRemovable);
+  if (removable.length) {
+    // দিন ১৭ — ব্যাচ-মুছার আগে নিরাপত্তা-স্ন্যাপশট
+    void s.guardSnapshot('ফাঁকা পাতা সরানোর আগে / Before removing empty pages');
+  }
   for (const id of removable) {
     useEditorStore.getState().deletePage(id);
   }

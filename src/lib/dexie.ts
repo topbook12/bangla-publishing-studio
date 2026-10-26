@@ -24,6 +24,8 @@ export interface SnapshotRecord {
   title: string;
   createdAt: number;
   kind: 'auto' | 'manual';
+  /** দিন ১৭ — কাঠামোগত অপারেশনের আগের নিরাপত্তা-স্ন্যাপশটের মানুষ-পাঠযোগ্য নাম */
+  label?: string;
   pages: PageData[];
   settings: DocumentSettings;
 }

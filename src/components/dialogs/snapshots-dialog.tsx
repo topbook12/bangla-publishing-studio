@@ -7,7 +7,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { ArchiveRestore, History, Loader2, RotateCcw, Trash2 } from 'lucide-react';
+import { ArchiveRestore, History, Loader2, RotateCcw, ShieldCheck, Trash2 } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
@@ -124,6 +124,12 @@ export function SnapshotsDialog() {
                         {snap.kind === 'manual' ? tt('dlg2.snap.kind.manual') : tt('dlg2.snap.kind.auto')}
                       </Badge>
                     </div>
+                    {/* দিন ১৭ — কাঠামোগত অপের আগের নিরাপত্তা-স্ন্যাপশটের লেবেল */}
+                    {snap.label ? (
+                      <p className="mt-0.5 flex items-center gap-1 text-[11px] font-medium text-primary">
+                        <ShieldCheck size={12} aria-hidden="true" /> {snap.label}
+                      </p>
+                    ) : null}
                     <p className="mt-0.5 text-xs text-muted-foreground">
                       {banglaDateToday(new Date(snap.createdAt))} · {banglaTimeNow(new Date(snap.createdAt))} ·{' '}
                       {tt('dlg2.snap.pages').split('{n}').join(ff(snap.pages.length))}

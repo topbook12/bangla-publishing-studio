@@ -86,7 +86,9 @@ interface EditorActions {
 
   // ── স্ন্যাপশট (ভার্সন ব্যাকআপ) ──
   /** বর্তমান অবস্থার স্ন্যাপশট নেয় + পুরনোগুলো প্রুন (প্রতি প্রজেক্টে সর্বোচ্চ ১৫টি) */
-  takeSnapshot: (kind: 'auto' | 'manual') => Promise<void>;
+  takeSnapshot: (kind: 'auto' | 'manual', label?: string) => Promise<void>;
+  /** দিন ১৭ — কাঠামোগত অপের আগের লেবেলসহ নিরাপত্তা-স্ন্যাপশট (পরিবর্তন থাকলেই) */
+  guardSnapshot: (label: string) => Promise<void>;
   /** স্ন্যাপশট তালিকা (নতুন আগে); projectId না দিলে চালু বইয়ের */
   listSnapshots: (projectId?: string) => Promise<SnapshotRecord[]>;
   /** পুনরুদ্ধার — আগে বর্তমান অবস্থার নিরাপত্তা-স্ন্যাপশট, তারপর স্ন্যাপশটের অবস্থা লোড */
@@ -179,6 +181,20 @@ function touch(get: () => EditorStore) {
   scheduleSave(get);
 }
 
+/**
+ * দিন ১৭ — কাঠামোগত অপের আগে নিরাপত্তা-স্ন্যাপশট (আন্ডু-হার্ডেনিং)।
+ * পেজ মুছা/স্প্লিট/পুরো-বই প্রতিস্থাপন/থিম/স্মার্ট-ফ্লো ইত্যাদি টিপট্যাপ-ইতিহাসের
+ * বাইরে হয় (replaceDocNoHistory) — একটাই নিরাপত্তা-জাল: স্ন্যাপশট। প্রতিটি
+ * বড় অপের আগে লেবেলসহ স্ন্যাপশট নেওয়া হয় — সংস্করণ-তালিকায় "পাতা মোছার
+ * আগে" হিসেবে চেনা যায় ও এক ক্লিকে ফেরানো যায়। অ্যান্টি-ফ্লাড: শেষ
+ * স্ন্যাপশটের পর অবস্থা না বদলালে স্কিপ।
+ */
+async function preOpSnapshot(label: string): Promise<void> {
+  const s = useEditorStore.getState();
+  if (!s.projectId) return;
+  if (s.pages === lastSnapshottedPages) return;
+  await s.takeSnapshot('auto', label);
+}
 // ─── গভীর মার্জ (settings-এর জন্য) ───
 
 function mergeSettings(current: DocumentSettings, patch: Partial<DocumentSettings>): DocumentSettings {
@@ -433,6 +449,8 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
     if (pages.length <= 1) return;
     const idx = pages.findIndex((p) => p.id === pageId);
     if (idx < 0) return;
+    // দিন ১৭ — মোছা পাতার নিরাপত্তা-জাল: আগের অবস্থা স্ন্যাপশট (সংস্করণ-তালিকায় চেনা যায়)
+    void preOpSnapshot('পাতা মোছার আগে / Before deleting a page');
     const next = pages.filter((p) => p.id !== pageId);
     const newActive = next[Math.min(idx, next.length - 1)].id;
     set({ pages: next, activePageId: get().activePageId === pageId ? newActive : get().activePageId });
@@ -520,6 +538,8 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
     const pages = [...get().pages];
     const idx = pages.findIndex((p) => p.id === pageId);
     if (idx < 0) return;
+    // দিন ১৭ — পেজ-ব্রেক/অটো-ফ্লো স্প্লিটের নিরাপত্তা-জাল (টিপট্যাপ-ইতিহাসের বাইরে)
+    void preOpSnapshot('পাতা ভাঙার আগে / Before splitting a page');
     const src = pages[idx];
     pages[idx] = { ...src, html: keptHtml || '<p></p>' };
     // স্প্লিট থেকে সৃষ্ট ধারাবাহিক পাতা — সোর্স পাতার chrome সেটিং বহাল থাকে
@@ -583,7 +603,7 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 
   // ── স্ন্যাপশট (ভার্সন ব্যাকআপ) ──
 
-  takeSnapshot: async (kind) => {
+  takeSnapshot: async (kind, label) => {
     const s = get();
     if (!s.projectId) return;
     try {
@@ -594,6 +614,7 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
         title: s.title,
         createdAt: Date.now(),
         kind,
+        ...(label ? { label } : {}),
         pages: s.pages,
         settings: s.settings,
       };
@@ -604,6 +625,11 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
       if (stale.length) await db.snapshots.bulkDelete(stale.map((r) => r.id));
       lastSnapshottedPages = s.pages;
     } catch { /* ইন-মেমরি মোড / IndexedDB অনুপলব্ধ */ }
+  },
+
+  // দিন ১৭ — পেজ-অপস/ফ্লো-ইঞ্জিন থেকে ডাকার পাবলিক এন্ট্রি
+  guardSnapshot: async (label) => {
+    await preOpSnapshot(label);
   },
 
   listSnapshots: async (projectId) => {
@@ -662,6 +688,8 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
   // ── UI ──
 
   replaceBook: (pages, settingsPatch) => {
+    // দিন ১৭ — টেমপ্লেট/ইমপোর্টে পুরো বই প্রতিস্থাপন — আগের বইয়ের নিরাপত্তা-স্ন্যাপশট
+    void preOpSnapshot('নতুন বই প্রতিস্থাপনের আগে / Before replacing the book');
     const settings = settingsPatch ? mergeSettings(get().settings, settingsPatch) : get().settings;
     set({
       pages,
