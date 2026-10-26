@@ -21,7 +21,7 @@ import FontFamily from '@tiptap/extension-font-family';
 import Link from '@tiptap/extension-link';
 import Table from '@tiptap/extension-table';
 import TableRow from '@tiptap/extension-table-row';
-import { FramedImage } from './image-ext';
+import { FramedImage, insertImageFilesInto } from './image-ext';
 import { TableCellWithBg, TableHeaderWithBg } from './table-cell-bg';
 import Placeholder from '@tiptap/extension-placeholder';
 import Subscript from '@tiptap/extension-subscript';
@@ -182,6 +182,14 @@ export function PageEditor({ page, index, isFirstPage }: PageEditorProps) {
       attributes: {
         class: 'bwp-prosemirror',
         'data-page-id': page.id,
+      },
+      // দিন ১৩ — পেস্ট/ড্রপ করা ছবি-ফাইল সরাসরি এডিটরে ঢোকে (Word-অভিজ্ঞতা);
+      // ছবি-ফাইল না থাকলে সাধারণ পেস্ট/ড্রপ আগের মতোই চলে। view = কলের সময়ের
+      // কারেন্ট ভিউ — ক্লোজার-স্টেল নেই।
+      handlePaste: (view, event) => insertImageFilesInto(view, event.clipboardData?.files),
+      handleDrop: (view, event, _slice, moved) => {
+        if (moved) return false; // এডিটরের ভিতরের ড্র্যাগ-মুভ — সাধারণ নিয়মে
+        return insertImageFilesInto(view, event.dataTransfer?.files);
       },
     },
     onUpdate: ({ editor: ed }) => {

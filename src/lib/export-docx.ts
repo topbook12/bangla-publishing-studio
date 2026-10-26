@@ -671,6 +671,25 @@ function blockToDocx(el: Element, ctx: Ctx, settings: DocumentSettings): DocxBlo
       out.push(...blockToDocxChildren(el, ctx, settings));
       return out;
     }
+    case 'IMG': {
+      // দিন ১৩ — ব্লক-স্তরের ছবি (inline:false টিপট্যাপ ইমেজ) আগে DOCX-এ হারিয়ে যেত —
+      // ডিফল্ট-কেসে শুধু এলিমেন্ট-চাইল্ড দেখা হত; এখন imageRun + ক্যাপশন প্যারা
+      const img = imageRunOf(el);
+      if (img) {
+        const alignAttr = el.getAttribute('data-align');
+        const alignment = alignAttr === 'center' ? AlignmentType.CENTER : alignAttr === 'right' ? AlignmentType.RIGHT : AlignmentType.LEFT;
+        out.push(new Paragraph({ children: [img], alignment, spacing: { before: 100, after: 40 } }));
+        const cap = el.getAttribute('data-caption') ?? '';
+        if (cap) {
+          out.push(new Paragraph({
+            children: [new TextRun({ text: cap, italics: true, size: 20, color: '52616F' })],
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 140 },
+          }));
+        }
+      }
+      return out;
+    }
     default:
       out.push(...blockToDocxChildren(el, ctx, settings));
       return out;

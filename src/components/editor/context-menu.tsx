@@ -552,6 +552,26 @@ export function ContextMenuHost({ containerRef }: { containerRef: RefObject<HTML
       ],
     },
     {
+      // দিন ১৩ — ক্যাপশন: যোগ → সরাসরি লেখার মোড (NodeView অটো-ফোকাস), বাদ → null
+      header: tt('ws.img.capSection', 'Caption'),
+      items: [
+        {
+          id: 'img-cap-add',
+          label: tt('ws.img.capAdd', 'Add caption under image'),
+          icon: MessageSquare,
+          disabled: menu.imageAttrs.caption != null,
+          onSelect: () => setImage({ caption: '' }),
+        },
+        {
+          id: 'img-cap-remove',
+          label: tt('ws.img.capRemove', 'Remove caption'),
+          icon: Eraser,
+          disabled: menu.imageAttrs.caption == null,
+          onSelect: () => setImage({ caption: null }),
+        },
+      ],
+    },
+    {
       header: tt('ws.ctx.hWrap', 'Text wrap'),
       items: [
         { id: 'img-float-left', label: tt('ws.img.floatLeft', 'Image left — text on the right'), icon: WrapText, active: imgFloat === 'left', onSelect: () => setImage({ float: 'left' }) },

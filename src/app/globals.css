@@ -1029,6 +1029,23 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
   pointer-events: auto;
 }
 
+/* ── দিন ১৩ — ছবির NodeView wrap + সম্পাদনযোগ্য ক্যাপশন ── */
+.doc-img-wrap { position: relative; }
+.doc-img-wrap.ProseMirror-selectednode { outline: 2px solid color-mix(in srgb, var(--primary) 55%, transparent); outline-offset: 2px; border-radius: 4px; }
+.doc-img-caption {
+  margin-top: 4px;
+  font-size: 0.82em;
+  line-height: 1.45;
+  color: #52616f;
+  text-align: center;
+  outline: none;
+  border-radius: 3px;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+.doc-img-caption:empty::before { content: 'ক্যাপশন লিখুন…'; color: #94a3b8; }
+.doc-img-wrap[data-link-href] img { cursor: pointer; }
+
 .paper-page {
   position: relative;
   overflow: hidden;

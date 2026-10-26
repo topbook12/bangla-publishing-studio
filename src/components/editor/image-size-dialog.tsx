@@ -25,6 +25,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { useT, useFmtNum } from '@/lib/i18n';
 import { imageLayoutStyle, type ImageAlign, type ImageFloat } from './image-ext';
@@ -130,6 +131,10 @@ export function ImageSizeDialog({ state, onClose }: { state: ImageDialogState; o
   const [float, setFloat] = useState<ImageFloat>(
     attrs.float === 'left' || attrs.float === 'right' ? attrs.float : 'none',
   );
+  // দিন ১৩ — alt + ক্যাপশন সম্পাদনা
+  const [altText, setAltText] = useState<string>((attrs.alt as string | null) ?? '');
+  const [capText, setCapText] = useState<string>(attrs.caption == null ? '' : String(attrs.caption));
+  const [hasCap, setHasCap] = useState<boolean>(attrs.caption != null);
 
   const setWidthFromInput = (raw: string) => {
     const v = Number.parseFloat(raw);
@@ -178,6 +183,8 @@ export function ImageSizeDialog({ state, onClose }: { state: ImageDialogState; o
       float,
       width: wPx !== null ? Math.round(wPx) : null,
       height: hPx !== null ? Math.round(hPx) : null,
+      alt: altText,
+      caption: hasCap ? capText : null,
     };
     try {
       editor
@@ -330,6 +337,28 @@ export function ImageSizeDialog({ state, onClose }: { state: ImageDialogState; o
               </button>
             ))}
           </div>
+        </div>
+
+        {/* ── দিন ১৩ — alt + ক্যাপশন ── */}
+        <div className="space-y-2">
+          <div className="space-y-1.5">
+            <Label htmlFor="img-alt" className="text-xs">{tt('ws.img.alt', 'Alt text (accessibility)')}</Label>
+            <Input id="img-alt" value={altText} onChange={(e) => setAltText(e.target.value)} className="h-8 text-xs" />
+          </div>
+          <div className="flex items-center gap-2">
+            <Switch id="img-cap" checked={hasCap} onCheckedChange={setHasCap} />
+            <Label htmlFor="img-cap" className="text-xs">{tt('ws.img.capToggle', 'Show caption under the image')}</Label>
+          </div>
+          {hasCap ? (
+            <Textarea
+              id="img-cap-text"
+              value={capText}
+              onChange={(e) => setCapText(e.target.value)}
+              rows={2}
+              className="text-xs"
+              placeholder={tt('ws.img.capPh', 'Image caption — prints under the image')}
+            />
+          ) : null}
         </div>
 
         {/* লাইভ প্রিভিউ (স্টাইল স্ট্রিং) */}

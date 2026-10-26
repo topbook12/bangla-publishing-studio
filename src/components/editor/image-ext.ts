@@ -21,6 +21,8 @@
 import Image from '@tiptap/extension-image';
 import { Plugin } from '@tiptap/pm/state';
 import { mergeAttributes } from '@tiptap/core';
+import type { Node as PMNode } from '@tiptap/pm/model';
+import type { EditorView } from '@tiptap/pm/view';
 
 export type ImageAlign = 'left' | 'center' | 'right';
 export type ImageFloat = 'none' | 'left' | 'right';
@@ -35,6 +37,32 @@ interface ImageLayoutAttrs {
   framed?: boolean;
   linkHref?: string | null;
   linkTarget?: string | null;
+}
+
+/** দিন ১৩ — NodeView দুই-স্তরে স্টাইল বসায়: wrap-এ অবস্থান (float/align), img-এ মাপ/ফ্রেম */
+export function splitImageLayout(attrs: ImageLayoutAttrs): { wrapStyle: string; imgStyle: string } {
+  const imgParts: string[] = [];
+  const w = sizeCss('width', attrs.width ?? null);
+  if (w) imgParts.push(w);
+  const h = sizeCss('height', attrs.height ?? null);
+  if (h) imgParts.push(h);
+  if (attrs.framed) {
+    imgParts.push('border: 3px solid #94a3b8', 'padding: 3px', 'border-radius: 6px', 'box-sizing: border-box');
+  }
+
+  const wrapParts: string[] = ['display: block', 'max-width: 100%'];
+  if (attrs.float === 'left') {
+    wrapParts.push('float: left', 'margin: 6px 14px 6px 0');
+  } else if (attrs.float === 'right') {
+    wrapParts.push('float: right', 'margin: 6px 0 6px 14px');
+  } else if (attrs.textAlign === 'center') {
+    wrapParts.push('margin-left: auto', 'margin-right: auto');
+  } else if (attrs.textAlign === 'right') {
+    wrapParts.push('margin-left: auto', 'margin-right: 0');
+  } else if (attrs.textAlign === 'left') {
+    wrapParts.push('margin-left: 0', 'margin-right: auto');
+  }
+  return { wrapStyle: wrapParts.join('; '), imgStyle: imgParts.join('; ') };
 }
 
 function sizeCss(name: 'width' | 'height', v: ImageSizeAttr): string | null {
@@ -209,6 +237,22 @@ export const FramedImage = Image.extend({
           return t ? { 'data-link-target': t } : {};
         },
       },
+
+      /**
+       * দিন ১৩ — ছবির ক্যাপশন। null = ক্যাপশন নেই; স্ট্রিং (ফাঁকা সহ) = ক্যাপশন আছে।
+       * স্টোরেজে img[data-caption]-এ থাকে → HTML/DOCX এক্সপোর্ট ও প্রিন্ট একই সোর্স।
+       */
+      caption: {
+        default: null as string | null,
+        parseHTML: (el) => {
+          const c = el.getAttribute('data-caption');
+          return c === null ? null : c;
+        },
+        renderHTML: (attrs) => {
+          const c = attrs.caption as string | null;
+          return c === null || c === undefined ? {} : { 'data-caption': c };
+        },
+      },
     };
   },
 
@@ -228,6 +272,148 @@ export const FramedImage = Image.extend({
       img,
     ];
     return anchor;
+  },
+
+  /**
+   * দিন ১৩ — NodeView: wrap(div.doc-img-wrap) > img + ঐচ্ছিক সম্পাদনযোগ্য ক্যাপশন।
+   *  - স্টোরেজ renderHTML-ই থাকে (img[data-caption]) → এক্সপোর্ট/প্রিন্ট অপরিবর্তিত সোর্স
+   *  - ক্যাপশন contenteditable — blur/Enter-এ attribute-commit (এক undo-ধাপ)
+   *  - float/align wrap-এ, মাপ/ফ্রেম img-এ → লেখা-জড়ানো হুবহু আগের মতোই
+   */
+  addNodeView() {
+    return ({ node, editor, getPos }) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'doc-img-wrap';
+      const img = document.createElement('img');
+      wrap.appendChild(img);
+      let cap: HTMLDivElement | null = null;
+      let capSynced: string | null = null;
+      let nodeRef: PMNode = node;
+
+      const apply = (n: PMNode) => {
+        const a = n.attrs as Record<string, unknown>;
+        const { wrapStyle, imgStyle } = splitImageLayout(a as ImageLayoutAttrs);
+        wrap.setAttribute('style', wrapStyle);
+        img.setAttribute('style', imgStyle);
+        img.src = (a.src as string) ?? '';
+        img.alt = (a.alt as string | null) ?? '';
+        img.draggable = false;
+        // দিন ১৩ — NodeView-এর img-এ স্টোরেজ-contract data-attrs হাতে মিরর করা
+        // (spec.renderHTML ম্যানুয়ালি ডাকলে per-attribute renderHTML যোগ হয় না)
+        const mirror: Array<[string, unknown]> = [
+          ['data-width', a.width],
+          ['data-height', a.height],
+          ['data-align', a.textAlign],
+          ['data-float', a.float === 'left' || a.float === 'right' ? a.float : null],
+          ['data-framed', a.framed ? 'true' : null],
+          ['data-caption', a.caption],
+          ['data-natural-w', a.naturalWidth],
+          ['data-natural-h', a.naturalHeight],
+        ];
+        for (const [k, v] of mirror) {
+          if (v === null || v === undefined || v === '') img.removeAttribute(k);
+          else img.setAttribute(k, String(v));
+        }
+        const href = (a.linkHref as string | null) ?? '';
+        if (href) {
+          wrap.setAttribute('data-link-href', href);
+          wrap.classList.add('doc-image-link');
+        } else {
+          wrap.removeAttribute('data-link-href');
+          wrap.classList.remove('doc-image-link');
+        }
+      };
+
+      const commitCap = () => {
+        if (!cap || editor.isDestroyed) return;
+        try {
+          const text = cap.textContent ?? '';
+          if (text === (capSynced ?? '')) return;
+          capSynced = text;
+          const pos = typeof getPos === 'function' ? getPos() : undefined;
+          if (typeof pos !== 'number') return;
+          const cur = editor.state.doc.nodeAt(pos);
+          if (!cur || cur.type.name !== 'image') return;
+          editor.view.dispatch(
+            editor.view.state.tr.setNodeMarkup(pos, undefined, { ...cur.attrs, caption: text }),
+          );
+        } catch (err) {
+          console.error('[cap-commit] error', err);
+        }
+      };
+
+      const buildCap = (text: string) => {
+        cap = document.createElement('div');
+        cap.className = 'doc-img-caption';
+        cap.contentEditable = 'true';
+        cap.spellcheck = false;
+        cap.setAttribute('role', 'textbox');
+        cap.setAttribute('aria-label', 'Image caption');
+        cap.textContent = text;
+        capSynced = text;
+        cap.addEventListener('blur', commitCap);
+        cap.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            cap?.blur();
+          } else if (e.key === 'Escape') {
+            e.preventDefault();
+            if (cap) cap.textContent = capSynced ?? '';
+            cap?.blur();
+          }
+        });
+        wrap.appendChild(cap);
+      };
+
+      apply(node);
+      const initialCap = (node.attrs.caption as string | null) ?? null;
+      if (initialCap !== null) buildCap(initialCap);
+
+      return {
+        dom: wrap,
+        update(n: PMNode) {
+          if (n.type.name !== 'image') return false;
+          const prevCap = (nodeRef.attrs.caption as string | null) ?? null;
+          nodeRef = n;
+          apply(n);
+          const nextCap = (n.attrs.caption as string | null) ?? null;
+          if (nextCap !== null && cap === null) buildCap(nextCap);
+          if (nextCap === null && cap !== null) {
+            cap.remove();
+            cap = null;
+            capSynced = null;
+          } else if (cap && document.activeElement !== cap && (cap.textContent ?? '') !== (nextCap ?? '')) {
+            cap.textContent = nextCap ?? '';
+            capSynced = nextCap;
+          }
+          if (prevCap === null && nextCap !== null && cap) {
+            // ক্যাপশন যোগ হলে সরাসরি লেখার মোডে
+            window.setTimeout(() => {
+              if (cap && cap.isConnected) cap.focus();
+            }, 0);
+          }
+          return true;
+        },
+        selectNode() {
+          wrap.classList.add('ProseMirror-selectednode');
+        },
+        deselectNode() {
+          wrap.classList.remove('ProseMirror-selectednode');
+        },
+        stopEvent(e: Event) {
+          if (cap && (e.target === cap || (e.target instanceof Node && cap.contains(e.target)))) return true;
+          return false;
+        },
+        ignoreMutation(m: { type: string; target: Node }) {
+          if (cap && (m.target === cap || (m.target instanceof Node && cap.contains(m.target)))) return true;
+          if (m.type === 'attributes' && (m.target === img || m.target === wrap)) return true;
+          return false;
+        },
+        destroy() {
+          commitCap();
+        },
+      };
+    };
   },
 
   /**
@@ -294,3 +480,28 @@ export const FramedImage = Image.extend({
     ];
   },
 });
+
+/** দিন ১৩ — পেস্ট/ড্রপ করা ছবি-ফাইল এডিটরে ঢোকানো; হ্যান্ডেল করলে true। */
+export function insertImageFilesInto(view: EditorView | null | undefined, files: FileList | null | undefined): boolean {
+  if (!view || files == null || files.length === 0) return false;
+  const images = Array.from(files).filter((f) => f.type.startsWith('image/'));
+  if (images.length === 0) return false;
+  let handled = false;
+  for (const file of images) {
+    if (file.size > 8 * 1024 * 1024) continue; // 8 MB — বড় ছবি বাদ (বেস৬৪ ইনফ্লেশন সুরক্ষা)
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = String(reader.result ?? '');
+      if (!dataUrl.startsWith('data:image/') || view.isDestroyed) return;
+      const nodeType = view.state.schema.nodes.image;
+      if (!nodeType) return;
+      const node = nodeType.create({ src: dataUrl, alt: file.name.replace(/\.[a-z0-9]+$/i, '') });
+      const tr = view.state.tr.replaceSelectionWith(node);
+      view.dispatch(tr);
+      view.focus();
+    };
+    reader.readAsDataURL(file);
+    handled = true;
+  }
+  return handled;
+}

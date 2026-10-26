@@ -100,6 +100,35 @@ function expandHtml(html: string): string {
     el.innerHTML = `<div class="callout-head"><span class="callout-badge">${escapeHtml(title)}</span></div><div class="callout-content">${el.innerHTML}</div>`;
   });
 
+  // দিন ১৩ — ছবির ক্যাপশন: img[data-caption] → figure.doc-figure > img + figcaption.doc-figure-cap
+  // (স্ক্রিনে NodeView যেটা দেখায়, এক্সপোর্টেড HTML/প্রিন্টেও হুবহু সেটাই যায়)
+  root.querySelectorAll('img[data-caption]').forEach((img) => {
+    const parent = img.parentElement;
+    if (parent && parent.classList.contains('doc-figure')) return; // আগে মোড়ানো হলে দ্বিগুণ নয়
+    const cap = img.getAttribute('data-caption') ?? '';
+    const doc = root.ownerDocument;
+    const fig = doc.createElement('figure');
+    fig.className = 'doc-figure doc-img-figure';
+    const float = img.getAttribute('data-float');
+    const imgStyle = img.getAttribute('style') ?? '';
+    if (float === 'left' || float === 'right') {
+      // ভাসমান ছবি — float ও margin figure-এর উপরে যায়, নইলে flex-কনটেইনারে ভাসা ভাঙে
+      fig.setAttribute(
+        'style',
+        float === 'left'
+          ? 'float:left; margin: 6px 14px 6px 0; max-width:100%;'
+          : 'float:right; margin: 6px 0 6px 14px; max-width:100%;',
+      );
+      img.setAttribute('style', imgStyle.replace(/float:[^;]+;?/g, '').replace(/margin:[^;]+;?/g, ''));
+    }
+    img.parentNode?.insertBefore(fig, img);
+    fig.appendChild(img);
+    const fc = doc.createElement('figcaption');
+    fc.className = 'doc-figure-cap';
+    fc.textContent = cap;
+    fig.appendChild(fc);
+  });
+
   return root.innerHTML;
 }
 
