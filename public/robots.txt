@@ -1,14 +1,4 @@
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
-
 User-agent: *
 Allow: /
+
+# শেয়ার ও স্ট্যাট ভিউও পাবলিক — ইনডেক্সিং ঠিক আছে (share পেজ কনটেন্ট-ভিউ)

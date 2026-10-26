@@ -93,16 +93,47 @@ const APP_NAME = "বাংলা পাবলিশিং স্টুডিও
 const APP_DESCRIPTION =
   "বাংলা ও হিন্দি বই, কোচিং ম্যাটেরিয়াল ও প্রকাশনার জন্য অফলাইন-ফার্স্ট WYSIWYG ওয়ার্ড প্রসেসর — Bangla & Hindi book typesetting studio";
 
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ??
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+
 export const metadata: Metadata = {
   // Vercel-এ স্বয়ংক্রিয় সঠিক ডোমেইন; লোকালে localhost fallback
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ??
-      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000")
-  ),
-  title: `${APP_NAME} — বাংলা ও হিন্দি ওয়ার্ড প্রসেসর ও বুক ডিজাইনার`,
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: `${APP_NAME} — বাংলা ও হিন্দি ওয়ার্ড প্রসেসর ও বুক ডিজাইনার`,
+    template: `%s | ${APP_NAME}`,
+  },
   description: APP_DESCRIPTION,
   applicationName: APP_NAME,
   manifest: "/manifest.webmanifest",
+  keywords: [
+    "বাংলা টাইপসেটিং", "বাংলা বই ডিজাইন", "bangla word processor",
+    "bangla book typesetting", "question paper maker", "প্রশ্নপত্র বানানো",
+    "farma print", "ফরমা প্রিন্ট", "hindi typesetting", "offline word processor",
+  ],
+  authors: [{ name: APP_NAME }],
+  // ফেজ-৩ SEO — প্রথম পাতা = ল্যান্ডিং; সার্চ-ইঞ্জিন নির্দেশনা
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    siteName: APP_NAME,
+    title: `${APP_NAME} — মুদ্রকের মতোই নিখুঁত বাংলা বই ও প্রশ্নপত্র`,
+    description: APP_DESCRIPTION,
+    url: "/",
+    locale: "bn_BD",
+    alternateLocale: ["hi_IN", "en_US"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${APP_NAME} — বাংলা বই ও প্রশ্নপত্রের WYSIWYG স্টুডিও`,
+    description: APP_DESCRIPTION,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-image-preview": "large" },
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -136,6 +167,24 @@ export default function RootLayout({
           আগে <head>-এর শুরুতে নিজের <script>/<link> ঢুকিয়ে দেয়, ফলে React আমাদের ট্যাগের
           অ্যাট্রিবিউট মিসম্যাচ হিসেবে ভুল কনসোল এরর দেখায়। এটি নিরীহ — তাই দমন করা হলো। */}
       <head suppressHydrationWarning>
+        {/* SEO — JSON-LD structured data (SoftwareApplication) */}
+        <script
+          suppressHydrationWarning
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebApplication",
+              name: APP_NAME,
+              url: SITE_URL,
+              applicationCategory: "BusinessApplication",
+              operatingSystem: "Web",
+              description: APP_DESCRIPTION,
+              inLanguage: ["bn", "hi", "en"],
+              offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+            }),
+          }}
+        />
         {/* সেভ করা থিম আগে প্রয়োগ (ফ্ল্যাশ এড়াতে) */}
         <script
           suppressHydrationWarning

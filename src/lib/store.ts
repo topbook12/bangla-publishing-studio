@@ -46,6 +46,8 @@ interface EditorActions {
   openProject: (id: string) => Promise<void>;
   duplicateProject: (id: string) => Promise<void>;
   removeProject: (id: string) => Promise<void>;
+  /** ফেজ-৩ — ক্লাউড ডকুমেন্ট নতুন লোকাল প্রজেক্ট হিসেবে ইমপোর্ট করে খোলা */
+  loadCloudProject: (title: string, settings: DocumentSettings, pages: PageData[]) => Promise<void>;
   renameProject: (title: string) => void;
 
   updateSettings: (patch: Partial<DocumentSettings>) => void;
@@ -328,6 +330,31 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
         saveState: { status: 'saved', at: Date.now() },
       });
     } catch { /* উপেক্ষা */ }
+  },
+
+  loadCloudProject: async (title, settings, pages) => {
+    try {
+      await flushSave();
+      const project: BookProject = {
+        id: newId('bk'),
+        title: title || 'শিরোনামহীন বই',
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        settings: normalizeLoadedSettings(settings),
+        pages: pages.length ? pages : [createEmptyPage()],
+      };
+      await saveProject(project);
+      if (typeof window !== 'undefined') window.localStorage.setItem(LAST_PROJECT_KEY, project.id);
+      set({
+        projectId: project.id,
+        title: project.title,
+        settings: project.settings,
+        pages: project.pages,
+        activePageId: project.pages[0]?.id ?? null,
+        saveState: { status: 'saved', at: Date.now() },
+      });
+      await get().refreshProjects();
+    } catch { /* ইন-মেমরি মোড — স্টেটে যা আছে তাই */ }
   },
 
   duplicateProject: async (id) => {

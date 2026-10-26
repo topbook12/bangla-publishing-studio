@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import {
-  Check, CircleHelp, CloudOff, FilePlus2, Focus, FolderOpen, History, ListTree, Loader2, MessageSquare, Moon, PenLine,
+  Check, CircleHelp, CloudOff, FilePlus2, Focus, FolderOpen, History, Home, ListTree, Loader2, MessageSquare, Moon, PenLine,
   Save, Sun, Trash2, Copy, Pencil, Menu, Globe, Sparkles,
 } from 'lucide-react';
 import { BrandMark } from '@/components/brand-mark';
@@ -27,6 +27,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useEditorStore } from '@/lib/store';
 import { useUiStore } from '@/lib/ui-store';
 import { useAiStore, aiConfiguredSelector } from '@/lib/ai-store';
+import { AccountButton } from '@/components/auth/account-button';
+import { useViewStore } from '@/lib/view-store';
 import { useT, useLangStore, useFmtDate, LANGUAGES } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
@@ -181,6 +183,7 @@ function NavigatorToggle() {
         <Button
           variant="ghost"
           size="icon"
+          data-tour="navigator"
           className={cn('header-action max-sm:hidden', navigatorOpen && 'bg-accent text-accent-foreground')}
           aria-label={tt('hdr.navigator')}
           aria-pressed={navigatorOpen}
@@ -277,7 +280,24 @@ export function AppHeader() {
       <div className="flex shrink-0 items-center gap-1.5">
         <SaveIndicator />
         <span className="hidden text-xs text-muted-foreground md:inline">{now}</span>
+        {/* ফেজ-৩ — ল্যান্ডিং পেজে ফেরা (পাবলিক হোম) */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="header-action max-sm:h-11 max-sm:w-11"
+              aria-label={tt('land.footer.tag')}
+              title={tt('land.footer.tag')}
+              onClick={() => useViewStore.getState().goLanding()}
+            >
+              <Home size={16} />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">{tt('land.footer.tag')}</TooltipContent>
+        </Tooltip>
         <LanguageSwitcher />
+        <AccountButton />
         <AiChatButton />
         <AiSettingsButton />
         <NavigatorToggle />

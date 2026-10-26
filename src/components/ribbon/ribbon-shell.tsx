@@ -278,6 +278,7 @@ export function Ribbon() {
                 aria-selected={activeTab === tab.id}
                 className={cn('ribbon-tab', activeTab === tab.id && 'ribbon-tab-active')}
                 data-tone={tab.tone}
+                {...(tab.id === 'design' ? { 'data-tour': 'templates' } : null)}
                 onClick={() => selectTab(tab.id)}
               >
                 {activeTab === tab.id ? (

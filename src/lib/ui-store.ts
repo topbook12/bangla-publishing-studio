@@ -28,6 +28,7 @@ export type DialogName =
   | 'documentStudio'
   | 'sketchPad'
   | 'thesis'
+  | 'cloud'
   | 'help';
 
 /** AI ডায়ালগের কোন ট্যাব নিয়ে খুলবে */

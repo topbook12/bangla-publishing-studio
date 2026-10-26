@@ -1,8 +1,8 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// বাংলা পাবলিশিং স্টুডিও — ফেজ-৩ (দিন ২১–৩০) বিজনেস ভিত্তি
+// NextAuth (JWT কৌশল) + ক্লাউড-সিঙ্ক ডকুমেন্ট + শেয়ার লিংক + অ্যানালিটিক্স
+//
+// নোট: সেশন কৌশল JWT — Account/Session/VerificationToken টেবিল রাখা হচ্ছে
+// ভবিষ্যৎ অ্যাডাপ্টার-ভিত্তিক ফ্লো (ইমেইল ম্যাজিক লিংক ইত্যাদি)-র জন্য।
 
 generator client {
   provider = "prisma-client-js"
@@ -13,20 +13,84 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ─── NextAuth বেস টেবিল ───
+
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  accounts      Account[]
+  sessions      Session[]
+  documents     Document[]
 }
 
-model Post {
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─── ক্লাউড-সিঙ্ক ডকুমেন্ট ───
+
+model Document {
+  id         String   @id @default(cuid())
+  ownerId    String
+  owner      User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  title      String
+  /// BookProject-এর JSON সিরিয়ালাইজেশন ({ title, settings, pages, … })
+  data       String
+  /// অপ্টিমিস্টিক কনকারেন্সি — পুশ করার সময় baseVersion মিললেই হালনাগাদ
+  version    Int      @default(1)
+  /// পাবলিক শেয়ার চালু কি না
+  isPublic   Boolean  @default(false)
+  /// পাবলিক শেয়ার টোকেন (?share=<token>) — ঘুরিয়ে (rotate) নেওয়া যায়
+  shareToken String?  @unique
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([ownerId, updatedAt])
+}
+
+// ─── প্রাইভেসি-ফ্রেন্ডলি অ্যানালিটিক্স (কুকি নেই, ব্যক্তিগত তথ্য নেই) ───
+
+model AnalyticsEvent {
   id        String   @id @default(cuid())
-  title     String
-  content   String?
-  published Boolean  @default(false)
-  authorId  String
+  event     String
+  path      String
+  referrer  String?
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+
+  @@index([event, createdAt])
 }

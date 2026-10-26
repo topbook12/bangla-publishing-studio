@@ -23,6 +23,7 @@ import { QuestionPaperDialog } from './question-paper-dialog';
 import { DocumentStudioDialog } from './document-studio-dialog';
 import { SketchPadDialog } from './sketch-pad-dialog';
 import { ThesisDialog } from './thesis-dialog';
+import { CloudDialog } from '@/components/cloud/cloud-dialog';
 import { CommandPalette } from '@/components/command-palette';
 
 export function Dialogs() {
@@ -47,6 +48,7 @@ export function Dialogs() {
       <DocumentStudioDialog />
       <SketchPadDialog />
       <ThesisDialog />
+      <CloudDialog />
       <HelpDialog />
       {/* দিন ১৪ — কমান্ড প্যালেট (Ctrl+K) — সব টুল/কমান্ড খোঁজার কেন্দ্র */}
       <CommandPalette />

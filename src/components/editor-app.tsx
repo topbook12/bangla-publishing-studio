@@ -15,10 +15,12 @@ import { NavigatorPanel } from '@/components/navigator/navigator-panel';
 import { StatusBar } from '@/components/status-bar';
 import { Dialogs } from '@/components/dialogs/dialogs';
 import { AiChatPanel } from '@/components/editor/ai-chat-panel';
+import { OnboardingTour } from '@/components/onboarding/tour';
 import { useEditorStore } from '@/lib/store';
 import { useUiStore } from '@/lib/ui-store';
 import { useAutoToc } from '@/lib/toc';
 import { useT, useLangStore } from '@/lib/i18n';
+import { maybeAutoPush } from '@/lib/cloud-sync';
 import { cn } from '@/lib/utils';
 
 export default function EditorApp() {
@@ -42,6 +44,16 @@ export default function EditorApp() {
 
   // অটো-সূচিপত্র — শিরোনাম বদলালে TOC ব্লক নিজে থেকেই হালনাগাদ হয় (ডিবাউন্সড)
   useAutoToc();
+
+  // ফেজ-৩ — অটো-সিঙ্ক: লোকাল সেভ 'saved' হলে (অপশনাল ক্লাউড ফ্ল্যাগ থাকলে) ক্লাউডে পুশ
+  useEffect(() => {
+    const unsub = useEditorStore.subscribe((state, prev) => {
+      if (state.saveState.status === 'saved' && prev.saveState.status !== 'idle') {
+        maybeAutoPush();
+      }
+    });
+    return unsub;
+  }, []);
 
   // ফোকাস-মোড কীবোর্ড শর্টকাট — Ctrl+Shift+F টগল, Esc বেরিয়ে যাওয়া
   useEffect(() => {
@@ -85,15 +97,21 @@ export default function EditorApp() {
   return (
     <div className={cn('app-root flex h-screen flex-col overflow-hidden', focusMode && 'focus-mode')}>
       <AppHeader />
-      <Ribbon />
+      <div data-tour="ribbon">
+        <Ribbon />
+      </div>
       <div className="relative flex min-h-0 flex-1 overflow-hidden">
         {navigatorOpen ? <NavigatorPanel /> : null}
-        <Workspace />
+        <div data-tour="canvas" className="flex min-w-0 flex-1 flex-col">
+          <Workspace />
+        </div>
       </div>
       <StatusBar />
       <Dialogs />
       {/* AI চ্যাট — ডান পাশের প্রফেশনাল কথোপকথন প্যানেল */}
       <AiChatPanel />
+      {/* ফেজ-৩ — প্রথমবার ঢোকা ব্যবহারকারীর ৬ ধাপের স্পটলাইট ট্যুর */}
+      <OnboardingTour />
       {focusMode ? (
         <button
           type="button"
