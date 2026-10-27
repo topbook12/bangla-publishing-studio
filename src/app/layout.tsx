@@ -93,9 +93,10 @@ const APP_NAME = "বাংলা পাবলিশিং স্টুডিও
 const APP_DESCRIPTION =
   "বাংলা ও হিন্দি বই, কোচিং ম্যাটেরিয়াল ও প্রকাশনার জন্য অফলাইন-ফার্স্ট WYSIWYG ওয়ার্ড প্রসেসর — Bangla & Hindi book typesetting studio";
 
-const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ??
-  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+const SITE_URL = (
+  process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000")
+).replace(/\/+$/, "");
 
 export const metadata: Metadata = {
   // Vercel-এ স্বয়ংক্রিয় সঠিক ডোমেইন; লোকালে localhost fallback
