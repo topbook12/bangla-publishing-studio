@@ -29,6 +29,7 @@ export type PTone =
   | 'lime'     // লাইম
   | 'teal'     // টিল
   | 'cyan'     // সায়ান
+  | 'sky'      // আকাশি — শান্ত তথ্য/AI টোন
   | 'slate';   // গ্রাফাইট — নিরপেক্ষ
 
 const TILE_ICON: Record<'sm' | 'md' | 'lg' | 'xl', number> = { sm: 13, md: 17, lg: 22, xl: 26 };

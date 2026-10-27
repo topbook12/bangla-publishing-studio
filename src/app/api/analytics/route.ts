@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/db';
+import { enforceRateLimit } from '@/lib/rate-limit';
 
 export const runtime = 'nodejs';
 
@@ -23,6 +24,10 @@ const ALLOWED_EVENTS = new Set([
 ]);
 
 export async function POST(req: NextRequest) {
+  // ইভেন্ট-ফালা গার্ড — অ্যানালিটিক্স টেবিল ফ্লাড আটকায়
+  const limited = enforceRateLimit(req, { bucket: 'analytics:post', limit: 60 });
+  if (limited) return limited;
+
   let body: { event?: string; path?: string; referrer?: string };
   try {
     body = await req.json();

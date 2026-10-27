@@ -3,6 +3,7 @@ import "./globals.css";
 import "./hindi-fonts.css";
 import "./forma-print.css";
 import PwaRegister from "@/components/pwa-register";
+import PwaInstall from "@/components/pwa-install";
 import { SonnerToaster } from "@/components/sonner-toaster";
 
 // বাংলা ফন্ট — বান্ডেল (অফলাইনেও কাজ করে)
@@ -204,6 +205,7 @@ export default function RootLayout({
         {/* টোস্ট সিস্টেম Sonner — পুরনো shadcn Toaster (use-toast) এমিটার-শূন্য ছিল, বাদ */}
         <SonnerToaster />
         <PwaRegister />
+        <PwaInstall />
       </body>
     </html>
   );

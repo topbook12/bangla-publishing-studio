@@ -19,10 +19,15 @@ import {
   providerMode, sandboxInstructions, type ProviderId,
 } from '@/lib/payments';
 import { ensureCoupons, validateCouponCode } from '@/lib/billing';
+import { enforceRateLimit } from '@/lib/rate-limit';
 
 export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
+  // অর্ডার-ফালা/স্ক্রিপ্টেড অ্যাবিউজ গার্ড (অথেন্টিকেশনের আগেই — IP-ভিত্তিক)
+  const limited = enforceRateLimit(req, { bucket: 'billing:checkout', limit: 10 });
+  if (limited) return limited;
+
   const session = await getServerSession(authOptions);
   const uid = session?.user?.id;
   if (!uid) return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });

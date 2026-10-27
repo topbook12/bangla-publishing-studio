@@ -9,10 +9,15 @@ import { authOptions } from '@/lib/auth';
 import { isCycle, isPlanId } from '@/lib/plans';
 import { finalAmount } from '@/lib/payments';
 import { ensureCoupons, validateCouponCode } from '@/lib/billing';
+import { enforceRateLimit } from '@/lib/rate-limit';
 
 export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
+  // কুপন-কোড ব্রুটফোর্স গার্ড
+  const limited = enforceRateLimit(req, { bucket: 'billing:coupon', limit: 15 });
+  if (limited) return limited;
+
   const session = await getServerSession(authOptions);
   const uid = session?.user?.id;
   if (!uid) return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });

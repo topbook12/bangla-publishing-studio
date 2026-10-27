@@ -12,6 +12,7 @@ import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { checkDocQuota, getEffectivePlan } from '@/lib/billing';
 import { docByteLimit, type PlanId } from '@/lib/plans';
+import { enforceRateLimit } from '@/lib/rate-limit';
 
 export const runtime = 'nodejs';
 
@@ -51,6 +52,10 @@ export async function GET() {
  * (অর্থাৎ অন্য ডিভাইস মাঝপথে সেভ করেছে) — ক্লায়েন্ট তখন সিদ্ধান্ত নেয়।
  */
 export async function POST(req: NextRequest) {
+  // সিঙ্ক-ফ্লাড গার্ড — স্বাভাবিক অটোসেভ চক্রের চেয়ে অনেক বড় সীমা
+  const limited = enforceRateLimit(req, { bucket: 'documents:post', limit: 60 });
+  if (limited) return limited;
+
   const session = await getServerSession(authOptions);
   const uid = session?.user?.id;
   if (!uid) return unauthorized();

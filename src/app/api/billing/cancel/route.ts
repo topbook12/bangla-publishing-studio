@@ -3,14 +3,18 @@
  * প্ল্যান periodEnd পর্যন্ত চলবে, তারপর getEffectivePlan স্বয়ংক্রিয়ভাবে free-তে নামাবে।
  */
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/db';
+import { enforceRateLimit } from '@/lib/rate-limit';
 
 export const runtime = 'nodejs';
 
-export async function POST() {
+export async function POST(req: NextRequest) {
+  const limited = enforceRateLimit(req, { bucket: 'billing:cancel', limit: 5 });
+  if (limited) return limited;
+
   const session = await getServerSession(authOptions);
   const uid = session?.user?.id;
   if (!uid) return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });

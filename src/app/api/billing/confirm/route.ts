@@ -13,10 +13,15 @@ import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { periodFromNow, nextInvoiceNumber } from '@/lib/billing';
 import { isPlanId } from '@/lib/plans';
+import { enforceRateLimit } from '@/lib/rate-limit';
 
 export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
+  // confirm-ফালা গার্ড — পেমেন্ট এন্ডপয়েন্ট সবচেয়ে সংবেদনশীল
+  const limited = enforceRateLimit(req, { bucket: 'billing:confirm', limit: 10 });
+  if (limited) return limited;
+
   const session = await getServerSession(authOptions);
   const uid = session?.user?.id;
   if (!uid) return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
