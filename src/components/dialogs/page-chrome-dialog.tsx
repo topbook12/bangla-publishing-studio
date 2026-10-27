@@ -176,7 +176,7 @@ export function PageChromeDialog() {
           </DialogDescription>
         </DialogHeader>
         <PHero
-          tone="purple"
+          tone="sky"
           icon={Frame}
           title={tt('dlg1.chrome.title').split('{n}').join(nf(pageIndex + 1))}
           desc={tt('dlg1.chrome.desc')}

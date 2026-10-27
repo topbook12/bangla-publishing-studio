@@ -48,7 +48,7 @@ function FontFamilySelect() {
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <button type="button" className="ribbon-select w-44" title={tt('home.font')} style={{ fontFamily: current ? fontStackOf(current) : undefined }}>
-          <span className="truncate">{current || tt('home.font')}</span>
+          <span className="min-w-0 flex-1 truncate text-left">{current || tt('home.font')}</span>
           <ChevronDown className="h-3 w-3 shrink-0 opacity-60" aria-hidden="true" />
         </button>
       </DropdownMenuTrigger>

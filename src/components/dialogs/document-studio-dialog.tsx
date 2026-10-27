@@ -67,12 +67,12 @@ const POPULAR_SET = new Set<string>(POPULAR_IDS);
 /** ক্যাটাগরি → lucide আইকন + Aurora হিউ (গ্রিড-টাইল ও চিপ-বিন্দু) */
 const CAT_META: Record<DsCategory, { icon: LucideIcon; tone: PTone; dot: string }> = {
   career:   { icon: FileUser,      tone: 'rose',    dot: 'bg-rose-500' },
-  office:   { icon: Briefcase,     tone: 'violet',  dot: 'bg-violet-500' },
+  office:   { icon: Briefcase,     tone: 'sky',     dot: 'bg-sky-500' },
   finance:  { icon: ReceiptText,   tone: 'emerald', dot: 'bg-emerald-500' },
   legal:    { icon: Scale,         tone: 'slate',   dot: 'bg-slate-500' },
   cert:     { icon: Award,         tone: 'amber',   dot: 'bg-amber-500' },
   edu:      { icon: GraduationCap, tone: 'teal',    dot: 'bg-teal-500' },
-  event:    { icon: PartyPopper,   tone: 'fuchsia', dot: 'bg-fuchsia-500' },
+  event:    { icon: PartyPopper,   tone: 'rose',    dot: 'bg-rose-500' },
   med:      { icon: Stethoscope,   tone: 'cyan',    dot: 'bg-cyan-500' },
   promo:    { icon: Megaphone,     tone: 'orange',  dot: 'bg-orange-500' },
   regional: { icon: Globe,         tone: 'lime',    dot: 'bg-lime-600' },
@@ -266,7 +266,7 @@ export function DocumentStudioDialog() {
         <PPill tone="hot" className="absolute -top-1.5 right-1.5 z-10">{tt('ds.pick.badgePopular')}</PPill>
       ) : null}
       <DesignThumb html={thumbCache.get(t.id) ?? ''} />
-      <span className="text-[12.5px] font-semibold leading-tight">{t.name[lang] || t.name.en}</span>
+      <span className="text-[12.5px] font-semibold leading-snug">{t.name[lang] || t.name.en}</span>
       <span className="line-clamp-2 text-[10.5px] leading-snug text-muted-foreground">{t.desc[lang] || t.desc.en}</span>
       <span className="flex items-center justify-between pt-0.5">
         <StyleDots tpl={t} />
@@ -544,7 +544,7 @@ export function DocumentStudioDialog() {
 
             {/* AI দিয়ে পূরণ */}
             <div className="rounded-lg border border-border bg-muted/30 p-2.5">
-              <PSection tone="fuchsia" icon={Wand2} title={tt('ds.fill.ai.tip')} className="mb-1.5" />
+              <PSection tone="teal" icon={Wand2} title={tt('ds.fill.ai.tip')} className="mb-1.5" />
               <div className="flex flex-col gap-1.5 sm:flex-row">
                 <Input
                   value={aiBrief}

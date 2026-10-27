@@ -70,7 +70,7 @@ export const DOC_BOX_PRESETS: Record<DocBoxVariant, Omit<DocBoxAttrs, 'variant'>
   dashed: { border: '#d97706', fill: 'transparent', bstyle: 'dashed', bwidth: 2 },
   double: { border: '#b91c1c', fill: 'transparent', bstyle: 'double', bwidth: 4 },
   shaded: { border: '#a8a29e', fill: 'rgba(120,113,108,0.10)', bstyle: 'solid', bwidth: 1 },
-  circle: { border: '#c026d3', fill: 'rgba(192,38,211,0.05)', bstyle: 'solid', bwidth: 2 },
+  circle: { border: '#059669', fill: 'rgba(5,150,105,0.06)', bstyle: 'solid', bwidth: 2 },
 };
 
 /** বাংলা লেবেল (ইনসার্ট মেনু ও বক্স-টুলবার) */

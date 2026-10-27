@@ -96,8 +96,8 @@ const GUIDE_ITEMS: Array<{ icon: typeof Check; key: string }> = [
   { icon: Check, key: 'thesis.guide.check' },
 ];
 
-/** গাইড-আইটেমের টাইল-টোন — চক্রাকারে বর্ণাঢ্য (violet→amber→fuchsia→teal→emerald) */
-const GUIDE_TONES: PTone[] = ['violet', 'amber', 'fuchsia', 'teal', 'emerald'];
+/** গাইড-আইটেমের টাইল-টোন — চক্রাকারে বর্ণাঢ্য (emerald→teal→amber→sky→rose) */
+const GUIDE_TONES: PTone[] = ['emerald', 'teal', 'amber', 'sky', 'rose'];
 
 const CITE_STYLES = new Set(Object.keys(CITE_STYLE_NAMES));
 const CITE_TYPES = new Set(Object.keys(CITE_TYPE_NAMES));
@@ -548,7 +548,7 @@ export function ThesisDialog() {
           {([
             { id: 'build' as Tab, icon: GraduationCap, tone: 'emerald' as PTone, label: tt('thesis.tab.build') },
             { id: 'cite' as Tab, icon: BookMarked, tone: 'amber' as PTone, label: tt('thesis.tab.cite') },
-            { id: 'draft' as Tab, icon: PenLine, tone: 'fuchsia' as PTone, label: tt('thesis.tab.draft') },
+            { id: 'draft' as Tab, icon: PenLine, tone: 'sky' as PTone, label: tt('thesis.tab.draft') },
             { id: 'guide' as Tab, icon: ScrollText, tone: 'teal' as PTone, label: tt('thesis.tab.guide') },
           ]).map((t) => (
             <button
@@ -969,7 +969,7 @@ export function ThesisDialog() {
 
             {draftOut ? (
               <div className="grid gap-2">
-                <PSection tone="fuchsia" icon={PenLine} title={tt('thesis.draft.result')} />
+                <PSection tone="sky" icon={PenLine} title={tt('thesis.draft.result')} />
                 <Textarea
                   value={draftOut}
                   onChange={(e) => setDraftOut(e.target.value)}

@@ -684,7 +684,7 @@ export function LayoutTab() {
             <PopoverTrigger asChild>
               <button type="button" className="ribbon-select w-48" title={tt('lay.columns.tip')}>
                 {inColumns ? <Columns3 size={13} /> : <Columns2 size={13} />}{' '}
-                {inColumns ? tFmt('lay.columns.countN', { n: fnum(colCount) }) : tt('lay.columns.label')}
+                <span className="min-w-0 flex-1 truncate text-left">{inColumns ? tFmt('lay.columns.countN', { n: fnum(colCount) }) : tt('lay.columns.label')}</span>
                 <ChevronDown className="h-3 w-3 opacity-60" aria-hidden="true" />
               </button>
             </PopoverTrigger>
@@ -711,7 +711,7 @@ export function LayoutTab() {
                       onClick={() => applyColumns(p.attrs)}
                     >
                       <ColMini n={p.attrs.count} gap={p.attrs.gap} rule={p.attrs.rule} ruleStyle={p.attrs.ruleStyle} spanFirst={p.attrs.firstSpan} bars={2} />
-                      <span className="w-full truncate text-center text-[10px] leading-none">{tt(`lay.columns.preset.${p.id}`)}</span>
+                      <span className="w-full min-w-0 truncate text-center text-[10px] leading-snug">{tt(`lay.columns.preset.${p.id}`)}</span>
                     </button>
                   ))}
                 </div>
@@ -886,7 +886,7 @@ export function LayoutTab() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button type="button" className="ribbon-select w-28" title={tt('lay.wm.preset')}>
-                  <span className="truncate">{wm.text.trim() || tt('lay.wm.presetShort')}</span> <ChevronDown className="h-3 w-3 opacity-60" aria-hidden="true" />
+                  <span className="min-w-0 flex-1 truncate text-left">{wm.text.trim() || tt('lay.wm.presetShort')}</span> <ChevronDown className="h-3 w-3 opacity-60" aria-hidden="true" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-56">
@@ -903,7 +903,7 @@ export function LayoutTab() {
             <Popover>
               <PopoverTrigger asChild>
                 <button type="button" className="ribbon-select w-36" title={tt('lay.wm.customizeTitle')}>
-                  <SlidersHorizontal size={13} /> {tt('lay.wm.customizeBtn')} <ChevronDown className="h-3 w-3 opacity-60" aria-hidden="true" />
+                  <SlidersHorizontal size={13} /> <span className="min-w-0 flex-1 truncate text-left">{tt('lay.wm.customizeBtn')}</span> <ChevronDown className="h-3 w-3 opacity-60" aria-hidden="true" />
                 </button>
               </PopoverTrigger>
               <PopoverContent className="w-72 p-3" align="start">
@@ -918,7 +918,7 @@ export function LayoutTab() {
                 <div className="flex h-14 items-center justify-center overflow-hidden rounded-md border border-border bg-background">
                   <span
                     aria-hidden="true"
-                    className="whitespace-nowrap font-bold"
+                    className="max-w-full overflow-hidden text-ellipsis whitespace-nowrap font-bold"
                     style={{
                       transform: `rotate(${wm.angle}deg)`,
                       color: wm.color,

@@ -428,7 +428,7 @@ export function AiVisionDialog() {
           </DialogDescription>
         </DialogHeader>
         <PHero
-          tone="fuchsia"
+          tone="teal"
           icon={ScanEye}
           title={tt('ai.vision.title')}
           desc={tab === 'clone' ? tt('ai.clone.desc') : tt('ai.vision.desc')}

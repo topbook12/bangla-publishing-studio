@@ -78,25 +78,25 @@ const GENRE_ICONS: Record<BlueprintGenre, LucideIcon> = {
   islamic: Moon,
 };
 
-/** ধাঁচ → Aurora টোন — কার্ড-টাইলের গ্রেডিয়েন্ট (প্রিভিউ-ওভারলে চিপ টেমপ্লেটের নিজস্ব accent ধরে রাখে) */
+/** ধাঁচ → ব্র্যান্ড টোন — কার্ড-টাইলের গ্রেডিয়েন্ট (প্রিভিউ-ওভারলে চিপ টেমপ্লেটের নিজস্ব accent ধরে রাখে) */
 const GENRE_TONES: Record<BlueprintGenre, PTone> = {
-  literature: 'violet', poetry: 'pink', textbook: 'cyan', science: 'teal', children: 'lime',
-  cooking: 'orange', history: 'amber', coaching: 'emerald', journal: 'purple', report: 'slate',
+  literature: 'sky', poetry: 'pink', textbook: 'cyan', science: 'teal', children: 'lime',
+  cooking: 'orange', history: 'amber', coaching: 'emerald', journal: 'amber', report: 'slate',
   magazine: 'rose', islamic: 'emerald',
 };
 
-/** পাতার টেমপ্লেট ক্যাটাগরি → Aurora টোন ও আইকন — কার্ডের রঙিন টাইল */
+/** পাতার টেমপ্লেট ক্যাটাগরি → ব্র্যান্ড টোন ও আইকন — কার্ডের রঙিন টাইল */
 const TPL_CAT_TONES: Record<TemplateCategory, PTone> = {
-  title: 'violet', front: 'cyan', toc: 'teal', author: 'orange', chapter: 'emerald', special: 'fuchsia',
+  title: 'sky', front: 'cyan', toc: 'teal', author: 'orange', chapter: 'emerald', special: 'rose',
 };
 const TPL_CAT_ICONS: Record<TemplateCategory, LucideIcon> = {
   title: FileText, front: BookMarked, toc: List, author: PenLine, chapter: Bookmark, special: Award,
 };
 
-/** ডকুমেন্ট-স্টুডিও ক্যাটাগরি → Aurora টোন ও আইকন */
+/** ডকুমেন্ট-স্টুডিও ক্যাটাগরি → ব্র্যান্ড টোন ও আইকন */
 const DS_CAT_TONES: Record<DsCategory, PTone> = {
   career: 'teal', office: 'slate', finance: 'emerald', legal: 'cyan', cert: 'amber',
-  edu: 'violet', event: 'fuchsia', med: 'rose', promo: 'orange', regional: 'lime',
+  edu: 'sky', event: 'rose', med: 'cyan', promo: 'orange', regional: 'lime',
 };
 const DS_CAT_ICONS: Record<DsCategory, LucideIcon> = {
   career: Briefcase, office: Building2, finance: Receipt, legal: Scale, cert: Award,
@@ -258,7 +258,7 @@ function BlueprintCard({ bp, onStart, onInsert }: {
       <div className="flex items-start gap-2">
         <PTile tone={GENRE_TONES[bp.genre]} icon={GENRE_ICONS[bp.genre]} size="sm" className="mt-0.5" />
         <div className="min-w-0">
-          <p className="text-sm font-semibold leading-tight">{tx3(bp.name, lang)}</p>
+          <p className="text-sm font-semibold leading-snug">{tx3(bp.name, lang)}</p>
           <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{tx3(bp.desc, lang)}</p>
         </div>
       </div>
@@ -323,7 +323,7 @@ function TemplateCard({ tpl, onPick, onReplace, canReplace }: {
       >
         <SheetPreview html={tpl.html} className="h-48" />
         <div>
-          <p className="flex items-center gap-1.5 text-sm font-semibold leading-tight">
+          <p className="flex items-center gap-1.5 text-sm font-semibold leading-snug">
             <PTile tone={TPL_CAT_TONES[tpl.category]} icon={TPL_CAT_ICONS[tpl.category]} size="sm" className="shrink-0" />
             {tx3(tpl.name, lang)}
           </p>
@@ -595,7 +595,7 @@ export function TemplatesDialog() {
           </DialogHeader>
           <div className="px-5 pt-4">
             <PHero
-              tone="fuchsia"
+              tone="teal"
               icon={LayoutTemplate}
               title={tt('store.title')}
               desc={tt('store.desc')}
@@ -740,7 +740,7 @@ export function TemplatesDialog() {
               <div className="flex flex-col gap-3 pb-3">
                 <div className="flex flex-col gap-2 rounded-xl border border-primary/30 bg-primary/5 p-4">
                   <PSection
-                    tone="purple"
+                    tone="emerald"
                     icon={FileText}
                     title={tt('store.doc.title')}
                     count={`(${nf(DS_TEMPLATES.length)})`}
@@ -773,7 +773,7 @@ export function TemplatesDialog() {
                     <div key={t.id} className="flex items-start gap-2 rounded-lg border border-border bg-card p-2.5">
                       <PTile tone={DS_CAT_TONES[t.category]} icon={DS_CAT_ICONS[t.category]} size="sm" className="mt-0.5" />
                       <div className="flex min-w-0 flex-1 flex-col gap-1">
-                        <p className="text-[12.5px] font-semibold leading-tight">{t.name[lang] ?? t.name.bn}</p>
+                        <p className="text-[12.5px] font-semibold leading-snug">{t.name[lang] ?? t.name.bn}</p>
                         <p className="text-[10.5px] leading-snug text-muted-foreground">{t.desc[lang] ?? t.desc.bn}</p>
                         <p className="mt-auto text-[9.5px] uppercase tracking-wide text-muted-foreground/70">
                           {DS_CATEGORY_LABELS[t.category][lang] ?? DS_CATEGORY_LABELS[t.category].bn}

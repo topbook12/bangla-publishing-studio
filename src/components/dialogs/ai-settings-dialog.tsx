@@ -175,7 +175,7 @@ export function AiSettingsDialog() {
           <DialogDescription>{tt('ai.set.desc')}</DialogDescription>
         </DialogHeader>
         <PHero
-          tone="fuchsia"
+          tone="teal"
           icon={Settings2}
           title={tt('ai.set.title')}
           desc={tt('ai.set.desc')}

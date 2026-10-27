@@ -237,7 +237,7 @@ html.dark .app-splash-title {
   font-size: 14.5px;
   font-weight: 700;
   letter-spacing: -0.01em;
-  line-height: 1.25;
+  line-height: 1.4;
   max-width: 34vw;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1805,7 +1805,7 @@ button.status-pill:not(:disabled):hover { color: var(--foreground); }
 .docbox-preview[data-variant="dashed"] { border: 2px dashed #d97706; border-radius: 5px; }
 .docbox-preview[data-variant="double"] { border: 4px double #b91c1c; border-radius: 3px; }
 .docbox-preview[data-variant="shaded"] { border: 1px solid #64748b; border-radius: 5px; background: rgba(100, 116, 139, 0.18); }
-.docbox-preview[data-variant="circle"] { border: 2px solid #c026d3; border-radius: 50%; width: 16px; height: 16px; }
+.docbox-preview[data-variant="circle"] { border: 2px solid #059669; border-radius: 50%; width: 16px; height: 16px; }
 
 /* ─── ডিভাইডার ─── */
 
@@ -4839,7 +4839,7 @@ html.dark .thesis-chip-on { border-color: var(--primary); background: color-mix(
 .thesis-out-sm { min-width: 128px; }
 .thesis-out-sm .thesis-out-body { font-size: 12.5px; }
 html.dark .thesis-out { border-color: oklch(0.36 0.015 300); background: color-mix(in oklab, oklch(0.27 0.014 300) 55%, transparent); }
-html.dark .thesis-out-label { color: oklch(0.78 0.09 295); border-color: oklch(0.34 0.015 300); }
+html.dark .thesis-out-label { color: oklch(0.78 0.015 300); border-color: oklch(0.34 0.015 300); }
 
 .thesis-guide-item {
   display: flex; gap: 8px; align-items: flex-start;

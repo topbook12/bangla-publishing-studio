@@ -281,7 +281,7 @@ export function ExportTab() {
               <FileDown size={16} /> {tt('exp.pdf.btn')}
             </Button>
           </div>
-          <p className="max-w-72 text-center text-[10px] leading-tight text-muted-foreground">
+          <p className="max-w-72 text-center text-[10px] leading-snug text-muted-foreground">
             {tt('exp.print.hint')}
           </p>
         </div>
@@ -402,7 +402,7 @@ export function ExportTab() {
             >
               <RadioGroupItem value="normal" id="mode-normal" className="mt-0.5" />
               <div className="space-y-0.5">
-                <p className="text-sm font-semibold leading-none">{tt('exp.mode.normal')}</p>
+                <p className="text-sm font-semibold leading-snug">{tt('exp.mode.normal')}</p>
                 <p className="text-xs text-muted-foreground">
                   {tt('exp.mode.normal.desc')}
                 </p>
@@ -418,7 +418,7 @@ export function ExportTab() {
             >
               <RadioGroupItem value="forma" id="mode-forma" className="mt-0.5" />
               <div className="space-y-0.5">
-                <p className="text-sm font-semibold leading-none">{tt('exp.mode.forma')}</p>
+                <p className="text-sm font-semibold leading-snug">{tt('exp.mode.forma')}</p>
                 <p className="text-xs text-muted-foreground">
                   {tt('exp.mode.forma.desc')}
                 </p>
@@ -509,7 +509,7 @@ export function ExportTab() {
                 </span>
               </Label>
             </RadioGroup>
-            <p className="text-[10px] leading-tight text-muted-foreground">
+            <p className="text-[10px] leading-snug text-muted-foreground">
               {tt('exp.range.note')}
             </p>
           </div>
@@ -556,7 +556,7 @@ export function ExportTab() {
                   </Label>
                   <Switch id="include-cover" checked={includeCover} onCheckedChange={setIncludeCover} />
                 </div>
-                <p className="text-[10px] leading-tight text-muted-foreground">
+                <p className="text-[10px] leading-snug text-muted-foreground">
                   {tt('exp.forma.includecover.note')}
                 </p>
                 <div className="flex items-center justify-between">
@@ -577,7 +577,7 @@ export function ExportTab() {
                   </Label>
                   <Switch id="grid-swap" checked={swapGrid} onCheckedChange={setSwapGrid} />
                 </div>
-                <p className="text-[10px] leading-tight text-muted-foreground">
+                <p className="text-[10px] leading-snug text-muted-foreground">
                   {tt('exp.forma.gridswap.note')}
                 </p>
                 {binding.tight && (
@@ -654,7 +654,7 @@ export function ExportTab() {
                   className="forma-preview-host flex justify-center overflow-hidden rounded border bg-white p-1"
                   aria-label={tt('exp.preview.aria')}
                 />
-                <p className="text-[10px] leading-tight text-muted-foreground">
+                <p className="text-[10px] leading-snug text-muted-foreground">
                   {tt('exp.preview.note')}
                 </p>
               </div>
@@ -711,7 +711,7 @@ export function ExportTab() {
                     </div>
                   )}
                 </div>
-                <p className="text-[10px] leading-tight text-muted-foreground">
+                <p className="text-[10px] leading-snug text-muted-foreground">
                   {tt('exp.schem.foldnote')}
                 </p>
               </div>

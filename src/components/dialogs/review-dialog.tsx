@@ -127,9 +127,9 @@ export function ReviewDialog() {
 
         <Tabs defaultValue="spell">
           <TabsList className="w-full">
-            <TabsTrigger value="spell" className="flex-1 gap-1"><Search size={13} /> {tt('dlg2.review.tab.spell')}</TabsTrigger>
-            <TabsTrigger value="dict" className="flex-1 gap-1"><BookPlus size={13} /> {tt('dlg2.review.tab.dict')}</TabsTrigger>
-            <TabsTrigger value="conjunct" className="flex-1 gap-1">{tt('dlg2.review.tab.conjunct')}</TabsTrigger>
+            <TabsTrigger value="spell" className="min-w-0 flex-1 gap-1 whitespace-normal leading-snug"><Search size={13} /> {tt('dlg2.review.tab.spell')}</TabsTrigger>
+            <TabsTrigger value="dict" className="min-w-0 flex-1 gap-1 whitespace-normal leading-snug"><BookPlus size={13} /> {tt('dlg2.review.tab.dict')}</TabsTrigger>
+            <TabsTrigger value="conjunct" className="min-w-0 flex-1 gap-1 whitespace-normal leading-snug">{tt('dlg2.review.tab.conjunct')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="spell" className="space-y-3 pt-2">

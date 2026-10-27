@@ -1008,7 +1008,7 @@ export function QuestionPaperDialog() {
             >
               <span className="qp-doctype-vis" aria-hidden="true"><DocTypeVis id={dt.id} /></span>
               <span className="flex items-center gap-2">
-                <PTile size="sm" tone={dt.id === 'question' ? 'emerald' : 'fuchsia'} icon={dt.id === 'question' ? FileQuestion : Star} />
+                <PTile size="sm" tone={dt.id === 'question' ? 'emerald' : 'rose'} icon={dt.id === 'question' ? FileQuestion : Star} />
                 <strong>{tt(dt.label)}</strong>
               </span>
               <span className="qp-doctype-desc">{tt(dt.desc)}</span>
@@ -1028,7 +1028,7 @@ export function QuestionPaperDialog() {
               disabled={busy}
             >
               <span className="flex items-center gap-2">
-                <PTile size="sm" tone={lv.id === 'school' ? 'amber' : 'purple'} icon={lv.id === 'school' ? GraduationCap : Landmark} />
+                <PTile size="sm" tone={lv.id === 'school' ? 'amber' : 'sky'} icon={lv.id === 'school' ? GraduationCap : Landmark} />
                 <strong>{tt(lv.label)}</strong>
               </span>
               <span className="qp-doctype-desc">{tt(lv.desc)}</span>
@@ -1348,7 +1348,7 @@ export function QuestionPaperDialog() {
   // ── ধাপ ৩: নকশা ──
   const stepFormat = (
     <section aria-label={tt('qp.step.format')} className="flex flex-col gap-3">
-      <PSection tone="purple" icon={LayoutTemplate} title={tt('qp.format.title')} />
+      <PSection tone="teal" icon={LayoutTemplate} title={tt('qp.format.title')} />
       <div className="qp-formats" role="radiogroup" aria-label={tt('qp.format.title')}>
         {formatsForDocType(docType).map((f) => (
           <button
