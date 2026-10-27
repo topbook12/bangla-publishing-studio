@@ -7,7 +7,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import {
-  Cloud, CloudUpload, Download, Globe, Link2, Loader2, RefreshCw, Trash2, Unlink,
+  Cloud, CloudUpload, Crown, Download, Globe, Link2, Loader2, RefreshCw, Trash2, Unlink,
 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
@@ -17,7 +17,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
-import { useT, useFmtDate } from '@/lib/i18n';
+import { useT, useFmtDate, tFmt, fmtNum } from '@/lib/i18n';
 import { useUiStore } from '@/lib/ui-store';
 import { useEditorStore } from '@/lib/store';
 import {
@@ -72,6 +72,11 @@ export function CloudDialog() {
         await refresh();
       } else if (res.status === 'offline') {
         toast.info(tt('cloud.offline'));
+      } else if (res.status === 'quota') {
+        // ফেজ-৪ — প্ল্যান-কোটা শেষ → আপগ্রেড প্রম্পট
+        toast.warning(tFmt('bill.quota.docs', { n: fmtNum(res.limit) }), { duration: 10000 });
+      } else if (res.status === 'toolarge') {
+        toast.error(tFmt('bill.quota.size', { n: fmtNum(Math.round(res.limitBytes / 1048576)) }), { duration: 10000 });
       } else {
         toast.error(tt('auth.error'));
       }
@@ -119,6 +124,9 @@ export function CloudDialog() {
         await refresh();
       } else if (res.status === 'signin') {
         toast.warning(tt('cloud.needsignin'));
+      } else if (res.status === 'quota') {
+        // ফেজ-৪ — শেয়ার-লিংক কোটা শেষ → আপগ্রেড প্রম্পট
+        toast.warning(tFmt('bill.quota.shares', { n: fmtNum(res.limit) }), { duration: 10000 });
       }
     } finally {
       setBusy(false);
@@ -158,6 +166,14 @@ export function CloudDialog() {
               <Button onClick={() => void doPush()} disabled={busy} className="gap-2 bg-emerald-700 hover:bg-emerald-800">
                 {busy ? <Loader2 size={14} className="animate-spin" /> : <CloudUpload size={14} />}
                 {tt('cloud.push')}
+              </Button>
+              {/* ফেজ-৪ — প্ল্যান/আপগ্রেড শর্টকাট */}
+              <Button
+                variant="outline"
+                onClick={() => { close(); useUiStore.getState().open('billing'); }}
+                className="gap-1.5 text-emerald-800 dark:text-emerald-300"
+              >
+                <Crown size={14} /> {tt('bill.upgrade')}
               </Button>
               <label className="ml-auto flex cursor-pointer items-center gap-2 text-xs font-medium text-muted-foreground">
                 <Switch

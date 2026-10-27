@@ -7,7 +7,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Cloud, LogIn, LogOut } from 'lucide-react';
+import { Cloud, Crown, LogIn, LogOut } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import {
@@ -31,6 +31,13 @@ export function AccountButton() {
     window.addEventListener('bwp-session-updated', handler);
     return () => window.removeEventListener('bwp-session-updated', handler);
   }, [update]);
+
+  // ফেজ-৪ — অন্য কোথাও (বিলিং ডায়ালগ ইত্যাদি) থেকে 'সাইন ইন' খোলার ইভেন্ট
+  useEffect(() => {
+    const openAuth = () => setAuthOpen(true);
+    window.addEventListener('bwp-open-auth', openAuth);
+    return () => window.removeEventListener('bwp-open-auth', openAuth);
+  }, []);
 
   const user = session?.user;
 
@@ -64,6 +71,10 @@ export function AccountButton() {
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => openDialog('cloud')}>
               <Cloud size={14} /> {tt('auth.cloud.docs')}
+            </DropdownMenuItem>
+            {/* ফেজ-৪ — প্ল্যান ও বিলিং কেন্দ্র */}
+            <DropdownMenuItem onClick={() => openDialog('billing')} data-tour="billing">
+              <Crown size={14} /> {tt('bill.menu')}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem

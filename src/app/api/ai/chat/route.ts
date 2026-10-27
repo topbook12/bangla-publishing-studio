@@ -33,6 +33,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
+import { consumeAiCredit } from '@/lib/billing';
 import {
   allowRate, assertSafeBase, backoffDelayMs, bestModelMatch, clientIp,
   extractModelIds, extractSuggestedModel, isGeminiHost, isInvalidKeyMessage,
@@ -700,6 +703,24 @@ export async function POST(req: NextRequest) {
   const ip = clientIp(req);
   if (!allowRate(`${ip}:${hasKey ? 'byok' : 'demo'}`, hasKey ? RATE_BYOK : RATE_DEMO)) {
     return jsonError('Rate limit reached', hasKey ? 'ai.err.rateLimit' : 'ai.err.demoRate');
+  }
+
+  // ফেজ-৪ — প্ল্যাটফর্ম-ডেমো AI ক্রেডিট (BYOK-বিহীন কলে)। সাইন-ইন না থাকলে
+  // মিটার হয় না (IP-রেট-লিমিটই তখন রক্ষা); বিলিং ব্যর্থ হলে fail-open।
+  if (!hasKey) {
+    try {
+      const sess = await getServerSession(authOptions);
+      const uid = sess?.user?.id;
+      if (uid) {
+        const credit = await consumeAiCredit(uid);
+        if (!credit.allowed) {
+          return NextResponse.json(
+            { ok: false, error: 'QUOTA_AI', limit: credit.limit, used: credit.used, hintKey: 'ai.err.quota' },
+            { status: 402 },
+          );
+        }
+      }
+    } catch { /* fail-open */ }
   }
 
   // ─── স্ট্রিম পথ — SSE: প্রথম টোকেনেই স্ক্রিনে লেখা (প্রিমিয়াম গতি) ───

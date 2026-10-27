@@ -10,11 +10,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/db';
+import { checkDocQuota, getEffectivePlan } from '@/lib/billing';
+import { docByteLimit, type PlanId } from '@/lib/plans';
 
 export const runtime = 'nodejs';
 
-/** একটি ডকুমেন্টের JSON-ডেটা সর্বোচ্চ সাইজ (4MB) */
-const MAX_DATA_BYTES = 4 * 1024 * 1024;
+/** ফলব্যাক সাইজ-ক্যাপ — প্ল্যান-সীমা সাইন-আউট/বিলিং-ডাউন অবস্থায়ও রক্ষা করে */
+const MAX_DATA_BYTES_FALLBACK = 8 * 1024 * 1024;
 
 function unauthorized() {
   return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
@@ -65,8 +67,29 @@ export async function POST(req: NextRequest) {
   if (typeof data !== 'string' || data.length === 0) {
     return NextResponse.json({ error: 'EMPTY_DATA' }, { status: 400 });
   }
-  if (data.length > MAX_DATA_BYTES) {
-    return NextResponse.json({ error: 'DATA_TOO_LARGE' }, { status: 413 });
+
+  // ফেজ-৪ — সাইজ-ক্যাপ প্ল্যান অনুযায়ী (বিলিং ব্যর্থ হলে ফলব্যাক ক্যাপ — fail-open)
+  let plan: PlanId = 'free';
+  try {
+    plan = (await getEffectivePlan(uid)).plan;
+  } catch { /* fallback plan = free */ }
+  const cap = docByteLimit(plan) || MAX_DATA_BYTES_FALLBACK;
+  if (data.length > cap) {
+    return NextResponse.json({ error: 'DATA_TOO_LARGE', plan, limitBytes: cap }, { status: 413 });
+  }
+
+  // ফেজ-৪ — ক্লাউড-ডক কোটা: শুধু নতুন ডকুমেন্টে প্রযোজ্য; আপডেট সবসময় খোলা
+  // (লোকাল-ফার্স্ট অক্ষুণ্ণ — ব্যর্থতায় fail-open, কখনো সেভ আটকাবে না)
+  if (!body.id) {
+    try {
+      const q = await checkDocQuota(uid, plan);
+      if (!q.allowed) {
+        return NextResponse.json(
+          { error: 'QUOTA_DOCS', plan, limit: q.limit, used: q.used },
+          { status: 402 },
+        );
+      }
+    } catch { /* fail-open */ }
   }
 
   if (body.id) {

@@ -13,6 +13,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
+import { consumeAiCredit } from '@/lib/billing';
 
 export const runtime = 'nodejs';
 export const maxDuration = 120;
@@ -79,6 +82,22 @@ export async function POST(req: NextRequest) {
   if (!allowRate(clientIp(req), RATE_PER_MIN)) {
     return NextResponse.json({ ok: false, error: 'Rate limit reached', hintKey: 'sketch.err.rate' }, { status: 429 });
   }
+
+  // ফেজ-৪ — চিত্র-জেনেরেশনও প্ল্যাটফর্ম-ক্রেডিটে চলে — সাইন-ইন ইউজারের মিটার
+  // (সাইন-আউটে IP-রেট-লিমিটই রক্ষা; বিলিং ব্যর্থ হলে fail-open)
+  try {
+    const sess = await getServerSession(authOptions);
+    const uid = sess?.user?.id;
+    if (uid) {
+      const credit = await consumeAiCredit(uid);
+      if (!credit.allowed) {
+        return NextResponse.json(
+          { ok: false, error: 'QUOTA_AI', limit: credit.limit, used: credit.used, hintKey: 'ai.err.quota' },
+          { status: 402 },
+        );
+      }
+    }
+  } catch { /* fail-open */ }
 
   try {
     const { default: ZAI } = await import('z-ai-web-dev-sdk');

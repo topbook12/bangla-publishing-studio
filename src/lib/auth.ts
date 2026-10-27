@@ -11,7 +11,6 @@
  */
 
 import type { NextAuthOptions } from 'next-auth';
-import type { Provider } from 'next-auth/providers';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
 import { db } from './db';
@@ -23,7 +22,7 @@ export const googleEnabled = Boolean(
   process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET,
 );
 
-const providers: Provider[] = [];
+const providers: NonNullable<NextAuthOptions['providers']> = [];
 
 if (googleEnabled) {
   providers.push(
@@ -58,7 +57,10 @@ providers.push(
 );
 
 export const authOptions: NextAuthOptions = {
-  secret: process.env.NEXTAUTH_SECRET,
+  // স্পষ্ট সিক্রেট বাধ্যতামূলক — নইলে NextAuth v4 route-handler ও getServerSession
+  // দুই জায়গায় ভিন্ন ডিফল্ট সিক্রেট বানায় → JWEDecryptionFailed (401)।
+  // প্রোডাকশনে (Vercel) NEXTAUTH_SECRET এনভারনমেন্ট ভ্যারিয়েবল সেট করতে হবে।
+  secret: process.env.NEXTAUTH_SECRET ?? 'bwp-dev-only-secret-change-on-vercel',
   session: { strategy: 'jwt' },
   providers,
   pages: { signIn: '/' }, // নিজস্ব সাইন-ইন ডায়ালগ ব্যবহার করি — NextAuth ডিফল্ট পেজ নয়

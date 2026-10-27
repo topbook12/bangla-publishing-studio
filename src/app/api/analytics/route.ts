@@ -63,7 +63,7 @@ export async function GET() {
   ]);
 
   // শেষ ১৪ দিনের দৈনিক সিরিজ — র-এ সাধারণ কুয়েরি দিয়ে
-  const raw = await db.$queryRawUnsafe<{ day: string; event: string; n: number }>(
+  const raw = await db.$queryRawUnsafe<Array<{ day: string; event: string; n: number }>>(
     `SELECT substr(createdAt, 1, 10) AS day, event, COUNT(*) AS n
      FROM AnalyticsEvent
      WHERE createdAt >= ? AND event IN ('landing_view','studio_open','cloud_doc_save','share_viewed')

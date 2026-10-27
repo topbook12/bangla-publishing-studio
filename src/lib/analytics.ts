@@ -13,15 +13,21 @@ export type AnalyticsEventName =
   | 'cloud_doc_save'
   | 'share_created'
   | 'share_viewed'
-  | 'tour_completed';
+  | 'tour_completed'
+  | 'pricing_view'
+  | 'checkout_started'
+  | 'payment_success'
+  | 'plan_upgraded'
+  | 'paywall_hit';
 
 /** এক সেশনে একই ইভেন্ট একবারই — স্প্যাম এড়াতে */
 const sent = new Set<string>();
 
-export function track(event: AnalyticsEventName): void {
+/** dedup:false — প্রতিবারই পাঠাও (paywall hit ইত্যাদি ঘনঘন ঘটনার জন্য) */
+export function track(event: AnalyticsEventName, opts?: { dedup?: boolean }): void {
   try {
     const key = `${event}:${window.location.pathname}`;
-    if (sent.has(key)) return;
+    if ((opts?.dedup ?? true) && sent.has(key)) return;
     sent.add(key);
     void fetch('/api/analytics', {
       method: 'POST',

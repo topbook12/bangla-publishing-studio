@@ -50,6 +50,8 @@ function setCloudIdFor(localProjectId: string, cloudId: string): void {
 export type PushResult =
   | { status: 'saved'; meta: CloudDocMeta }
   | { status: 'conflict'; current: CloudDocMeta & { version: number } }
+  | { status: 'quota'; limit: number; used: number }
+  | { status: 'toolarge'; limitBytes: number }
   | { status: 'signin' | 'offline' | 'error' };
 
 /** বর্তমান ডকুমেন্ট ক্লাউডে সেভ (আপসার্ট) */
@@ -70,6 +72,16 @@ export async function pushCurrentDoc(): Promise<PushResult> {
       body: JSON.stringify({ id: cloudId ?? undefined, title, data: payloadData, baseVersion }),
     });
     if (res.status === 401) return { status: 'signin' };
+    if (res.status === 402) {
+      // ফেজ-৪ — প্ল্যান-কোটা শেষ (শুধু নতুন ডক; আপডেট সবসময় খোলা)
+      const q = (await res.json().catch(() => ({}))) as { limit?: number; used?: number };
+      track('paywall_hit', { dedup: false });
+      return { status: 'quota', limit: q.limit ?? 0, used: q.used ?? 0 };
+    }
+    if (res.status === 413) {
+      const q = (await res.json().catch(() => ({}))) as { limitBytes?: number };
+      return { status: 'toolarge', limitBytes: q.limitBytes ?? 0 };
+    }
     if (res.status === 409) {
       const body = (await res.json()) as { current?: CloudDocMeta };
       return { status: 'conflict', current: body.current as CloudDocMeta & { version: number } };
@@ -164,6 +176,7 @@ export async function deleteCloudDoc(cloudId: string): Promise<boolean> {
 
 export type ShareResult =
   | { status: 'ok'; isPublic: boolean; shareToken: string | null }
+  | { status: 'quota'; limit: number; used: number }
   | { status: 'signin' | 'error' };
 
 /** শেয়ার টগল/রোটেট */
@@ -175,6 +188,12 @@ export async function setShare(cloudId: string, enabled: boolean, rotate = false
       body: JSON.stringify({ documentId: cloudId, enabled, rotate }),
     });
     if (res.status === 401) return { status: 'signin' };
+    if (res.status === 402) {
+      // ফেজ-৪ — শেয়ার-লিংক কোটা শেষ
+      const q = (await res.json().catch(() => ({}))) as { limit?: number; used?: number };
+      track('paywall_hit', { dedup: false });
+      return { status: 'quota', limit: q.limit ?? 0, used: q.used ?? 0 };
+    }
     if (!res.ok) return { status: 'error' };
     const body = (await res.json()) as { document: { isPublic: boolean; shareToken: string | null } };
     if (body.document.isPublic) track('share_created');

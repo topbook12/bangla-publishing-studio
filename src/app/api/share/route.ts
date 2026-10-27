@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/db';
+import { checkShareQuota, getEffectivePlan } from '@/lib/billing';
 
 export const runtime = 'nodejs';
 
@@ -43,6 +44,21 @@ export async function POST(req: NextRequest) {
   if (!doc) return NextResponse.json({ error: 'NOT_FOUND' }, { status: 404 });
 
   const enabled = body.enabled !== false;
+
+  // ফেজ-৪ — শেয়ার-লিংক কোটা: নতুন শেয়ার চালু করলেই গোনা হয়; বন্ধ/রোটেট সবসময় খোলা
+  if (enabled && !doc.isPublic) {
+    try {
+      const eff = await getEffectivePlan(uid);
+      const q = await checkShareQuota(uid, eff.plan, doc.isPublic);
+      if (!q.allowed) {
+        return NextResponse.json(
+          { error: 'QUOTA_SHARES', plan: eff.plan, limit: q.limit, used: q.used },
+          { status: 402 },
+        );
+      }
+    } catch { /* fail-open — বিলিং ডাউন থাকলেও শেয়ার আটকাবে না */ }
+  }
+
   const shareToken = enabled ? (body.rotate || !doc.shareToken ? makeToken() : doc.shareToken) : null;
 
   const updated = await db.document.update({

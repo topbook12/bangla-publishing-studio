@@ -21,11 +21,18 @@ model User {
   email         String?   @unique
   emailVerified DateTime?
   image         String?
+  /// ফেজ-৪ — কার্যকর প্ল্যান ('free' | 'pro' | 'publisher'); সাবস্ক্রিপশন শেষে
+  /// lazy downgrade-এ আবার 'free' হয়। সত্য-উৎস: Subscription টেবিল।
+  plan          String    @default("free")
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   accounts      Account[]
   sessions      Session[]
   documents     Document[]
+  subscription  Subscription?
+  orders        Order[]
+  invoices      Invoice[]
+  usageCounters UsageCounter[]
 }
 
 model Account {
@@ -93,4 +100,94 @@ model AnalyticsEvent {
   createdAt DateTime @default(now())
 
   @@index([event, createdAt])
+}
+
+// ─── ফেজ-৪ (দিন ৩১–৪০) — মনিটাইজেশন: সাবস্ক্রিপশন, অর্ডার, ইনভয়েস, কুপন, ব্যবহার ───
+
+model Subscription {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// 'free' | 'pro' | 'publisher'
+  plan        String
+  /// 'active' | 'canceled_at_period_end'
+  status      String   @default("active")
+  /// 'monthly' | 'yearly'
+  cycle       String   @default("monthly")
+  /// 'demo' | 'bkash' | 'nagad' | 'sslcommerz' | …
+  provider    String   @default("demo")
+  periodStart DateTime @default(now())
+  periodEnd   DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Order {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// ORD-YYYYMMDD-XXXX
+  number     String    @unique
+  plan       String
+  cycle      String
+  provider   String
+  /// 'live' | 'sandbox' | 'demo'
+  mode       String
+  /// পুরো টাকা (কোনো পয়সা নয়) — কুপন ছাড় বাদেই চূড়ান্ত
+  amount     Int
+  currency   String    @default("BDT")
+  discount   Int       @default(0)
+  couponCode String?
+  /// 'pending' | 'paid' | 'failed'
+  status     String    @default("pending")
+  /// স্যান্ডবক্স মোডে প্রদর্শিত নমুনা ট্রানজেকশন-আইডি (live-এ null)
+  sandboxRef String?
+  paidAt     DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  invoice Invoice?
+
+  @@index([userId, createdAt])
+}
+
+model Invoice {
+  id       String   @id @default(cuid())
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderId  String   @unique
+  order    Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  /// INV-YYYYMM-NNN
+  number   String   @unique
+  amount   Int
+  currency String   @default("BDT")
+  plan     String
+  cycle    String
+  provider String
+  issuedAt DateTime @default(now())
+
+  @@index([userId, issuedAt])
+}
+
+model Coupon {
+  id         String    @id @default(cuid())
+  code       String    @unique
+  percentOff Int
+  /// 0 = সীমাহীন
+  maxUses    Int       @default(0)
+  uses       Int       @default(0)
+  expiresAt  DateTime?
+  active     Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+}
+
+model UsageCounter {
+  id        String @id @default(cuid())
+  userId    String
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// 'YYYY-MM' (UTC)
+  month     String
+  aiCredits Int    @default(0)
+
+  @@unique([userId, month])
 }

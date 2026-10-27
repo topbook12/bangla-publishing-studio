@@ -7,7 +7,7 @@
 
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
   BookOpen, Braces, Check, Cloud, FileText, GraduationCap,
   Languages, Printer, Sparkles, WifiOff,
@@ -17,9 +17,10 @@ import {
 } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { BrandMark } from '@/components/brand-mark';
-import { useT, useLangStore } from '@/lib/i18n';
+import { useT, useFmtNum, useLangStore } from '@/lib/i18n';
 import { useViewStore } from '@/lib/view-store';
 import { track } from '@/lib/analytics';
+import { fetchPlans, type PlanPublic } from '@/lib/billing-client';
 
 const LANGS: Array<{ id: 'bn' | 'hi' | 'en'; label: string }> = [
   { id: 'bn', label: 'বাং' },
@@ -76,6 +77,12 @@ export function LandingPage() {
   const lang = useLangStore((s) => s.lang);
   const setLang = useLangStore((s) => s.setLang);
   const goStudio = useViewStore((s) => s.goStudio);
+
+  // ফেজ-৪ — প্রাইসিং CTA: স্টুডিওতে ঢুকেই বিলিং কেন্দ্র খুলবে (bwp-open-billing ফ্ল্যাগ)
+  const startUpgrade = () => {
+    try { sessionStorage.setItem('bwp-open-billing', '1'); } catch { /* ignore */ }
+    goStudio();
+  };
 
   useEffect(() => {
     track('landing_view');
@@ -241,6 +248,9 @@ export function LandingPage() {
           </div>
         </section>
 
+        {/* ─── প্রাইসিং (ফেজ-৪) ─── */}
+        <PricingSection onUpgrade={startUpgrade} />
+
         {/* ─── FAQ ─── */}
         <section className="py-14" aria-labelledby="faq-h">
           <div className="mx-auto w-full max-w-3xl px-4">
@@ -298,5 +308,151 @@ export function LandingPage() {
         </div>
       </footer>
     </div>
+  );
+}
+
+/**
+ * প্রাইসিং সেকশন (ফেজ-৪) — /api/billing/plans থেকে প্ল্যান এনে তিন কার্ড।
+ * লোড হওয়া পর্যন্ত স্কেলেটন; নেটওয়ার্ক ব্যর্থ হলে পুরো সেকশনই গায়েব —
+ * ল্যান্ডিং কখনো ভাঙবে না (অফলাইনেও নিরাপদ)।
+ */
+function PricingSection({ onUpgrade }: { onUpgrade: () => void }) {
+  const tt = useT();
+  const fn = useFmtNum();
+  const goStudio = useViewStore((s) => s.goStudio);
+  const [plans, setPlans] = useState<PlanPublic[] | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [cycle, setCycle] = useState<'monthly' | 'yearly'>('monthly');
+
+  useEffect(() => {
+    track('pricing_view');
+  }, []);
+
+  useEffect(() => {
+    let alive = true;
+    void (async () => {
+      const res = await fetchPlans();
+      if (!alive) return;
+      if (res) setPlans(res.plans);
+      else setFailed(true);
+    })();
+    return () => { alive = false; };
+  }, []);
+
+  // নেটওয়ার্ক ব্যর্থ — সেকশন রেন্ডারই হবে না
+  if (failed) return null;
+
+  /** {n} → সংখ্যা/আনলিমিটেড */
+  const limitText = (tpl: string, lim: number): string =>
+    tpl.split('{n}').join(lim === -1 ? tt('bill.feat.unlimited') : fn(lim));
+  const sizeText = (bytes: number): string =>
+    bytes === -1 ? '∞' : tt('bill.feat.size').split('{n}').join(fn(Math.round(bytes / 1048576)));
+
+  return (
+    <section id="pricing" className="py-14" aria-labelledby="pricing-h">
+      <div className="mx-auto w-full max-w-6xl px-4">
+        <h2 id="pricing-h" className="mb-2 text-center text-2xl font-extrabold sm:text-3xl">{tt('land.pricing.title')}</h2>
+        <p className="mx-auto mb-7 max-w-xl text-center text-sm leading-relaxed text-stone-600 dark:text-stone-300">{tt('land.pricing.sub')}</p>
+
+        {/* মাসিক/বার্ষিক পিল — হেডারের ভাষা-পিলের ধাঁচেই */}
+        <div className="mb-8 flex justify-center">
+          <div
+            className="flex items-center rounded-full border border-stone-300 p-0.5 dark:border-stone-700"
+            role="group"
+            aria-label={`${tt('bill.cycle.monthly')} / ${tt('bill.cycle.yearly')}`}
+          >
+            {(['monthly', 'yearly'] as const).map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setCycle(c)}
+                aria-pressed={cycle === c}
+                className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+                  cycle === c
+                    ? 'bg-emerald-700 text-white'
+                    : 'text-stone-600 hover:bg-stone-200 dark:text-stone-300 dark:hover:bg-stone-800'
+                }`}
+              >
+                {tt(c === 'monthly' ? 'bill.cycle.monthly' : 'bill.cycle.yearly')}
+                {c === 'yearly' ? (
+                  <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${cycle === 'yearly' ? 'bg-white/20 text-white' : 'bg-amber-500/15 text-amber-700'}`}>
+                    {tt('bill.yearly.save')}
+                  </span>
+                ) : null}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid gap-5 sm:grid-cols-3">
+          {!plans
+            ? [0, 1, 2].map((i) => (
+                <div
+                  key={i}
+                  aria-hidden="true"
+                  className="h-80 animate-pulse rounded-2xl border border-stone-200 bg-stone-100 dark:border-stone-800 dark:bg-stone-900"
+                />
+              ))
+            : plans.map((p) => {
+                const pro = p.highlight;
+                const price = cycle === 'monthly' ? p.monthlyPrice : p.yearlyPrice;
+                const feats = [
+                  limitText(tt('bill.feat.docs'), p.limits.cloudDocs),
+                  limitText(tt('bill.feat.shares'), p.limits.shareLinks),
+                  limitText(tt('bill.feat.ai'), p.limits.aiCredits),
+                  sizeText(p.limits.docBytes),
+                ];
+                return (
+                  <article
+                    key={p.id}
+                    className={`relative flex flex-col rounded-2xl border bg-white p-6 dark:bg-stone-900/60 ${
+                      pro ? 'border-emerald-700 shadow-lg' : 'border-stone-200 dark:border-stone-800'
+                    }`}
+                  >
+                    {pro ? (
+                      <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-emerald-700 px-3 py-1 text-[11px] font-bold text-white shadow-md">
+                        {tt('bill.popular')}
+                      </span>
+                    ) : null}
+                    <h3 className="text-base font-bold">{tt(`bill.plan.${p.id}`)}</h3>
+                    <p className="mt-0.5 text-xs text-stone-500 dark:text-stone-400">{tt(`bill.plan.${p.id}.tag`)}</p>
+                    <p className="mt-4 text-2xl font-extrabold tracking-tight">
+                      ৳{fn(price)}
+                      <span className="text-xs font-medium text-stone-500 dark:text-stone-400">
+                        {tt(cycle === 'monthly' ? 'bill.permonth' : 'bill.peryear')}
+                      </span>
+                    </p>
+                    {cycle === 'yearly' ? (
+                      <p className="text-xs text-stone-500 dark:text-stone-400">
+                        ≈ ৳{fn(Math.round(p.yearlyPrice / 12))}{tt('bill.permonth')}
+                      </p>
+                    ) : null}
+                    <ul className="mt-4 flex-1 space-y-2">
+                      {feats.map((f, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-stone-600 dark:text-stone-300">
+                          <Check size={15} className="mt-0.5 shrink-0 text-emerald-700" aria-hidden="true" /> {f}
+                        </li>
+                      ))}
+                    </ul>
+                    {p.id === 'free' ? (
+                      <Button variant="outline" onClick={goStudio} className="mt-5 w-full rounded-full font-semibold max-sm:h-11">
+                        {tt('land.pricing.free.cta')}
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={onUpgrade}
+                        className={`mt-5 w-full rounded-full font-semibold max-sm:h-11 ${
+                          pro ? 'bg-emerald-700 text-white shadow-md shadow-emerald-700/20 hover:bg-emerald-800' : ''
+                        }`}
+                      >
+                        {tt('land.pricing.upgrade')}
+                      </Button>
+                    )}
+                  </article>
+                );
+              })}
+        </div>
+      </div>
+    </section>
   );
 }
