@@ -31,6 +31,7 @@ import { dictAccuracy } from './dict-accuracy';
 import { dictDocumentStudio } from './dict-document-studio';
 import { dictCloud } from './dict-cloud';
 import { dictBilling } from './dict-billing';
+import { dictFeedback } from './dict-feedback';
 
 export const ALL_DICTS: Dict = Object.assign(
   {},
@@ -51,6 +52,7 @@ export const ALL_DICTS: Dict = Object.assign(
   dictDocumentStudio,
   dictCloud,
   dictBilling,
+  dictFeedback,
 );
 
 function lookup(key: string, lang: Lang, fallback?: string): string {

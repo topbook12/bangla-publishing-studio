@@ -183,6 +183,9 @@ export const dictDialogsB: Dict = {
 
   // ফুটার নোট
   'dlg2.help.foot': { bn: 'আরও কিছু দরকার হলে অ্যাপের ভেতরে কোনো টুলের উপর মাউস রাখুন — প্রতিটি টুলেই টুল-টিপ আছে।', hi: 'और कुछ चाहिए तो ऐप में किसी भी टूल पर माउस रखें — हर टूल पर टूल-टिप मौजूद है।', en: 'Need more? Hover any tool inside the app — every tool has a tooltip.' },
+  // সাইকেল-১ — `?` হটকী এন্ট্রি
+  'dlg2.help.keys.q': { bn: '?', hi: '?', en: '?' },
+  'dlg2.help.sc.q': { bn: 'সহায়িকা ও শর্টকাট খুলুন', hi: 'सहायिका और शॉर्टकट खोलें', en: 'Open help & shortcuts' },
 };
 
 // ─── দিন ১৬ — খুঁজুন-বদলান আপগ্রেড ───

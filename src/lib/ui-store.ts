@@ -101,6 +101,8 @@ interface UiState {
   rulerUnit: 'cm' | 'in';
   /** দিন ১৪ — কমান্ড প্যালেট (Ctrl+K) খোলা আছে কি না */
   paletteOpen: boolean;
+  /** সাইকেল-১ — ফিডব্যাক উইজেট ডায়ালগ খোলা আছে কি না (সর্বত্র — ল্যান্ডিং/স্টুডিও) */
+  feedbackOpen: boolean;
   open: (name: DialogName) => void;
   /** AI ডায়ালগ নির্দিষ্ট ট্যাবসহ খোলা */
   openAi: (tab: AiVisionTab) => void;
@@ -117,6 +119,8 @@ interface UiState {
   /** দিন ১৪ — কমান্ড প্যালেট */
   setPaletteOpen: (v: boolean) => void;
   togglePalette: () => void;
+  /** সাইকেল-১ — ফিডব্যাক উইজেট */
+  setFeedbackOpen: (v: boolean) => void;
 }
 
 export const useUiStore = create<UiState>((set, get) => ({
@@ -131,6 +135,7 @@ export const useUiStore = create<UiState>((set, get) => ({
   rulerVisible: typeof window !== 'undefined' && window.innerWidth >= 900,
   rulerUnit: readStrFlag('bwp-ruler-unit', 'cm') === 'in' ? 'in' : 'cm',
   paletteOpen: false,
+  feedbackOpen: false,
   open: (name) => set({ openDialog: name }),
   openAi: (tab) => set({ openDialog: 'aiVision', aiVisionTab: tab }),
   openPageChrome: (pageId) => set({ openDialog: 'pageChrome', pageChromeId: pageId }),
@@ -161,4 +166,5 @@ export const useUiStore = create<UiState>((set, get) => ({
   },
   setPaletteOpen: (v) => set({ paletteOpen: v }),
   togglePalette: () => set((s) => ({ paletteOpen: !s.paletteOpen })),
+  setFeedbackOpen: (v) => set({ feedbackOpen: v }),
 }));

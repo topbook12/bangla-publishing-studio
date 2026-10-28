@@ -42,6 +42,27 @@ export default function EditorApp() {
     document.documentElement.lang = lang;
   }, [lang]);
 
+  // সাইকেল-১ — `?` হটকী → সহায়িকা/শর্টকাট ডায়ালগ (Gmail/GitHub-রীতি)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== '?' || e.ctrlKey || e.metaKey || e.altKey) return;
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.isContentEditable ||
+          target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.tagName === 'SELECT')
+      ) {
+        return;
+      }
+      e.preventDefault();
+      useUiStore.getState().open('help');
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
   // অটো-সূচিপত্র — শিরোনাম বদলালে TOC ব্লক নিজে থেকেই হালনাগাদ হয় (ডিবাউন্সড)
   useAutoToc();
 

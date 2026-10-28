@@ -33,6 +33,30 @@ model User {
   orders        Order[]
   invoices      Invoice[]
   usageCounters UsageCounter[]
+  feedback      Feedback[]
+}
+
+// ─── সাইকেল-১ — ইউজার-ফিডব্যাক ইঞ্জিন (সংগ্রহ → বিশ্লেষণ → অ্যাকশন) ───
+
+model Feedback {
+  id        String   @id @default(cuid())
+  /// সাইন-ইন করা থাকলে লিংক; অ্যানোনিমাস হলে null (প্রাইভেসি: ইমেইল জমা হয় না)
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  /// ১–৫ স্টার
+  rating    Int
+  /// 'bug' | 'idea' | 'praise' | 'question' | 'other'
+  category  String
+  /// ফ্রি-টেক্সট (সর্বোচ্চ ২০০০ অক্ষর — API-তে ক্যাপ)
+  message   String
+  /// কোন ভিউ থেকে জমা হলো ('landing' | 'studio' | 'stats')
+  page      String   @default("studio")
+  /// লুপ-বন্ধকরণ: 'new' → 'triaged' → 'done'
+  status    String   @default("new")
+  createdAt DateTime @default(now())
+
+  @@index([status, createdAt])
+  @@index([category])
 }
 
 model Account {

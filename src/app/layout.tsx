@@ -4,6 +4,7 @@ import "./hindi-fonts.css";
 import "./forma-print.css";
 import PwaRegister from "@/components/pwa-register";
 import PwaInstall from "@/components/pwa-install";
+import { FeedbackWidget } from "@/components/feedback-widget";
 import { SonnerToaster } from "@/components/sonner-toaster";
 
 // বাংলা ফন্ট — বান্ডেল (অফলাইনেও কাজ করে)
@@ -206,6 +207,7 @@ export default function RootLayout({
         <SonnerToaster />
         <PwaRegister />
         <PwaInstall />
+        <FeedbackWidget />
       </body>
     </html>
   );

@@ -10,7 +10,7 @@
 
 'use client';
 
-import { ChevronRight, CircleHelp, CloudOff, FileDown, Globe2, Keyboard, LayoutTemplate, Printer, Type } from 'lucide-react';
+import { ChevronRight, CircleHelp, CloudOff, FileDown, Globe2, Keyboard, LayoutTemplate, MessageSquarePlus, Printer, Type } from 'lucide-react';
 import { BrandMark } from '@/components/brand-mark';
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
@@ -29,6 +29,7 @@ const SHORTCUTS: Array<[string, string]> = [
   ['dlg2.help.keys.print', 'dlg2.help.sc.print'],
   ['dlg2.help.keys.zoom', 'dlg2.help.sc.zoom'],
   ['dlg2.help.keys.ruler', 'dlg2.help.sc.ruler'],
+  ['dlg2.help.keys.q', 'dlg2.help.sc.q'],
 ];
 
 /** অ্যাবাউট ফিচার-চিপ — [আইকন, dict-কী] */
@@ -58,6 +59,7 @@ function Step({ title, children }: { title: string; children: React.ReactNode })
 export function HelpDialog() {
   const open = useUiStore((s) => s.openDialog === 'help');
   const close = useUiStore((s) => s.close);
+  const setFeedbackOpen = useUiStore((s) => s.setFeedbackOpen);
   const tt = useT();
 
   return (
@@ -180,6 +182,18 @@ export function HelpDialog() {
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* সাইকেল-১ — হেল্প থেকেই মতামত: ফিডব্যাক-লুপের প্রবেশদ্বার */}
+          <div className="flex justify-center pt-1">
+            <button
+              type="button"
+              onClick={() => { close(); setFeedbackOpen(true); }}
+              className="inline-flex h-8 items-center gap-1.5 rounded-full border border-primary/30 bg-primary/8 px-3.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <MessageSquarePlus size={13} aria-hidden="true" />
+              {tt('fb.action')}
+            </button>
           </div>
 
           <p className="pt-1 text-center text-[11px] text-muted-foreground">
