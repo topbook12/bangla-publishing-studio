@@ -248,6 +248,19 @@ html.dark .app-splash-title {
   font-size: 10px;
   letter-spacing: 0.02em;
   color: var(--muted-foreground);
+  /* ট্যাগলাইন কখনো মোড়াবে না — চাপ পেলে এলিপসিস (৭৬৯–১২৭৯px প্যাডে-জোনে
+     সম্পূর্ণ লুকানো, নইলে বাঁকা জায়গায় ৪০px-প্রস্থে বাংলা লিগেচার উল্লম্বে
+     ৪ লাইনে ভেঙে টাইটেলকে হেডারের বাইরে ঠেলে দেয়) */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+/* প্যাডে-জোন (৭৬৯–১২৭৯px): হেডার-অ্যাকশন বেশি — ট্যাগলাইন জায়গা নেয় না
+   (মোবাইল ব্রেকপয়েন্টের সাথে একই নীতি; PRO ব্যাজ থেকে যায়) */
+@media (max-width: 1279px) {
+  .app-subtitle { display: none; }
 }
 
 .save-indicator {
@@ -612,8 +625,32 @@ html.dark .ribbon-tab-ind {
   overflow-y: hidden;
   scrollbar-width: none;
   min-height: 80px;
+  /* প্রান্ত-ফেড সংকেতের অ্যাংকর — ::before/::after প্রান্তে বসে */
+  position: relative;
 }
 .ribbon-scroll::-webkit-scrollbar { display: none; }
+
+/* স্ক্রল-প্রান্ত সংকেত — data-ov-l/r শুধু তখনই থাকে যখন ওই দিকে স্ক্রল করার
+   মতো বেশি থাকে (useRibbonScrollEnhance সেট করে)। প্রান্তে পৌঁছালে ফেড নেই —
+   প্রান্তের বাটন সবসময় পূর্ণ তীব্রতায় দেখা যায়। */
+.ribbon-scroll[data-ov-r]::after,
+.ribbon-scroll[data-ov-l]::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 34px;
+  pointer-events: none;
+  z-index: 5;
+}
+.ribbon-scroll[data-ov-r]::after {
+  right: 0;
+  background: linear-gradient(to right, transparent, color-mix(in oklab, var(--card) 94%, transparent) 78%, color-mix(in oklab, var(--card) 100%, transparent));
+}
+.ribbon-scroll[data-ov-l]::before {
+  left: 0;
+  background: linear-gradient(to left, transparent, color-mix(in oklab, var(--card) 94%, transparent) 78%, color-mix(in oklab, var(--card) 100%, transparent));
+}
 
 .ribbon-group {
   display: flex;

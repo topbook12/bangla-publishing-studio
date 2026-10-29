@@ -4,7 +4,7 @@
 
 'use client';
 
-import { memo, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { motion, MotionConfig } from 'framer-motion';
 import {
@@ -252,11 +252,73 @@ function QuickAccess() {
   );
 }
 
+/**
+ * Ribbon-স্ক্রল প্রফেশনালাইজেশন — স্ক্রলযোগ্য ট্যাব-বডিতে (`.ribbon-scroll`):
+ *  ১. মাউস-হুইলের উল্লম্ব ঘূর্ণন → অনুভূমিক স্ক্রল (MS Word/Excel আচরণ —
+ *     টুলবারে উল্লম্ব স্ক্রল নেই, তাই হুইল অপব্যবহৃত থাকার কথাই)। যে স্ক্রলার
+ *     ইতিমধ্যে প্রান্তে পৌঁছেছে সেখানে হুইল চেপে ধরে না — পৃষ্ঠা-স্ক্রল স্বাভাবিক চলে।
+ *  ২. প্রান্ত-গ্র্যাডিয়েন্ট সংকেত — স্ক্রল করার মতো বেশি বাকি থাকলেই কেবল ওই
+ *     প্রান্তে হালকা ফেড (data-ov-l / data-ov-r অ্যাট্রিবিউট CSS-এ পেইন্ট করে)।
+ *     না থাকলে কোনো মাস্ক নেই — প্রান্তের বাটন কখনো ধূসর দেখাবে না।
+ * প্রতি ট্যাব-পরিবর্তনে DOM নতুন করে মাউন্ট হয় — একটি MutationObserver +
+ * scroll/resize ডেলিগেশন দিয়ে সব স্ক্রলার সস্তায় সিঙ্ক রাখা হয়।
+ */
+function useRibbonScrollEnhance(activeTab: RibbonTab): React.RefObject<HTMLDivElement | null> {
+  const bodyRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const root = bodyRef.current;
+    if (!root) return;
+
+    const update = () => {
+      root.querySelectorAll<HTMLElement>('.ribbon-scroll').forEach((el) => {
+        const max = el.scrollWidth - el.clientWidth;
+        if (max <= 1) {
+          el.removeAttribute('data-ov-l');
+          el.removeAttribute('data-ov-r');
+          return;
+        }
+        el.toggleAttribute('data-ov-l', el.scrollLeft > 4);
+        el.toggleAttribute('data-ov-r', el.scrollLeft < max - 4);
+      });
+    };
+
+    // নন-প্যাসিভ হুইল — শুধু তখনই preventDefault যখন আমরা সত্যিই স্ক্রল করাই
+    const onWheel = (e: WheelEvent) => {
+      if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+      const target = e.target instanceof Element ? e.target.closest<HTMLElement>('.ribbon-scroll') : null;
+      if (!target) return;
+      const max = target.scrollWidth - target.clientWidth;
+      if (max <= 1) return;
+      if ((e.deltaY < 0 && target.scrollLeft <= 0) || (e.deltaY > 0 && target.scrollLeft >= max - 1)) return;
+      e.preventDefault();
+      target.scrollLeft = Math.max(0, Math.min(max, target.scrollLeft + e.deltaY));
+    };
+
+    update();
+    root.addEventListener('scroll', update, { capture: true, passive: true });
+    root.addEventListener('wheel', onWheel, { passive: false });
+    window.addEventListener('resize', update);
+    // ট্যাব-স্যুইচে নতুন .ribbon-scroll বসে — উপ-গাছ পর্যবেক্ষণ করে পুনঃগণনা
+    const mo = new MutationObserver(update);
+    mo.observe(root, { childList: true, subtree: true });
+    return () => {
+      root.removeEventListener('scroll', update, { capture: true });
+      root.removeEventListener('wheel', onWheel);
+      window.removeEventListener('resize', update);
+      mo.disconnect();
+    };
+  }, [activeTab]);
+
+  return bodyRef;
+}
+
 export function Ribbon() {
   const tt = useT();
   const activeTab = useEditorStore((s) => s.activeRibbonTab);
   const setTab = useEditorStore((s) => s.setRibbonTab);
   const [collapsed, setCollapsed] = useState(false);
+  const bodyRef = useRibbonScrollEnhance(activeTab);
 
   // Word-like behavior: picking a tab while the ribbon is collapsed expands it again
   const selectTab = (id: RibbonTab) => {
@@ -315,7 +377,7 @@ export function Ribbon() {
         </Tooltip>
       </div>
       <div className={cn('ribbon-collapse', collapsed && 'ribbon-collapse-closed')}>
-        <div className="ribbon-body" role="tabpanel">
+        <div ref={bodyRef} className="ribbon-body" role="tabpanel">
           {activeTab === 'home' ? <HomeTab /> : null}
           {activeTab === 'insert' ? <InsertTab /> : null}
           {activeTab === 'layout' ? <LayoutTab /> : null}
