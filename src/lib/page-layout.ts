@@ -139,6 +139,45 @@ export function dsMarginsForPaper(
   };
 }
 
+// ─── প্রশ্নপত্র (QP)-নকশার প্রতি-কাগজ মার্জিন ───
+
+/**
+ * QP-নকশার A4-রেফারেন্স মার্জিন (ইঞ্চি) — ৬৪px/৬২px @96dpi। উইজার্ড-প্রিভিউ শীটের
+ * প্যাডিং, সন্নিবেশিত পাতার marginsOverride, স্বয়ংসম্পূর্ণ ফাইলের স্ক্রিন-প্যাডিং ও
+ * @page মার্জিন — চারটিই এই এক ফাংশন থেকে (আগে চার রকম প্রথা ছিল: প্রিভিউ ৬৪/৬২px,
+ * এডিটর ১″, স্ট্যান্ডঅ্যালোন ১৮/১৬মিমি, প্রিন্ট ১৪/১২মিমি — ফলে প্রিভিউ দেখে
+ * বসানো পত্র ভিন্নভাবে ভাঙত আর উইজার্ড-প্রিন্ট ≠ এডিটর-প্রিন্ট)।
+ */
+export const QP_REF_MARGIN = { top: 0.667, bottom: 0.667, left: 0.646, right: 0.646 } as const;
+
+/** QP নিরাপত্তা-মেঝে (ইঞ্চি) — বোর্ড-পত্রের ৯মিমি ছাপা-প্রথার সম্মান; এর নিচে নামলে ছাপায় কাটা পড়ে */
+const QP_MARGIN_FLOOR = { top: 0.35, side: 0.35 } as const;
+
+/**
+ * প্রদত্ত কাগজ-মাপে প্রশ্নপত্রের কার্যকর মার্জিন — **A4-আনুপাতিক** (dsMarginsForPaper-এর
+ * একই ধাঁচ: প্রস্থ/উচ্চতা-অনুপাতে স্কেল, ক্ল্যাম্প ০.৫৫–১.২৫, ছাপাখানার মেঝেসহ)।
+ * A5-তে মার্জিন নেমে আসে (~০.৪৬″) — ছোট পত্রে প্রশ্নের জায়গা বাঁচে; Legal-এ বাড়ে।
+ */
+export function qpMarginsForPaper(
+  paperSize: PaperSizeId,
+  orientation: 'portrait' | 'landscape' = 'portrait',
+  custom: { widthMm: number; heightMm: number } = { widthMm: 210, heightMm: 297 },
+): Pick<Margins, 'top' | 'bottom' | 'left' | 'right'> {
+  const { widthMm, heightMm } = getPageDimensionsMm(paperSize, orientation, custom);
+  const wIn = widthMm / MM_PER_INCH;
+  const hIn = heightMm / MM_PER_INCH;
+  const a4W = 210 / MM_PER_INCH;
+  const a4H = 297 / MM_PER_INCH;
+  const sw = clampNum(wIn / a4W, 0.55, 1.25);
+  const sh = clampNum(hIn / a4H, 0.55, 1.25);
+  return {
+    top: Math.max(QP_MARGIN_FLOOR.top, round3(QP_REF_MARGIN.top * sh)),
+    bottom: Math.max(QP_MARGIN_FLOOR.top, round3(QP_REF_MARGIN.bottom * sh)),
+    left: Math.max(QP_MARGIN_FLOOR.side, round3(QP_REF_MARGIN.left * sw)),
+    right: Math.max(QP_MARGIN_FLOOR.side, round3(QP_REF_MARGIN.right * sw)),
+  };
+}
+
 // ─── বই-ব্লুপ্রিন্টের জনর-ভিত্তিক প্রতি-কাগজ মার্জিন ───
 
 /** বই-ব্লুপ্রিন্টের নিরাপত্তা-মেঝে (ইঞ্চি) — বাঁধাই-নিরাপদ সর্বনিম্ন; এর নিচে নামলে ছাপায় কাটা পড়ে */

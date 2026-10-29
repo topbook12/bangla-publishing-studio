@@ -4576,7 +4576,7 @@ html.dark .qp-format-vis { background: oklch(0.27 0.01 260); border-color: rgb(2
   min-height: 1123px;
   background: #fff;
   color: #171717;
-  padding: 64px 62px; /* ≈17mm × 16mm */
+  /* প্যাডিং ইনলাইনে বসে (qpMarginsForPaper) — প্রিভিউ = বসানো পাতা WYSIWYG চুক্তি */
   font-size: 12pt;
   line-height: 1.62;
   border-radius: 2px;
@@ -4655,9 +4655,9 @@ html.dark .qp-format-vis { background: oklch(0.27 0.01 260); border-color: rgb(2
 .qp-progress-title { font-size: 13.5px; font-weight: 700; color: var(--foreground); margin: 0; }
 .qp-progress-wait { font-size: 11.5px; color: var(--muted-foreground); margin: 0; }
 
-/* মোবাইলে প্রশ্নপত্রের শীট-প্রিভিউ সরু */
+/* মোবাইলে প্রশ্নপত্রের শীট-প্রিভিউ সরু (শীট-প্যাডিং ইনলাইনেই আসে — মোবাইল ওভাররাইড নেই,
+   নইলে প্রিভিউ ≠ বসানো পাতা হয়ে যেত) */
 @media (max-width: 640px) {
-  .qp-sheet { padding: 34px 26px; }
   .qp-preview { padding: 10px; }
 }
 

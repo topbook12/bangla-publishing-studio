@@ -20,6 +20,8 @@
 import { toBanglaNumber, toDevanagariNumber, toEnglishDigits } from './bangla';
 import type { Lang } from './i18n/core';
 import { columnsStyleText } from './nodes-html';
+import { qpMarginsForPaper } from './page-layout';
+import type { PaperSizeId } from './types';
 // চিত্র-স্মার্ট-সিস্টেম — স্লট-মার্কার ক্যানোনিক্যাল এখানেই; রি-এক্সপোর্টে পুরনো আমদানিকারক অক্ষত
 import { QP_FIGURE_RE, figureHtmlFor, type QpFigureFill } from './qp-figures';
 export { QP_FIGURE_RE } from './qp-figures';
@@ -2357,6 +2359,12 @@ export function paperToStandaloneHtml(p: QuestionPaper, lang: Lang, figures?: re
   const frameBorder = royal ? '4px double #111' : '1.7px solid #111';
   const layout = normalizeQpLayout(p.layout);
   const size = QP_PAGE_SIZES[layout.pageSize] ?? QP_PAGE_SIZES.a4;
+  // মার্জিন-মডেল — উইজার্ড-প্রিভিও ও এডিটরে বসানো পাতার সাথে হুবহু এক (qpMarginsForPaper):
+  // স্ক্রিন .qp-page প্যাডিং = @page মার্জিন = বসানো পাতার marginsOverride। বোর্ড-ফ্রেমের
+  // ৪মিমি অভ্যন্তরীণ ইনসেটটাই একমাত্র ইচ্ছাকৃত অতিরিক্ত (ডাবল-রুলের ভিতরে লেখা চিপড়ায় না)।
+  const qm = qpMarginsForPaper(layout.pageSize as PaperSizeId);
+  const mmStr = (inch: number): string => `${Math.round(inch * 25.4 * 10) / 10}mm`;
+  const pageMarginCss = `${mmStr(qm.top)} ${mmStr(qm.left)}`;
   const scale = p.fontScale === 'sm' ? '11pt' : p.fontScale === 'lg' ? '13.5pt' : '12pt';
   // <title> — সাজেশনে পরীক্ষার নাম বাদ: "প্রতিষ্ঠান — সাজেশন — বিষয় (শ্রেণি)";
   // প্রশ্নপত্রে আগের প্রথাই (প্রতিষ্ঠান — পরীক্ষা — বিষয়)
@@ -2383,9 +2391,9 @@ export function paperToStandaloneHtml(p: QuestionPaper, lang: Lang, figures?: re
   :root { color-scheme: light; }
   * { box-sizing: border-box; }
   body { margin: 0; background: #6b7280; font-family: ${lang === 'hi' ? "'Noto Serif Devanagari'" : "'Tiro Bangla','Noto Serif Bengali'"}, serif; }
-  ${board ? `.qp-frame { max-width: ${size.wMm}mm; margin: 24px auto 40px; background: #fff; border: ${frameBorder}; padding: 4mm; box-shadow: 0 8px 30px rgba(0,0,0,.35); }` : ''}
-  .qp-page { max-width: ${size.wMm}mm; margin: 24px auto; background: #fff; padding: 18mm 16mm; box-shadow: 0 8px 30px rgba(0,0,0,.35); font-size: ${scale}; line-height: 1.6; color: #111; }
-  ${board ? '.qp-frame .qp-page { margin: 0 auto; max-width: none; box-shadow: none; padding: 12mm 10mm; border: 1px solid #111; }' : ''}
+  ${board ? `.qp-frame { max-width: ${size.wMm}mm; margin: 24px auto 40px; background: #fff; border: ${frameBorder}; padding: 0; box-shadow: 0 8px 30px rgba(0,0,0,.35); }` : ''}
+  .qp-page { max-width: ${size.wMm}mm; margin: 24px auto; background: #fff; padding: ${pageMarginCss}; box-shadow: 0 8px 30px rgba(0,0,0,.35); font-size: ${scale}; line-height: 1.6; color: #111; }
+  ${board ? '.qp-frame .qp-page { margin: 0 auto; max-width: none; box-shadow: none; padding: 4mm; border: 1px solid #111; }' : ''}
   .qp-page hr { border: none; border-top: 1.6px solid #111; margin: 10px 0 12px; }
   .qp-page blockquote { margin: 2px 0 2px 26px; padding: 0; border: none; }
   .qp-page ul { margin: 6px 0; padding-left: 24px; }
@@ -2407,10 +2415,10 @@ export function paperToStandaloneHtml(p: QuestionPaper, lang: Lang, figures?: re
   @media print {
     body { background: #fff; }
     .qp-page, .qp-frame { margin: 0; box-shadow: none; max-width: none; }
-    ${board ? '.qp-page { padding: 8mm 9mm; }' : '.qp-page { padding: 0; }'}
+    ${board ? '.qp-page { padding: 4mm; }' : '.qp-page { padding: 0; }'}
     .qp-printbar { display: none; }
   }
-  @page { size: ${size.wMm}mm ${size.hMm}mm; margin: ${board ? '9mm' : '14mm 12mm'}; }
+  @page { size: ${size.wMm}mm ${size.hMm}mm; margin: ${pageMarginCss}; }
 </style>
 </head>
 <body>

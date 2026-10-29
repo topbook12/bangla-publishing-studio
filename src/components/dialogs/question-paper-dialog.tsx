@@ -48,6 +48,7 @@ import {
   type QpFigureFill,
 } from '@/lib/qp-figures';
 import { htmlIsEmpty, paginateInsertedReader } from '@/components/editor/page-ops';
+import { qpMarginsForPaper } from '@/lib/page-layout';
 import { tFmt, useLangStore, useT, useFmtNum } from '@/lib/i18n';
 import { formatDateLong } from '@/lib/i18n/core';
 import { cn } from '@/lib/utils';
@@ -407,6 +408,11 @@ export function QuestionPaperDialog() {
   const pageSize = normalizeQpLayout(paper?.layout).pageSize;
   const pageW = qpPageSizePx(pageSize).w;
   const pageH = qpPageSizePx(pageSize).h;
+  // প্রিভিউ-প্যাডিং = সন্নিবেশিত পাতার মার্জিন (qpMarginsForPaper) — প্রিভিউ = পাতা
+  // (WYSIWYG; আগে .qp-sheet-এ নির্ধারিত ৬৪/৬২px ছিল, বসানো পাতা ১″ গ্লোবাল মার্জিনে
+  // যেত — ভিন্ন ভাঙন, ভিন্ন পৃষ্ঠা-সংখ্যা)
+  const qpMargins = qpMarginsForPaper(pageSize);
+  const inPx = (inch: number): number => Math.round(inch * 96 * 100) / 100;
   useEffect(() => {
     if (step !== 4 || !previewWrapRef.current) return;
     const el = previewWrapRef.current;
@@ -672,9 +678,15 @@ export function QuestionPaperDialog() {
     // বাকি পাতা অক্ষত (প্রতি-পাতা আইসোলেশন হার্ড-রুল)।
     const docFresh = st.pages.length > 0
       && st.pages.every((p) => p.kind === 'normal' && !p.flowLock && htmlIsEmpty(p.html));
-    if (docFresh && qpPs !== globalPs) st.updateSettings({ paperSize: qpPs });
+    // প্রশ্নপত্রের মার্জিন-মডেল — প্রিভিউ যে প্যাডিং দেখিয়েছিল, বসানো পাতাও ঠিক তা-ই
+    // (qpMarginsForPaper; প্রিভিউ = পাতা WYSIWYG চুক্তি — DS-এর dsMarginsForPaper প্যাটার্ন)
+    const qpMargins = qpMarginsForPaper(qpPs);
+    if (docFresh && qpPs !== globalPs) {
+      st.updateSettings({ paperSize: qpPs, margins: { ...qpMargins, gutter: st.settings.margins.gutter } });
+    }
     const sizePatch: Partial<PageData> = {
       paperSizeOverride: qpPs !== globalPs ? qpPs : null,
+      marginsOverride: { ...qpMargins, gutter: st.settings.margins.gutter },
       noChrome: hideChrome,
     };
     const last = st.pages[st.pages.length - 1];
@@ -1554,6 +1566,8 @@ export function QuestionPaperDialog() {
               transformOrigin: 'top left',
               width: pageW,
               minHeight: pageH,
+              // প্যাডিং = বসানো পাতার মার্জিন — প্রিভিউ = পাতা (ds-sheet-live-এর একই চুক্তি)
+              padding: `${inPx(qpMargins.top)}px ${inPx(qpMargins.right)}px ${inPx(qpMargins.bottom)}px ${inPx(qpMargins.left)}px`,
             }}
             dangerouslySetInnerHTML={{ __html: previewHtml }}
           />
