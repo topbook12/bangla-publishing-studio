@@ -103,4 +103,29 @@ export const dictDocumentStudio = {
   'ds.confirm.replaceGo': { bn: 'বদলে দিন', hi: 'बदलें', en: 'Replace' },
   'ds.confirm.replaceCancel': { bn: 'না, নতুন পাতায়', hi: 'नहीं, नया पृष्ठ', en: 'No, new page' },
   'ds.err.apply': { bn: 'বসানো যায়নি — আবার চেষ্টা করুন', hi: 'लगाने में विफल', en: 'Could not insert — please try again' },
+
+  // ── কমিউনিটি প্যাক (ধাপ ১-এ সেকশন + ধাপ ৩-এ এক্সপোর্ট) ──
+  'ds.pack.title': { bn: 'কমিউনিটি প্যাক', hi: 'कम्युनिटी पैक', en: 'Community packs' },
+  'ds.pack.desc': {
+    bn: 'পূরণ-করা নমুনা-সেট .bpspack.json ফাইল হিসেবে ভাগ করুন — বন্ধু, সহকর্মী বা প্রতিষ্ঠানের সেট ইমপোর্ট করলেই এখানে চলে আসে। সবকিছু আপনার যন্ত্রেই থাকে।',
+    hi: 'भरे हुए नमूने-सेट को .bpspack.json फ़ाइल के रूप में साझा करें — आयात करते ही यहाँ दिखेगा।',
+    en: 'Share filled sample sets as .bpspack.json files — import a colleague\u2019s set and it appears here. Everything stays on your device.',
+  },
+  'ds.pack.yours': { bn: 'ইনস্টল-করা প্যাক', hi: 'इंस्टॉल किए गए पैक', en: 'Installed packs' },
+  'ds.pack.entries': { bn: '{n}টি নকশা', hi: '{n} डिज़ाइन', en: '{n} designs' },
+  'ds.pack.import': { bn: 'প্যাক ইমপোর্ট', hi: 'पैक आयात', en: 'Import pack' },
+  'ds.pack.importTip': { bn: '.bpspack.json ফাইল বাছুন — যাচাই হয়ে ইনস্টল হবে', hi: '.bpspack.json फ़ाइल चुनें', en: 'Pick a .bpspack.json file' },
+  'ds.pack.starter': { bn: 'স্টার্টার প্যাক', hi: 'स्टार्टर पैक', en: 'Starter packs' },
+  'ds.pack.install': { bn: 'ইনস্টল', hi: 'इंस्टॉल', en: 'Install' },
+  'ds.pack.remove': { bn: 'প্যাক সরান', hi: 'पैक हटाएँ', en: 'Remove pack' },
+  'ds.pack.export': { bn: 'প্যাক হিসেবে সেভ', hi: 'पैक सहेजें', en: 'Save as pack' },
+  'ds.pack.exportTip': {
+    bn: 'বর্তমান নকশা+তথ্য+সাজ .bpspack.json ফাইলে নামবে — যে-কেউ ইমপোর্ট করে একই সেট পাবে',
+    hi: 'वर्तमान डिज़ाइन+जानकारी .bpspack.json में सहेजें',
+    en: 'Downloads current design+values+style as .bpspack.json — anyone can import and reuse it',
+  },
+  'ds.toast.packInstalled': { bn: 'প্যাক ইনস্টল হয়েছে — নিচের তালিকায় নকশায় ক্লিক করুন', hi: 'पैक इंस्टॉल हुआ', en: 'Pack installed — click a design below' },
+  'ds.toast.packRemoved': { bn: 'প্যাক সরানো হয়েছে', hi: 'पैक हटाया गया', en: 'Pack removed' },
+  'ds.toast.packExported': { bn: 'প্যাক-ফাইল নামল — যে-কাউকে পাঠান, ইমপোর্ট করলেই তার উইজার্ডে বসবে', hi: 'पैक फ़ाइल सहेजी गई', en: 'Pack file downloaded — share it; importing recreates the set' },
+  'ds.err.packRead': { bn: 'প্যাক-ফাইল পড়া গেল না — সঠিক .bpspack.json ফাইল দিন', hi: 'पैक फ़ाइल पढ़ने में विफल', en: 'Could not read the pack file — provide a valid .bpspack.json' },
 };

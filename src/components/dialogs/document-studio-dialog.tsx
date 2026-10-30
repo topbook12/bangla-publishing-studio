@@ -18,9 +18,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Award, Briefcase, Check, ChevronLeft, ChevronRight, FileText, FileUser,
-  GraduationCap, Globe, Loader2, Megaphone, PartyPopper, ReceiptText,
-  Replace, Scale, Search, SearchX, Sparkles, Stethoscope, Wand2,
-  ZoomIn, ZoomOut, type LucideIcon,
+  GraduationCap, Globe, Loader2, Megaphone, Package, PackageOpen, PackagePlus,
+  PartyPopper, ReceiptText, Replace, Scale, Search, SearchX, Sparkles,
+  Stethoscope, Trash2, Wand2, ZoomIn, ZoomOut, type LucideIcon,
 } from 'lucide-react';
 import { PHero, PPill, PSection, PTile, type PTone } from '@/components/premium';
 import {
@@ -42,6 +42,11 @@ import {
 } from '@/lib/document-studio';
 import { callAi } from '@/lib/ai-client';
 import { extractJson } from '@/lib/ai-content';
+import {
+  downloadPackFile, fetchStarterPack, installPack, loadInstalledPacks,
+  makePackFromCurrent, readPackFile, STARTER_PACKS, uninstallPack,
+  type InstalledPack, type PackEntry,
+} from '@/lib/template-pack';
 import { ensurePageEditorMounted, fitTemplatePage } from '@/components/editor/page-ops';
 import { dsMarginsForPaper, effectivePageSize } from '@/lib/page-layout';
 import { getPageDimensionsMm, getPaperPreset, mmToPx } from '@/lib/paper';
@@ -170,6 +175,8 @@ export function DocumentStudioDialog() {
   const [aiBusy, setAiBusy] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [confirmReplace, setConfirmReplace] = useState(false);
+  const [packs, setPacks] = useState<InstalledPack[]>([]);
+  const packFileRef = useRef<HTMLInputElement | null>(null);
 
   const previewWrapRef = useRef<HTMLDivElement | null>(null);
   const [fitScale, setFitScale] = useState(0.62);
@@ -213,6 +220,63 @@ export function DocumentStudioDialog() {
     setValues(init);
     setAiBrief('');
     setStep(2);
+  };
+
+  // ── কমিউনিটি প্যাক — ডায়ালগ খুললেই তালিকা রিফ্রেশ (local-first: localStorage) ──
+  useEffect(() => {
+    if (open) setPacks(loadInstalledPacks());
+  }, [open]);
+
+  /** প্যাক-এন্ট্রি → ধাপ-২ (মান-পূর্ণ ফরম) — তারিখ-ঘর আজকের রেখে প্যাক-মান বসে */
+  const applyPackEntry = (entry: PackEntry) => {
+    const t = dsTemplateById(entry.tplId);
+    if (!t) return;
+    setTplId(t.id);
+    setStyleId(entry.styleId && t.styles.includes(entry.styleId) ? entry.styleId : t.defaultStyle);
+    setValues({ ...dsDefaultValues(t, lang), ...entry.values });
+    setAiBrief('');
+    setStep(2);
+  };
+
+  const importPackFile = async (file: File) => {
+    try {
+      const pack = await readPackFile(file);
+      installPack(pack);
+      setPacks(loadInstalledPacks());
+      toast.success(tt('ds.toast.packInstalled'));
+    } catch {
+      toast.error(tt('ds.err.packRead'));
+    }
+  };
+
+  const installStarter = async (file: string) => {
+    try {
+      const pack = await fetchStarterPack(file);
+      installPack(pack);
+      setPacks(loadInstalledPacks());
+      toast.success(tt('ds.toast.packInstalled'));
+    } catch {
+      toast.error(tt('ds.err.packRead'));
+    }
+  };
+
+  const removePack = (packId: string) => {
+    uninstallPack(packId);
+    setPacks(loadInstalledPacks());
+    toast.success(tt('ds.toast.packRemoved'));
+  };
+
+  /** ধাপ-৩: বর্তমান নকশা+তথ্য+সাজ → .bpspack.json ডাউনলোড */
+  const exportCurrentPack = () => {
+    if (!tpl) return;
+    try {
+      const pack = makePackFromCurrent(tpl.id, values, styleId, tpl.name[lang] || tpl.name.en);
+      if (!pack) throw new Error('invalid');
+      downloadPackFile(pack);
+      toast.success(tt('ds.toast.packExported'));
+    } catch {
+      toast.error(tt('ds.err.apply'));
+    }
   };
 
   const filtered = useMemo(() => {
@@ -492,6 +556,75 @@ export function DocumentStudioDialog() {
                 </div>
               ) : null}
 
+              {/* কমিউনিটি প্যাক — ভাগাভাগি-করা নমুনা-সেট (local-first: ফাইল ইমপোর্ট/এক্সপোর্ট) */}
+              {cat === 'all' && !query.trim() ? (
+                <div className="mb-4">
+                  <div className="mb-1.5 flex flex-wrap items-center justify-between gap-1.5">
+                    <PSection tone="emerald" icon={Package} title={tt('ds.pack.title')} className="mb-0" />
+                    <Button variant="outline" size="sm" className="h-7" onClick={() => packFileRef.current?.click()} title={tt('ds.pack.importTip')} aria-label={tt('ds.pack.import')}>
+                      <PackageOpen size={13} aria-hidden="true" /> {tt('ds.pack.import')}
+                    </Button>
+                  </div>
+
+                  {packs.length ? (
+                    <div className="flex flex-col gap-1.5">
+                      {packs.map((p) => (
+                        <div key={p.packId} className="rounded-lg border border-border bg-card p-2.5">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <PTile size="sm" tone="emerald" icon={Package} />
+                            <span className="text-[12.5px] font-semibold">{p.name}</span>
+                            <span className="text-[10px] text-muted-foreground">
+                              {tt('ds.pack.entries').replace('{n}', nf(p.entries.length))}{p.author ? ` · ${p.author}` : ''}
+                            </span>
+                            <span className="ms-auto">
+                              <Button variant="ghost" size="sm" className="h-7 px-2 text-muted-foreground hover:text-destructive" onClick={() => removePack(p.packId)} aria-label={tt('ds.pack.remove')} title={tt('ds.pack.remove')}>
+                                <Trash2 size={13} aria-hidden="true" />
+                              </Button>
+                            </span>
+                          </div>
+                          <div className="mt-1.5 flex flex-wrap gap-1.5">
+                            {p.entries.map((e) => {
+                              const t = dsTemplateById(e.tplId);
+                              if (!t) return null;
+                              return (
+                                <button
+                                  key={e.tplId} type="button"
+                                  className="rounded-md border border-border bg-background px-2 py-1 text-[11px] font-medium transition-colors hover:border-primary hover:text-primary focus-visible:outline-2 focus-visible:outline-ring"
+                                  onClick={() => applyPackEntry(e)}
+                                  title={tt('ds.pick.next')}
+                                >
+                                  {t.name[lang] || t.name.en}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+
+                  {STARTER_PACKS.filter((sp) => !packs.some((p) => p.name === sp.name)).length ? (
+                    <div className="mt-1.5 rounded-lg border border-dashed border-border p-2.5">
+                      <p className="ai-field-label mb-1.5">{tt('ds.pack.starter')}</p>
+                      <div className="flex flex-col gap-1.5">
+                        {STARTER_PACKS.filter((sp) => !packs.some((p) => p.name === sp.name)).map((sp) => (
+                          <div key={sp.file} className="flex flex-wrap items-center gap-2">
+                            <PTile size="sm" tone="lime" icon={PackagePlus} />
+                            <span className="text-[12.5px] font-semibold">{sp.name}</span>
+                            <span className="ms-auto">
+                              <Button variant="outline" size="sm" className="h-7" onClick={() => void installStarter(sp.file)}>
+                                <PackagePlus size={13} aria-hidden="true" /> {tt('ds.pack.install')}
+                              </Button>
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+                  <p className="mt-1.5 text-[10.5px] leading-snug text-muted-foreground">{tt('ds.pack.desc')}</p>
+                </div>
+              ) : null}
+
               {[...byCat.entries()].map(([category, tpls]) => (
                 <div key={category} className="mb-4">
                   <p className="ai-field-label mb-1.5 flex items-center gap-1.5">
@@ -626,6 +759,9 @@ export function DocumentStudioDialog() {
                 <ChevronLeft size={14} aria-hidden="true" /> {tt('ds.prev.back')}
               </Button>
               <div className="flex flex-wrap justify-end gap-2">
+                <Button variant="ghost" onClick={exportCurrentPack} title={tt('ds.pack.exportTip')} aria-label={tt('ds.pack.export')}>
+                  <PackageOpen size={14} aria-hidden="true" /> {tt('ds.pack.export')}
+                </Button>
                 <Button variant="outline" onClick={() => setConfirmReplace(true)} title={tt('ds.prev.replaceTip')}>
                   <Replace size={14} aria-hidden="true" /> {tt('ds.prev.insertHere')}
                 </Button>
@@ -636,6 +772,13 @@ export function DocumentStudioDialog() {
             </div>
           </section>
         ) : null}
+
+        {/* প্যাক-ফাইল ইমপোর্ট — লুকানো ফাইল-ইনপুট */}
+        <input
+          ref={packFileRef} type="file" accept=".json,.bpspack,application/json" className="hidden"
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) void importPackFile(f); e.target.value = ''; }}
+          aria-hidden="true" tabIndex={-1}
+        />
 
         {/* বর্তমান পাতা-বদলের নিশ্চয়তা */}
         <AlertDialog open={confirmReplace} onOpenChange={setConfirmReplace}>
