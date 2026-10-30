@@ -10,7 +10,7 @@
  * সম্পূর্ণ পরীক্ষণযোগ্য (UI-মুক্ত বিশুদ্ধ ফাংশন) — scripts/verify-templates.ts-এ যাচাই হয়।
  */
 
-import { VECTOR_DEFS, vectorDataUri } from './vector-catalog';
+import { VECTOR_DEFS, tightenVectorSvg } from './vector-catalog';
 import type { VectorDef } from './vector-types';
 
 // ─── চিত্র-মার্কার (ক্যানোনিক্যাল) ───
@@ -65,14 +65,18 @@ const FIG_SYNONYMS: Record<string, string> = {
   'লেখচিত্র': 'graph axes', 'গ্রাফ': 'graph axes', 'অক্ষ': 'axes', 'স্থানাঙ্ক': 'axes coordinate',
   'প্যারাবোলা': 'parabola', 'সাইন': 'sine', 'জ্যা': 'sine', 'কোসাইন': 'sine curve', 'বক্ররেখা': 'curve',
   'ভেন': 'venn', 'সেট': 'venn set',
-  // বিজ্ঞান-যন্ত্র
-  'প্রটেক্টর': 'protractor', 'ফার্মুলার': 'protractor', 'কম্পাস': 'compass', 'অঙ্কন': 'compass ruler',
+  // বিজ্ঞান-যন্ত্র ('অঙ্কন' = আঁকা-শব্দ, যন্ত্র নয় — STOPWORDS-এ)
+  'প্রটেক্টর': 'protractor', 'ফার্মুলার': 'protractor', 'কম্পাস': 'compass',
+  // যৌগিক জ্যামিতি-নাম আগে রাখা — দীর্ঘতম-চাবি-প্রথায় ছোট চাবির ('ক্ষেত্র') ফাঁদ এড়াতে
+  'বর্গক্ষেত্র': 'square', 'চৌম্বকক্ষেত্র': 'field magnet', 'বলরেখা': 'field magnet lines',
   'স্কেল': 'ruler', 'রুলার': 'ruler', 'মাপকাঠি': 'ruler',
   // পদার্থ
   'প্রিজম': 'prism', 'প্রিজমে': 'prism', 'লেন্স': 'lens', 'আয়না': 'mirror', 'প্রতিফলন': 'reflection mirror',
   'প্রতিসরণ': 'refraction prism', 'আলো': 'light ray', 'রশ্মি': 'ray light', 'পুলি': 'pulley',
   'স্প্রিং': 'spring', 'মানদণ্ড': 'ruler', 'কম্পন': 'wave', 'তরঙ্গ': 'wave', 'সার্কিট': 'circuit',
-  'ব্যাটারি': 'battery', 'চুম্বক': 'magnet', 'ক্ষেত্র': 'field magnet', 'ডায়নামো': 'dynamo',
+  // 'ক্ষেত্র' একা চাবি কাটা — 'বর্গক্ষেত্র/আয়তক্ষেত্র/ক্ষেত্রফল' যৌগিকে 'field magnet'-কাণ্ড হতো;
+  // 'চুম্বক/চৌম্বক' দুই বানানই (ক্যাটালগে 'চুম্বক', প্রশ্নে দুই-ই লেখে)
+  'ব্যাটারি': 'battery', 'চুম্বক': 'magnet', 'চৌম্বক': 'magnet', 'ম্যাগনেট': 'magnet', 'ডায়নামো': 'dynamo',
   'ভোল্টমিটার': 'voltmeter', 'অ্যামিটার': 'ammeter', 'মাইক্রোমিটার': 'micrometer', 'ভারী': 'weight',
   // রসায়ন/জীব
   'পরীক্ষণ': 'test tube', 'টিউব': 'test tube', 'বিকারক': 'beaker', 'কলাম': 'column',
@@ -89,6 +93,9 @@ const FIG_SYNONYMS: Record<string, string> = {
   'লাইন-চার্ট': 'line chart', 'দণ্ড': 'bar chart', 'শতকরা': 'pie chart',
 };
 
+/** দীর্ঘতম-চাবি-প্রথম ক্রমে সাজানো চাবি — expandQuery একবারই বাছে (মডিউল-লোডে একবার) */
+const FIG_SYNONYM_KEYS: string[] = Object.keys(FIG_SYNONYMS).sort((a, b) => b.length - a.length);
+
 /** বর্ণনা → অনুসন্ধান-শব্দ (প্রতিশব্দ-সম্প্রসারণসহ) */
 const FIG_STOPWORDS = new Set([
   // সাধারণ "চিত্র আঁকো" শব্দ — প্রতিটি বর্ণনায় থাকে, মিল-স্কোরে শব্দ-শব্দ সমান ওজন দিলে
@@ -96,6 +103,8 @@ const FIG_STOPWORDS = new Set([
   'চিত্র', 'ছবি', 'চিত্রপট', 'figure', 'fig', 'diagram', 'picture', 'image', 'draw', 'drawing',
   'আঁক', 'আঁকো', 'এঁকে', 'আঁকা', 'বানাও', 'বানান', 'দেখাও', 'দেখান', 'লেখ', 'নিচের', 'উপরের',
   'here', 'given', 'following', 'shown', 'below', 'দাও', 'করো', 'কর', 'এর', 'একটি', 'একটা', 'এই',
+  // জ্যামিতি-গণনা শব্দ — গ্রাফ/চিত্র নয়; 'ক্ষেত্রফল' যেন 'field magnet'-ে যেন না টানে
+  'অঙ্কন', 'অঙ্কনকরো', 'ক্ষেত্রফল', 'পরিসীমা', 'নির্ণয়', 'কত', 'হবে', 'লাগবে',
 ]);
 
 function expandQuery(desc: string, hint?: string): string[] {
@@ -113,13 +122,16 @@ function expandQuery(desc: string, hint?: string): string[] {
     }
   }
   // প্রতিশব্দ-সম্প্রসারণ — বর্ণনা ও প্রশ্ন-লেখা দুটোতেই খোঁজা
+  // দীর্ঘতম-চাবি-প্রথম: 'বর্গক্ষেত্র' যেন 'ক্ষেত্র'-চাবিতে (পুরনো কান্ড: ম্যাগনেট) না পড়ে —
+  // সবচেয়ে দীর্ঘ মিল-চাবিই শুধু সম্প্রসারণ করে, তারপর চাবি-লুপ ভাঙা
   const expanded = new Set<string>();
   for (const w of words) {
     if (FIG_STOPWORDS.has(w)) continue;
     expanded.add(w);
-    for (const [bn, en] of Object.entries(FIG_SYNONYMS)) {
+    for (const bn of FIG_SYNONYM_KEYS) {
       if (w.includes(bn)) {
-        for (const e of en.split(' ')) expanded.add(e);
+        for (const e of FIG_SYNONYMS[bn].split(' ')) expanded.add(e);
+        break;
       }
     }
   }
@@ -219,6 +231,29 @@ export function figureSvgDataUri(svg: string): string {
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
 
+// ─── মনোক্রোম-প্রথা (প্রশ্নপত্র সাদা-কালো ছাপা হয়) ───
+
+/** হালকা ক্রিম লেখা — গাঢ় ব্লকের ওপরে থাকে, কালা হলে পড়া যায় না — সাদাই থাকুক */
+const FIG_LIGHT_HEX = /^#(?:f4ead2|ffffff|fff)$/i;
+
+/**
+ * SVG → মনোক্রোম — প্রশ্নপত্র-প্রথা সাদা-কালো ছাপা; রঙিন ভেক্টর-প্যালেট (VP.*)
+ * ছাপার পাতায় ধূসর-ছায়া হয়ে খারাপ দেখায়। সব হেক্স-রঙ → কালি-কালা (#1a1a1a),
+ * শুধু ক্রিম/সাদা লেখা (গাঢ় ব্লকের ভেতরের অক্ষর) সাদা থাকে — নইলে অদৃশ্য হয়ে যায়।
+ * opacity রাখা হয় — কালা-ব্লকের N/S দুই খণ্ড হালকা-গাঢ় হয়ে আলাদা বোঝা যায়।
+ */
+export function toMonoSvg(svg: string): string {
+  return svg
+    .replace(/(fill|stroke)\s*=\s*"(#[0-9a-fA-F]{3,8})"/g, (_full, attr: string, hex: string) =>
+      FIG_LIGHT_HEX.test(hex) ? `${attr}="#ffffff"` : `${attr}="#1a1a1a"`)
+    .replace(/(fill|stroke)\s*=\s*"(?:rgb|hsl)\([^)]*\)"/gi, '$1="#1a1a1a"');
+}
+
+/** ক্যাটালগ-অ্যাসেট → মনোক্রোম data URI (টাইট-ভিউবক্স সহ) — ডক-ফিগার NodeView-ও ব্যবহার করে */
+export function vectorMonoDataUri(def: VectorDef): string {
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(tightenVectorSvg(toMonoSvg(def.svg)))}`;
+}
+
 // ─── সন্নিবেশ-HTML ───
 
 /** চিত্র-পূর্ণক পরিকল্পনা — স্লট-ক্রমে সারিবদ্ধ; null = ম্যানুয়াল স্লটই থাকবে */
@@ -242,18 +277,21 @@ export function figureHtmlFor(fill: QpFigureFill): string {
   const cap = (fill.cap || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').slice(0, 160);
   const src = fill.src.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
   const vid = fill.vid ? ` data-vid="${fill.vid.replace(/&/g, '&amp;').replace(/"/g, '&quot;')}"` : '';
-  return `<figure class="doc-figure"${vid} data-src="${src}" data-w="${w}" data-cap="${cap}">`
-    + `<img src="${src}" alt="${cap || 'চিত্র'}" draggable="false"></figure>`;
+  // data-mono="1" — প্রশ্নপত্র-চিত্র সাদা-কালো ছাপা হয়; এডিটর NodeView-ও এই পতাকায়
+  // ক্যাটালগ-পুনঃরাস্তা করলে রঙিন URI-তে ফিরে যায় না (মনোক্রোম-প্রথা রক্ষা)
+  const mono = ' data-mono="1"';
+  return `<figure class="doc-figure"${vid}${mono} data-src="${src}" data-w="${w}" data-cap="${cap}">`
+    + `<img src="${src}" alt="${cap || 'চিত্র'}" draggable="false" style="width:${w}px;max-width:100%;height:auto"></figure>`;
 }
 
-/** ক্যাটালগ-ম্যাচ → fill (data URI টাইট-ভিউবক্সে) */
+/** ক্যাটালগ-ম্যাচ → fill (মনোক্রোম data URI টাইট-ভিউবক্সে) */
 export function fillFromMatch(m: FigureMatch, cap: string): QpFigureFill {
-  return { src: vectorDataUri(m.def), vid: m.def.id, w: m.def.w, cap };
+  return { src: vectorMonoDataUri(m.def), vid: m.def.id, w: m.def.w, cap };
 }
 
-/** AI-SVG → fill */
+/** AI-SVG → fill (মনোক্রোম) */
 export function fillFromSvg(svg: string, cap: string): QpFigureFill | null {
   const clean = sanitizeFigureSvg(svg);
   if (!clean) return null;
-  return { src: figureSvgDataUri(clean), w: 300, cap };
+  return { src: figureSvgDataUri(toMonoSvg(clean)), w: 300, cap };
 }

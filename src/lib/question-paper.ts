@@ -462,7 +462,16 @@ export function qpPreambleMeta(raw: string, meta: QpMeta, lang: Lang, docType: Q
     // এক লাইনে একাধিক কী-মান থাকতে পারে — কমা/পাইপে ভেঙে প্রতিটি খণ্ড আলাদা চিনি
     const segments = line.split(/\s*[,|;·]\s*/).map((s) => s.trim()).filter(Boolean);
 
-    for (const seg of segments) {
+    // যৌগিক কী-খণ্ড — "সময়: ২ ঘণ্টা — পূর্ণমান: ১০০" জাতীয় em/en-dash-যুক্ত রূপ ভাঙা
+    // (বোর্ড-প্রথায় সবচেয়ে পরিচিত হেডার; না ভাঙলে time = "২ ঘণ্টা — পূর্ণমান: ১০০"
+    //  হয়ে পূর্ণমান দুইবার ছাপা হয়)। শুধু কী-দিয়ে শুরু হওয়া খণ্ড ভাঙে — নইলে
+    // "অর্ধবার্ষিক মূল্যায়ন — ২০২৫" জাতীয় পরীক্ষার নাম কেটে যেত।
+    const compoundSegs = segments.flatMap((seg) => {
+      if (!QP_KEY_PATTERNS.some((kp) => kp.re.test(seg)) && !QP_UNI_KEY_PATTERNS.some((kp) => kp.re.test(seg))) return [seg];
+      return seg.split(/\s+[—–]\s+/).map((s) => s.trim()).filter(Boolean);
+    });
+
+    for (const seg of compoundSegs) {
       let matched = false;
       // খণ্ড-ভিত্তিক বিশেষ হেডার — "কোর্স কোড: ২৩২৫০৭ · কোর্স টাইটেল: …" জাতীয় যৌগিক লাইনেও
       // কোড/সেট-বক্সের তথ্য ধরা পড়ে (শুধু পূর্ণ-লাইনে চেক করলে যৌগিক রূপ বাদ পড়ত)

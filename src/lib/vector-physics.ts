@@ -214,7 +214,7 @@ export const VECTOR_PHYSICS: VectorDef[] = [
     id: 'phy-magnet-field',
     cat: 'physics',
     label: 'দণ্ড-চুম্বক ও বলরেখা',
-    kw: 'magnet field lines চুম্বক বলরেখা দণ্ড মেরু',
+    kw: 'magnet field lines চুম্বক চৌম্বক ম্যাগনেট বলরেখা দণ্ড মেরু',
     w: 300,
     svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 180" fill="none"><path d="M88 74C44 30 196 30 152 74" stroke="${VP.ink}" stroke-width="1.8"/><path d="M94 70C76 48 164 48 146 70" stroke="${VP.ink}" stroke-width="1.8"/><path d="M88 110c-44 44 108 44 64 0" stroke="${VP.ink}" stroke-width="1.8"/><path d="M94 114c-18 22 70 22 52 0" stroke="${VP.ink}" stroke-width="1.8"/><path d="M130 41l-8-5m8 5l-8 5M129 53.5l-8-5m8 5l-8 5" stroke="${VP.ink}" stroke-width="1.8" stroke-linecap="round"/><path d="M130 143l-8-5m8 5l-8 5M129 130.5l-8-5m8 5l-8 5" stroke="${VP.ink}" stroke-width="1.8" stroke-linecap="round"/><rect x="90" y="72" width="30" height="40" fill="${VP.terracotta}" opacity=".75"/><rect x="120" y="72" width="30" height="40" fill="${VP.sky}" opacity=".75"/><rect x="90" y="72" width="60" height="40" stroke="${VP.ink}" stroke-width="2.2"/><path d="M120 72v40" stroke="${VP.ink}" stroke-width="1.4"/><text x="105" y="98" font-family="${VFONT}" fill="${VP.cream}" font-size="13" font-weight="700" text-anchor="middle">N</text><text x="135" y="98" font-family="${VFONT}" fill="${VP.cream}" font-size="13" font-weight="700" text-anchor="middle">S</text></svg>`,
   },

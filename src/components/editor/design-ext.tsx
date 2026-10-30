@@ -40,6 +40,7 @@ import {
   stickerSpanStyle,
 } from '@/lib/sticker-catalog';
 import { getVector, vectorDataUri } from '@/lib/vector-catalog';
+import { vectorMonoDataUri } from '@/lib/qp-figures';
 
 // ─────────────────────────── আইকন ───────────────────────────
 
@@ -828,9 +829,13 @@ function DocFigureNodeView({ node, updateAttributes, deleteNode, selected }: Nod
   const vid = (node.attrs.vid as string) ?? '';
   const w = Math.max(90, Math.min(640, Number(node.attrs.w ?? 300) || 300));
   const cap = (node.attrs.cap as string) ?? '';
+  const mono = node.attrs.mono === true || node.attrs.mono === '1';
   const def = vid ? getVector(vid) : undefined;
-  // ক্যাটালগে মিললে টাইট ভিউবক্সের সদ্য-URI — পুরনো ডকুমেন্টের প্যাডেড সংস্করণও সেরে যায়
-  const src = def ? vectorDataUri(def) : ((node.attrs.src as string) ?? '');
+  // ক্যাটালগে মিললে টাইট ভিউবক্সের সদ্য-URI — পুরনো ডকুমেন্টের প্যাডেড সংস্করণও সেরে যায়;
+  // data-mono চিহ্নিত প্রশ্নপত্র-চিত্র মনোক্রোম URI-ই পায় (রঙিন প্যালেটে ফিরে যায় না)
+  const src = def
+    ? (mono ? vectorMonoDataUri(def) : vectorDataUri(def))
+    : ((node.attrs.src as string) ?? '');
   const label = def?.label ?? 'চিত্র';
 
   const clampW = (n: number) => Math.max(90, Math.min(640, n));
@@ -923,6 +928,11 @@ export const DocFigure = Node.create({
         parseHTML: (el) => el.getAttribute('data-cap') ?? '',
         renderHTML: (attrs) => ({ 'data-cap': attrs.cap ?? '' }),
       },
+      mono: {
+        default: false,
+        parseHTML: (el) => el.getAttribute('data-mono') === '1',
+        renderHTML: (attrs) => (attrs.mono ? { 'data-mono': '1' } : {}),
+      },
     };
   },
 
@@ -935,9 +945,12 @@ export const DocFigure = Node.create({
     const src = (node.attrs.src as string) ?? '';
     const w = Number(node.attrs.w ?? 300) || 300;
     const cap = (node.attrs.cap as string) ?? '';
+    const mono = node.attrs.mono === true || node.attrs.mono === '1';
 
     const kids: DOMOutputSpec[] = [
-      ['img', { src, alt: cap || '', draggable: 'false' }],
+      // style width অবশ্যই — না দিলে প্রিন্ট/এক্সপোর্ট-HTML-এ img width ছাড়া SVG
+      // ভিউবক্স-আসল মাপে ফুলে যায় (এডিটর NodeView তো ঠিকই দেখায়)
+      ['img', { src, alt: cap || '', draggable: 'false', style: `width:${w}px;max-width:100%;height:auto` }],
     ];
     if (cap) kids.push(['figcaption', { class: 'doc-figure-cap' }, cap]);
 
@@ -949,6 +962,7 @@ export const DocFigure = Node.create({
         'data-src': src || null,
         'data-w': String(w),
         'data-cap': cap,
+        ...(mono ? { 'data-mono': '1' } : {}),
       }),
       ...kids,
     ] as DOMOutputSpec;
