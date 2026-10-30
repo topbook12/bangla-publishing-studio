@@ -215,3 +215,21 @@ model UsageCounter {
 
   @@unique([userId, month])
 }
+
+// ─── দিন ৬২ — প্যাক-গ্যালারি (কমিউনিটি টেমপ্লেট-প্যাক পাবলিশ/বিতরণ) ───
+
+model PackShare {
+  id        String   @id @default(cuid())
+  /// URL-নিরাপদ ২২-অক্ষরের টোকেন — GET /api/packs/<token>
+  token     String   @unique
+  name      String
+  desc      String?
+  author    String?
+  /// যাচাই-করা প্যাক JSON (v1 — validatePack-পাস)
+  data      String
+  entries   Int
+  downloads Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}

@@ -18,7 +18,12 @@ export type AnalyticsEventName =
   | 'checkout_started'
   | 'payment_success'
   | 'plan_upgraded'
-  | 'paywall_hit';
+  | 'paywall_hit'
+  | 'pack_link_shared'
+  | 'pack_url_open'
+  | 'pack_url_installed'
+  | 'pack_published'
+  | 'pack_gallery_installed';
 
 /** এক সেশনে একই ইভেন্ট একবারই — স্প্যাম এড়াতে */
 const sent = new Set<string>();

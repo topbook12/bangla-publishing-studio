@@ -128,4 +128,60 @@ export const dictDocumentStudio = {
   'ds.toast.packRemoved': { bn: 'প্যাক সরানো হয়েছে', hi: 'पैक हटाया गया', en: 'Pack removed' },
   'ds.toast.packExported': { bn: 'প্যাক-ফাইল নামল — যে-কাউকে পাঠান, ইমপোর্ট করলেই তার উইজার্ডে বসবে', hi: 'पैक फ़ाइल सहेजी गई', en: 'Pack file downloaded — share it; importing recreates the set' },
   'ds.err.packRead': { bn: 'প্যাক-ফাইল পড়া গেল না — সঠিক .bpspack.json ফাইল দিন', hi: 'पैक फ़ाइल पढ़ने में विफल', en: 'Could not read the pack file — provide a valid .bpspack.json' },
+
+  // ── দিন ৬২ — প্যাক-শেয়ার: URL-লিংক + গ্যালারি ──
+  'ds.pack.link': { bn: 'লিংক শেয়ার', hi: 'लिंक साझा करें', en: 'Share link' },
+  'ds.pack.linkTip': {
+    bn: 'প্যাক লিংকেই বাহি হয় (কোনো সার্ভার নেই) — ক্লিপবোর্ডে কপি হবে; প্রাপক লিংক খুললেই ইনস্টল-পাতা',
+    hi: 'पैक लिंक में सहेजा जाता है — क्लिपबोर्ड पर कॉपी होगा',
+    en: 'Packs the whole set inside the link (no server) — copies to clipboard; the recipient installs from the link',
+  },
+  'ds.pack.gallery': { bn: 'প্যাক গ্যালারি', hi: 'पैक गैलरी', en: 'Pack gallery' },
+  'ds.pack.galleryTip': {
+    bn: 'কমিউনিটির পাবলিশ-করা প্যাক — যেকোনোটি এক-ক্লিকে ইনস্টল',
+    hi: 'कम्युनिटी के प्रकाशित पैक — किसी भी एक को इंस्टॉल करें',
+    en: 'Community-published packs — install any with one click',
+  },
+  'ds.pack.publish': { bn: 'গ্যালারিতে পাঠান', hi: 'गैलरी में भेजें', en: 'Publish to gallery' },
+  'ds.pack.publishTip': {
+    bn: 'প্যাক সবার জন্য গ্যালারিতে ওঠে (ইন্টারনেট লাগে) — ইচ্ছা না হলে ফাইল/লিংক-শেয়ারই যথেষ্ট',
+    hi: 'पैक सबके लिए गैलरी में जाता है (इंटरनेट चाहिए)',
+    en: 'Uploads the pack to the public gallery (needs internet) — file/link sharing works fully offline',
+  },
+  'ds.pack.galleryEmpty': { bn: 'গ্যালারি এখন খালি — ধাপ-৩ থেকে "গ্যালারিতে পাঠান" দিয়ে প্রথম প্যাক ওঠান', hi: 'गैलरी खाली है', en: 'Gallery is empty — publish the first pack from step-3' },
+  'ds.pack.galleryLoad': { bn: 'গ্যালারি দেখুন', hi: 'गैलरी देखें', en: 'Browse gallery' },
+  'ds.pack.galleryHide': { bn: 'গ্যালারি লুকান', hi: 'गैलरी छिपाएँ', en: 'Hide gallery' },
+  'ds.pack.dlCount': { bn: '{n} বার নামানো', hi: '{n} बार डाउनलोड', en: '{n} downloads' },
+  'ds.pack.installedTag': { bn: 'ইনস্টল-আছে', hi: 'इंस्टॉल है', en: 'Installed' },
+  'ds.toast.packLinkCopied': { bn: 'প্যাক-লিংক কপি হয়েছে — চ্যাট/মেইলে পাঠান; প্রাপক লিংক খুললেই ইনস্টল করবে', hi: 'पैक लिंक कॉपी हुआ', en: 'Pack link copied — send it anywhere; recipients install from the link' },
+  'ds.toast.packPublished': { bn: 'গ্যালারিতে ওঠা হয়েছে — এখন যে-কেউ এক-ক্লিকে ইনস্টল করতে পারবে', hi: 'गैलरी में प्रकाशित हुआ', en: 'Published to the gallery — anyone can install it now' },
+  'ds.err.packLink': { bn: 'এই প্যাক লিংকে ধরার মতো বড় — ফাইল-ডাউনলোড ব্যবহার করুন', hi: 'यह पैक लिंक के लिए बहुत बड़ा है', en: 'This pack is too large for a link — use file download instead' },
+  'ds.err.packPublish': { bn: 'গ্যালারিতে ওঠা গেল না (অফলাইন?) — ফাইল-ডাউনলোড/লিংক-শেয়ার কাজ করছে', hi: 'प्रकाशित करने में विफल', en: 'Could not publish (offline?) — file/link sharing still works' },
+
+  // ── দিন ৬২ — প্যাক-ভিউয়ার (?pack= লিংক-পাতা) ──
+  'pkv.banner': { bn: 'কমিউনিটি প্যাক লিংক', hi: 'कम्युनिटी पैक लिंक', en: 'Community pack link' },
+  'pkv.pill': { bn: 'প্যাক', hi: 'पैक', en: 'Pack' },
+  'pkv.by': { bn: 'লেখক:', hi: 'लेखक:', en: 'by' },
+  'pkv.kb': { bn: '~{kb} KB', hi: '~{kb} KB', en: '~{kb} KB' },
+  'pkv.entries': { bn: 'এই প্যাকে {n}টি নকশা:', hi: 'इस पैक में {n} डिज़ाइन:', en: '{n} designs in this pack:' },
+  'pkv.install': { bn: 'এই যন্ত্রে ইনস্টল করুন', hi: 'इस डिवाइस पर इंस্টॉल करें', en: 'Install on this device' },
+  'pkv.goStudio': { bn: 'স্টুডিওতে যান', hi: 'स्टूडियो खोलें', en: 'Open studio' },
+  'pkv.goWizard': { bn: 'উইজার্ডে ব্যবহার করুন', hi: 'विज़ार्ड में उपयोग करें', en: 'Use in the wizard' },
+  'pkv.donePill': { bn: 'ইনস্টল-সম্পন্ন', hi: 'इंस्टॉल पूर्ण', en: 'Installed' },
+  'pkv.doneHint': {
+    bn: 'প্যাক আপনার যন্ত্রেই জমা — ডকুমেন্ট স্টুডিওর ধাপ-১-এ দেখা যাবে',
+    hi: 'पैक आपके डिवाइस पर सहेजा गया',
+    en: 'The pack is saved on this device — find it in Document Studio step-1',
+  },
+  'pkv.bad': { bn: 'প্যাক-লিংক পড়া গেল না', hi: 'पैक लिंक पढ़ने में विफल', en: 'Could not read the pack link' },
+  'pkv.badHint': {
+    bn: 'লিংক অসম্পূর্ণ বা কেটে-গেছে — প্রেরকের কাছে পুরো লিংক (বা .bpspack.json ফাইল) আবার চেয়ে নিন।',
+    hi: 'लिंक अधूरा है — प्रेषक से पूरा लिंक माँगें',
+    en: 'The link is truncated or corrupted — ask the sender for the full link (or the .bpspack.json file).',
+  },
+  'pkv.localNote': {
+    bn: '১০০% লোকাল-ফার্স্ট: প্যাক লিংকেই বাহি ছিল, ইনস্টল করলে শুধু আপনার ব্রাউজারে জমা হয় — কোনো অ্যাকাউন্ট বা সার্ভার লাগে না।',
+    hi: '१००% लोकल-फर्स्ट: पैक केवल आपके ब्राउज़र में सहेजा जाता है',
+    en: '100% local-first: the pack travelled inside the link and installs only in your browser — no account, no server.',
+  },
 };

@@ -17,10 +17,10 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Award, Briefcase, Check, ChevronLeft, ChevronRight, FileText, FileUser,
-  GraduationCap, Globe, Loader2, Megaphone, Package, PackageOpen, PackagePlus,
+  Award, Briefcase, Check, ChevronLeft, ChevronRight, CloudUpload, FileText, FileUser,
+  GraduationCap, Globe, Link2, Loader2, Megaphone, Package, PackageOpen, PackagePlus,
   PartyPopper, ReceiptText, Replace, Scale, Search, SearchX, Sparkles,
-  Stethoscope, Trash2, Wand2, ZoomIn, ZoomOut, type LucideIcon,
+  Stethoscope, Store, Trash2, Wand2, ZoomIn, ZoomOut, type LucideIcon,
 } from 'lucide-react';
 import { PHero, PPill, PSection, PTile, type PTone } from '@/components/premium';
 import {
@@ -47,6 +47,8 @@ import {
   makePackFromCurrent, readPackFile, STARTER_PACKS, uninstallPack,
   type InstalledPack, type PackEntry,
 } from '@/lib/template-pack';
+import { encodePackUrl } from '@/lib/pack-share';
+import { track } from '@/lib/analytics';
 import { ensurePageEditorMounted, fitTemplatePage } from '@/components/editor/page-ops';
 import { dsMarginsForPaper, effectivePageSize } from '@/lib/page-layout';
 import { getPageDimensionsMm, getPaperPreset, mmToPx } from '@/lib/paper';
@@ -56,6 +58,17 @@ import { toast } from 'sonner';
 
 /** প্রিভিউ-শীটের প্যাডিং px মার্জিনে রূপান্তর (96dpi — .ds-sheet-এর একক) */
 const inToPx = (inch: number): number => Math.round(inch * 96 * 100) / 100;
+
+/** গ্যালারি-তালিকার এক সারি (data ছাড়া — হালকা) */
+interface GalleryRow {
+  token: string;
+  name: string;
+  desc?: string | null;
+  author?: string | null;
+  entries: number;
+  downloads: number;
+  createdAt: string;
+}
 
 type Step = 1 | 2 | 3;
 
@@ -177,6 +190,10 @@ export function DocumentStudioDialog() {
   const [confirmReplace, setConfirmReplace] = useState(false);
   const [packs, setPacks] = useState<InstalledPack[]>([]);
   const packFileRef = useRef<HTMLInputElement | null>(null);
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const [galleryBusy, setGalleryBusy] = useState(false);
+  const [gallery, setGallery] = useState<GalleryRow[]>([]);
+  const [publishBusy, setPublishBusy] = useState(false);
 
   const previewWrapRef = useRef<HTMLDivElement | null>(null);
   const [fitScale, setFitScale] = useState(0.62);
@@ -276,6 +293,81 @@ export function DocumentStudioDialog() {
       toast.success(tt('ds.toast.packExported'));
     } catch {
       toast.error(tt('ds.err.apply'));
+    }
+  };
+
+  /** ধাপ-৩: প্যাক → ?pack= লিংক (১০০% local-first — সার্ভার ছাড়াই বিতরণ) */
+  const sharePackLink = async () => {
+    if (!tpl) return;
+    try {
+      const pack = makePackFromCurrent(tpl.id, values, styleId, tpl.name[lang] || tpl.name.en);
+      const url = await encodePackUrl(pack);
+      if (!url) {
+        toast.error(tt('ds.err.packLink'));
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      track('pack_link_shared', { dedup: false });
+      toast.success(tt('ds.toast.packLinkCopied'));
+    } catch {
+      // ক্লিপবোর্ড-বাধা/অন্য ব্যর্থতা — ফাইল-পথ তখনও খোলা
+      toast.error(tt('ds.err.packLink'));
+    }
+  };
+
+  /** ধাপ-৩: প্যাক → পাবলিক গ্যালারি (ক্লাউড-ঐচ্ছিক — ব্যর্থ হলে লোকাল-পথ অটুট) */
+  const publishPack = async () => {
+    if (!tpl || publishBusy) return;
+    setPublishBusy(true);
+    try {
+      const pack = makePackFromCurrent(tpl.id, values, styleId, tpl.name[lang] || tpl.name.en);
+      const res = await fetch('/api/packs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(pack),
+      });
+      if (!res.ok) throw new Error(String(res.status));
+      track('pack_published', { dedup: false });
+      toast.success(tt('ds.toast.packPublished'));
+    } catch {
+      toast.error(tt('ds.err.packPublish'));
+    } finally {
+      setPublishBusy(false);
+    }
+  };
+
+  /** ধাপ-১: প্যাক-গ্যালারি তালিকা (ক্লাউড-ডাউন হলে খালি — লোকাল-পথ অটুট) */
+  const loadGallery = async () => {
+    if (galleryBusy) return;
+    setGalleryBusy(true);
+    try {
+      const res = await fetch('/api/packs', { cache: 'no-store' });
+      const body = (await res.json()) as { packs?: GalleryRow[] };
+      setGallery(Array.isArray(body.packs) ? body.packs : []);
+      setGalleryOpen(true);
+    } catch {
+      setGallery([]);
+      setGalleryOpen(true);
+    } finally {
+      setGalleryBusy(false);
+    }
+  };
+
+  /** গ্যালারি-প্যাক → এক-ক্লিক ইনস্টল (token দিয়ে পুরো data আনে) */
+  const installGalleryPack = async (row: GalleryRow) => {
+    try {
+      const res = await fetch(`/api/packs/${encodeURIComponent(row.token)}`, { cache: 'no-store' });
+      if (!res.ok) throw new Error('fetch-failed');
+      const body = (await res.json()) as { pack?: { data?: unknown } };
+      const pack = body.pack?.data;
+      if (!pack) throw new Error('no-data');
+      // validatePack installPack-এর ভেতরেই (ক্লায়েন্টেও যাচাই)
+      installPack(pack as Parameters<typeof installPack>[0]);
+      setPacks(loadInstalledPacks());
+      track('pack_gallery_installed', { dedup: false });
+      toast.success(tt('ds.toast.packInstalled'));
+    } catch {
+      toast.error(tt('ds.err.packRead'));
     }
   };
 
@@ -556,15 +648,58 @@ export function DocumentStudioDialog() {
                 </div>
               ) : null}
 
-              {/* কমিউনিটি প্যাক — ভাগাভাগি-করা নমুনা-সেট (local-first: ফাইল ইমপোর্ট/এক্সপোর্ট) */}
+              {/* কমিউনিটি প্যাক — ভাগাভাগি-করা নমুনা-সেট (local-first: ফাইল/লিংক + গ্যালারি) */}
               {cat === 'all' && !query.trim() ? (
                 <div className="mb-4">
                   <div className="mb-1.5 flex flex-wrap items-center justify-between gap-1.5">
                     <PSection tone="emerald" icon={Package} title={tt('ds.pack.title')} className="mb-0" />
-                    <Button variant="outline" size="sm" className="h-7" onClick={() => packFileRef.current?.click()} title={tt('ds.pack.importTip')} aria-label={tt('ds.pack.import')}>
-                      <PackageOpen size={13} aria-hidden="true" /> {tt('ds.pack.import')}
-                    </Button>
+                    <div className="flex items-center gap-1.5">
+                      <Button variant="outline" size="sm" className="h-7" onClick={() => (galleryOpen ? setGalleryOpen(false) : void loadGallery())} title={tt('ds.pack.galleryTip')} aria-label={tt('ds.pack.gallery')}>
+                        {galleryBusy
+                          ? <Loader2 size={13} className="animate-spin" aria-hidden="true" />
+                          : <Store size={13} aria-hidden="true" />}
+                        {galleryOpen ? tt('ds.pack.galleryHide') : tt('ds.pack.galleryLoad')}
+                      </Button>
+                      <Button variant="outline" size="sm" className="h-7" onClick={() => packFileRef.current?.click()} title={tt('ds.pack.importTip')} aria-label={tt('ds.pack.import')}>
+                        <PackageOpen size={13} aria-hidden="true" /> {tt('ds.pack.import')}
+                      </Button>
+                    </div>
                   </div>
+
+                  {/* প্যাক-গ্যালারি — কমিউনিটির পাবলিশ-করা প্যাক (ক্লাউড-ঐচ্ছিক) */}
+                  {galleryOpen ? (
+                    <div className="mb-1.5 rounded-lg border border-dashed border-border p-2.5">
+                      <p className="ai-field-label mb-1.5">{tt('ds.pack.gallery')}</p>
+                      {gallery.length ? (
+                        <div className="flex max-h-52 flex-col gap-1.5 overflow-y-auto pr-1">
+                          {gallery.map((g) => {
+                            const installed = packs.some((p) => p.name === g.name);
+                            return (
+                              <div key={g.token} className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-card p-2">
+                                <PTile size="sm" tone="teal" icon={Package} />
+                                <div className="min-w-0 flex-1">
+                                  <p className="flex items-center gap-1.5 truncate text-[12.5px] font-semibold">
+                                    {g.name}
+                                    {installed ? <PPill tone="new">{tt('ds.pack.installedTag')}</PPill> : null}
+                                  </p>
+                                  <p className="truncate text-[10px] text-muted-foreground">
+                                    {tt('ds.pack.entries').replace('{n}', nf(g.entries))}
+                                    {g.author ? ` · ${g.author}` : ''}
+                                    {` · ${tt('ds.pack.dlCount').replace('{n}', nf(g.downloads))}`}
+                                  </p>
+                                </div>
+                                <Button variant="outline" size="sm" className="h-7 shrink-0" onClick={() => void installGalleryPack(g)}>
+                                  <PackagePlus size={13} aria-hidden="true" /> {tt('ds.pack.install')}
+                                </Button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <p className="text-[11px] leading-snug text-muted-foreground">{tt('ds.pack.galleryEmpty')}</p>
+                      )}
+                    </div>
+                  ) : null}
 
                   {packs.length ? (
                     <div className="flex flex-col gap-1.5">
@@ -759,6 +894,15 @@ export function DocumentStudioDialog() {
                 <ChevronLeft size={14} aria-hidden="true" /> {tt('ds.prev.back')}
               </Button>
               <div className="flex flex-wrap justify-end gap-2">
+                <Button variant="ghost" onClick={() => void sharePackLink()} title={tt('ds.pack.linkTip')} aria-label={tt('ds.pack.link')}>
+                  <Link2 size={14} aria-hidden="true" /> {tt('ds.pack.link')}
+                </Button>
+                <Button variant="ghost" onClick={() => void publishPack()} disabled={publishBusy} title={tt('ds.pack.publishTip')} aria-label={tt('ds.pack.publish')}>
+                  {publishBusy
+                    ? <Loader2 size={14} className="animate-spin" aria-hidden="true" />
+                    : <CloudUpload size={14} aria-hidden="true" />}
+                  {tt('ds.pack.publish')}
+                </Button>
                 <Button variant="ghost" onClick={exportCurrentPack} title={tt('ds.pack.exportTip')} aria-label={tt('ds.pack.export')}>
                   <PackageOpen size={14} aria-hidden="true" /> {tt('ds.pack.export')}
                 </Button>

@@ -21,6 +21,11 @@ const ALLOWED_EVENTS = new Set([
   'share_created',
   'share_viewed',
   'tour_completed',
+  'pack_link_shared',
+  'pack_url_open',
+  'pack_url_installed',
+  'pack_published',
+  'pack_gallery_installed',
 ]);
 
 export async function POST(req: NextRequest) {
