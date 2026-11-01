@@ -8,7 +8,7 @@
 
 'use client';
 
-import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useT } from '@/lib/i18n';
 import { track } from '@/lib/analytics';
@@ -38,6 +38,11 @@ export function OnboardingTour() {
   const [step, setStep] = useState(0);
   const [active, setActive] = useState(false);
   const [rect, setRect] = useState<Rect | null>(null);
+  // ডায়ালগ-সংঘর্ষ বন্ধ — অন্য ডায়ালগ (প্রশ্নপত্র স্টুডিও, ডকুমেন্ট স্টুডিও…) খোলা
+  // থাকলে ট্যুর নিজেকে লুকিয়ে রাখে; ডায়ালগ বন্ধ হলে একই ধাপ থেকে ফিরে আসে।
+  // নইলে z-[100]-টুলটিপ টুল-ডায়ালগের ওপর বসে ফর্ম-পূরণ আটকে দেয় (ব্যবহারকারীর রিপোর্ট)।
+  const [suppressed, setSuppressed] = useState(false);
+  const tourRef = useRef<HTMLDivElement | null>(null);
 
   const current = STEPS[step];
 
@@ -49,6 +54,21 @@ export function OnboardingTour() {
     const t = setTimeout(() => setActive(true), 1200);
     return () => clearTimeout(t);
   }, []);
+
+  // Radix-ডায়ালগ সনাক্ত — ট্যুরের নিজের নোড বাদে [role=dialog][data-state=open];
+  // ট্যুর-কার্ডে data-state নেই, তাই সংঘর্ষ-অমোঘ। MutationObserver-এ খোলা/বন্ধ দুটোই ধরে।
+  useEffect(() => {
+    if (!active) return;
+    const check = () => {
+      const foreign = Array.from(document.querySelectorAll('[role="dialog"][data-state="open"], [role="alertdialog"][data-state="open"]'))
+        .some((el) => !tourRef.current || !tourRef.current.contains(el));
+      setSuppressed(foreign);
+    };
+    check();
+    const mo = new MutationObserver(check);
+    mo.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-state'] });
+    return () => mo.disconnect();
+  }, [active]);
 
   const measure = useCallback(() => {
     if (!current?.sel) { setRect(null); return; }
@@ -82,7 +102,7 @@ export function OnboardingTour() {
   }, []);
 
   useEffect(() => {
-    if (!active) return;
+    if (!active || suppressed) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') { e.preventDefault(); finish(); }
       if (e.key === 'ArrowRight' || e.key === 'Enter') {
@@ -93,9 +113,9 @@ export function OnboardingTour() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [active, finish]);
+  }, [active, suppressed, finish]);
 
-  if (!active) return null;
+  if (!active || suppressed) return null;
 
   const pad = 8;
   const hasRect = rect !== null && rect.width > 0;
@@ -119,7 +139,7 @@ export function OnboardingTour() {
       };
 
   return (
-    <div className="no-print" role="dialog" aria-modal="true" aria-label={tt(current.titleKey)}>
+    <div ref={tourRef} className="no-print" role="dialog" aria-modal="true" aria-label={tt(current.titleKey)}>
       {/* কাটআউট স্পটলাইট */}
       {hasRect ? (
         <div
