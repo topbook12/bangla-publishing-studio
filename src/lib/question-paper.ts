@@ -1550,6 +1550,10 @@ export function parseQuestionText(raw: string, meta: QpMeta, format: QpFormat, l
   let cur: QpSection | null = null;
   let q: QpQuestion | null = null;
   let qNo = 0;
+  // চলমান প্রশ্নের মূল নম্বর (পূর্ণসংখ্যা) — ধারাবাহিকতা-যাচাই এটার সাথেই;
+  // বিশ্বব্যাপী qNo-সাপেক্ষ যাচাই ছিল না বলে যে-কোনো বিভাগ ৫/৬/৭ নম্বর থেকে
+  // শুরু হলে দ্বিতীয় প্রশ্নটি আগের প্রশ্নের লেখায় গিয়ে মিশে যেত (বাগ)
+  let lastNum = 0;
 
   for (const rawLine of lines) {
     let line = rawLine.replace(/\s+$/, '').trim();
@@ -1586,16 +1590,22 @@ export function parseQuestionText(raw: string, meta: QpMeta, format: QpFormat, l
     if (qm) {
       const num = parseInt(qm[1], 10);
       // চলমান প্রশ্নের ভেতরে "৩৬ মিটার…" জাতীয় লাইন নতুন প্রশ্ন নয় —
-      // ঠিক পরের ধারাবাহিক সংখ্যা (বা নতুন বিভাগের ১) হলেই কেবল নতুন প্রশ্ন
-      if (!q || num === qNo + 1 || num === 1) {
+      // মূল নম্বরের ঠিক পরের ধারাবাহিক সংখ্যা (বা বিভাগ-পুনরারম্ভের ১) হলেই কেবল নতুন প্রশ্ন
+      if (!q || num === lastNum + 1 || num === 1) {
         if (!cur) { cur = { title: '', note: '', questions: [] }; sections.push(cur); }
         qNo++;
+        // শিক্ষকের মূল নম্বরই থাকুক — "৬." দিয়ে শুরু হলে সেই ৬-ই দেখাবে;
+        // পুরনো ধারা সব নম্বর ১,২,৩…-তে জোর-করে পুর্নগোন্ত্রিত করত (AI-পথের সাথে অমিল)
+        // en ↔ line দৈর্ঘ্য-সমান (toEnglishDigits ১:১), তাই সূচি দুই জায়গায়ই টিকে
+        const numPrefixLen = qm[0].length - qm[2].length;
+        const origNum = line.slice(0, numPrefixLen).match(/[\u09e6-\u09ef\d]+/)?.[0]
+          ?? (banglaNums ? toBanglaNumber(qNo) : String(qNo));
         const rest = line.slice(qm[0].length - qm[2].length);
         const { text, marks } = splitTrailingMarks(rest);
         // বছর-ট্যাগ — "…ব্যাখ্যা কর। [DU '19]" → tag আলাদা
         const yt = extractYearTagFromText(text);
         q = {
-          number: banglaNums ? toBanglaNumber(qNo) : String(qNo),
+          number: origNum,
           text: yt.text,
           marks,
           options: [],
@@ -1603,6 +1613,7 @@ export function parseQuestionText(raw: string, meta: QpMeta, format: QpFormat, l
           importance: stars >= 2 ? 2 : stars === 1 ? 1 : undefined,
           ...(yt.tag ? { yearTag: yt.tag } : {}),
         };
+        lastNum = num;
         cur.questions.push(q);
         continue;
       }
