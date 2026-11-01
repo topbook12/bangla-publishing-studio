@@ -68,7 +68,9 @@ server.log
 /tests/
 /examples/
 /download/
-/mini-services/
+# mini-services: সোর্স কমিট হয় — শুধু প্রতি-সার্ভিস node_modules/লগ বাদ
+/mini-services/*/node_modules/
+/mini-services/*.log
 /Caddyfile
 /worklog.md
 

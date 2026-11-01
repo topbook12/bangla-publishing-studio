@@ -1,0 +1,12 @@
+{
+  "name": "presence-service",
+  "version": "0.1.0",
+  "private": true,
+  "description": "দিন ৬৩ — প্রেজেন্স-অনলি সহযোগিতা সার্ভিস (socket.io, ইন-মেমরি, কোনো ধারণ-স্থায়ী ডেটা নেই — local-first বান্ধব)",
+  "scripts": {
+    "dev": "bun --hot index.ts"
+  },
+  "dependencies": {
+    "socket.io": "^4.8.4"
+  }
+}

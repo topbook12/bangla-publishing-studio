@@ -28,6 +28,7 @@ import { useEditorStore } from '@/lib/store';
 import { useUiStore } from '@/lib/ui-store';
 import { useAiStore, aiConfiguredSelector } from '@/lib/ai-store';
 import { AccountButton } from '@/components/auth/account-button';
+import { PresenceBar } from '@/components/presence-bar';
 import { useViewStore } from '@/lib/view-store';
 import { useT, useLangStore, useFmtDate, LANGUAGES } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
@@ -36,7 +37,8 @@ function SaveIndicator() {
   const saveState = useEditorStore((s) => s.saveState);
   const tt = useT();
   return (
-    <span className={`save-indicator save-indicator-${saveState.status}`} role="status">
+    // max-sm:hidden — ৩৯০px মোবাইল হেডার-জায়গা নিয়ন্ত্রণ (স্থানীয় অটো-সেভ, মোবাইলে অপরিহার্য নয়; ডেস্কটপে থাকে)
+    <span className={`save-indicator save-indicator-${saveState.status} max-sm:hidden`} role="status">
       {saveState.status === 'saving' ? (
         <><span className="save-pulse" aria-hidden="true" /><Loader2 size={13} className="animate-spin" /> {tt('hdr.save.saving')}</>
       ) : saveState.status === 'saved' ? (
@@ -159,7 +161,7 @@ function AiChatButton() {
         <Button
           variant="ghost"
           size="icon"
-          className={cn('header-action max-sm:h-11 max-sm:w-11', aiChatOpen && 'bg-accent text-accent-foreground', configured && 'ai-header-on')}
+          className={cn('header-action max-sm:hidden', aiChatOpen && 'bg-accent text-accent-foreground', configured && 'ai-header-on')}
           aria-label={tt('hdr.chat.tip')}
           aria-pressed={aiChatOpen}
           title={tt('hdr.chat.tip')}
@@ -277,7 +279,9 @@ export function AppHeader() {
         </div>
       </div>
 
-      <div className="flex shrink-0 items-center gap-1.5">
+      <div className="flex shrink-0 items-center gap-1.5 max-sm:gap-1">
+        {/* দিন ৬৩ — প্রেজেন্স-অনলি সহযোগিতা: কে এখানে, কে লিখছে */}
+        <PresenceBar />
         <SaveIndicator />
         <span className="hidden text-xs text-muted-foreground md:inline">{now}</span>
         {/* ফেজ-৩ — ল্যান্ডিং পেজে ফেরা (পাবলিক হোম) */}
@@ -382,7 +386,7 @@ export function AppHeader() {
             <Button
               variant="secondary"
               size="sm"
-              className="header-action header-action-accent gap-1.5 max-sm:h-11 max-sm:w-11 max-sm:px-0"
+              className="header-action header-action-accent gap-1.5 max-sm:h-11 max-sm:w-11 max-sm:px-0 max-sm:hidden"
               aria-label={tt('hdr.proofing')}
               onClick={() => openDialog('review')}
             >
