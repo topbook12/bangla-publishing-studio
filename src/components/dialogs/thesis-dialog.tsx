@@ -18,7 +18,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import {
-  BadgeCheck, BookMarked, Check, Copy, Eraser, GraduationCap, Loader2, PenLine,
+  BadgeCheck, BookMarked, Check, ChevronRight, Copy, Eraser, GraduationCap, Loader2, PenLine,
   Plus, ScrollText, Sparkles, Tag, Trash2, Wand2,
 } from 'lucide-react';
 import {
@@ -541,7 +541,24 @@ export function ThesisDialog() {
           <DialogTitle>{tt('thesis.title')}</DialogTitle>
           <DialogDescription>{tt('thesis.desc')}</DialogDescription>
         </DialogHeader>
-        <PHero tone="emerald" icon={GraduationCap} title={tt('thesis.title')} desc={tt('thesis.desc')} />
+        <PHero
+          tone="emerald"
+          icon={GraduationCap}
+          title={tt('thesis.title')}
+          desc={tt('thesis.desc.short')}
+          actions={
+            <p className="thesis-path" aria-label={tt('thesis.desc')}>
+              {tt('thesis.path').split('→').map((step, i, arr) => (
+                <span key={i} className="thesis-path-step">
+                  <span>{step.trim()}</span>
+                  {i < arr.length - 1 && (
+                    <ChevronRight size={11} aria-hidden="true" className="thesis-path-sep" />
+                  )}
+                </span>
+              ))}
+            </p>
+          }
+        />
 
         {/* ট্যাব-বার */}
         <div className="ai-tabs" role="tablist" aria-label={tt('thesis.title')}>

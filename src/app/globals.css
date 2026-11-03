@@ -4931,12 +4931,37 @@ html.dark .thesis-accent-ico { color: oklch(0.78 0.1 295); }
 }
 html.dark .thesis-mixed-warn { color: oklch(0.82 0.1 80); }
 
-/* ট্যাব-বার স্টিকি — লম্বা নির্মাণ-ট্যাবে স্ক্রলেও ট্যাব চোখের সামনে থাকে */
+/* ট্যাব-বার স্টিকি — লম্বা নির্মাণ-ট্যাবে স্ক্রলেও ট্যাব চোখের সামনে থাকে।
+   প্রিমিয়াম: ৪ ট্যাব এক সারিতে (Word-স্টাইল সেগমেন্টেড কন্ট্রোল), সরু স্ক্রিনে ২×২। */
 .thesis-dialog .ai-tabs {
   position: sticky; top: 0; z-index: 10;
+  grid-template-columns: repeat(4, 1fr);
   background: var(--card, var(--background));
   box-shadow: 0 6px 10px -8px rgb(0 0 0 / 0.14);
   border-radius: 0 0 10px 10px;
+}
+@media (max-width: 559px) {
+  .thesis-dialog .ai-tabs { grid-template-columns: 1fr 1fr; }
+}
+
+/* হিরো-পথ-স্ট্রিপ — কাঠামো-ধাপগুলো ছোট পিল + শেভরন সেপারেটর হিসেবে
+   (রান-অন বাক্যের বদলে; স্ক্রিন-রিডারের জন্য সম্পূর্ণ বর্ণনা aria-label-এ) */
+.thesis-path {
+  display: flex; flex-wrap: wrap; align-items: center;
+  gap: 2px 5px;
+  font-size: 11px; font-weight: 600; color: var(--muted-foreground);
+  margin: 0;
+}
+.thesis-path-step { display: inline-flex; align-items: center; gap: 5px; }
+.thesis-path-step > span {
+  padding: 2px 8px; border-radius: 999px; white-space: nowrap;
+  background: color-mix(in oklab, var(--primary) 7%, transparent);
+  border: 1px solid color-mix(in oklab, var(--primary) 16%, transparent);
+}
+.thesis-path-sep { color: color-mix(in oklab, var(--muted-foreground) 50%, transparent); }
+html.dark .thesis-path-step > span {
+  background: color-mix(in oklab, var(--primary) 16%, transparent);
+  border-color: color-mix(in oklab, var(--primary) 30%, transparent);
 }
 
 .thesis-draft-notice {
