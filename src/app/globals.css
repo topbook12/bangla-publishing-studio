@@ -676,15 +676,18 @@ html.dark .ribbon-tab-ind {
 }
 
 .ribbon-divider {
+  /* flex-shrink:0 — স্ক্রল-কনটেইনারে জায়গা টাইট হলে শূন্য-কনটেন্ট ডিভাইডার
+     প্রথমে 0px-এ চাপা পড়ত (গ্রুপ-বিভাজন অদৃশ্য হয়ে যেত); প্রস্থ রক্ষা করাই */
   width: 1px;
+  flex: 0 0 1px;
   align-self: stretch;
   margin: 6px 6px 20px;
   background: linear-gradient(
     to bottom,
     transparent,
-    color-mix(in oklab, var(--border) 55%, transparent) 18%,
-    var(--border) 50%,
-    color-mix(in oklab, var(--border) 55%, transparent) 82%,
+    color-mix(in oklab, var(--border) 80%, transparent) 18%,
+    color-mix(in oklab, var(--border) 92%, var(--muted-foreground) 8%) 50%,
+    color-mix(in oklab, var(--border) 80%, transparent) 82%,
     transparent
   );
 }
