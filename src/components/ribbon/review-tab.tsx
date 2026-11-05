@@ -5,7 +5,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { ArrowLeftRight, ChevronDown, Grid3x3, Pause, Search, Sigma, SpellCheck2, Square, Type, Volume2, ScanEye } from 'lucide-react';
+import { ArrowLeftRight, ChevronDown, Grid3x3, MessageSquarePlus, Pause, Search, Sigma, SpellCheck2, Square, Type, Volume2, ScanEye } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Switch } from '@/components/ui/switch';
@@ -14,6 +14,7 @@ import { RibbonButton, RibbonDivider, RibbonGroup, refocusActiveEditor, runComma
 import { useEditorStore } from '@/lib/store';
 import { useUiStore } from '@/lib/ui-store';
 import { useDocStats } from '@/lib/doc-stats';
+import { startCommentFromSelection } from '@/lib/comments';
 import { CONJUNCTS, findConjunctWords, toBanglaNumber } from '@/lib/bangla';
 import { useReadAloud } from '@/lib/read-aloud';
 import { t, useT, useFmtNum, tplNodes } from '@/lib/i18n';
@@ -241,6 +242,16 @@ export function ReviewTab() {
           label={tt('rev.kruti')}
           title={tt('rev.krutiTip')}
           onClick={() => openDialog('krutiConverter')}
+        />
+      </RibbonGroup>
+      <RibbonDivider />
+      <RibbonGroup label={tt('cm.group')} accent="collaboration">
+        <RibbonButton
+          icon={MessageSquarePlus}
+          label={tt('cm.new')}
+          title={tt('cm.newTip')}
+          shortcut="Ctrl+Alt+M"
+          onClick={() => startCommentFromSelection()}
         />
       </RibbonGroup>
       <RibbonDivider />

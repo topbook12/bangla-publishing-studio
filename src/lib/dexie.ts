@@ -4,7 +4,7 @@
  */
 
 import Dexie, { type EntityTable } from 'dexie';
-import type { BookProject, DocumentSettings, PageData } from './types';
+import type { BookProject, CommentThread, DocumentSettings, PageData } from './types';
 
 /**
  * প্রজেক্টের HTML কনটেন্ট বড় হতে পারে, তাই প্রতিটি পৃষ্ঠা আলাদা রেকর্ড নয় —
@@ -46,6 +46,7 @@ const db = new Dexie('bwp-studio') as Dexie & {
   projects: EntityTable<ProjectRecord, 'id'>;
   snapshots: EntityTable<SnapshotRecord, 'id'>;
   assets: EntityTable<CustomAssetRecord, 'id'>;
+  comments: EntityTable<CommentThread, 'id'>;
 };
 
 db.version(1).stores({
@@ -61,6 +62,12 @@ db.version(2).stores({
 // সংস্করণ ৩ — ডিজাইন স্টোরের নিজের আপলোড (অ্যাডিটিভ)
 db.version(3).stores({
   assets: 'id, name, createdAt',
+});
+
+// সংস্করণ ৪ — দিন ৬৪: কমেন্ট/রিভিউ-থ্রেড (অ্যাঙ্কর-মার্ক পাতার HTML-এই থাকে,
+// থ্রেড-মেটাডেটা এখানে — দলিল-ভিত্তিক docId ইনডেক্সে প্রকল্প বদলালে আলাদা লোড)
+db.version(4).stores({
+  comments: 'id, docId, createdAt',
 });
 
 export { db };

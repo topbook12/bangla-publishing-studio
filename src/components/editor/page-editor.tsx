@@ -24,6 +24,8 @@ import TableRow from '@tiptap/extension-table-row';
 import { FramedImage, insertImageFilesInto } from './image-ext';
 import { TableCellWithBg, TableHeaderWithBg } from './table-cell-bg';
 import { FindHighlightExtension } from '@/lib/find-highlight';
+import { CommentAnchorMark, COMMENT_ANCHOR_NAME } from '@/lib/comment-anchor';
+import { useCommentsStore } from '@/lib/comments';
 import Placeholder from '@tiptap/extension-placeholder';
 import Subscript from '@tiptap/extension-subscript';
 import Superscript from '@tiptap/extension-superscript';
@@ -176,6 +178,8 @@ export function PageEditor({ page, index, isFirstPage }: PageEditorProps) {
       ...designExtensions,
       BlockMover,
       shortcuts,
+      // দিন ৬৪ — কমেন্ট-অ্যাঙ্কর মার্ক (margin-note রিভিউ-থ্রেড)
+      CommentAnchorMark,
       // দিন ১৬ — খুঁজুন-ফলাফল হাইলাইট (decoration — ডক/undo/স্টোরেজ অপরিবর্তিত)
       FindHighlightExtension(),
     ],
@@ -185,6 +189,15 @@ export function PageEditor({ page, index, isFirstPage }: PageEditorProps) {
       attributes: {
         class: 'bwp-prosemirror',
         'data-page-id': page.id,
+      },
+      // দিন ৬৪ — অ্যাঙ্কর-লেখায় ক্লিক করলে রেল-কার্ড হাইলাইট
+      handleClick(view) {
+        const markType = view.state.schema.marks[COMMENT_ANCHOR_NAME];
+        if (!markType) return false;
+        const m = view.state.selection.$from.marks().find((x) => x.type === markType);
+        const id = m?.attrs.commentId as string | undefined;
+        if (id) useCommentsStore.getState().setActive(id);
+        return false; // ক্লিকের স্বাভাবিক ব্যবহার চলুক
       },
       // দিন ১৩ — পেস্ট/ড্রপ করা ছবি-ফাইল সরাসরি এডিটরে ঢোকে (Word-অভিজ্ঞতা);
       // ছবি-ফাইল না থাকলে সাধারণ পেস্ট/ড্রপ আগের মতোই চলে। view = কলের সময়ের

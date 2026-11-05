@@ -33,6 +33,7 @@ import { dictCloud } from './dict-cloud';
 import { dictBilling } from './dict-billing';
 import { dictFeedback } from './dict-feedback';
 import { dictPresence } from './dict-presence';
+import { dictComments } from './dict-comments';
 
 export const ALL_DICTS: Dict = Object.assign(
   {},
@@ -55,6 +56,7 @@ export const ALL_DICTS: Dict = Object.assign(
   dictBilling,
   dictFeedback,
   dictPresence,
+  dictComments,
 );
 
 function lookup(key: string, lang: Lang, fallback?: string): string {

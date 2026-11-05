@@ -27,6 +27,8 @@ import { PageEditor } from './page-editor';
 import { WorkspaceHRule, PageVRule } from './workspace-ruler';
 import { ContextMenuHost } from './context-menu';
 import { AiBubbleHost } from './ai-bubble';
+import { CommentRail } from '@/components/comments/comment-rail';
+import { startCommentFromSelection } from '@/lib/comments';
 
 /** দিন ১১ — পাতা-সীমানায় হোভার করলে দেখা "+" পিল: ঠিক এখানে নতুন পাতা ঢোকায় (মাঝে-সন্নিবেশ)। */
 function InsertGap({ afterPageId }: { afterPageId: string }) {
@@ -208,6 +210,15 @@ export function Workspace() {
           // এফেক্ট একবারই রেজিস্টার হয় — চলতি ভাষার টোস্টের জন্য t() (tt নয়)
           toast.success(t('ws.toast.saved', 'Saved — autosave is always on'));
         });
+        return;
+      }
+      // দিন ৬৪ — Ctrl+Alt+M: সিলেকশনে নতুন মন্তব্য (margin-note রিভিউ-থ্রেড)
+      if ((e.ctrlKey || e.metaKey) && e.altKey && !e.shiftKey && (e.key === 'm' || e.key === 'M')) {
+        const el = document.activeElement as HTMLElement | null;
+        // ইনপুট/টেক্সটএরিয়া/ডায়ালগের ভিতরে হস্তক্ষেপ নয়
+        if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable) && !el.closest('.ProseMirror')) return;
+        e.preventDefault();
+        startCommentFromSelection();
       }
     };
     window.addEventListener('keydown', onKey);
@@ -298,6 +309,8 @@ export function Workspace() {
                 <PageEditor page={page} index={index} isFirstPage={index === 0} />
               ) : null}
             </PaperPage>
+            {/* দিন ৬৪ — কমেন্ট-রেল (margin-note): পাতার ডান মার্জিনে থ্রেড-বুদবুদ */}
+            <CommentRail pageId={page.id} />
           </section>
           </Fragment>
         ))}

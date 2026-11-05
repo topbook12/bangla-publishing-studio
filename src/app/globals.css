@@ -5318,3 +5318,260 @@ html.dark .ribbon-tab[data-tone="purple"]  .ribbon-tab-ico { color: oklch(0.77 0
 @media print {
   .presence-wrap { display: none !important; }
 }
+
+/* ═══════════════ দিন ৬৪ — কমেন্ট/রিভিউ-থ্রেড (margin-note ধাঁচ) ═══════════════
+   অ্যাঙ্কর-মার্ক পাতার HTML-এ (span.cm-anchor[data-comment-id]) — রেল .page-slot-এর
+   ডানে (ws-ruler-v-এর দর্পণ: right:100% → এখানে left:100%)। প্রিন্টে অ্যাঙ্কর-দাগ
+   ও রেল বাদ (no-print + নিচের print ব্লক) — কাগজে কেবল লেখাই ছাপে। */
+
+/* ── অ্যাঙ্কর হাইলাইট (লেখার উপর) ── */
+.cm-anchor {
+  background: color-mix(in oklab, var(--primary) 14%, transparent);
+  border-bottom: 2px solid color-mix(in oklab, var(--primary) 55%, transparent);
+  border-radius: 2px;
+  padding: 0 1px;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+.cm-anchor:hover { background: color-mix(in oklab, var(--primary) 22%, transparent); }
+.cm-anchor.is-flash,
+.cm-anchor.cm-flash {
+  animation: cm-flash-bg 1.5s ease;
+}
+@keyframes cm-flash-bg {
+  0%, 55% { background: color-mix(in oklab, var(--primary) 34%, transparent); }
+  100% { background: color-mix(in oklab, var(--primary) 14%, transparent); }
+}
+
+/* ── রেল (পাতার ডান মার্জিন) ── */
+.cm-rail {
+  position: absolute;
+  top: 6px;
+  left: calc(100% + 20px);
+  width: 232px;
+  max-height: calc(100% - 12px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  z-index: 12;
+  padding: 2px;
+}
+
+/* ── থ্রেড-কার্ড ── */
+.cm-card {
+  background: color-mix(in oklab, var(--card) 96%, transparent);
+  border: 1px solid color-mix(in oklab, var(--foreground) 12%, transparent);
+  border-left: 3px solid color-mix(in oklab, var(--primary) 55%, transparent);
+  border-radius: 10px;
+  padding: 8px 9px;
+  box-shadow: 0 4px 14px -6px rgb(15 23 42 / 0.16);
+  font-size: 12px;
+  line-height: 1.45;
+  cursor: default;
+  transition: box-shadow 140ms ease, border-color 140ms ease, transform 140ms ease;
+}
+.cm-card:hover { box-shadow: 0 8px 20px -8px rgb(15 23 42 / 0.24); }
+.cm-card.is-active {
+  border-color: color-mix(in oklab, var(--primary) 42%, transparent);
+  border-left-width: 3px;
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--primary) 18%, transparent), 0 8px 20px -8px rgb(15 23 42 / 0.22);
+}
+.cm-card.is-composing { border-style: dashed; }
+.cm-card.is-resolved { opacity: 0.68; border-left-color: color-mix(in oklab, var(--muted-foreground) 45%, transparent); }
+
+.cm-card-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.cm-avatar {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  border-radius: 9999px;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+.cm-avatar-sm { width: 14px; height: 14px; font-size: 8px; }
+.cm-author { font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cm-author-sm { font-weight: 600; font-size: 10.5px; color: var(--muted-foreground); }
+.cm-time { margin-left: auto; flex: 0 0 auto; font-size: 10px; color: var(--muted-foreground); }
+
+.cm-quote {
+  margin: 0 0 4px;
+  padding: 3px 7px;
+  font-size: 11px;
+  color: var(--muted-foreground);
+  background: color-mix(in oklab, var(--foreground) 5%, transparent);
+  border-left: 2px solid color-mix(in oklab, var(--foreground) 18%, transparent);
+  border-radius: 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.cm-body { margin: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+.cm-mention {
+  background: color-mix(in oklab, var(--primary) 16%, transparent);
+  color: color-mix(in oklab, var(--primary) 78%, var(--foreground));
+  border-radius: 4px;
+  padding: 0 3px;
+  font-weight: 600;
+}
+
+.cm-replies {
+  margin-top: 6px;
+  padding-top: 5px;
+  border-top: 1px dashed color-mix(in oklab, var(--foreground) 12%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.cm-reply { display: flex; gap: 5px; align-items: flex-start; }
+.cm-reply-main { min-width: 0; }
+
+.cm-linklike {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: 0;
+  padding: 2px 0;
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: color-mix(in oklab, var(--primary) 80%, var(--foreground));
+  cursor: pointer;
+}
+.cm-linklike:hover { text-decoration: underline; }
+
+.cm-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-top: 6px;
+  padding-top: 4px;
+  border-top: 1px solid color-mix(in oklab, var(--foreground) 8%, transparent);
+}
+.cm-iconbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 0;
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+.cm-iconbtn:hover { background: color-mix(in oklab, var(--foreground) 8%, transparent); color: var(--foreground); }
+.cm-iconbtn.cm-danger:hover { background: color-mix(in oklab, 220 38 38 / 12%, transparent); color: #b91c1c; }
+html.dark .cm-iconbtn.cm-danger:hover { color: #f87171; }
+.cm-reply-trigger { margin-top: 4px; }
+
+/* ── ইনপুট (কম্পোজার + উত্তর) ── */
+.cm-input-wrap { position: relative; margin-top: 6px; }
+.cm-input {
+  width: 100%;
+  resize: vertical;
+  min-height: 44px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in oklab, var(--foreground) 16%, transparent);
+  background: var(--background);
+  color: var(--foreground);
+  padding: 6px 8px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.cm-input:focus { outline: 2px solid color-mix(in oklab, var(--primary) 45%, transparent); outline-offset: 0; }
+.cm-input-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-top: 4px;
+}
+.cm-mention-pop {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 30;
+  margin: 0;
+  list-style: none;
+  padding: 3px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in oklab, var(--foreground) 14%, transparent);
+  background: var(--popover, var(--card));
+  box-shadow: 0 10px 24px -10px rgb(15 23 42 / 0.3);
+  max-height: 168px;
+  overflow-y: auto;
+}
+.cm-mention-item {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  background: transparent;
+  padding: 5px 6px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  text-align: left;
+}
+.cm-mention-item:hover { background: color-mix(in oklab, var(--primary) 10%, transparent); }
+
+/* ── সমাধান-গোছানো (details) ── */
+.cm-resolved-group > summary {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  list-style: none;
+  padding: 4px 6px;
+  border-radius: 8px;
+  background: color-mix(in oklab, var(--foreground) 4%, transparent);
+}
+.cm-resolved-group > summary::-webkit-details-marker { display: none; }
+.cm-resolved-group > summary:hover { background: color-mix(in oklab, var(--foreground) 8%, transparent); }
+.cm-resolved-group[open] > summary { margin-bottom: 8px; }
+
+/* ── রেল স্ক্রলবার (slim) ── */
+.cm-rail::-webkit-scrollbar { width: 7px; }
+.cm-rail::-webkit-scrollbar-thumb {
+  background: color-mix(in oklab, var(--foreground) 18%, transparent);
+  border-radius: 9999px;
+}
+
+/* ── সংকীর্ণ স্ক্রিন: রেল পাতার নিচে স্ট্যাটিক ব্লক (ওভারফ্লো শূন্য) ── */
+@media (max-width: 1099px) {
+  .cm-rail {
+    position: static;
+    width: 100%;
+    max-width: 360px;
+    max-height: none;
+    margin: 10px auto 0;
+  }
+}
+
+/* ── প্রিন্ট: অ্যাঙ্কর-দাগ কাগজে ছাপে না, রেল নয় (no-print দ্বৈত-রক্ষা) ── */
+@media print {
+  .cm-rail { display: none !important; }
+  .cm-anchor {
+    background: transparent !important;
+    border-bottom-color: transparent !important;
+  }
+}

@@ -217,6 +217,40 @@ export interface BookProject {
   pages: PageData[];
 }
 
+// ─── দিন ৬৪ — কমেন্ট/রিভিউ-থ্রেড (margin-note ধাঁচ) ───
+
+/**
+ * মন্তব্য-থ্রেডের একটি বার্তা (প্রথম বার্তা = থ্রেডের body; বাকিগুলো replies[])।
+ * অ্যাঙ্কর: নিজের আলাদা টেবিলে নয় — পাতার HTML-এর ভিতরেই
+ * `<span data-comment-id>` মার্ক হিসেবে থাকে (দলিলের সাথেই সেভ/লোড/শেয়ার)।
+ */
+export interface CommentMessage {
+  id: string;
+  authorId: string;
+  /** প্রেজেন্স-পরিচয় স্ন্যাপশট — লেখক অফলাইনে গেলেও নাম/রং দেখায় */
+  authorName: string;
+  authorColor: string;
+  /** মন্তব্য-লেখা; @উল্লেখ সাদামাটা টেক্সট হিসেবেই থাকে, রেন্ডারে হাইলাইট হয় */
+  body: string;
+  createdAt: number;
+}
+
+export interface CommentThread {
+  /** 'cm-…' — পাতার HTML-এর data-comment-id-এর সাথে একই */
+  id: string;
+  /** কোন প্রকল্পের (BookProject.id) */
+  docId: string;
+  /** প্রথম মন্তব্য যে পাতায় করা হয়েছিল (অ্যাঙ্কর সরে গেলেও ইতিহাস রইল) */
+  pageId: string;
+  /** নির্বাচিত লেখার স্ন্যাপশট (≤২০০ অক্ষর) — অ্যাঙ্কর হারালেও প্রসঙ্গ দেখায় */
+  quote: string;
+  /** থ্রেডের প্রথম বার্তা */
+  body: CommentMessage;
+  replies: CommentMessage[];
+  resolved: boolean;
+  resolvedAt: number | null;
+}
+
 // ─── TOC ───
 
 export interface TocEntry {
