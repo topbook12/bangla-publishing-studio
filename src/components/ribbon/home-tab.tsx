@@ -47,7 +47,7 @@ function FontFamilySelect() {
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
-        <button type="button" className="ribbon-select w-44" title={tt('home.font')} style={{ fontFamily: current ? fontStackOf(current) : undefined }}>
+        <button type="button" className="ribbon-select w-40" title={tt('home.font')} style={{ fontFamily: current ? fontStackOf(current) : undefined }}>
           <span className="min-w-0 flex-1 truncate text-left">{current || tt('home.font')}</span>
           <ChevronDown className="h-3 w-3 shrink-0 opacity-60" aria-hidden="true" />
         </button>
@@ -141,7 +141,7 @@ function ColorPicker() {
       <Tooltip>
         <TooltipTrigger asChild>
           <PopoverTrigger asChild>
-            <button type="button" className="ribbon-btn" aria-label={tt('home.color.tip')}>
+            <button type="button" className="ribbon-btn" data-iconic="" aria-label={tt('home.color.tip')}>
               <Palette size={16} />
               <span className="ribbon-btn-label">{tt('home.color')}</span>
             </button>
@@ -251,6 +251,7 @@ function FormatPainterButton() {
       shortcut="Ctrl+Alt+C"
       title={tt('home.formatpainter.tip')}
       active={isPainterArmed()}
+      iconic
       onClick={() => {
         if (isPainterArmed()) {
           disarmPainter();
@@ -281,7 +282,7 @@ function TextToolsMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button type="button" className="ribbon-btn" aria-label={tt('home.texttools')} title={tt('home.texttools.tip')}>
+        <button type="button" className="ribbon-btn" data-iconic="" aria-label={tt('home.texttools')} title={tt('home.texttools.tip')}>
           <CaseSensitive size={16} aria-hidden="true" />
           <span className="ribbon-btn-label">{tt('home.texttools')}</span>
           <ChevronDown className="h-3 w-3 opacity-60" aria-hidden="true" />
@@ -335,18 +336,18 @@ export function HomeTab() {
             <FontSizeSelect />
           </div>
           <div className="flex gap-1">
-            <RibbonButton icon={Bold} label={tt('home.bold')} shortcut="Ctrl+B" active={isActive((e) => e.isActive('bold'))} onClick={() => cmd((e) => e.chain().focus().toggleBold().run())} />
-            <RibbonButton icon={Italic} label={tt('home.italic')} shortcut="Ctrl+I" active={isActive((e) => e.isActive('italic'))} onClick={() => cmd((e) => e.chain().focus().toggleItalic().run())} />
-            <RibbonButton icon={UnderlineIcon} label={tt('home.underline')} shortcut="Ctrl+U" active={isActive((e) => e.isActive('underline'))} onClick={() => cmd((e) => e.chain().focus().toggleUnderline().run())} />
-            <RibbonButton icon={Strikethrough} label={tt('home.strike')} shortcut="Ctrl+Shift+X" active={isActive((e) => e.isActive('strike'))} onClick={() => cmd((e) => e.chain().focus().toggleStrike().run())} />
-            <RibbonButton icon={SupIcon} label={tt('home.sup')} shortcut="Ctrl+." active={isActive((e) => e.isActive('superscript'))} onClick={() => cmd((e) => e.chain().focus().toggleSuperscript().run())} />
-            <RibbonButton icon={SubIcon} label={tt('home.sub')} shortcut="Ctrl+," active={isActive((e) => e.isActive('subscript'))} onClick={() => cmd((e) => e.chain().focus().toggleSubscript().run())} />
+            <RibbonButton icon={Bold} label={tt('home.bold')} shortcut="Ctrl+B" iconic active={isActive((e) => e.isActive('bold'))} onClick={() => cmd((e) => e.chain().focus().toggleBold().run())} />
+            <RibbonButton icon={Italic} label={tt('home.italic')} shortcut="Ctrl+I" iconic active={isActive((e) => e.isActive('italic'))} onClick={() => cmd((e) => e.chain().focus().toggleItalic().run())} />
+            <RibbonButton icon={UnderlineIcon} label={tt('home.underline')} shortcut="Ctrl+U" iconic active={isActive((e) => e.isActive('underline'))} onClick={() => cmd((e) => e.chain().focus().toggleUnderline().run())} />
+            <RibbonButton icon={Strikethrough} label={tt('home.strike')} shortcut="Ctrl+Shift+X" iconic active={isActive((e) => e.isActive('strike'))} onClick={() => cmd((e) => e.chain().focus().toggleStrike().run())} />
+            <RibbonButton icon={SupIcon} label={tt('home.sup')} shortcut="Ctrl+." iconic active={isActive((e) => e.isActive('superscript'))} onClick={() => cmd((e) => e.chain().focus().toggleSuperscript().run())} />
+            <RibbonButton icon={SubIcon} label={tt('home.sub')} shortcut="Ctrl+," iconic active={isActive((e) => e.isActive('subscript'))} onClick={() => cmd((e) => e.chain().focus().toggleSubscript().run())} />
           </div>
         </div>
         <div className="mt-1 flex gap-1">
           <ColorPicker />
-          <RibbonButton icon={Highlighter} label={tt('home.highlight')} shortcut="Ctrl+Shift+H" active={isActive((e) => e.isActive('highlight'))} onClick={() => cmd((e) => e.chain().focus().toggleHighlight({ color: '#fef08a' }).run())} />
-          <RibbonButton icon={Eraser} label={tt('home.clearformat')} onClick={() => cmd((e) => e.chain().focus().unsetAllMarks().clearNodes().run())} />
+          <RibbonButton icon={Highlighter} label={tt('home.highlight')} shortcut="Ctrl+Shift+H" iconic active={isActive((e) => e.isActive('highlight'))} onClick={() => cmd((e) => e.chain().focus().toggleHighlight({ color: '#fef08a' }).run())} />
+          <RibbonButton icon={Eraser} label={tt('home.clearformat')} iconic onClick={() => cmd((e) => e.chain().focus().unsetAllMarks().clearNodes().run())} />
           <FormatPainterButton />
         </div>
       </RibbonGroup>
@@ -354,18 +355,18 @@ export function HomeTab() {
       <RibbonGroup label={tt('home.group.paragraph')} accent="paragraph">
         <div className="flex flex-col gap-1">
           <div className="flex gap-1">
-            <RibbonButton icon={AlignLeft} label={tt('home.alignleft')} active={isActive((e) => e.isActive({ textAlign: 'left' }))} onClick={() => cmd((e) => e.chain().focus().setTextAlign('left').run())} />
-            <RibbonButton icon={AlignCenter} label={tt('home.center')} active={isActive((e) => e.isActive({ textAlign: 'center' }))} onClick={() => cmd((e) => e.chain().focus().setTextAlign('center').run())} />
-            <RibbonButton icon={AlignRight} label={tt('home.alignright')} active={isActive((e) => e.isActive({ textAlign: 'right' }))} onClick={() => cmd((e) => e.chain().focus().setTextAlign('right').run())} />
-            <RibbonButton icon={AlignJustify} label={tt('home.justify')} active={isActive((e) => e.isActive({ textAlign: 'justify' }))} onClick={() => cmd((e) => e.chain().focus().setTextAlign('justify').run())} />
+            <RibbonButton icon={AlignLeft} label={tt('home.alignleft')} iconic active={isActive((e) => e.isActive({ textAlign: 'left' }))} onClick={() => cmd((e) => e.chain().focus().setTextAlign('left').run())} />
+            <RibbonButton icon={AlignCenter} label={tt('home.center')} iconic active={isActive((e) => e.isActive({ textAlign: 'center' }))} onClick={() => cmd((e) => e.chain().focus().setTextAlign('center').run())} />
+            <RibbonButton icon={AlignRight} label={tt('home.alignright')} iconic active={isActive((e) => e.isActive({ textAlign: 'right' }))} onClick={() => cmd((e) => e.chain().focus().setTextAlign('right').run())} />
+            <RibbonButton icon={AlignJustify} label={tt('home.justify')} iconic active={isActive((e) => e.isActive({ textAlign: 'justify' }))} onClick={() => cmd((e) => e.chain().focus().setTextAlign('justify').run())} />
           </div>
           <div className="flex gap-1">
-            <RibbonButton icon={List} label={tt('home.bullets')} active={isActive((e) => e.isActive('bulletList'))} onClick={() => cmd((e) => e.chain().focus().toggleBulletList().run())} />
-            <RibbonButton icon={ListOrdered} label={tt('home.numbering')} active={isActive((e) => e.isActive('orderedList'))} onClick={() => cmd((e) => e.chain().focus().toggleOrderedList().run())} />
-            <RibbonButton icon={Quote} label={tt('home.quote')} active={isActive((e) => e.isActive('blockquote'))} onClick={() => cmd((e) => e.chain().focus().toggleBlockquote().run())} />
+            <RibbonButton icon={List} label={tt('home.bullets')} iconic active={isActive((e) => e.isActive('bulletList'))} onClick={() => cmd((e) => e.chain().focus().toggleBulletList().run())} />
+            <RibbonButton icon={ListOrdered} label={tt('home.numbering')} iconic active={isActive((e) => e.isActive('orderedList'))} onClick={() => cmd((e) => e.chain().focus().toggleOrderedList().run())} />
+            <RibbonButton icon={Quote} label={tt('home.quote')} iconic active={isActive((e) => e.isActive('blockquote'))} onClick={() => cmd((e) => e.chain().focus().toggleBlockquote().run())} />
             <LineHeightSelect />
-            <RibbonButton icon={ChevronsUp} label={tt('home.moveup')} title={tt('home.moveup.tip')} shortcut="Alt+↑" onClick={() => cmd((e) => e.chain().focus().moveBlockUp().run())} />
-            <RibbonButton icon={ChevronsDown} label={tt('home.movedown')} title={tt('home.movedown.tip')} shortcut="Alt+↓" onClick={() => cmd((e) => e.chain().focus().moveBlockDown().run())} />
+            <RibbonButton icon={ChevronsUp} label={tt('home.moveup')} title={tt('home.moveup.tip')} shortcut="Alt+↑" iconic onClick={() => cmd((e) => e.chain().focus().moveBlockUp().run())} />
+            <RibbonButton icon={ChevronsDown} label={tt('home.movedown')} title={tt('home.movedown.tip')} shortcut="Alt+↓" iconic onClick={() => cmd((e) => e.chain().focus().moveBlockDown().run())} />
             <TextToolsMenu />
           </div>
         </div>

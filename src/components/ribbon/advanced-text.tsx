@@ -308,12 +308,14 @@ function IndentButtons() {
         icon={IndentIncrease}
         label={tt('adv.indent')}
         title={tt('adv.indent.tip')}
+        iconic
         onClick={() => runCommand((ed) => ed.chain().focus().adjustIndent('indentLeft', 0.5).run())}
       />
       <RibbonButton
         icon={IndentDecrease}
         label={tt('adv.outdent')}
         title={tt('adv.outdent.tip')}
+        iconic
         onClick={() => runCommand((ed) => ed.chain().focus().adjustIndent('indentLeft', -0.5).run())}
       />
     </>
@@ -429,7 +431,7 @@ function SpecialCharsMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button type="button" className="ribbon-btn" aria-label={tt('adv.specialchars')}>
+        <button type="button" className="ribbon-btn" data-iconic="" aria-label={tt('adv.specialchars')}>
           <Omega size={16} aria-hidden="true" />
           <span className="ribbon-btn-label">{tt('adv.symbols')}</span>
           <ChevronDown className="h-3 w-3 opacity-60" aria-hidden="true" />
@@ -495,7 +497,7 @@ function AdvancedSpacingPopover() {
       <Tooltip>
         <TooltipTrigger asChild>
           <PopoverTrigger asChild>
-            <button type="button" className="ribbon-btn" aria-label={tt('adv.spacing.aria')}>
+            <button type="button" className="ribbon-btn" data-iconic="" aria-label={tt('adv.spacing.aria')}>
               <SlidersHorizontal size={16} aria-hidden="true" />
               <span className="ribbon-btn-label">{tt('adv.spacing')}</span>
             </button>

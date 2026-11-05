@@ -772,12 +772,12 @@ export function InsertTab() {
               title={tt('ins.sketch.tip')}
               onClick={() => openDialog('sketchPad')}
             />
-            <RibbonButton icon={Lightbulb} label={tt('ins.conceptBox')} onClick={() => runCommand((e) => e.commands.insertCallout('concept', t('ins.callout.concept')))} />
-            <RibbonButton icon={AlertTriangle} label={tt('ins.warningBox')} onClick={() => runCommand((e) => e.commands.insertCallout('warning', t('ins.callout.warning')))} />
-            <RibbonButton icon={BookOpen} label={tt('ins.formulaBox')} onClick={() => runCommand((e) => e.commands.insertCallout('formula', t('ins.callout.formula')))} />
+            <RibbonButton icon={Lightbulb} label={tt('ins.conceptBox')} iconic onClick={() => runCommand((e) => e.commands.insertCallout('concept', t('ins.callout.concept')))} />
+            <RibbonButton icon={AlertTriangle} label={tt('ins.warningBox')} iconic onClick={() => runCommand((e) => e.commands.insertCallout('warning', t('ins.callout.warning')))} />
+            <RibbonButton icon={BookOpen} label={tt('ins.formulaBox')} iconic onClick={() => runCommand((e) => e.commands.insertCallout('formula', t('ins.callout.formula')))} />
           </div>
           <div className="flex gap-1">
-            <RibbonButton icon={Pin} label={tt('ins.noteBox')} onClick={() => runCommand((e) => e.commands.insertCallout('note', t('ins.callout.note')))} />
+            <RibbonButton icon={Pin} label={tt('ins.noteBox')} iconic onClick={() => runCommand((e) => e.commands.insertCallout('note', t('ins.callout.note')))} />
             <RibbonButton icon={HelpCircle} label={tt('ins.mcq')} onClick={() => runCommand((e) => e.commands.insertMcq())} />
             <RibbonButton
               icon={Hash}

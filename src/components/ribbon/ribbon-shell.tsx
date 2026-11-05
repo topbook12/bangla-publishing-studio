@@ -5,6 +5,7 @@
 'use client';
 
 import { memo, useEffect, useRef, useState } from 'react';
+import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import type { ReactNode } from 'react';
 import { motion, MotionConfig } from 'framer-motion';
 import {
@@ -113,11 +114,16 @@ interface RibbonButtonProps {
   /** Keyboard shortcut appended to the tooltip, e.g. "Ctrl+B" */
   shortcut?: string;
   danger?: boolean;
+  /**
+   * MS Word-স্টাইল আইকনিক কমান্ড (B/I/U, alignment, lists) — লেবেল লুকানো হয়,
+   * আইকন-ই পরিচয়; টুলটিপে লেবেল+শর্টকাট থাকে। রিবন-ঘনত্ব ঠিক রাখে।
+   */
+  iconic?: boolean;
 }
 
 // React.memo — প্যারেন্ট ট্যাব রি-রেন্ডার হলেও props (icon/label/active/disabled)
 // অপরিবর্তিত থাকলে বাটনের ভেতরের Tooltip ট্রি রি-রেন্ডার বাদ যায়
-export const RibbonButton = memo(function RibbonButton({ icon: Icon, label, onClick, active, disabled, title, shortcut, danger }: RibbonButtonProps) {
+export const RibbonButton = memo(function RibbonButton({ icon: Icon, label, onClick, active, disabled, title, shortcut, danger, iconic }: RibbonButtonProps) {
   const tip = [title ?? label, shortcut].filter(Boolean).join(' · ');
   return (
     <Tooltip>
@@ -128,6 +134,7 @@ export const RibbonButton = memo(function RibbonButton({ icon: Icon, label, onCl
           disabled={disabled}
           aria-label={label}
           aria-pressed={active}
+          {...(iconic ? { 'data-iconic': '' } : null)}
           className={cn(
             'ribbon-btn',
             active && 'ribbon-btn-active',
@@ -319,6 +326,7 @@ export function Ribbon() {
   const setTab = useEditorStore((s) => s.setRibbonTab);
   const [collapsed, setCollapsed] = useState(false);
   const bodyRef = useRibbonScrollEnhance(activeTab);
+  const tabsNavRef = useRef<HTMLElement | null>(null);
 
   // Word-like behavior: picking a tab while the ribbon is collapsed expands it again
   const selectTab = (id: RibbonTab) => {
@@ -326,17 +334,36 @@ export function Ribbon() {
     if (collapsed) setCollapsed(false);
   };
 
+  /**
+   * WAI-ARIA tabs প্যাটার্ন — ট্যাবস্ট্রিপে ←/→ দিয়ে ট্যাব বদল (ফোকাস সহ)।
+   * বাটনগুলো নেটিভ ফোকাসেবল বলে Tab আগের মতোই কাজ করে; তীর-কী এক্সট্রা।
+   */
+  const onTablistKeyDown = (e: ReactKeyboardEvent<HTMLElement>) => {
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    e.preventDefault();
+    const idx = RIBBON_TABS.findIndex((tb) => tb.id === activeTab);
+    const next = e.key === 'ArrowRight'
+      ? (idx + 1) % RIBBON_TABS.length
+      : (idx - 1 + RIBBON_TABS.length) % RIBBON_TABS.length;
+    selectTab(RIBBON_TABS[next].id);
+    requestAnimationFrame(() => {
+      tabsNavRef.current?.querySelectorAll<HTMLButtonElement>('[role=tab]')[next]?.focus();
+    });
+  };
+
   return (
     <div className="ribbon no-print" role="toolbar" aria-label={tt('rb.toolbar')}>
       <div className="ribbon-tabstrip">
         <QuickAccess />
-        <nav className="ribbon-tabs" role="tablist" aria-label={tt('rb.tabs')}>
+        <nav ref={tabsNavRef} className="ribbon-tabs" role="tablist" aria-label={tt('rb.tabs')} onKeyDown={onTablistKeyDown}>
           <MotionConfig reducedMotion="user">
             {RIBBON_TABS.map((tab) => (
               <button
                 key={tab.id}
                 type="button"
                 role="tab"
+                id={`rb-tab-${tab.id}`}
+                aria-controls="ribbon-body"
                 aria-selected={activeTab === tab.id}
                 className={cn('ribbon-tab', activeTab === tab.id && 'ribbon-tab-active')}
                 data-tone={tab.tone}
@@ -377,7 +404,7 @@ export function Ribbon() {
         </Tooltip>
       </div>
       <div className={cn('ribbon-collapse', collapsed && 'ribbon-collapse-closed')}>
-        <div ref={bodyRef} className="ribbon-body" role="tabpanel">
+        <div ref={bodyRef} id="ribbon-body" role="tabpanel" aria-labelledby={`rb-tab-${activeTab}`}>
           {activeTab === 'home' ? <HomeTab /> : null}
           {activeTab === 'insert' ? <InsertTab /> : null}
           {activeTab === 'layout' ? <LayoutTab /> : null}

@@ -100,7 +100,7 @@ export function DesignTab() {
       <RibbonDivider />
       <RibbonGroup label={tt('dsn.group.hf')} accent="header & footer">
         <div className="flex flex-col gap-1">
-          <RibbonButton icon={Settings2} label={tt('dsn.hf.master')} onClick={() => openDialog('headerFooter')} />
+          <RibbonButton icon={Settings2} label={tt('dsn.hf.master')} iconic onClick={() => openDialog('headerFooter')} />
           <div className="flex gap-1">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -194,11 +194,11 @@ export function DesignTab() {
       <RibbonDivider />
       <RibbonGroup label={tt('dsn.group.covtoc')} accent="cover & toc">
         <div className="flex gap-1">
-          <RibbonButton icon={Crown} label={tt('dsn.btn.cover')} onClick={() => openDialog('cover')} />
+          <RibbonButton icon={Crown} label={tt('dsn.btn.cover')} iconic onClick={() => openDialog('cover')} />
           <RibbonButton icon={LayoutTemplate} label={tt('dsn.btn.templates')} title={tt('dsn.btn.templatesTip')} onClick={() => openDialog('templates')} />
-          <RibbonButton icon={Store} label={tt('ins.store.btn')} title={tt('ins.store.btnTip')} onClick={() => openDialog('assetStore')} />
-          <RibbonButton icon={RefreshCw} label={tt('dsn.btn.updateToc')} onClick={refreshToc} />
-          <RibbonButton icon={Palette} label={tt('dsn.btn.borderColor')} onClick={() => {
+          <RibbonButton icon={Store} label={tt('ins.store.btn')} title={tt('ins.store.btnTip')} iconic onClick={() => openDialog('assetStore')} />
+          <RibbonButton icon={RefreshCw} label={tt('dsn.btn.updateToc')} iconic onClick={refreshToc} />
+          <RibbonButton icon={Palette} label={tt('dsn.btn.borderColor')} iconic onClick={() => {
             const c = window.prompt(tt('dsn.prompt.borderColor'), settings.pageBorderColor);
             if (c) update({ pageBorderColor: c });
           }} />

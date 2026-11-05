@@ -880,6 +880,7 @@ export function LayoutTab() {
             label={tt('lay.wm.label')}
             title={tt('lay.wm.tip')}
             active={wm.enabled}
+            iconic
             onClick={toggleWatermark}
           />
           <div className="flex gap-1">
@@ -993,18 +994,21 @@ export function LayoutTab() {
             icon={ArrowUpToLine}
             label={tt('lay.flow.fill')}
             title={tt('lay.flow.fill.tip')}
+            iconic
             onClick={fillFromNext}
           />
           <RibbonButton
             icon={Wand2}
             label={tt('lay.flow.smart')}
             title={tt('lay.flow.smart.tip')}
+            iconic
             onClick={smartFlow}
           />
           <RibbonButton
             icon={Eraser}
             label={tt('lay.flow.remove')}
             title={tt('lay.flow.remove.tip')}
+            iconic
             onClick={removeEmpty}
             danger
           />

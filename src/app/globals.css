@@ -749,6 +749,12 @@ html.dark .ribbon-btn {
 /* গ্রুপ-ভিত্তিক আইকন টিন্ট (data-accent → --grp-accent, globals.css এ ডিফাইনড) */
 .ribbon-btn > svg { color: var(--grp-accent, inherit); transition: color 0.16s; }
 
+/* MS Word-স্টাইল আইকনিক কমান্ড — B/I/U/সারিবন্ধ/লিস্টের মতো সর্বজনীন গ্লিফে
+   লেবেল লুকানো (display:none হলে flex gap-ও মরে যায়, ফাঁকা জায়গা থাকে না);
+   টুলটিপ + aria-label পূর্ণ নাম বহন করে। রিবন-ঘনত্ব Word-এর মতো ঘন হয়। */
+.ribbon-btn[data-iconic] { padding-inline: 7px; gap: 0; }
+.ribbon-btn[data-iconic] .ribbon-btn-label { display: none; }
+
 .ribbon-btn:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
 .ribbon-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; box-shadow: none; }
 
