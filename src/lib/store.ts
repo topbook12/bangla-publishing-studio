@@ -96,6 +96,9 @@ interface EditorActions {
   /** পুনরুদ্ধার — আগে বর্তমান অবস্থার নিরাপত্তা-স্ন্যাপশট, তারপর স্ন্যাপশটের অবস্থা লোড */
   restoreSnapshot: (id: string) => Promise<void>;
   deleteSnapshot: (id: string) => Promise<void>;
+  /** দিন ৬৫ — পেজ-লেভেল রোলব্যাক: স্ন্যাপশটের একটি পাতা বর্তমান বইয়ে ফেরত
+   *  (id মিললে প্রতিস্থাপন, না মিললে স্ন্যাপশট-অবস্থানে ঢোকানো)। সাফল্যে true। */
+  restorePageFromSnapshot: (snapshotId: string, snapPageId: string) => Promise<boolean>;
 }
 
 export type EditorStore = EditorState & EditorActions;
@@ -710,6 +713,34 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
     try {
       await db.snapshots.delete(id);
     } catch { /* ইন-মেমরি মোড */ }
+  },
+
+  // দিন ৬৫ — পেজ-লেভেল রোলব্যাক (ভার্সন-তুলনা ভিউ থেকে)
+  restorePageFromSnapshot: async (snapshotId, snapPageId) => {
+    try {
+      const rec = await db.snapshots.get(snapshotId);
+      const pid = get().projectId;
+      if (!rec || !pid || rec.projectId !== pid) return false; // অন্য বইয়ের স্ন্যাপশট — অগ্রাহ্য
+      const src = rec.pages.find((p) => p.id === snapPageId);
+      if (!src) return false;
+      // নিরাপত্তা-জাল: রোলব্যাকের আগে বর্তমান অবস্থার লেবেলসহ স্ন্যাপশট
+      await get().guardSnapshot('পাতা রোলব্যাকের আগে / Before page rollback');
+      const exists = get().pages.some((p) => p.id === src.id);
+      if (exists) {
+        set({ pages: get().pages.map((p) => (p.id === src.id ? { ...src } : p)) });
+      } else {
+        // পাতাটি বর্তমান বইয়ে নেই — স্ন্যাপশটের অবস্থান মেনে ঢোকানো
+        const snapIdx = rec.pages.findIndex((p) => p.id === snapPageId);
+        const pages = [...get().pages];
+        const idx = Math.max(0, Math.min(snapIdx, pages.length));
+        pages.splice(idx, 0, { ...src });
+        set({ pages, activePageId: src.id });
+      }
+      touch(get);
+      return true;
+    } catch {
+      return false; // ইন-মেমরি মোড / অন্য কোনো ব্যর্থতা
+    }
   },
 
   // ── UI ──

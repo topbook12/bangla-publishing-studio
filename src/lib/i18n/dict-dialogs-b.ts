@@ -68,6 +68,23 @@ export const dictDialogsB: Dict = {
   'dlg2.snap.restoreDesc': { bn: '“{title}” স্ন্যাপশটের অবস্থায় পুরো বই ফিরে যাবে — এরপরের সব সম্পাদনা মিলে যাবে। চিন্তা নেই: পুনরুদ্ধারের ঠিক আগে বর্তমান অবস্থার একটি স্বয়ংক্রিয় ব্যাকআপ নেওয়া হবে — সেটি থেকেও ফেরা যাবে।', hi: '“{title}” स्नैपशॉट की अवस्था पर पूरी पुस्तक लौट जाएगी — उसके बाद के सभी संपादन मिट जाएँगे। चिंता न करें: पुनर्स्थापन के ठीक पहले वर्तमान अवस्था का एक स्वतः बैकअप ले लिया जाएगा — उससे भी वापस आया जा सकता है।', en: 'The whole book will return to the state of the “{title}” snapshot — all later edits will be lost. Don’t worry: right before restoring, an automatic backup of the current state is taken — you can come back from that too.' },
   'dlg2.snap.restoreYes': { bn: 'হ্যাঁ, পুনরুদ্ধার করুন', hi: 'हाँ, पुनर्स्थापित करें', en: 'Yes, restore' },
 
+  // ─── দিন ৬৫ — ভার্সন-তুলনা (diff-view) + পেজ-লেভেল রোলব্যাক ───
+  'dlg2.snap.compare': { bn: 'তুলনা করুন', hi: 'तुलना करें', en: 'Compare' },
+  'dlg2.snap.compareAria': { bn: 'বর্তমান বইয়ের সাথে তুলনা — {t}', hi: 'वर्तमान पुस्तक से तुलना — {t}', en: 'Compare with current book — {t}' },
+  'dlg2.snap.compareTitle': { bn: 'তুলনা: স্ন্যাপশট ↔ বর্তমান বই', hi: 'तुलना: स्नैपशॉट ↔ वर्तमान पुस्तक', en: 'Compare: snapshot ↔ current book' },
+  'dlg2.snap.back': { bn: 'তালিকায় ফিরুন', hi: 'सूची पर लौटें', en: 'Back to list' },
+  'dlg2.snap.diff.identical': { bn: 'অপরিবর্তিত', hi: 'अपरिवर्तित', en: 'Unchanged' },
+  'dlg2.snap.diff.changed': { bn: 'পরিবর্তিত', hi: 'परिवर्तित', en: 'Changed' },
+  'dlg2.snap.diff.added': { bn: 'নতুন যোগ', hi: 'नया जोड़ा', en: 'Newly added' },
+  'dlg2.snap.diff.removed': { bn: 'বাদ পড়েছে', hi: 'लुप्त', en: 'Missing' },
+  'dlg2.snap.diff.pageN': { bn: 'পাতা {n}', hi: 'पृष्ठ {n}', en: 'Page {n}' },
+  'dlg2.snap.diff.empty': { bn: 'কোনো পার্থক্য নেই — এই স্ন্যাপশট আর বর্তমান বই হুবহু এক।', hi: 'कोई अंतर नहीं — यह स्नैपशॉट और वर्तमान पुस्तक बिल्कुल एक समान हैं।', en: 'No differences — this snapshot and the current book are identical.' },
+  'dlg2.snap.diff.settingsChanged': { bn: 'সেটিংসেও পার্থক্য', hi: 'सेटिंग्स में भी अंतर', en: 'Settings differ too' },
+  'dlg2.snap.restorePage': { bn: 'এই পাতা ফেরত আনুন', hi: 'यह पृष्ठ लौटाएँ', en: 'Restore this page' },
+  'dlg2.snap.restorePageYes': { bn: 'নিশ্চিত?', hi: 'पक्का?', en: 'Sure?' },
+  'dlg2.snap.toastPageRestored': { bn: 'পাতাটি স্ন্যাপশট থেকে ফেরত এসেছে', hi: 'पृष्ठ स्नैपशॉट से लौट आया', en: 'Page restored from snapshot' },
+  'dlg2.snap.toastPageRestoreFail': { bn: 'পাতা ফেরত আনা গেল না', hi: 'पृष्ठ लौटाना विफल रहा', en: 'Could not restore the page' },
+
   // ─── সহায়িকা (help-dialog) ───
   'dlg2.help.title': { bn: 'ব্যবহার নির্দেশিকা', hi: 'उपयोग निर्देशिका', en: 'User Guide' },
   'dlg2.help.desc': { bn: 'ছোট ছোট প্রশ্নে ক্লিক করে উত্তর দেখুন — সবকিছু বাংলায়।', hi: 'छोटे-छोटे प्रश्नों पर क्लिक करके उत्तर देखें — सब कुछ आपकी भाषा में।', en: 'Click a question to see the answer — everything in your own language.' },

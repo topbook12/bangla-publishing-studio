@@ -5575,3 +5575,34 @@ html.dark .cm-iconbtn.cm-danger:hover { color: #f87171; }
     border-bottom-color: transparent !important;
   }
 }
+
+/* ─── দিন ৬৫ — ভার্সন-তুলনা (diff-view): সেমান্টিক <del>/<ins> শব্দ-লেভেল হাইলাইট ─── */
+.vd-body del.vd-del,
+.vd-body ins.vd-ins {
+  text-decoration: none;
+  border-radius: 3px;
+  padding: 0 2px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+.vd-body del.vd-del {
+  background: color-mix(in oklab, #dc2626 10%, transparent);
+  color: #b91c1c;
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+  text-decoration-color: color-mix(in oklab, #dc2626 55%, transparent);
+}
+.vd-body ins.vd-ins {
+  background: color-mix(in oklab, var(--primary) 13%, transparent);
+  color: var(--primary);
+  font-weight: 600;
+}
+html.dark .vd-body del.vd-del {
+  background: color-mix(in oklab, #ef4444 16%, transparent);
+  color: #fca5a5;
+  text-decoration-color: color-mix(in oklab, #ef4444 55%, transparent);
+}
+html.dark .vd-body ins.vd-ins {
+  background: color-mix(in oklab, var(--primary) 24%, transparent);
+  color: color-mix(in oklab, var(--primary) 28%, white);
+}
