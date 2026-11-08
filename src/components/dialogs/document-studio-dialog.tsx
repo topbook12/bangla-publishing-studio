@@ -17,7 +17,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Award, Briefcase, Check, ChevronLeft, ChevronRight, CloudUpload, FileText, FileUser,
+  Award, Briefcase, Check, ChevronLeft, ChevronRight, CloudUpload, Feather, FileText, FileUser,
   GraduationCap, Globe, Link2, Loader2, Megaphone, Package, PackageOpen, PackagePlus,
   PartyPopper, ReceiptText, Replace, Scale, Search, SearchX, Sparkles,
   Stethoscope, Store, Trash2, Wand2, ZoomIn, ZoomOut, type LucideIcon,
@@ -94,6 +94,7 @@ const CAT_META: Record<DsCategory, { icon: LucideIcon; tone: PTone; dot: string 
   med:      { icon: Stethoscope,   tone: 'cyan',    dot: 'bg-cyan-500' },
   promo:    { icon: Megaphone,     tone: 'orange',  dot: 'bg-orange-500' },
   regional: { icon: Globe,         tone: 'lime',    dot: 'bg-lime-600' },
+  literature: { icon: Feather,     tone: 'violet',  dot: 'bg-violet-500' },
 };
 
 /** তথ্য-ফরমের এক ঘর */

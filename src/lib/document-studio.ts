@@ -219,10 +219,11 @@ export type DsCategory =
   | 'event'    // Events & Invitations
   | 'med'      // Health & Medical
   | 'promo'    // Marketing & Media
-  | 'regional';// Bangladesh & India
+  | 'regional' // Bangladesh & India
+  | 'literature'; // দিন ৬৮ — বই-অধ্যায় (গল্প/উপন্যাস/কবিতা/প্রবন্ধ)
 
 export const DS_CATEGORY_ORDER: DsCategory[] = [
-  'career', 'office', 'finance', 'legal', 'cert', 'edu', 'event', 'med', 'promo', 'regional',
+  'career', 'office', 'finance', 'legal', 'cert', 'edu', 'event', 'med', 'promo', 'regional', 'literature',
 ];
 
 export const DS_CATEGORY_LABELS: Record<DsCategory, T3> = {
@@ -236,6 +237,7 @@ export const DS_CATEGORY_LABELS: Record<DsCategory, T3> = {
   med: L3('চিকিৎসা ও স্বাস্থ্য', 'चिकित्सा व स्वास्थ्य', 'Health & Medical'),
   promo: L3('মার্কেটিং ও প্রচার', 'मार्केटिंग', 'Marketing & Media'),
   regional: L3('বাংলাদেশ ও ভারত', 'बांग्लादेश व भारत', 'Bangladesh & India'),
+  literature: L3('বই-অধ্যায় (সাহিত্য)', 'पुस्तक-अध्याय', 'Book Chapters'),
 };
 
 export type DsFieldKind = 'text' | 'textarea' | 'date' | 'table';
@@ -455,6 +457,50 @@ const DS_DEMO: Record<string, T3> = {
 
 /** বিশেষ টেমপ্লেট-ভিত্তিক নমুনা — ফিল্ড-অর্থ ভিন্ন হলে বা টেবিলের সারিতে */
 const DS_DEMO_SPECIAL: Record<string, Record<string, T3>> = {
+  // ── দিন ৬৮ — বই-অধ্যায় (literature) ──
+  'story-chapter': {
+    bookTitle: L3('সাঁঝবাতি', 'साँझबत्ती', 'Evening Lamp'),
+    chapterNo: L3('তিন', 'तीन', 'Three'),
+    chapterTitle: L3('নদীর ঠিকানা', 'नदी का पता', 'The River’s Address'),
+    authorName: L3('মোঃ রাকিব হাসান', 'राकिब हसन', 'Rakib Hasan'),
+    body: L3(
+      'নদীটা সেদিন অন্যরকম শান্ত ছিল। বিকেলের রোদ পানিতে ভাঙছিল, আর দূরের গ্রামটা মনে হচ্ছিল ভেজা কাগজে আঁকা ছবির মতো।\nমিনতি দোকানদারের কাছ থেকে কাগজ-কলম আনল। বলল, ঠিকানাটা নদীর ভিতরেই লিখতে হবে — কারণ শহরের কোনো ঘরে নদী থাকে না।',
+      'नदी उस दिन अजीब शांत थी।…\nमिनती ने कागज़-कलम लिया।…',
+      'The river was strangely calm that day…\nMinti took paper and pen…',
+    ),
+  },
+  'novel-chapter': {
+    bookTitle: L3('শূন্য ঘরের চাবি', 'खाली घर की चाबी', 'Key to the Empty Room'),
+    chapterNo: L3('প্রথম', 'पहला', 'First'),
+    chapterTitle: L3('ভেজা সিঁড়ি', 'गीली सीढ़ियाँ', 'Wet Stairs'),
+    epigraph: L3('নদী যার ভাষা বোঝে, সে-ই শুধু নদীর চিঠি পড়তে পারে।', 'जो नदी की भाषा समझता है, वही उसके पत्र पढ़ सकता है।', 'Only who knows the river’s tongue can read its letters.'),
+    body: L3(
+      'সিঁড়িগুলো এখনো ভেজা ছিল। কেউ একজন আগে নেমে গেছে, জুতো-সুতো পানিতে ভিজিয়ে।\nদরজার চাবি পকেটে ছিল, অথচ ঘরের দরজা খুলে যাওয়া — এই খেলাটা এই বাড়িতে নতুন নয়।\nআমি দাঁড়িয়ে রইলাম। পেছনে কেউ ফুসফুস ফুলছিল।',
+      'सीढ़ियाँ अभी गीली थीं।…\nचाबी जेब में थी…\nमैं खड़ा रह गया।',
+      'The stairs were still wet…\nThe key was in my pocket…\nI stood still.',
+    ),
+  },
+  'poetry-page': {
+    bookTitle: L3('জলছবি', 'जलचित्र', 'Watercolour'),
+    poemTitle: L3('আজ আকাশ বেশি নীল', 'आज आसमान ज़्यादा नीला', 'The Sky Is Bluer Today'),
+    poetName: L3('সুমনা রায়', 'सुमना राय', 'Sumana Ray'),
+    dedication: L3('মায়ের হাতের লেখা খাতায়', 'माँ की डायरी में', 'To my mother’s notebook'),
+    poemBody: L3(
+      'আজ আকাশ বেশি নীল\nবেশি দূরের কোনো গ্রামে\nআলো পড়ছে হঠাৎ\n\nওই গ্রামের প্রবাসীরা\nকী খবর পাঠায় নদীকে\nকে জানে, কে জানে',
+      'आज आसमान ज़्यादा नीला…\n\nदूर गाँव के प्रवासी…',
+      'The sky is bluer today…\n\nThe migrants of that village…',
+    ),
+  },
+  'essay-chapter': {
+    bookTitle: L3('ভাষা ও আলো', 'भाषा और प्रकाश', 'Language and Light'),
+    essayTitle: L3('মুদ্রণ কীভাবে এক জাতিকে গড়ে', 'मुद्रण कैसे एक राष्ट्र बनाती है', 'How Printing Shapes a Nation'),
+    authorName: L3('ড. আরিফুল ইসলাম', 'डॉ. आरिफुल इसलाम', 'Dr. Ariful Islam'),
+    body: L3(
+      'ভাষা শুধু যোগাযোগের মাধ্যম নয় — ভাষা একটা জাতির স্মৃতি-ভাণ্ডার। আর মুদ্রণ সেই স্মৃতিকে ভাঙা-গাঙা সময়ের পারে পাঠিয়ে দেয়।\nপাণ্ডুলিপির যুগে লেখা ছিল অল্প হাতের সম্পদ। মুদ্রণযন্ত্র সেই দরজাটা খুলে দিল সবার জন্য।\nআজ একটা ছাপাখানা একটা স্কুলের মতোই জরুরি — কারণ বই পড়া শেখারই আরেক নাম।',
+      'भाषा केवल संवाद का माध्यम नहीं…\nमुद्रण-यंत्र ने वह द्वार खोला…\nआज छपाई उतनी ही ज़रूरी है…',
+      'Language is not merely a medium…\nThe printing press opened that door…\nToday a press matters as much as a school…',
+    ),
+  },
   // ── সনদ (regional) ──
   residence: {
     office: L3('মিরপুর ইউনিয়ন পরিষদ', 'मीरपुर यूनियन परिषद', 'Mirpur Union Parishad'),
@@ -3403,9 +3449,144 @@ const BUSINESS_CARD_TPL: DsTemplate = {
   },
 };
 
+// ═════════════════════════ দিন ৬৮ — বই-অধ্যায় (সাহিত্য) টেমপ্লেট-সেট ═════════════════════════
+
+/**
+ * বই-টেমপ্লেট প্যাক — গল্প/উপন্যাস/কবিতা/প্রবন্ধ চ্যাপ্টার-স্টাইল সেট।
+ * প্রকাশনা-প্রথার টাইপোগ্রাফি: অধ্যায়-শিরোনাম কেন্দ্রে, গদ্যে প্রথম-পঙক্তি-ফাঁক (story) /
+ * প্যারা-ইনডেন্ট (novel), কবিতায় স্তবক-বিরতি (ফাঁকা লাইন = নতুন স্তবক), প্রবন্ধে সমান-খাড়া
+ * অনুচ্ছেদ। সব পাঠ্য esc-যোগ্য — কোনো মার্কআপ প্রবেশ নেই।
+ */
+
+/** গদ্য-অনুচ্ছেদ সারি — একক নতুন লাইন = নতুন অনুচ্ছেদ */
+function litParas(v: string, indentFromSecond: boolean): string {
+  return v
+    .split('\n')
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((p, i) =>
+      `<p style="margin:0 0 0.4em; line-height:2.0; text-align:justify;${indentFromSecond && i > 0 ? ' text-indent:1.7em;' : ''}">${esc(p)}</p>`,
+    )
+    .join('');
+}
+
+/** কবিতা-স্তবক — ফাঁকা লাইন = নতুন স্তবক; স্তবকের ভিতরে লাইন <br/>-এ যুক্ত */
+function litStanzas(v: string): string {
+  return v
+    .split(/\n\s*\n/)
+    .map((blk) => blk.split('\n').map((s) => s.trim()).filter(Boolean))
+    .filter((ls) => ls.length > 0)
+    .map((ls) =>
+      `<p style="margin:0.9em 0; line-height:1.85">${ls.map((l) => esc(l)).join('<br/>')}</p>`,
+    )
+    .join('');
+}
+
+const STORY_CHAPTER_TPL: DsTemplate = {
+  id: 'story-chapter',
+  category: 'literature',
+  name: L3('গল্পের অধ্যায়', 'कहानी अध्याय', 'Story Chapter'),
+  desc: L3('বইয়ের গল্প-অধ্যায় — অধ্যায়-নম্বর, শিরোনাম, প্রথম-পঙক্তি-ফাঁকসহ প্রকাশনা-প্রথার পাতা।', 'प्रकाशन-प्रथा अध्याय पृष्ठ।', 'Publication-convention story chapter page.'),
+  styles: ALL_STYLES,
+  defaultStyle: 'classic',
+  fields: [
+    { id: 'bookTitle', kind: 'text', wide: true, label: L3('বইয়ের নাম', 'पुस्तक का नाम', 'Book title') },
+    { id: 'chapterNo', kind: 'text', label: L3('অধ্যায় নম্বর', 'अध्याय संख्या', 'Chapter number'), ph: L3('তিন / ৩', 'तीन', 'Three') },
+    { id: 'chapterTitle', kind: 'text', wide: true, label: L3('অধ্যায়ের শিরোনাম', 'अध्याय शीर्षक', 'Chapter title') },
+    { id: 'authorName', kind: 'text', label: L3('লেখক', 'लेखक', 'Author') },
+    { id: 'body', kind: 'textarea', wide: true, rows: 9, label: L3('গল্পের লেখা (প্রতি লাইনে একটি অনুচ্ছেদ)', 'कहानी (प्रति पंक्ति एक अनुच्छेद)', 'Story text (one paragraph per line)'), ph: L3('নদীটা সেদিন অন্যরকম শান্ত…\nদ্বিতীয় অনুচ্ছেদ…', '…', 'The river was calm that day…') },
+  ],
+  build: (v, lang, P) => {
+    const chapterLabel = pick(lang, 'অধ্যায়', 'अध्याय', 'CHAPTER');
+    return [
+      V(v, 'bookTitle') ? pc(`<span style="font-size:9.5pt; letter-spacing:3px">${esc(V(v, 'bookTitle'))}</span>`, `color:${P.soft}`) : '',
+      pc(`<span style="font-size:10.5pt; letter-spacing:2.5px">${esc(V(v, 'chapterNo') ? `${chapterLabel} ${V(v, 'chapterNo')}` : chapterLabel)}</span>`, `color:${P.head}`),
+      pc(`<strong style="font-size:19pt">${esc(V(v, 'chapterTitle'))}</strong>`, 'margin-top:0.3em'),
+      V(v, 'authorName') ? pc(`<span style="font-size:10pt; font-style:italic">${esc(V(v, 'authorName'))}</span>`, `color:${P.soft}`) : '',
+      buildDividerHtml('flourish'),
+      litParas(V(v, 'body'), true),
+    ].filter(Boolean).join('');
+  },
+};
+
+const NOVEL_CHAPTER_TPL: DsTemplate = {
+  id: 'novel-chapter',
+  category: 'literature',
+  name: L3('উপন্যাসের অধ্যায়', 'उपन्यास अध्याय', 'Novel Chapter'),
+  desc: L3('উপন্যাস-অধ্যায় — উদ্ধৃতি-পঙক্তি (epigraph) ও প্যারা-ইনডেন্টে ধারাবাহিক গদ্য।', 'एपिग्राफ व इंडेंट गद्य।', 'Epigraph and indented prose.'),
+  styles: ALL_STYLES,
+  defaultStyle: 'sepia',
+  fields: [
+    { id: 'bookTitle', kind: 'text', wide: true, label: L3('উপন্যাসের নাম', 'उपन्यास का नाम', 'Novel title') },
+    { id: 'chapterNo', kind: 'text', label: L3('পরিচ্ছেদ নম্বর', 'परिच्छेद संख्या', 'Part number'), ph: L3('প্রথম / ১', 'पहला', 'First') },
+    { id: 'chapterTitle', kind: 'text', wide: true, label: L3('পরিচ্ছেদের শিরোনাম', 'परिच्छेद शीर्षक', 'Part title') },
+    { id: 'epigraph', kind: 'textarea', wide: true, rows: 2, label: L3('উদ্ধৃতি-পঙক্তি (ঐচ্ছিক)', 'उद्धरण (वैकल्पिक)', 'Epigraph (optional)'), ph: L3('“নদী যার ভাষা বোঝে, সেই শুধু জানে…”', '…', '“Only the river knows its own tongue…”') },
+    { id: 'body', kind: 'textarea', wide: true, rows: 9, label: L3('মূল লেখা (প্রতি লাইনে একটি অনুচ্ছেদ)', 'मुख्य गद्य (प्रति पंक्ति एक)', 'Prose (one paragraph per line)') },
+  ],
+  build: (v, lang, P) => {
+    const partLabel = pick(lang, 'পরিচ্ছেদ', 'परिच्छेद', 'PART');
+    return [
+      V(v, 'bookTitle') ? pc(`<span style="font-size:9.5pt; letter-spacing:3px">${esc(V(v, 'bookTitle'))}</span>`, `color:${P.soft}`) : '',
+      pc(`<span style="font-size:10.5pt; letter-spacing:2.5px">${esc(V(v, 'chapterNo') ? `${partLabel} ${V(v, 'chapterNo')}` : partLabel)}</span>`, `color:${P.head}`),
+      pc(`<strong style="font-size:19pt">${esc(V(v, 'chapterTitle'))}</strong>`, 'margin-top:0.3em'),
+      V(v, 'epigraph') ? pc(`<em style="font-size:10.5pt">“${esc(V(v, 'epigraph').replace(/^["“”]|["“”]$/g, ''))}”</em>`, `color:${P.soft}; margin-top:0.5em`) : '',
+      buildDividerHtml('flourish'),
+      litParas(V(v, 'body'), true),
+      buildDividerHtml('flourish'),
+    ].filter(Boolean).join('');
+  },
+};
+
+const POETRY_PAGE_TPL: DsTemplate = {
+  id: 'poetry-page',
+  category: 'literature',
+  name: L3('কবিতা-পাতা', 'कविता पृष्ठ', 'Poetry Page'),
+  desc: L3('কবিতা-সংকলনের পাতা — শিরোনাম, কবি-পরিচিতি, উৎসর্গ ও স্তবক-বিন্যাস (ফাঁকা লাইন = নতুন স্তবক)।', 'कविता पृष्ठ — स्तंभ प्रारूप।', 'Poem page — blank line starts a new stanza.'),
+  styles: ALL_STYLES,
+  defaultStyle: 'royal',
+  fields: [
+    { id: 'bookTitle', kind: 'text', wide: true, label: L3('সংকলনের নাম', 'संकलन का नाम', 'Collection title') },
+    { id: 'poemTitle', kind: 'text', wide: true, label: L3('কবিতার শিরোনাম', 'कविता शीर्षक', 'Poem title') },
+    { id: 'poetName', kind: 'text', label: L3('কবি', 'कवि', 'Poet') },
+    { id: 'dedication', kind: 'text', wide: true, label: L3('উৎসর্গ-পঙক্তি (ঐচ্ছিক)', 'समर्पण (वैकल्पिक)', 'Dedication (optional)'), ph: L3('মায়ের হাতের লেখা খাতায়', 'माँ की डायरी में', 'To my mother’s notebook') },
+    { id: 'poemBody', kind: 'textarea', wide: true, rows: 10, label: L3('কবিতা (ফাঁকা লাইন = নতুন স্তবক)', 'कविता (खाली पंक्ति = नया स्तंभ)', 'Poem (blank line = new stanza)'), ph: L3('আজ আকাশ বেশি নীল\nবেশি দূরের কোনো গ্রামে\n\nওই গ্রামের প্রবাসীরা…', '…', 'The sky is bluer today…') },
+  ],
+  build: (v, lang, P) => [
+    V(v, 'bookTitle') ? pc(`<span style="font-size:9.5pt; letter-spacing:3px">${esc(V(v, 'bookTitle'))}</span>`, `color:${P.soft}`) : '',
+    pc(`<strong style="font-size:17pt">${esc(V(v, 'poemTitle'))}</strong>`),
+    V(v, 'poetName') ? pc(`<span style="font-size:10pt; letter-spacing:1.5px">${esc(pick(lang, 'কবি', 'कवि', 'by') + ' ' + V(v, 'poetName'))}</span>`, `color:${P.head}`) : '',
+    V(v, 'dedication') ? `<p style="text-align:right; margin:0.6em 0 0;"><em style="font-size:10pt; color:${P.soft}">— ${esc(V(v, 'dedication'))}</em></p>` : '',
+    buildDividerHtml('stars'),
+    litStanzas(V(v, 'poemBody')),
+  ].filter(Boolean).join(''),
+};
+
+const ESSAY_CHAPTER_TPL: DsTemplate = {
+  id: 'essay-chapter',
+  category: 'literature',
+  name: L3('প্রবন্ধ-অধ্যায়', 'निबंध अध्याय', 'Essay Chapter'),
+  desc: L3('প্রবন্ধ/প্রতিবেদন-অধ্যায় — কেন্দ্রীয় শিরোনাম, লেখক-পঙক্তি ও সমান-খাড়া যুক্তিনির্ভর অনুচ্ছেদ।', 'निबंध अध्याय।', 'Essay chapter page.'),
+  styles: ALL_STYLES,
+  defaultStyle: 'green',
+  fields: [
+    { id: 'bookTitle', kind: 'text', wide: true, label: L3('সংকলন/বইয়ের নাম', 'संकलन का नाम', 'Collection title') },
+    { id: 'essayTitle', kind: 'text', wide: true, label: L3('প্রবন্ধের শিরোনাম', 'निबंध शीर्षक', 'Essay title') },
+    { id: 'authorName', kind: 'text', label: L3('লেখক', 'लेखक', 'Author') },
+    { id: 'body', kind: 'textarea', wide: true, rows: 10, label: L3('প্রবন্ধের লেখা (প্রতি লাইনে একটি অনুচ্ছেদ)', 'निबंध (प्रति पंक्ति एक)', 'Essay text (one paragraph per line)'), ph: L3('ভাষা শুধু যোগাযোগের মাধ্যম নয়…\nদ্বিতীয় অনুচ্ছেদ…', '…', 'Language is not merely a medium…') },
+  ],
+  build: (v, lang, P) => [
+    V(v, 'bookTitle') ? pc(`<span style="font-size:9.5pt; letter-spacing:3px">${esc(V(v, 'bookTitle'))}</span>`, `color:${P.soft}`) : '',
+    pc(`<strong style="font-size:18pt">${esc(V(v, 'essayTitle'))}</strong>`),
+    V(v, 'authorName') ? pc(`<span style="font-size:10pt; font-style:italic">${esc(V(v, 'authorName'))}</span>`, `color:${P.soft}`) : '',
+    buildDividerHtml('double'),
+    litParas(V(v, 'body'), false),
+    buildDividerHtml('double'),
+  ].filter(Boolean).join(''),
+};
+
 // ═════════════════════════ নিবন্ধিত টেমপ্লেট ═════════════════════════
 
-/** সব টেমপ্লেট — ক্যাটাগরি-ক্রম অনুযায়ী (৫৫টি) */
+/** সব টেমপ্লেট — ক্যাটাগরি-ক্রম অনুযায়ী (৫৫টি + দিন ৬৮-এর ৪ বই-অধ্যায়) */
 export const DS_TEMPLATES: DsTemplate[] = [
   // চাকরি ও ক্যারিয়ার (career) — বৈশ্বিক
   RESUME_MODERN_TPL, RESUME_CLASSIC_TPL, COVER_LETTER_TPL, RECOMMENDATION_TPL, RESIGNATION_TPL,
@@ -3429,6 +3610,8 @@ export const DS_TEMPLATES: DsTemplate[] = [
   // আঞ্চলিক সংগ্রহ — বাংলাদেশ ও ভারত (regional)
   GENERAL_APP_TPL, RESIDENCE_TPL, CHARACTER_TPL, UNMARRIED_TPL, INCOME_TPL, HEIR_TPL,
   MUTATION_TPL, GIFT_TPL, PARTITION_TPL, SALE_TPL,
+  // বই-অধ্যায় (literature) — দিন ৬৮
+  STORY_CHAPTER_TPL, NOVEL_CHAPTER_TPL, POETRY_PAGE_TPL, ESSAY_CHAPTER_TPL,
 ];
 
 export function dsTemplateById(id: string): DsTemplate | undefined {

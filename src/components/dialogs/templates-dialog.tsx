@@ -96,11 +96,12 @@ const TPL_CAT_ICONS: Record<TemplateCategory, LucideIcon> = {
 /** ডকুমেন্ট-স্টুডিও ক্যাটাগরি → ব্র্যান্ড টোন ও আইকন */
 const DS_CAT_TONES: Record<DsCategory, PTone> = {
   career: 'teal', office: 'slate', finance: 'emerald', legal: 'cyan', cert: 'amber',
-  edu: 'sky', event: 'rose', med: 'cyan', promo: 'orange', regional: 'lime',
+  edu: 'sky', event: 'rose', med: 'cyan', promo: 'orange', regional: 'lime', literature: 'violet',
 };
 const DS_CAT_ICONS: Record<DsCategory, LucideIcon> = {
   career: Briefcase, office: Building2, finance: Receipt, legal: Scale, cert: Award,
   edu: GraduationCap, event: PartyPopper, med: HeartPulse, promo: Megaphone, regional: Landmark,
+  literature: Feather,
 };
 
 function GenreIcon({ genre, size = 11, className }: { genre: BlueprintGenre; size?: number; className?: string }) {
