@@ -16,6 +16,173 @@ export const dictQuestionPaper = {
     en: 'Question Paper Studio — print-ready paper from handwriting or raw text',
   },
 
+  // ── দিন ৬৬ — প্রশ্ন-ভান্ডার (Question Bank) ──
+  'ins.qbank': {
+    bn: 'প্রশ্ন-ভান্ডার',
+    hi: 'प्रश्न-भंडार',
+    en: 'Question Bank',
+  },
+  'ins.qbank.tip': {
+    bn: 'প্রশ্ন-ভান্ডার — ট্যাগ/শ্রেণি/জটিলতা ধরে রাখা প্রশ্ন-সংগ্রহ থেকে প্রশ্নপত্রে টানুন',
+    hi: 'प्रश्न-भंडार — टैग/कक्षा/कठिनाई सहित प्रश्न-संग्रह से प्रश्नपत्र बनाएँ',
+    en: 'Question bank — pull questions into papers by tag/class/difficulty',
+  },
+  'cp.qbank': {
+    bn: 'প্রশ্ন-ভান্ডার…',
+    hi: 'प्रश्न-भंडार…',
+    en: 'Question bank…',
+  },
+  'qbank.title': {
+    bn: 'প্রশ্ন-ভান্ডার',
+    hi: 'प्रश्न-भंडार',
+    en: 'Question Bank',
+  },
+  'qbank.desc': {
+    bn: 'নিজের প্রশ্ন-সংগ্রহ — শ্রেণি/বিষয়/জটিলতা/ট্যাগ ছাঁকনিতে খুঁজে সরাসরি প্রশ্নপত্রে টানুন। সব ডেটা এই ডিভাইসেই থাকে।',
+    hi: 'अपना प्रश्न-संग्रह — कक्षा/विषय/कठिनाई/टैग फ़िल्टर से खोजकर सीधे प्रश्नपत्र में लाएँ। सारा डेटा इसी डिवाइस पर रहता है।',
+    en: 'Your own question pool — filter by class/subject/difficulty/tag and pull straight into a paper. All data stays on this device.',
+  },
+  'qbank.add': {
+    bn: 'নতুন প্রশ্ন',
+    hi: 'नया प्रश्न',
+    en: 'New question',
+  },
+  'qbank.add.tip': {
+    bn: 'ভান্ডারে নতুন প্রশ্ন যোগ করুন',
+    hi: 'भंडार में नया प्रश्न जोड़ें',
+    en: 'Add a new question to the bank',
+  },
+  'qbank.pull': {
+    bn: 'নির্বাচিত প্রশ্নপত্রে টানুন',
+    hi: 'चयनित प्रश्नपत्र में लाएँ',
+    en: 'Pull selected into paper',
+  },
+  'qbank.pull.tip': {
+    bn: 'চিহ্নিত প্রশ্নগুলো এক প্রশ্নপত্র-অংশে সাজিয়ে ডকুমেন্টের শেষে বসান',
+    hi: 'चिह्नित प्रश्नों को एक अनुभाग में सजाकर दस्तावेज़ के अंत में जोड़ें',
+    en: 'Arrange marked questions into one paper section appended to the document',
+  },
+  'qbank.empty': {
+    bn: 'ভান্ডার এখনো খালি — প্রথম প্রশ্ন যোগ করুন বা নমুনা প্রশ্ন নিয়ে শুরু করুন।',
+    hi: 'भंडार अभी खाली है — पहला प्रश्न जोड़ें या नमूना प्रश्नों से शुरू करें।',
+    en: 'The bank is empty — add your first question or start with samples.',
+  },
+  'qbank.seed': {
+    bn: 'নমুনা প্রশ্ন যোগ করুন',
+    hi: 'नमूना प्रश्न जोड़ें',
+    en: 'Add sample questions',
+  },
+  'qbank.edit': {
+    bn: 'সম্পাদনা',
+    hi: 'संपादन',
+    en: 'Edit',
+  },
+  'qbank.delete': {
+    bn: 'মুছুন',
+    hi: 'मिटाएँ',
+    en: 'Delete',
+  },
+  'qbank.deleteAria': {
+    bn: 'প্রশ্ন মুছুন — {t}',
+    hi: 'प्रश्न मिटाएँ — {t}',
+    en: 'Delete question — {t}',
+  },
+  'qbank.confirmDelete': {
+    bn: 'নিশ্চিত?',
+    hi: 'पक्का?',
+    en: 'Sure?',
+  },
+  'qbank.fields.type': {
+    bn: 'ধরন',
+    hi: 'प्रकार',
+    en: 'Type',
+  },
+  'qbank.fields.text': {
+    bn: 'প্রশ্ন',
+    hi: 'प्रश्न',
+    en: 'Question',
+  },
+  'qbank.fields.answer': {
+    bn: 'উত্তর (ঐচ্ছিক — উত্তরপত্রে কাজে লাগবে)',
+    hi: 'उत्तर (वैकल्पिक — उत्तर-पत्रके काम आएगा)',
+    en: 'Answer (optional — used in answer keys)',
+  },
+  'qbank.fields.marks': {
+    bn: 'নম্বর',
+    hi: 'अंक',
+    en: 'Marks',
+  },
+  'qbank.fields.className': {
+    bn: 'শ্রেণি',
+    hi: 'कक्षा',
+    en: 'Class',
+  },
+  'qbank.fields.subject': {
+    bn: 'বিষয়',
+    hi: 'विषय',
+    en: 'Subject',
+  },
+  'qbank.fields.tags': {
+    bn: 'ট্যাগ (কমা দিয়ে)',
+    hi: 'टैग (अल्पविराम से)',
+    en: 'Tags (comma-separated)',
+  },
+  'qbank.fields.difficulty': {
+    bn: 'জটিলতা',
+    hi: 'कठिनाई',
+    en: 'Difficulty',
+  },
+  'qbank.fields.options': {
+    bn: 'অপশন — প্রতি লাইনে একটি',
+    hi: 'विकल्प — प्रति पंक्ति एक',
+    en: 'Options — one per line',
+  },
+  'qbank.fields.subs': {
+    bn: 'উপপ্রশ্ন — প্রতি লাইনে: লেখা | নম্বর',
+    hi: 'उपप्रश्न — प्रति पंक्ति: पाठ | अंक',
+    en: 'Sub-questions — per line: text | marks',
+  },
+  'qbank.save': {
+    bn: 'সংরক্ষণ',
+    hi: 'सहेजें',
+    en: 'Save',
+  },
+  'qbank.type.short': { bn: 'সংক্ষিপ্ত', hi: 'लघु', en: 'Short' },
+  'qbank.type.mcq': { bn: 'নৈর্ব্যক্তিক', hi: 'बहुविकल्पी', en: 'MCQ' },
+  'qbank.type.creative': { bn: 'সৃজনশীল', hi: 'सृजनशील', en: 'Creative' },
+  'qbank.type.tf': { bn: 'সত্য/মিথ্যা', hi: 'सत्य/असत्य', en: 'True/False' },
+  'qbank.type.blank': { bn: 'শূন্যস্থান', hi: 'रिक्त स्थान', en: 'Fill blank' },
+  'qbank.type.match': { bn: 'মিলকরণ', hi: 'मिलान', en: 'Matching' },
+  'qbank.diff.easy': { bn: 'সহজ', hi: 'सरल', en: 'Easy' },
+  'qbank.diff.medium': { bn: 'মধ্যম', hi: 'मध्यम', en: 'Medium' },
+  'qbank.diff.hard': { bn: 'কঠিন', hi: 'कठिन', en: 'Hard' },
+  'qbank.filter.all': { bn: 'সব', hi: 'सभी', en: 'All' },
+  'qbank.filter.search': {
+    bn: 'প্রশ্ন/ট্যাগ খুঁজুন…',
+    hi: 'प्रश्न/टैग खोजें…',
+    en: 'Search text/tags…',
+  },
+  'qbank.filter.className': { bn: 'শ্রেণি', hi: 'कक्षा', en: 'Class' },
+  'qbank.filter.subject': { bn: 'বিষয়', hi: 'विषय', en: 'Subject' },
+  'qbank.count': { bn: '{n}টি প্রশ্ন', hi: '{n} प्रश्न', en: '{n} questions' },
+  'qbank.selected': { bn: '{n}টি নির্বাচিত', hi: '{n} चयनित', en: '{n} selected' },
+  'qbank.answerChip': { bn: 'উত্তর: {a}', hi: 'उत्तर: {a}', en: 'Answer: {a}' },
+  'qbank.toast.saved': { bn: 'প্রশ্ন সংরক্ষিত হয়েছে', hi: 'प्रश्न सहेजा गया', en: 'Question saved' },
+  'qbank.toast.deleted': { bn: 'প্রশ্ন মুছে ফেলা হয়েছে', hi: 'प्रश्न मिटा दिया गया', en: 'Question deleted' },
+  'qbank.toast.pulled': { bn: 'প্রশ্নপত্র শেষ পাতায় বসেছে — পেইনেশন চলছে', hi: 'प्रश्नपत्र अंतिम पृष्ठ पर जुड़ गया — पेजिनेशन चल रहा है', en: 'Paper appended on the last page — paginating' },
+  'qbank.toast.seeded': { bn: 'নমুনা প্রশ্ন যোগ হয়েছে', hi: 'नमूना प्रश्न जोड़े गए', en: 'Sample questions added' },
+  'qbank.pull.needSelection': {
+    bn: 'আগে অন্তত একটি প্রশ্ন নির্বাচন করুন।',
+    hi: 'पहले कम से कम एक प्रश्न चुनें।',
+    en: 'Select at least one question first.',
+  },
+  'qbank.err.text': {
+    bn: 'প্রশ্নের লেখা দিন।',
+    hi: 'प्रश्न का पाठ दें।',
+    en: 'Enter the question text.',
+  },
+
+
   // ── হাতে-আঁকা চিত্র স্টুডিও (Sketch Pad) ──
   'ins.sketch': {
     bn: 'হাতে আঁকা চিত্র',

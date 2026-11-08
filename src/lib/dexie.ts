@@ -5,6 +5,7 @@
 
 import Dexie, { type EntityTable } from 'dexie';
 import type { BookProject, CommentThread, DocumentSettings, PageData } from './types';
+import type { QuestionBankRecord } from './question-bank';
 
 /**
  * প্রজেক্টের HTML কনটেন্ট বড় হতে পারে, তাই প্রতিটি পৃষ্ঠা আলাদা রেকর্ড নয় —
@@ -47,6 +48,7 @@ const db = new Dexie('bwp-studio') as Dexie & {
   snapshots: EntityTable<SnapshotRecord, 'id'>;
   assets: EntityTable<CustomAssetRecord, 'id'>;
   comments: EntityTable<CommentThread, 'id'>;
+  questions: EntityTable<QuestionBankRecord, 'id'>;
 };
 
 db.version(1).stores({
@@ -68,6 +70,12 @@ db.version(3).stores({
 // থ্রেড-মেটাডেটা এখানে — দলিল-ভিত্তিক docId ইনডেক্সে প্রকল্প বদলালে আলাদা লোড)
 db.version(4).stores({
   comments: 'id, docId, createdAt',
+});
+
+// সংস্করণ ৫ — দিন ৬৬: প্রশ্ন-ভান্ডার (গ্লোবাল ব্যাংক — প্রজেক্ট-নিরপেক্ষ; ট্যাগ/শ্রেণি/জটিলতা
+// ইনডেক্সে ছাঁকনি তালিকা) — অ্যাডিটিভ স্কিমা-বৃদ্ধি
+db.version(5).stores({
+  questions: 'id, className, subject, difficulty, type, updatedAt',
 });
 
 export { db };

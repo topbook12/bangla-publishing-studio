@@ -12,7 +12,7 @@
 
 import { useEffect, useMemo } from 'react';
 import {
-  AlignCenter, AlignJustify, AlignLeft, AlignRight, Bold, BookOpen, Bookmark, Bot, Camera, Copy,
+  AlignCenter, AlignJustify, AlignLeft, AlignRight, Bold, BookMarked, BookOpen, Bookmark, Bot, Camera, Copy,
   Download, Eraser, FileDown, FilePlus2, FileText, FileImage, GraduationCap, Heading1, Heading2, Heading3,
   HelpCircle, Highlighter, History, Image as ImageIcon, Italic, Languages, LayoutTemplate, List, ListOrdered,
   ListTree, MessageSquareText, Moon, MoveVertical, PenTool, Printer, Quote, Redo2, Ruler, Save,
@@ -50,6 +50,7 @@ interface PaletteCommand {
 
 const DIALOG_CMDS: Array<{ d: DialogName; icon: LucideIcon; k: string; fb: string; kw: string }> = [
   { d: 'questionPaper', icon: FileText, k: 'cp.qp', fb: 'প্রশ্নপত্র স্টুডিও…', kw: 'question paper exam' },
+  { d: 'questionBank', icon: BookMarked, k: 'cp.qbank', fb: 'প্রশ্ন-ভান্ডার…', kw: 'question bank repository pool' },
   { d: 'documentStudio', icon: LayoutTemplate, k: 'cp.ds', fb: 'ডকুমেন্ট স্টুডিও…', kw: 'document studio template design' },
   { d: 'thesis', icon: GraduationCap, k: 'cp.thesis', fb: 'থিসিস স্টুডিও…', kw: 'thesis dissertation' },
   { d: 'templates', icon: BookOpen, k: 'cp.bookTpl', fb: 'বই-টেমপ্লেট (ব্লুপ্রিন্ট)…', kw: 'book template blueprint' },
