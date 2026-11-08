@@ -81,6 +81,9 @@ export const dictCloud: Dict = {
   'cloud.push.done': { bn: 'ক্লাউডে সেভ হয়েছে', hi: 'क्लाउड पर सेव हुआ', en: 'Saved to cloud' },
   'cloud.pull': { bn: 'এই ডিভাইসে খুলুন', hi: 'इस डिवाइस में खोलें', en: 'Open on this device' },
   'cloud.pull.done': { bn: 'ক্লাউড থেকে খোলা হয়েছে', hi: 'क्लाउड से खोला गया', en: 'Opened from cloud' },
+  // দিন ৭১–৭২ — সংঘর্ষ-নিরাপদ মার্জ
+  'cloud.pull.merged': { bn: 'ক্লাউড-মার্জ: সংঘর্ষ {c}টি · যোগ {a}টি পাতা — দ্বিপাক্ষিক সম্পাদনা কেউ না-হারিয়ে "-m2" প্রত্যয়ে শেষে বসেছে', hi: 'क्लाउड-मर्ज: संघर्ष {c} · जोड़े गए {a} पृष्ठ — द्विपाक्षिक संपादन "-m2" प्रत्यय में अंत में जुड़े हैं', en: 'Cloud merge: {c} conflicts · {a} pages added — dual edits appended with "-m2" suffix' },
+  'cloud.pull.mergedClean': { bn: 'ক্লাউড-মার্জ হয়েছে — কোনো সংঘর্ষ নেই', hi: 'क्लाउड-मर्ज हुआ — कोई संघर्ष नहीं', en: 'Cloud merged — no conflicts' },
   'cloud.pull.warn': { bn: 'এই ডিভাইসের বর্তমান ডকুমেন্ট বদলে যাবে — ঠিক আছে?', hi: 'इस डिवाइस का मौजूदा दस्तावेज़ बदल जाएगा — ठीक है?', en: 'The current document on this device will be replaced — OK?' },
   'cloud.list.empty': { bn: 'ক্লাউডে এখনো কোনো ডকুমেন্ট নেই — “ক্লাউডে সেভ করুন” চাপুন।', hi: 'क्लाउड में अभी कोई दस्तावेज़ नहीं — “क्लाउड पर सेव करें” दबाएँ।', en: 'No cloud documents yet — press “Save to cloud”.' },
   'cloud.list.title': { bn: 'আপনার ক্লাউড ডকুমেন্ট', hi: 'आपके क्लाउड दस्तावेज़', en: 'Your cloud documents' },

@@ -11,6 +11,8 @@
 import { useEditorStore } from './store';
 import type { DocumentSettings, PageData } from './types';
 import { track } from './analytics';
+import { db, getProject, saveProject } from './dexie';
+import { mergeProjects, type MergeInput } from './merge';
 
 export interface CloudDocMeta {
   id: string;
@@ -142,26 +144,81 @@ export async function listCloudDocs(): Promise<CloudDocMeta[] | null> {
   }
 }
 
-/** ক্লাউড ডক খুলে নতুন লোকাল প্রজেক্ট হিসেবে ইমপোর্ট */
-export async function pullCloudDoc(cloudId: string): Promise<boolean> {
+/** ক্লাউড ডক খোলা — লোকাল প্রতিরূপ থাকলে ৩-পথ মার্জ (দিন ৭১–৭২), নইলে নতুন প্রজেক্ট */
+export interface PullResult {
+  ok: boolean;
+  /** লোকাল বইয়ের উপর মার্জ হয়েছে (নতুন প্রজেক্ট নয়) */
+  merged: boolean;
+  /** পাতা-সংঘর্ষ (দুই পাশেই আলাদা বদল) */
+  conflicts: number;
+  /** settings-ফিল্ডে দ্বিপাক্ষিক বদল (আমারটি জেতে) */
+  settingsConflicts: number;
+  /** প্রতিপক্ষ থেকে যোগ হওয়া পাতা */
+  added: number;
+  /** প্রতিপক্ষে মুছে-ফেলা পাতা (আসল ৩-পথ সিদ্ধান্তে মুছে গেছে) */
+  dropped: number;
+}
+
+export async function pullCloudDoc(cloudId: string): Promise<PullResult> {
   try {
     const res = await fetch(`/api/documents/${cloudId}`);
-    if (!res.ok) return false;
+    if (!res.ok) return { ok: false, merged: false, conflicts: 0, settingsConflicts: 0, added: 0, dropped: 0 };
     const body = (await res.json()) as { document: CloudDocFull };
     const parsed = JSON.parse(body.document.data) as {
       settings?: DocumentSettings;
       pages?: PageData[];
     };
-    if (!parsed.pages?.length) return false;
+    if (!parsed.pages?.length) return { ok: false, merged: false, conflicts: 0, settingsConflicts: 0, added: 0, dropped: 0 };
+
+    // ── সংঘর্ষ-নিরাপদ মার্জ পথ: এই ক্লাউড-ডকের লোকাল প্রতিরূপ থাকলে ──
+    const map = readMap();
+    const localPid = Object.keys(map).find((k) => map[k] === cloudId);
+    const localRec = localPid ? await getProject(localPid).catch(() => undefined) : undefined;
+    if (localRec && localRec.pages.length) {
+      // ভিত্তি = লোকাল বইয়ের শেষ স্ন্যাপশট (best-effort); না থাকলে null-ভিত্তি
+      let base: MergeInput | null = null;
+      try {
+        const snaps = await db.snapshots.where('projectId').equals(localRec.id).sortBy('createdAt');
+        const last = snaps[snaps.length - 1];
+        if (last) base = { pages: last.pages, settings: last.settings };
+      } catch { /* স্ন্যাপশট নেই */ }
+      const theirs: MergeInput = { pages: parsed.pages, settings: parsed.settings ?? localRec.settings };
+      const outcome = mergeProjects(base, { pages: localRec.pages, settings: localRec.settings }, theirs);
+      // মিশ্র-অবস্থা একই লোকাল বইয়ে প্রতিস্থাপন — ম্যাপিং ও ইতিহাস অক্ষুণ্ণ
+      if (useEditorStore.getState().projectId === localRec.id) {
+        useEditorStore.getState().replaceBook(outcome.pages, outcome.settings);
+      } else {
+        await saveProject({
+          id: localRec.id,
+          title: localRec.title,
+          createdAt: localRec.createdAt,
+          updatedAt: Date.now(),
+          settings: outcome.settings,
+          pages: outcome.pages,
+        });
+      }
+      writeVersion(cloudId, body.document.version);
+      track('cloud_pull_merged');
+      return {
+        ok: true,
+        merged: true,
+        conflicts: outcome.conflicts.length,
+        settingsConflicts: outcome.settingsConflicts,
+        added: outcome.addedFromTheirs,
+        dropped: outcome.droppedFromTheirs,
+      };
+    }
+
+    // লোকাল প্রতিরূপ নেই — আগের চুক্তি: নতুন প্রজেক্ট হিসেবে ইমপোর্ট
     writeVersion(cloudId, body.document.version);
     await useEditorStore.getState().loadCloudProject(
       body.document.title,
       parsed.settings ?? ({} as DocumentSettings),
       parsed.pages,
     );
-    return true;
+    return { ok: true, merged: false, conflicts: 0, settingsConflicts: 0, added: parsed.pages.length, dropped: 0 };
   } catch {
-    return false;
+    return { ok: false, merged: false, conflicts: 0, settingsConflicts: 0, added: 0, dropped: 0 };
   }
 }
 

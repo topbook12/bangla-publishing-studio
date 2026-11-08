@@ -89,9 +89,23 @@ export function CloudDialog() {
     if (!window.confirm(tt('cloud.pull.warn'))) return;
     setBusy(true);
     try {
-      const ok = await pullCloudDoc(cloudId);
-      if (ok) {
-        toast.success(tt('cloud.pull.done'));
+      const res = await pullCloudDoc(cloudId);
+      if (res.ok) {
+        // দিন ৭১–৭২ — সংঘর্ষ-নিরাপদ মার্জ রিপোর্ট
+        if (res.merged) {
+          if (res.conflicts > 0 || res.added > 0) {
+            toast.warning(
+              tt('cloud.pull.merged')
+                .split('{c}').join(fmtNum(res.conflicts))
+                .split('{a}').join(fmtNum(res.added)),
+              { duration: 12000 },
+            );
+          } else {
+            toast.success(tt('cloud.pull.mergedClean'));
+          }
+        } else {
+          toast.success(tt('cloud.pull.done'));
+        }
         close();
       } else {
         toast.error(tt('auth.error'));

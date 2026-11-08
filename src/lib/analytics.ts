@@ -11,6 +11,7 @@ export type AnalyticsEventName =
   | 'landing_view'
   | 'studio_open'
   | 'cloud_doc_save'
+  | 'cloud_pull_merged'
   | 'share_created'
   | 'share_viewed'
   | 'tour_completed'
