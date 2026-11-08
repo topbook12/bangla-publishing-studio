@@ -156,6 +156,23 @@ io.on('connection', (socket) => {
     if (peer) peer.lastSeen = Date.now();
   });
 
+  // দিন ৭৩–৭৪ — প্রেজেন্স-কার্সর রিলে: পাতা-সাপেক্ষ ভগ্রাংশ-স্থানাঙ্ক রুমে ছড়ায়,
+  // প্রেরককে বাদ দিয়ে; কনটেন্ট নয় — কেবল {pageId, fx, fy}; ক্যাপ বাইটেও ছোট
+  socket.on('cursor', (raw: unknown) => {
+    const docId = socket.data.docId as string | null;
+    if (!docId) return;
+    const peer = rooms.get(ROOM_PREFIX + docId)?.get(socket.id);
+    if (!peer) return;
+    peer.lastSeen = Date.now();
+    if (!raw || typeof raw !== 'object') return;
+    const p = raw as Record<string, unknown>;
+    const pageId = typeof p.pageId === 'string' ? p.pageId.slice(0, 48) : '';
+    const fx = typeof p.fx === 'number' && p.fx >= 0 && p.fx <= 1 ? Math.round(p.fx * 1000) / 1000 : null;
+    const fy = typeof p.fy === 'number' && p.fy >= 0 && p.fy <= 1 ? Math.round(p.fy * 1000) / 1000 : null;
+    if (!pageId || fx === null || fy === null) return;
+    socket.to(ROOM_PREFIX + docId).emit('cursor', { userId: peer.user.id, pageId, fx, fy });
+  });
+
   socket.on('disconnect', () => {
     const docId = socket.data.docId as string | null;
     if (docId) dropSocket(io, ROOM_PREFIX + docId, socket.id);

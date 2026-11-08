@@ -27,6 +27,7 @@ import { PageEditor } from './page-editor';
 import { WorkspaceHRule, PageVRule } from './workspace-ruler';
 import { ContextMenuHost } from './context-menu';
 import { AiBubbleHost } from './ai-bubble';
+import { PresenceCursorLayer } from './presence-cursor-layer';
 import { CommentRail } from '@/components/comments/comment-rail';
 import { startCommentFromSelection } from '@/lib/comments';
 
@@ -333,6 +334,8 @@ export function Workspace() {
       <ContextMenuHost containerRef={scrollRef} />
       {/* সিলেকশনে ভাসমান ✦ AI পিল + অ্যাকশন প্যানেল (portal) */}
       <AiBubbleHost />
+      {/* দিন ৭৩–৭৪ — দূরবর্তী পিয়ারদের কার্সর-নিশান (fixed overlay, online হলেই) */}
+      <PresenceCursorLayer />
     </main>
   );
 }

@@ -49,17 +49,31 @@ export interface PresenceIdentity {
   name: string;
   color: string;
 }
+/** দিন ৭৩–৭৪ — দূরবর্তী কার্সর: পাতা-সাপেক্ষ ভগ্রাংশ-স্থানাঙ্ক (zoom/scroll-নিরপেক্ষ) */
+export interface RemoteCursor {
+  userId: string;
+  pageId: string;
+  /** পাতার প্রস্থ-অনুপাতে ০..১ */
+  fx: number;
+  /** পাতার উচ্চতা-অনুপাতে ০..১ */
+  fy: number;
+  at: number;
+}
 
 interface PresenceState {
   status: PresenceStatus;
   /** নিজেকে বাদে, user.id-দিয়ে dedup করা তালিকা */
   peers: PresencePeer[];
+  /** দিন ৭৩–৭৪ — দূরবর্তী কার্সর (TTL ৬ সে সুইপ) */
+  cursors: RemoteCursor[];
   /** SSR-নিরাপদ: hydrate() না হওয়া পর্যন্ত null */
   identity: PresenceIdentity | null;
   docId: string | null;
   hydrate: () => void;
   join: (docId: string | null) => void;
   setIdentity: (patch: Partial<Pick<PresenceIdentity, 'name' | 'color'>>) => void;
+  /** লোকাল কার্সর-সংকেত (থ্রটলড এমিট) — লেয়ার থেকে ডাকা হয় */
+  pushLocalCursor: (pageId: string, fx: number, fy: number) => void;
 }
 
 // ─── পরিচয় ───
@@ -150,6 +164,19 @@ function getSocket(): Socket {
   socket.on('room-full', () => {
     usePresenceStore.setState({ status: 'full' });
   });
+  // দিন ৭৩–৭৪ — দূরবর্তী কার্সর গ্রহণ (নিজেরটি সার্ভার-ই বাদ দেয়)
+  socket.on('cursor', (payload: { userId?: unknown; pageId?: unknown; fx?: unknown; fy?: unknown }) => {
+    if (!payload || typeof payload !== 'object') return;
+    const userId = typeof payload.userId === 'string' ? payload.userId : '';
+    const pageId = typeof payload.pageId === 'string' ? payload.pageId : '';
+    const fx = typeof payload.fx === 'number' ? payload.fx : -1;
+    const fy = typeof payload.fy === 'number' ? payload.fy : -1;
+    if (!userId || !pageId || fx < 0 || fy < 0) return;
+    const st = usePresenceStore.getState();
+    if (!st.identity || userId === st.identity.id) return;
+    const others = st.cursors.filter((c) => c.userId !== userId);
+    usePresenceStore.setState({ cursors: [...others, { userId, pageId, fx, fy, at: Date.now() }].slice(-12) });
+  });
   socket.on('state', (payload: { v?: number; users?: PresencePeer[] }) => {
     const st = usePresenceStore.getState();
     if (!payload || !Array.isArray(payload.users)) return;
@@ -239,6 +266,7 @@ function ensureHeartbeat(): void {
 export const usePresenceStore = create<PresenceState>((set, get) => ({
   status: 'connecting',
   peers: [],
+  cursors: [],
   identity: null,
   docId: null,
 
@@ -246,6 +274,7 @@ export const usePresenceStore = create<PresenceState>((set, get) => ({
     if (!get().identity) set({ identity: loadIdentity() });
     const s = getSocket();
     ensureHeartbeat();
+    ensureCursorSweep();
     installTypingWatcher();
     // leavePresence() দিয়ে স্পষ্ট disconnect হলে পুনঃসংযোগ
     if (!s.connected) s.connect();
@@ -272,7 +301,39 @@ export const usePresenceStore = create<PresenceState>((set, get) => ({
     set({ identity: next });
     helloNow(); // সার্ভারের এন্ট্রি হালনাগাদ + রুম-রিব্রডকাস্ট
   },
+
+  // দিন ৭৩–৭৪ — লোকাল কার্সর: ১২০ms থ্রটল, কেবল online+রুমে থাকলে; কনটেন্ট যায় না —
+  // কেবল pageId + ভগ্রাংশ-স্থানাঙ্ক
+  pushLocalCursor: (pageId, fx, fy) => {
+    const s = get();
+    if (s.status !== 'online' || !s.docId || !socket?.connected) return;
+    const now = Date.now();
+    if (now - lastCursorEmit < 120) return;
+    lastCursorEmit = now;
+    socket.emit('cursor', { pageId, fx, fy });
+  },
 }));
+
+let lastCursorEmit = 0;
+
+// দিন ৭৩–৭৪ — মেয়াদোত্তীর্ণ কার্সর ঝালাই (৬ সে) + চলে-গেছে-পিয়ারের কার্সর বাদ
+let cursorSweepTimer: ReturnType<typeof setInterval> | null = null;
+function ensureCursorSweep(): void {
+  if (cursorSweepTimer || typeof window === 'undefined') return;
+  cursorSweepTimer = setInterval(() => {
+    const st = usePresenceStore.getState();
+    const now = Date.now();
+    const alive = st.cursors.filter((c) => now - c.at < 6_000);
+    const peerIds = new Set(st.peers.map((p) => p.id));
+    const next = alive.filter((c) => peerIds.has(c.userId));
+    if (next.length !== st.cursors.length) usePresenceStore.setState({ cursors: next });
+  }, 2_000);
+}
+
+// ডেভ-ডায়গনস্টিক হুক — উৎপাদনে সেট হয় না (synthetic-peer E2E ও কনসোল-ডিবাগে কাজে লাগে)
+if (process.env.NODE_ENV !== 'production') {
+  (window as unknown as { __presenceStore?: typeof usePresenceStore }).__presenceStore = usePresenceStore;
+}
 
 /** studio ভিউ ছাড়ার সময় — স্পষ্ট বিচ্ছিন্ন: 'মানুষ চলে গেছে' সঙ্গে সঙ্গে সবার কাছে পৌঁছায় */
 export function leavePresence(): void {
@@ -282,5 +343,5 @@ export function leavePresence(): void {
     typingStopTimer = null;
   }
   if (socket?.connected) socket.disconnect();
-  usePresenceStore.setState({ docId: null, peers: [], status: 'connecting' });
+  usePresenceStore.setState({ docId: null, peers: [], cursors: [], status: 'connecting' });
 }

@@ -5606,3 +5606,33 @@ html.dark .vd-body ins.vd-ins {
   background: color-mix(in oklab, var(--primary) 24%, transparent);
   color: color-mix(in oklab, var(--primary) 28%, white);
 }
+
+/* ─── দিন ৭৩–৭৪ — প্রেজেন্স-কার্সর লেয়ার (দূরবর্তী পিয়ারের নিশান + নাম-পতাকা) ─── */
+.pc-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 40;
+}
+.pc-cursor {
+  position: absolute;
+  transform: translate(-2px, -2px);
+  will-change: left, top;
+  transition: left 160ms ease-out, top 160ms ease-out;
+}
+.pc-cursor-arrow {
+  display: block;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.25));
+}
+.pc-cursor-flag {
+  display: inline-block;
+  margin-left: 12px;
+  margin-top: -4px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: white;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.25);
+}
