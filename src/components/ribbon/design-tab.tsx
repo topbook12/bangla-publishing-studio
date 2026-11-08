@@ -4,7 +4,7 @@
 
 'use client';
 
-import { Check, ChevronDown, Crown, LayoutTemplate, PaintBucket, Palette, RefreshCw, Settings2, Store } from 'lucide-react';
+import { Check, ChevronDown, Crown, Languages, LayoutTemplate, PaintBucket, Palette, RefreshCw, Settings2, Store } from 'lucide-react';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -202,6 +202,12 @@ export function DesignTab() {
             const c = window.prompt(tt('dsn.prompt.borderColor'), settings.pageBorderColor);
             if (c) update({ pageBorderColor: c });
           }} />
+          <RibbonButton
+            icon={Languages}
+            label={tt('dsn.btn.typography')}
+            title={tt('dsn.btn.typographyTip')}
+            onClick={() => openDialog('typography')}
+          />
         </div>
       </RibbonGroup>
       <RibbonDivider />

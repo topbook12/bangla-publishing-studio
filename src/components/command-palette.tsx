@@ -51,6 +51,7 @@ interface PaletteCommand {
 const DIALOG_CMDS: Array<{ d: DialogName; icon: LucideIcon; k: string; fb: string; kw: string }> = [
   { d: 'questionPaper', icon: FileText, k: 'cp.qp', fb: 'প্রশ্নপত্র স্টুডিও…', kw: 'question paper exam' },
   { d: 'questionBank', icon: BookMarked, k: 'cp.qbank', fb: 'প্রশ্ন-ভান্ডার…', kw: 'question bank repository pool' },
+  { d: 'typography', icon: Languages, k: 'cp.typography', fb: 'টাইপোগ্রাফি প্যাক…', kw: 'typography packs madrasa sanskrit hindi numerals' },
   { d: 'documentStudio', icon: LayoutTemplate, k: 'cp.ds', fb: 'ডকুমেন্ট স্টুডিও…', kw: 'document studio template design' },
   { d: 'thesis', icon: GraduationCap, k: 'cp.thesis', fb: 'থিসিস স্টুডিও…', kw: 'thesis dissertation' },
   { d: 'templates', icon: BookOpen, k: 'cp.bookTpl', fb: 'বই-টেমপ্লেট (ব্লুপ্রিন্ট)…', kw: 'book template blueprint' },

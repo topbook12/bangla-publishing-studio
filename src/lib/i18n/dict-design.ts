@@ -13,6 +13,19 @@ export const dictDesign: Dict = {
   'dsn.group.covtoc': { bn: 'কভার ও সূচিপত্র', hi: 'कवर और विषय-सूची', en: 'Cover & TOC' },
   'dsn.group.ink': { bn: 'এক রঙের বই', hi: 'एक रंग की किताब', en: 'Single-Ink Book' },
 
+  // ─── দিন ৬৯ — টাইপোগ্রাফি প্যাক (মাদ্রাসা/সংস্কৃত/হিন্দি) ───
+  'dsn.btn.typography': { bn: 'টাইপোগ্রাফি প্যাক', hi: 'टाइपोग्राफी पैक', en: 'Typography Packs' },
+  'dsn.btn.typographyTip': { bn: 'মাদ্রাসা/সংস্কৃত/হিন্দি প্রকাশনা-প্রথার ফন্ট-জোড় ও সংখ্যা-প্রথা — এক ক্লিকে প্রয়োগ', hi: 'मदरसा/संस्कृत/हिंदी प्रकाशन-प्रथा के फ़ॉन्ट-जोड़े व अंक-प्रथा — एक क्लिक में लगाएँ', en: 'Madrasa/Sanskrit/Hindi font pairs + numeral conventions — one-click apply' },
+  'cp.typography': { bn: 'টাইপোগ্রাফি প্যাক…', hi: 'टाइपोग्राफी पैक…', en: 'Typography packs…' },
+  'tp.title': { bn: 'টাইপোগ্রাফি প্যাক', hi: 'टाइपोग्राफी पैक', en: 'Typography Packs' },
+  'tp.desc': { bn: 'প্রকাশনা-প্রথার প্রস্তুত ফন্ট-জোড় ও অঙ্কপ্রথা — ফন্ট এক ক্লিকে, অঙ্ক-ঢালাই পুরো বইয়ে (স্ন্যাপশট-সুরক্ষিত)।', hi: 'प्रकाशन-प्रथा के तैयार फ़ॉन्ट-जोड़े व अंक-प्रथा — फ़ॉन्ट एक क्लिक में, अंक-रूपांतरण पूरी किताब में (स्नैपशॉट-सुरक्षित)।', en: 'Publication-ready font pairs and numeral conventions — fonts in one click, digit conversion across the book (snapshot-protected).' },
+  'tp.applyFont': { bn: 'ফন্ট প্রয়োগ', hi: 'फ़ॉन्ट लगाएँ', en: 'Apply fonts' },
+  'tp.applyDigits': { bn: 'সংখ্যা রূপান্তর (সব পাতা)', hi: 'अंक रूपांतरण (सभी पृष्ठ)', en: 'Convert digits (all pages)' },
+  'tp.applyDigitsTip': { bn: 'পাতার লেখার অঙ্ক এই প্রথায় ঢালাই হবে — মার্কআপ/মাপ অক্ষত; আগে স্বয়ংক্রিয় ব্যাকআপ', hi: 'पृष्ठ के अंक इस प्रथा में बदलेंगे — मार्कअप/माप सुरक्षित; पहले स्वतः बैकअप', en: 'Page digits will be recast in this convention — markup/metrics intact; auto backup first' },
+  'tp.toast.font': { bn: 'ডিফল্ট ফন্ট: {f}', hi: 'डिफ़ॉल्ट फ़ॉन्ट: {f}', en: 'Default font: {f}' },
+  'tp.toast.digits': { bn: '{n}টি পাতার অঙ্ক বদলেছে', hi: '{n} पृष्ठ के अंक बदल गए', en: 'Digits updated on {n} pages' },
+  'tp.toast.digitsNone': { bn: 'বদলানোর মতো অঙ্ক পাওয়া যায়নি', hi: 'बदलने जैसे अंक नहीं मिले', en: 'No convertible digits found' },
+
   // ─── হেডার ও ফুটার ───
   'dsn.hf.master': { bn: 'হেডার-ফুটার মাস্টার', hi: 'हेडर-फुटर मास्टर', en: 'Header & Footer Master' },
   'dsn.hstyle.parallel': { bn: 'প্যারালাল (গ্লো)', hi: 'पैरेलल (ग्लो)', en: 'Parallel (Glow)' },

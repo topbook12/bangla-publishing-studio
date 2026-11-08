@@ -26,6 +26,7 @@ export type DialogName =
   | 'vectorLib'
   | 'questionPaper'
   | 'questionBank'
+  | 'typography'
   | 'documentStudio'
   | 'sketchPad'
   | 'thesis'

@@ -21,6 +21,7 @@ import { AssetStoreDialog } from './asset-store-dialog';
 import { VectorLibraryDialog } from './vector-library-dialog';
 import { QuestionPaperDialog } from './question-paper-dialog';
 import { QuestionBankDialog } from './question-bank-dialog';
+import { TypographyPackDialog } from './typography-pack-dialog';
 import { DocumentStudioDialog } from './document-studio-dialog';
 import { SketchPadDialog } from './sketch-pad-dialog';
 import { ThesisDialog } from './thesis-dialog';
@@ -48,6 +49,7 @@ export function Dialogs() {
       <VectorLibraryDialog />
       <QuestionPaperDialog />
       <QuestionBankDialog />
+      <TypographyPackDialog />
       <DocumentStudioDialog />
       <SketchPadDialog />
       <ThesisDialog />
