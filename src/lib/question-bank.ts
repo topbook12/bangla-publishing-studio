@@ -276,3 +276,116 @@ export function buildPaperFromBank(
 export function bankPaperToEditorHtml(paper: QuestionPaper, lang: Lang): string {
   return paperToEditorHtml(paper, lang);
 }
+
+// ─── দিন ৬৭ — মিক্স-জেনারেটর (সেট ক/খ) + উত্তরপত্র ───
+
+/** নির্ধারিত বীজের PRNG (mulberry32) — E2E-পুনরুৎপাদনযোগ্য শাফল */
+function mulberry32(seed: number): () => number {
+  let a = seed >>> 0;
+  return () => {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+const DIFF_ORDER: Record<BankDifficulty, number> = { easy: 0, medium: 1, hard: 2 };
+
+export interface MixOptions {
+  /** প্রতি সেটে প্রশ্নসংখ্যা */
+  count: number;
+  /** নির্ধারিত বীজ — না দিলে Date.now() */
+  seed?: number;
+}
+
+export interface MixResult {
+  sets: QuestionBankRecord[][];
+  /** পুল ছোট হওয়ায় সেটদ্বয়ে প্রশ্ন মিলে গেছে কি না */
+  shared: boolean;
+}
+
+/**
+ * ব্যাংক-পুল → সেট ক/খ — যথাসম্ভব অসংযুক্ত দুটি সেট, জটিলতা-ক্রমে (সহজ→কঠিন) সাজানো।
+ * পুল < ২×count হলে সেটদ্বয় ভাগ করে নেয় (shared=true) — শাফল-ক্রম আলাদা থাকে।
+ */
+export function buildMixedSets(pool: QuestionBankRecord[], opts: MixOptions): MixResult {
+  const count = Math.max(1, Math.min(60, Math.round(opts.count) || 1));
+  const rng = mulberry32(opts.seed ?? Date.now());
+  const shuffled = [...pool];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  const sortByDiff = (arr: QuestionBankRecord[]) =>
+    [...arr].sort((a, b) => DIFF_ORDER[a.difficulty] - DIFF_ORDER[b.difficulty] || a.updatedAt - b.updatedAt);
+
+  const need = count * 2;
+  if (shuffled.length >= need) {
+    const shared = false;
+    const setA = sortByDiff(shuffled.slice(0, count));
+    const setB = sortByDiff(shuffled.slice(count, count * 2));
+    return { sets: [setA, setB], shared };
+  }
+  const half = Math.ceil(shuffled.length / 2);
+  const setA = sortByDiff(shuffled.slice(0, half));
+  const setB = sortByDiff(shuffled.slice(half));
+  return { sets: [setA, setB], shared: true };
+}
+
+const ANSKEY_TD = 'padding:6px 10px;border:1px solid #999;text-align:left;vertical-align:top;font-size:11pt;';
+
+/** ব্যাংক-লেখা নিরাপদ HTML (প্রশ্ন/উত্তরে কোনো মার্কআপ আসলে ভাঙবে না) */
+function escapeBankHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function answerRows(qs: QuestionBankRecord[]): string {
+  return qs
+    .map((q, i) => {
+      const shown = q.answer?.trim() || '—';
+      return `<tr><td style="${ANSKEY_TD}">${toBanglaNumber(i + 1)}</td><td style="${ANSKEY_TD}">${escapeBankHtml(q.text.slice(0, 90))}</td><td style="${ANSKEY_TD}">${escapeBankHtml(shown)}</td></tr>`;
+    })
+    .join('');
+}
+
+const ANSKEY_SET_LABEL: Record<string, string> = { bn: 'সেট ক', hi: 'सेट क', en: 'Set A' };
+const ANSKEY_SET_LABEL2: Record<string, string> = { bn: 'সেট খ', hi: 'सेट ख', en: 'Set B' };
+const ANSKEY_TITLE: Record<string, string> = {
+  bn: 'উত্তরপত্র — সেট ক ও খ',
+  hi: 'उत्तर-पत्रक — सेट क और ख',
+  en: 'Answer Key — Sets A & B',
+};
+const ANSKEY_EMPTY: Record<string, string> = {
+  bn: 'উত্তর দেওয়া নেই — ভান্ডারে উত্তর যোগ করলে এখানে আসবে।',
+  hi: 'उत्तर दिया गया नहीं — भंडार में उत्तर जोड़ने पर यहाँ आएगा।',
+  en: 'No answers yet — add answers in the bank and they will appear here.',
+};
+
+/** উত্তরপত্র-পাতা (দুই সেটের সারণি; inline-style — এডিটর-পাতার চুক্তি) */
+export function buildAnswerKeyHtml(setA: QuestionBankRecord[], setB: QuestionBankRecord[], lang: Lang): string {
+  const th = `${ANSKEY_TD.replace('text-align:left', 'text-align:left;background:#eef5ef;font-weight:700;')}`;
+  const section = (label: string, qs: QuestionBankRecord[]) => {
+    if (qs.length === 0) return '';
+    const body = qs.every((q) => !q.answer?.trim())
+      ? `<tr><td colspan="3" style="${ANSKEY_TD}">${ANSKEY_EMPTY[lang] ?? ANSKEY_EMPTY.bn}</td></tr>`
+      : answerRows(qs);
+    return `<p style="margin:14px 0 6px;font-weight:700;font-size:12pt;">${escapeBankHtml(label)}</p>` +
+      `<table style="width:100%;border-collapse:collapse;"><thead><tr>` +
+      `<th style="${th}">${lang === 'en' ? 'No' : 'নং'}</th>` +
+      `<th style="${th}">${lang === 'hi' ? 'प्रश्न' : lang === 'en' ? 'Question' : 'প্রশ্ন'}</th>` +
+      `<th style="${th}">${lang === 'hi' ? 'উত্তর' : lang === 'en' ? 'Answer' : 'উত্তর'}</th>` +
+      `</tr></thead><tbody>${body}</tbody></table>`;
+  };
+  return (
+    `<h2 style="text-align:center;font-size:14pt;margin:0 0 4px;">${ANSKEY_TITLE[lang] ?? ANSKEY_TITLE.bn}</h2>` +
+    `<div style="text-align:center;font-size:10pt;color:#555;">${new Date().toLocaleDateString(lang === 'bn' ? 'bn-BD' : lang === 'hi' ? 'hi-IN' : 'en-GB')}</div>` +
+    section(ANSKEY_SET_LABEL[lang] ?? ANSKEY_SET_LABEL.bn, setA) +
+    section(ANSKEY_SET_LABEL2[lang] ?? ANSKEY_SET_LABEL2.bn, setB)
+  );
+}

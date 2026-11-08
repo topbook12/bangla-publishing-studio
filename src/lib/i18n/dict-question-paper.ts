@@ -182,6 +182,40 @@ export const dictQuestionPaper = {
     en: 'Enter the question text.',
   },
 
+  // ─── দিন ৬৭ — মিক্স-জেনারেটর (সেট ক/খ) + উত্তরপত্র ───
+  'qbank.mix.count': {
+    bn: 'প্রতি সেটে প্রশ্ন',
+    hi: 'प्रति सेट प्रश्न',
+    en: 'Questions per set',
+  },
+  'qbank.mix.go': {
+    bn: 'সেট ক/খ মিক্স + উত্তরপত্র',
+    hi: 'सेट क/ख मिक्स + उत्तर-पत्रक',
+    en: 'Mix Set A/B + answer key',
+  },
+  'qbank.mix.tip': {
+    bn: 'ছাঁকনি-মেলা পুল থেকে অসংযুক্ত দুটি সেট (সহজ→কঠিন ক্রমে) + দুই সেটের উত্তরপত্র বসান',
+    hi: 'फ़िल्टर-मेला पूल से असंयुक्त दो सेट (सरल→कठिन क्रम में) + दोनों सेटों की उत्तर-पत्रक जोड़ें',
+    en: 'Two disjoint sets (easy→hard order) from the filtered pool + answer key for both',
+  },
+  'qbank.mix.needPool': {
+    bn: 'মিক্সের জন্য অন্তত ২টি প্রশ্ন দরকার — ছাঁকনি বদলে নিন।',
+    hi: 'मिक्स के लिए कम से कम २ प्रश्न चाहिए — फ़िल्टर बदलें।',
+    en: 'Need at least 2 questions to mix — adjust the filters.',
+  },
+  'qbank.mix.sharedWarn': {
+    bn: 'পুল ছোট — দুই সেটে কিছু প্রশ্ন মিলে যাবে।',
+    hi: 'पूल छोटा है — दोनों सेटों में कुछ प्रश्न मिल जाएँगे।',
+    en: 'Pool is small — some questions will be shared across sets.',
+  },
+  'qbank.mix.toast': {
+    bn: 'সেট ক/খ ও উত্তরপত্র বসেছে',
+    hi: 'सेट क/ख और उत्तर-पत्रक जुड़ गए',
+    en: 'Sets A/B and answer key inserted',
+  },
+  'qbank.mix.setA': { bn: 'সেট ক', hi: 'सेट क', en: 'Set A' },
+  'qbank.mix.setB': { bn: 'সেট খ', hi: 'सेट ख', en: 'Set B' },
+
 
   // ── হাতে-আঁকা চিত্র স্টুডিও (Sketch Pad) ──
   'ins.sketch': {

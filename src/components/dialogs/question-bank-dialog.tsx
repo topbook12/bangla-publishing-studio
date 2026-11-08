@@ -12,7 +12,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  BookMarked, Loader2, Pencil, Plus, RotateCcw, Sparkles, Trash2,
+  BookMarked, Loader2, Pencil, Plus, RotateCcw, Shuffle, Sparkles, Trash2,
 } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
@@ -31,9 +31,9 @@ import type { PageData, PaperSizeId } from '@/lib/types';
 import { useUiStore } from '@/lib/ui-store';
 import { useT, useFmtNum, useLangStore } from '@/lib/i18n';
 import {
-  bankFacets, bankPaperToEditorHtml, buildPaperFromBank, deleteBankQuestion,
-  listBankQuestions, saveBankQuestion, seedStarterQuestionsOnce,
-  type BankDifficulty, type BankType, type QuestionBankRecord,
+  bankFacets, bankPaperToEditorHtml, buildAnswerKeyHtml, buildMixedSets,
+  buildPaperFromBank, deleteBankQuestion, listBankQuestions, saveBankQuestion,
+  seedStarterQuestionsOnce, type BankDifficulty, type BankType, type QuestionBankRecord,
 } from '@/lib/question-bank';
 import { normalizeQpLayout } from '@/lib/question-paper';
 import { qpMarginsForPaper } from '@/lib/page-layout';
@@ -110,6 +110,9 @@ export function QuestionBankDialog() {
   const [form, setForm] = useState<FormState | null>(null);
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  // দিন ৬৭ — মিক্স-জেনারেটর
+  const [mixCount, setMixCount] = useState(5);
+  const [mixing, setMixing] = useState(false);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -257,6 +260,56 @@ export function QuestionBankDialog() {
     () => items.filter((q) => selected.has(q.id)).length,
     [items, selected],
   );
+
+  /** একটি HTML-পাতা ডকুমেন্টের শেষে বসানো + পেইনেশন-স্থিরতা (QP-সন্নিবেশ চুক্তি) */
+  const insertHtmlEnd = async (html: string): Promise<void> => {
+    const st = useEditorStore.getState();
+    const qpPs = 'a4' as PaperSizeId;
+    const globalPs = st.settings.paperSize;
+    const qpMargins = qpMarginsForPaper(qpPs);
+    const sizePatch: Partial<PageData> = {
+      paperSizeOverride: qpPs !== globalPs ? qpPs : null,
+      marginsOverride: { ...qpMargins, gutter: st.settings.margins.gutter },
+      noChrome: true,
+    };
+    const last = st.pages[st.pages.length - 1];
+    const lastUsable = !!last && last.kind === 'normal' && !last.flowLock && htmlIsEmpty(last.html);
+    let targetId: string;
+    if (lastUsable) {
+      st.replacePageHtml(last.id, html);
+      st.updatePage(last.id, sizePatch);
+      targetId = last.id;
+    } else {
+      targetId = st.addPage(last?.id ?? null, html, sizePatch);
+    }
+    st.setActivePage(targetId);
+    await paginateInsertedReader(targetId);
+  };
+
+  /** দিন ৬৭ — ছাঁকনি-পুল → সেট ক/খ (অসংযুক্ত, সহজ→কঠিন) + উত্তরপত্র → ধারাবাহিক সন্নিবেশ */
+  const handleMix = async () => {
+    if (items.length < 2) {
+      toast.error(tt('qbank.mix.needPool'));
+      return;
+    }
+    setMixing(true);
+    try {
+      const { sets, shared } = buildMixedSets(items, { count: mixCount });
+      if (shared) toast.warning(tt('qbank.mix.sharedWarn'));
+      const [setA, setB] = sets;
+      const common = {
+        subject: fSubject !== 'all' ? fSubject : setA[0]?.subject || setB[0]?.subject || '',
+        classLabel: fClass !== 'all' ? fClass : setA[0]?.className || setB[0]?.className || '',
+      };
+      await insertHtmlEnd(bankPaperToEditorHtml(buildPaperFromBank(setA, { ...common, examTitle: tt('qbank.mix.setA'), setCode: 'ক' }), lang));
+      await insertHtmlEnd(bankPaperToEditorHtml(buildPaperFromBank(setB, { ...common, examTitle: tt('qbank.mix.setB'), setCode: 'খ' }), lang));
+      await insertHtmlEnd(buildAnswerKeyHtml(setA, setB, lang));
+      close();
+      toast.success(tt('qbank.mix.toast'));
+    } finally {
+      setMixing(false);
+    }
+  };
 
   const diffOptions: Array<{ v: 'all' | BankDifficulty; label: string }> = [
     { v: 'all', label: tt('qbank.filter.all') },
@@ -464,6 +517,31 @@ export function QuestionBankDialog() {
               <span className="ml-auto text-xs text-muted-foreground" role="status">
                 {tt('qbank.count').split('{n}').join(ff(items.length))}
               </span>
+            </div>
+
+            {/* দিন ৬৭ — মিক্স-জেনারেটর সারি */}
+            <div className="flex flex-wrap items-center gap-2 rounded-lg border border-dashed border-primary/30 bg-primary/5 p-2">
+              <label className="text-xs font-medium text-primary" htmlFor="qbank-mix-count">
+                {tt('qbank.mix.count')}
+              </label>
+              <Input
+                id="qbank-mix-count"
+                type="number" min={1} max={30}
+                className="h-8 w-16"
+                value={mixCount}
+                onChange={(e) => setMixCount(Math.max(1, Math.min(30, Number(e.target.value) || 1)))}
+              />
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 gap-1.5 border-primary/40 text-primary hover:bg-primary/10"
+                disabled={mixing || items.length < 2}
+                title={tt('qbank.mix.tip')}
+                onClick={() => void handleMix()}
+              >
+                {mixing ? <Loader2 size={14} className="animate-spin" /> : <Shuffle size={14} />}
+                {tt('qbank.mix.go')}
+              </Button>
             </div>
 
             {/* তালিকা */}
