@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>বিজ্ঞান মেলা চিটশিট — Bangla Publishing Studio</title>
+<style>
+  :root{
+    --ink:#1a1512; --teal:#0f766e; --teal-dark:#134e4a; --amber:#b45309;
+    --line:#e7e2d8; --soft:#faf7f0; --red:#b91c1c; --green:#15803d;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{font-size:13.5px;}
+  body{
+    font-family:'Noto Sans Bengali','Hind Siliguri','SolaimanLipi','Kalpurush','Vrinda',sans-serif;
+    color:var(--ink); background:#f1efe8; line-height:1.45;
+  }
+  .sheet{
+    width:210mm; min-height:296mm; margin:10px auto; background:#fff;
+    padding:12mm 11mm; box-shadow:0 2px 10px rgba(0,0,0,.15);
+    display:flex; flex-direction:column; gap:4.5mm;
+  }
+  @media print{
+    body{background:#fff;}
+    .sheet{width:auto; min-height:auto; margin:0; box-shadow:none; page-break-after:always;}
+    .no-print{display:none !important;}
+  }
+  .hint{
+    max-width:210mm; margin:10px auto 0; background:var(--amber); color:#fff;
+    padding:8px 14px; border-radius:8px; font-size:.9rem; text-align:center;
+  }
+  /* ---------- header ---------- */
+  .head{border-bottom:2.5px solid var(--teal); padding-bottom:3mm; display:flex; align-items:baseline; justify-content:space-between; gap:6px;}
+  .head h1{font-size:1.5rem; color:var(--teal-dark); font-weight:800;}
+  .head .pitch{font-size:.95rem; color:var(--amber); font-weight:700; text-align:right;}
+  h2{font-size:1.02rem; color:var(--teal-dark); border-left:4px solid var(--teal); padding-left:7px; margin-bottom:2.2mm;}
+  h3{font-size:.92rem; color:var(--teal); margin:1.8mm 0 1mm;}
+  section{break-inside:avoid;}
+  /* ---------- story bits ---------- */
+  .bits{display:grid; grid-template-columns:repeat(6,1fr); gap:1.8mm;}
+  .bit{background:var(--soft); border:1px solid var(--line); border-top:3px solid var(--teal); border-radius:6px; padding:1.8mm 2mm; font-size:.78rem;}
+  .bit b{display:block; color:var(--teal-dark); font-size:.86rem;}
+  /* ---------- demo table ---------- */
+  table{width:100%; border-collapse:collapse; font-size:.8rem;}
+  th{background:var(--teal-dark); color:#fff; padding:1.6mm 2mm; text-align:left; font-weight:700;}
+  td{border:1px solid var(--line); padding:1.5mm 2mm; vertical-align:top;}
+  tr:nth-child(even) td{background:var(--soft);}
+  .star{color:var(--amber); font-weight:800;}
+  /* ---------- qa grid ---------- */
+  .qa{display:grid; grid-template-columns:1fr 1.6fr; gap:0; border:1px solid var(--line); border-radius:6px; overflow:hidden;}
+  .qa>div{padding:1.5mm 2.2mm; border-bottom:1px solid var(--line); font-size:.8rem;}
+  .qa .q{background:var(--soft); font-weight:700; color:var(--teal-dark); border-right:1px solid var(--line);}
+  .qa .grp{grid-column:1/-1; background:#eee9dd; color:var(--teal-dark); font-weight:800; font-size:.82rem; border-bottom:1.5px solid var(--teal); padding:1.3mm 2.2mm;}
+  /* ---------- boxes ---------- */
+  .row{display:grid; grid-template-columns:1fr 1fr; gap:3mm;}
+  .box{border:1px solid var(--line); border-radius:6px; padding:2.2mm 2.6mm; font-size:.8rem; background:#fff;}
+  .box.gold{border-top:3px solid var(--amber); background:#fffaf2;}
+  .box.teal{border-top:3px solid var(--teal); background:#f4faf8;}
+  .box ol{padding-right:2mm; padding-left:5mm;}
+  .box li{margin-bottom:.8mm;}
+  .mantra{background:var(--teal-dark); color:#fff; border-radius:6px; padding:2.4mm 3mm; font-size:.86rem; font-weight:700;}
+  .mantra small{font-weight:400; opacity:.9;}
+  .check li{list-style:none; padding-left:6mm; position:relative; margin-bottom:1.1mm; font-size:.8rem;}
+  .check li::before{content:"☐"; position:absolute; left:0; color:var(--amber); font-weight:800;}
+  .wao{display:grid; grid-template-columns:repeat(3,1fr); gap:2mm;}
+  .wao div{background:#fffaf2; border:1.5px dashed var(--amber); border-radius:6px; padding:1.8mm 2mm; font-size:.78rem;}
+  .wao b{color:var(--amber);}
+  footer{margin-top:auto; border-top:1.5px solid var(--line); padding-top:2mm; font-size:.75rem; color:#6b6257; display:flex; justify-content:space-between;}
+  .en{font-family:'Segoe UI',Arial,sans-serif; direction:ltr;}
+  code{font-family:'Segoe UI',Arial,sans-serif; direction:ltr; unicode-bidi:embed; background:#f3efe6; padding:0 3px; border-radius:3px; font-size:.92em;}
+</style>
+</head>
+<body>
+
+<div class="hint no-print">🖨️ প্রিন্ট করতে: <b>Ctrl+P</b> → পেপার A4 → মার্জিন Default → ২ পাতা। এটা মেলার দিন হাতে ধরে বলার সিট-কার্ড।</div>
+
+<!-- ================= PAGE 1 ================= -->
+<div class="sheet">
+  <div class="head">
+    <h1>Bangla Publishing Studio</h1>
+    <div class="pitch">বাংলা বই ও প্রশ্নপত্রের ফ্রি,<br>অফলাইন-চলা পাবলিশিং স্টুডিও</div>
+  </div>
+
+  <section>
+    <h2>১ · শুরুর গল্প — "করিম সাহেবের প্রশ্নপত্র" (৪০ সেকেন্ড)</h2>
+    <p style="font-size:.85rem;">
+      শিক্ষক করিম সাহেব Word-এ প্রশ্নপত্র বানালেন → যুক্তাক্ষর ভাঙা, প্রশ্ন কাগজের ভাঁজে কাটা পড়া, <b>২০০ কপি নষ্ট</b>। বই ছাপাতে গেলে কারিগর বললেন <b>"ফরমা" আনেন</b> — ফরমা বানানোর সফটওয়্যার (InDesign) = <b>৩ মাসের বেতন + মাস দেড়েক শেখা + পুরোটা ইংরেজি</b>। তখনই প্রশ্ন: বাংলা বই ছাপার এত কষ্ট কেন? তাই — <b>Bangla Publishing Studio</b>: ব্রাউজারে খোলে, ইন্টারনেট ছাড়া চলে, ছাপার সব নিয়ম নিজে থেকেই মানে।
+    </p>
+  </section>
+
+  <section>
+    <h2>২ · গল্পের ৬ বিট (মনে রাখো: ক-প-স-ফ-অ-ব)</h2>
+    <div class="bits">
+      <div class="bit"><b>ক</b>রিম সাহেব — Word-দুর্দান্তা, ২০০ কপি নষ্ট</div>
+      <div class="bit"><b>প</b>্রকাশক — ফরমা + দামি ইংরেজি সফটওয়্যার</div>
+      <div class="bit"><b>স</b>মাধান — ব্রাউজারে পুরো স্টুডিও, সার্ভার ছাড়া</div>
+      <div class="bit"><b>ফ</b>িচার — ৫৫ টেমপ্লেট, আসল পাতা, ফরমা, প্রশ্ন-ব্যাংক</div>
+      <div class="bit"><b>অ</b>ফলাইন ফাঁদ — WiFi বন্ধ → সব চলে</div>
+      <div class="bit"><b>ব</b>াস্তবতা — প্রিন্ট-রেডি PDF + DOCX এক্সপোর্ট</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>৩ · লাইভ ডেমো রুট (ধাপ = অ্যাকশন + এক বাক্য)</h2>
+    <table>
+      <tr><th style="width:5%">#</th><th style="width:31%">অ্যাকশন</th><th>বলার বাক্য</th></tr>
+      <tr><td>১</td><td>হোম → টেমপ্লেট স্টুডিও → <b>৫৫ টেমপ্লেট</b> → বই তৈরি</td><td>"উপন্যাস, প্রশ্নপত্র, থিসিস — রেডিমেড; কমিউনিটি প্যাকও ইমপোর্ট হয়।"</td></tr>
+      <tr><td>২</td><td class="star">⭐ বাংলা টাইপ → পাতা ভরে অটো পরের পাতায়</td><td>"Word এক লম্বা স্ক্রল; এখানে স্ক্রিনে যা, কাগজে তা-ই।"</td></tr>
+      <tr><td>৩</td><td>A4 → <b>Demy Octavo</b> মাপ-বদল</td><td>"ছাপাখানার আসল কাগজের নাম জানে।"</td></tr>
+      <tr><td>৪</td><td>৯ ফন্ট + বাংলা পৃষ্ঠা-সংখ্যা ১২৩ + যুক্তবর্ণ প্যালেট</td><td>"মাদ্রাসা/সংস্কৃত/হিন্দি টাইপোগ্রাফি প্যাক আছে।"</td></tr>
+      <tr><td>৫</td><td>Ctrl+K কমান্ড প্যালেট</td><td>"সব ফিচার এক জায়গা থেকে।"</td></tr>
+      <tr><td>৬</td><td class="star">⭐ প্রশ্ন-ব্যাংক (ট্যাগ/শ্রেণি/জটিলতা) → <b>Set-A/B + উত্তরপত্র</b></td><td>"শিক্ষকের ভান্ডার থেকে এক ক্লিকে দুই সেট — কপি কমবে, ঘুম ফেরবে।"</td></tr>
+      <tr><td>৭</td><td class="star">⭐ Ctrl+K → "ইতিহাস" → তুলনা → <b>শব্দ-লেভেল ডিফ</b> + পাতা-রোলব্যাক</td><td>"কে কী বদলেছে রঙিন দেখায়; এক পাতাও ফেরত আনা যায়।"</td></tr>
+      <tr><td>৮</td><td>২য় উইন্ডো → রিমোট কার্সর + মার্জিন কমেন্ট</td><td>"সম্পাদক-লেখক একসাথে; মার্জ সংঘর্ষ-নিরাপদ।"</td></tr>
+      <tr><td>৯</td><td class="star">⭐⭐ <b>WiFi বন্ধ</b> → টাইপ + সেভ চলতেই থাকে</td><td>"ডেটা আপনার কম্পিউটারেই — কোথাও আপলোড হয় না।"</td></tr>
+      <tr><td>১০</td><td>Ctrl+P প্রিভিউ + DOCX/JSON এক্সপোর্ট (ছাপা পাতা দেখাও)</td><td>"ছাপাখানা যা চায়, তাই বেরোয়।"</td></tr>
+      <tr><td>১১</td><td>ফরমা ভিউ — এক কাগজে ৪ পাতা</td><td>"গল্পের সেই 'ফরমা' — এখন এক ক্লিক।"</td></tr>
+    </table>
+  </section>
+
+  <section class="wao">
+    <div><b>ওয়াও-১:</b> পাতার অটো-ফ্লো — Word-এ এটা নেই</div>
+    <div><b>ওয়াও-২:</b> এক ক্লিকে Set-A/B + উত্তরপত্র</div>
+    <div><b>ওয়াও-৩:</b> WiFi বন্ধ করার সাহস — কিচ্ছু থামে না</div>
+  </section>
+
+  <div class="mantra">পাকা-মন্ত্র: "আসল কাগজের পাতা + ছাপাখানার ফরমা + অফলাইন চলা + পুরোপুরি বাংলা — এই চার একসাথে ফ্রিতে আগে কোথাও ছিল না।" <small>— যেকোনো তর্কে এই ত্রয়ী ফেরত আনো।</small></div>
+
+  <footer><span>বিজ্ঞান মেলা চিটশিট · পাতা ১/২</span><span class="en">github.com/topbook12/bangla-publishing-studio</span></footer>
+</div>
+
+<!-- ================= PAGE 2 ================= -->
+<div class="sheet">
+  <div class="head">
+    <h1 style="font-size:1.25rem;">প্রশ্ন-উত্তর চিটশিট</h1>
+    <div class="pitch">জুরির আগ্রাসনের জায়গা = তোমার গর্বের জায়গা</div>
+  </div>
+
+  <section>
+    <div class="qa">
+      <div class="grp">প্রযুক্তি</div>
+      <div class="q">কী দিয়ে বানানো?</div><div>Next.js + React + TypeScript (জনপ্রিয়তম ওয়েব প্রযুক্তি); এডিটর TipTap/ProseMirror (Google Docs ঘরানার ওপেন-সোর্স ইঞ্জিন); ডেটা IndexedDB।</div>
+      <div class="q">ডেটা কোথায় থাকে?</div><div>ব্রাউজারের ভিতরের ডেটাবেসে — প্রতি টাইপে অটোসেভ; JSON ব্যাকআপও ডাউনলোড করা যায়। কোথাও আপলোড না — এটা বৈশিষ্ট্য, বাগ না।</div>
+      <div class="q">AI ব্যবহার করেছ?</div><div>কোডিং-সহায়ক হিসেবে হ্যাঁ; ডিজাইন-সিদ্ধান্ত, ফিচার, পরীক্ষা আমার। অ্যাপের ভিতরে কোনো AI লাগে না — সব লোকাল।</div>
+      <div class="q">একা বানিয়েছ?</div><div>ডিজাইন-সিদ্ধান্ত আর ফিচার সব আমার; AI দ্রুত কোডে সাহায্য করেছে — পেশাদার প্রকৌশলীরাও আজ এভাবেই কাজ করেন।</div>
+      <div class="q">ওপেন সোর্স? দাম?</div><div>হ্যাঁ, GitHub-এ পাবলিক; কোর ফ্রি। Pro স্তর আছে — প্রজেক্ট সাসটেইন করার পরিকল্পনা।</div>
+      <div class="grp">তুলনা</div>
+      <div class="q">Word/Google Docs থেকে পার্থক্য?</div><div>Word জানে না "কাগজ" — এক লম্বা স্ক্রল; এখানে আসল পাতা, গাটার, ফরমা, বাংলা সংখ্যা। Docs ইন্টারনেট ছাড়া পুরো চলে না ও ডেটা কোম্পানির সার্ভারে।</div>
+      <div class="q">InDesign থাকলে কেন এটা?</div><div>ইনডিজাইন দামি + ইনস্টল + প্রশিক্ষণ + ইংরেজি। আমারটা ফ্রি, ব্রাউজারে, বাংলা-প্রথম, অফলাইন-ফার্স্ট — করিম সাহেবের জন্য।</div>
+      <div class="q">সবচেয়ে কঠিন সমস্যা?</div><div>সত্যিকারের পেজিনেশন (লেখা পাতার সীমায় ফ্লো), বাংলা যুক্তাক্ষর, আর ফরমার অঙ্ক — কোন পাতা উল্টো বসবে।</div>
+      <div class="grp">ব্যবহার ও সমাজ</div>
+      <div class="q">কারা ব্যবহার করবে?</div><div>শিক্ষক-কোচিং (প্রশ্ন-ব্যাংক, Set-A/B), লেখক, মাদ্রাসা-সংস্কৃত শিক্ষা, ছোট প্রকাশনী — যারা DTP কারিগর ভাড়া করতে পারে না।</div>
+      <div class="q">সমাজের লাভ?</div><div>ফরমা = এক কাগজে চার পাতা = কাগজ/খরচ অর্ধেক; শিক্ষকের সময় বাঁচে; গ্রামের লেখক নিজের বই নিজে বানায় — প্রকাশনা গণতায়িত হয়।</div>
+      <div class="grp">নিরাপত্তা ও সহযোগিতা</div>
+      <div class="q">লেখা হারাবে না?</div><div>প্রতি টাইপে অটোসেভ + ৫ মিনিটে অটো-স্ন্যাপশট + ভার্সন-ইতিহাসে রোলব্যাক (পুরো বই বা একটা পাতা) + JSON ব্যাকআপ।</div>
+      <div class="q">অন্য কেউ পড়বে?</div><div>না — কিছুই আপলোড হয় না, local-first। গোপনীয়তা ডিজাইনের অংশ।</div>
+      <div class="q">দুইজন একসাথে?</div><div>হ্যাঁ — রিমোট কার্সর, "কে লিখছে" ব্যাজ, মার্জিন কমেন্ট + @উল্লেখ, ক্লাউড-পুলে ৩-ওয়ে কনফ্লিক্ট-সেফ মার্জ।</div>
+      <div class="grp">জুরি-বাড়তি</div>
+      <div class="q">বড় ইনোভেশন কোনটা?</div><div>"শূন্য-কনফিগ প্রকাশনা" — ইনস্টল/অ্যাকাউন্ট/ইন্টারনেট ছাড়াই ছাপার-মাপের বই; প্রথমবার খুলেই শিক্ষক কাজ শেষ।</div>
+      <div class="q">করা হয়নি কিছু?</div><div>স্বীকার করি: রক্ত-মার্জিন/ক্রপ-মার্ক চেক, ওয়ান-ক্লিক সার্ভারলেস PDF, মেরুদণ্ড-ক্যালকুলেটরসহ কভার-ডিজাইনার — সব ১২০-দিনের রোডম্যাপে আছে (দুর্বলতা না, পরিকল্পনার প্রমাণ)।</div>
+      <div class="q">কাজ করে কী করে জানবেন?</div><div>প্রতিটা ফিচার ব্রাউজারে শেষ-থেকে-শেষ পরীক্ষা করি; লিন্টার + টাইপ-চেকার প্রতি পরিবর্তনে চলে।</div>
+      <div class="q">এটা Word-এর কপি?</div><div>Word লেখার টুল, আমারটা ছাপার টুল — Word যে ফাঁক ভরাট করে না (কাগজ/ফরমা), সেটাই আমি ভরাট করেছি।</div>
+      <div class="q">প্রিয় ফিচার?</div><div>অফলাইন ফাঁদ — WiFi বন্ধ করার সাহস যে টুলে আছে, সেটাই সবার কাছে পৌঁছাবে।</div>
+    </div>
+  </section>
+
+  <div class="row">
+    <div class="box teal">
+      <h3 style="margin-top:0;">প্রতিরক্ষার ৩ মন্ত্র</h3>
+      <ol>
+        <li>না জানলে: "দারুণ প্রশ্ন — রোডম্যাপে আছে, আপনার পরামর্শ নিচ্ছি।"</li>
+        <li>তর্কে: ত্রয়ী ফেরত — <b>অফলাইন + বাংলা + ফরমা</b>, ফ্রিতে।</li>
+        <li>মেশিন আচরণ করলে: "এটাই লাইভ-ডেমোর মজা!" → স্যাম্পল/স্ক্রিন-কাস্ট।</li>
+      </ol>
+    </div>
+    <div class="box gold">
+      <h3 style="margin-top:0;">৩০-সেকেন্ড পিচ (ভিড়ের জন্য)</h3>
+      <p>"বাংলা বই ছাপাতে Word ঝামেলা দেয়, ছাপাখানার সফটওয়্যার দামি। আমি বানিয়েছি ব্রাউজারে চলা ফ্রি স্টুডিও — আসল কাগজের পাতা, ফরমা, Set-A/B মিক্স, WiFi বন্ধেও চলে। ডেটা নিজের কম্পিউটারে, ওপেন সোর্স।"</p>
+    </div>
+  </div>
+
+  <section class="box">
+    <h2>মেলার আগের রাতের চেকলিস্ট</h2>
+    <div class="row">
+      <ul class="check">
+        <li><code>git clone github.com/topbook12/bangla-publishing-studio</code></li>
+        <li><code>bun install</code> → <code>bun run dev</code> → localhost:3000</li>
+        <li>ব্রাউজারে <b>PWA ইনস্টল</b> করে রাখো</li>
+        <li>৩–৪ পাতার স্যাম্পল বই বানিয়ে সেভ</li>
+        <li>প্রশ্ন-ব্যাংকে ৮–১০ প্রশ্ন (ট্যাগ/শ্রেণি/জটিলতা)</li>
+        <li>WiFi বন্ধ করে পুরো ডেমো প্র্যাকটিস</li>
+      </ul>
+      <ul class="check">
+        <li>ফোনে ৯০-সেকেন্ড স্ক্রিন-কাস্ট (ফলব্যাক)</li>
+        <li>ছাপা ১ পাতা A4 স্যাম্পল (ছাপা-প্রমাণ)</li>
+        <li>চার্জার + মাউস + ল্যাপটপ স্ট্যান্ড</li>
+        <li>এই চিটশিট ২ কপি প্রিন্ট</li>
+        <li>ঐচ্ছিক: <code>cd mini-services/presence-service && bun run dev</code> (রিমোট-কার্সর ডেমো)</li>
+        <li>শেষ বাক্য মুখস্থ: "প্রযুক্তি যখন মায়ের ভাষায় কথা বলে, তখন রাত জাগা করিম সাহেবরা ঘুমাতে পারেন।"</li>
+      </ul>
+    </div>
+  </section>
+
+  <footer><span>বিজ্ঞান মেলা চিটশিট · পাতা ২/২</span><span class="en">docs/science-fair-cheatsheet.html — Ctrl+P</span></footer>
+</div>
+
+</body>
+</html>
